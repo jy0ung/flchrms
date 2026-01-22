@@ -11,7 +11,7 @@ export function useEmployees() {
         .from('profiles')
         .select(`
           *,
-          department:departments(*)
+          department:departments!profiles_department_id_fkey(*)
         `)
         .order('first_name');
       
@@ -29,7 +29,7 @@ export function useEmployee(id: string) {
         .from('profiles')
         .select(`
           *,
-          department:departments(*)
+          department:departments!profiles_department_id_fkey(*)
         `)
         .eq('id', id)
         .single();
