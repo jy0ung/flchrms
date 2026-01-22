@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
-  BarChart3, Megaphone, Settings, LogOut, Building2, UserCircle
+  BarChart3, Megaphone, Settings, LogOut, Building2, UserCircle, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -17,6 +17,10 @@ const navigation = [
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
   { name: 'Announcements', href: '/announcements', icon: Megaphone },
+];
+
+const adminNavigation = [
+  { name: 'HR Admin', href: '/admin', icon: Shield },
 ];
 
 export function AppSidebar() {
@@ -62,6 +66,31 @@ export function AppSidebar() {
             </NavLink>
           );
         })}
+        
+        {/* Admin Navigation - Only visible to HR/Admin */}
+        {(role === 'admin' || role === 'hr') && (
+          <>
+            <Separator className="my-2 bg-sidebar-border" />
+            {adminNavigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    isActive 
+                      ? 'bg-red-500/20 text-red-400' 
+                      : 'text-red-400/70 hover:bg-red-500/10 hover:text-red-400'
+                  )}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </NavLink>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <Separator className="bg-sidebar-border" />
