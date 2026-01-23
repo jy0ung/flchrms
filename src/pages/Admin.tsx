@@ -119,7 +119,7 @@ export default function Admin() {
       email: employee.email || '',
       phone: employee.phone || '',
       job_title: employee.job_title || '',
-      department_id: employee.department_id || '',
+      department_id: employee.department_id || 'none',
       status: employee.status || 'active' as EmployeeStatus,
     });
     setEditProfileDialogOpen(true);
@@ -141,7 +141,7 @@ export default function Admin() {
         last_name: editForm.last_name,
         phone: editForm.phone || null,
         job_title: editForm.job_title || null,
-        department_id: editForm.department_id || null,
+        department_id: editForm.department_id === 'none' ? null : editForm.department_id || null,
         status: editForm.status,
       },
     });
@@ -587,7 +587,7 @@ export default function Admin() {
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Department</SelectItem>
+                    <SelectItem value="none">No Department</SelectItem>
                     {departments?.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
