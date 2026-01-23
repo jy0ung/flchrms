@@ -542,6 +542,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_department_manager: {
+        Args: { _employee_id: string; _manager_id: string }
+        Returns: boolean
+      }
       is_manager_of: {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
