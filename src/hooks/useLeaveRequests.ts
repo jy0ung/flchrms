@@ -1,23 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LeaveRequest, LeaveType, LeaveStatus } from '@/types/hrms';
+import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-export function useLeaveTypes() {
-  return useQuery({
-    queryKey: ['leave-types'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leave_types')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as LeaveType[];
-    },
-  });
-}
 
 export function useLeaveRequests() {
   const { role, user } = useAuth();
@@ -25,7 +10,7 @@ export function useLeaveRequests() {
   return useQuery({
     queryKey: ['leave-requests', role, user?.id],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('leave_requests')
         .select(`
           *,
@@ -33,8 +18,6 @@ export function useLeaveRequests() {
           leave_type:leave_types(*)
         `)
         .order('created_at', { ascending: false });
-      
-      const { data, error } = await query;
       
       if (error) throw error;
       return data as LeaveRequest[];
@@ -54,6 +37,7 @@ export function useCreateLeaveRequest() {
       end_date: string;
       days_count: number;
       reason?: string;
+      document_url?: string;
     }) => {
       const { data, error } = await supabase
         .from('leave_requests')
@@ -82,7 +66,19 @@ export function useApproveLeaveRequest() {
   const { user, role } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ requestId, action }: { requestId: string; action: 'approve' | 'reject'; rejectionReason?: string }) => {
+    mutationFn: async ({ 
+      requestId, 
+      action, 
+      rejectionReason,
+      documentRequired,
+      managerComments
+    }: { 
+      requestId: string; 
+      action: 'approve' | 'reject' | 'request_document'; 
+      rejectionReason?: string;
+      documentRequired?: boolean;
+      managerComments?: string;
+    }) => {
       let updateData: Record<string, unknown> = {};
       
       if (action === 'reject') {
@@ -90,12 +86,22 @@ export function useApproveLeaveRequest() {
           status: 'rejected' as LeaveStatus,
           rejected_by: user!.id,
           rejected_at: new Date().toISOString(),
+          rejection_reason: rejectionReason || null,
+          document_required: documentRequired || false,
+          manager_comments: managerComments || null,
+        };
+      } else if (action === 'request_document') {
+        // Manager requests supporting document - keeps status as pending but marks document required
+        updateData = {
+          document_required: true,
+          manager_comments: managerComments || 'Please provide supporting documentation.',
         };
       } else if (role === 'manager') {
         updateData = {
           status: 'manager_approved' as LeaveStatus,
           manager_approved_by: user!.id,
           manager_approved_at: new Date().toISOString(),
+          manager_comments: managerComments || null,
         };
       } else if (role === 'hr' || role === 'admin') {
         updateData = {
@@ -117,10 +123,68 @@ export function useApproveLeaveRequest() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      toast.success(variables.action === 'approve' ? 'Leave request approved' : 'Leave request rejected');
+      if (variables.action === 'approve') {
+        toast.success('Leave request approved');
+      } else if (variables.action === 'reject') {
+        toast.success('Leave request rejected');
+      } else if (variables.action === 'request_document') {
+        toast.success('Document request sent to employee');
+      }
     },
     onError: (error: Error) => {
       toast.error('Failed to process leave request: ' + error.message);
+    },
+  });
+}
+
+export function useAmendLeaveRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      requestId, 
+      amendmentNotes,
+      documentUrl,
+      reason
+    }: { 
+      requestId: string; 
+      amendmentNotes: string;
+      documentUrl?: string;
+      reason?: string;
+    }) => {
+      const updateData: Record<string, unknown> = {
+        status: 'pending' as LeaveStatus,
+        amendment_notes: amendmentNotes,
+        amended_at: new Date().toISOString(),
+        rejected_by: null,
+        rejected_at: null,
+        rejection_reason: null,
+      };
+
+      if (documentUrl) {
+        updateData.document_url = documentUrl;
+      }
+
+      if (reason) {
+        updateData.reason = reason;
+      }
+
+      const { data, error } = await supabase
+        .from('leave_requests')
+        .update(updateData)
+        .eq('id', requestId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      toast.success('Leave request amended and resubmitted');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to amend leave request: ' + error.message);
     },
   });
 }
@@ -143,6 +207,30 @@ export function useCancelLeaveRequest() {
     },
     onError: (error: Error) => {
       toast.error('Failed to cancel leave request: ' + error.message);
+    },
+  });
+}
+
+export function useUploadLeaveDocument() {
+  return useMutation({
+    mutationFn: async ({ file, requestId }: { file: File; requestId: string }) => {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${requestId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('leave-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('leave-documents')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to upload document: ' + error.message);
     },
   });
 }

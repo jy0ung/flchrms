@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
@@ -31,14 +32,20 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/employees" element={<Employees />} />
               <Route path="/leave" element={<Leave />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/training" element={<Training />} />
               <Route path="/performance" element={<Performance />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
+              {/* Protected routes - Admin/HR/Manager only */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'hr', 'manager']} />}>
+                <Route path="/employees" element={<Employees />} />
+              </Route>
+              {/* Admin routes - Admin/HR only */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'hr']} />}>
+                <Route path="/admin" element={<Admin />} />
+              </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
