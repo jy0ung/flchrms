@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees, useDepartments, useUpdateProfile } from '@/hooks/useEmployees';
 import { useUserRoles, useUpdateUserRole } from '@/hooks/useUserRoles';
+import { useLeaveTypes, useUpdateLeaveType } from '@/hooks/useLeaveTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { 
   Dialog, 
   DialogContent, 
@@ -34,9 +36,9 @@ import {
 } from '@/components/ui/table';
 import { 
   Shield, Users, Search, Edit, UserCog, Building, Mail, Phone,
-  Briefcase, Calendar, AlertTriangle
+  Briefcase, Calendar, AlertTriangle, FileText, Settings
 } from 'lucide-react';
-import { AppRole, Profile, EmployeeStatus } from '@/types/hrms';
+import { AppRole, Profile, EmployeeStatus, LeaveType } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -44,14 +46,28 @@ export default function Admin() {
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
+  const { data: leaveTypes, isLoading: leaveTypesLoading } = useLeaveTypes();
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
+  const updateLeaveType = useUpdateLeaveType();
 
   const [search, setSearch] = useState('');
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
+  const [editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
+  const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType | null>(null);
+  
+  // Leave type edit form state
+  const [leaveTypeForm, setLeaveTypeForm] = useState({
+    name: '',
+    description: '',
+    days_allowed: 0,
+    min_days: 1,
+    is_paid: true,
+    requires_document: false,
+  });
 
   // Profile edit form state
   const [editForm, setEditForm] = useState<{
@@ -142,6 +158,36 @@ export default function Admin() {
     setEditRoleDialogOpen(false);
   };
 
+  const handleEditLeaveType = (leaveType: LeaveType) => {
+    setSelectedLeaveType(leaveType);
+    setLeaveTypeForm({
+      name: leaveType.name,
+      description: leaveType.description || '',
+      days_allowed: leaveType.days_allowed,
+      min_days: leaveType.min_days || 1,
+      is_paid: leaveType.is_paid,
+      requires_document: leaveType.requires_document || false,
+    });
+    setEditLeaveTypeDialogOpen(true);
+  };
+
+  const handleSaveLeaveType = async () => {
+    if (!selectedLeaveType) return;
+    
+    await updateLeaveType.mutateAsync({
+      id: selectedLeaveType.id,
+      updates: {
+        name: leaveTypeForm.name,
+        description: leaveTypeForm.description || null,
+        days_allowed: leaveTypeForm.days_allowed,
+        min_days: leaveTypeForm.min_days,
+        is_paid: leaveTypeForm.is_paid,
+        requires_document: leaveTypeForm.requires_document,
+      },
+    });
+    setEditLeaveTypeDialogOpen(false);
+  };
+
   const stats = {
     totalEmployees: employees?.length || 0,
     admins: userRoles?.filter(r => r.role === 'admin').length || 0,
@@ -219,6 +265,10 @@ export default function Admin() {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
             Role Management
+          </TabsTrigger>
+          <TabsTrigger value="leave-policies" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Leave Policies
           </TabsTrigger>
         </TabsList>
 
@@ -384,6 +434,85 @@ export default function Admin() {
                         </TableRow>
                       );
                     })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Leave Policies Tab */}
+        <TabsContent value="leave-policies" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Leave Policy Configuration
+                  </CardTitle>
+                  <CardDescription>Configure leave types, minimum days, and document requirements</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {leaveTypesLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Leave Type</TableHead>
+                      <TableHead>Days Allowed</TableHead>
+                      <TableHead>Minimum Days</TableHead>
+                      <TableHead>Paid Leave</TableHead>
+                      <TableHead>Document Required</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaveTypes?.map((leaveType) => (
+                      <TableRow key={leaveType.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{leaveType.name}</p>
+                            {leaveType.description && (
+                              <p className="text-sm text-muted-foreground">{leaveType.description}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{leaveType.min_days || 1} day(s) min</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
+                            {leaveType.is_paid ? 'Paid' : 'Unpaid'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={leaveType.requires_document ? 'bg-orange-500/20 text-orange-600' : 'bg-muted text-muted-foreground'}>
+                            {leaveType.requires_document ? 'Required' : 'Optional'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditLeaveType(leaveType)}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Policy
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               )}
@@ -566,6 +695,90 @@ export default function Admin() {
             </Button>
             <Button onClick={handleSaveRole} disabled={updateUserRole.isPending}>
               {updateUserRole.isPending ? 'Updating...' : 'Update Role'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Leave Type Policy Dialog */}
+      <Dialog open={editLeaveTypeDialogOpen} onOpenChange={setEditLeaveTypeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Leave Policy</DialogTitle>
+            <DialogDescription>
+              Configure policy settings for {selectedLeaveType?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="leave_name">Leave Type Name</Label>
+              <Input
+                id="leave_name"
+                value={leaveTypeForm.name}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="leave_description">Description</Label>
+              <Input
+                id="leave_description"
+                value={leaveTypeForm.description}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, description: e.target.value })}
+                placeholder="Brief description of this leave type"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="days_allowed">Days Allowed Per Year</Label>
+                <Input
+                  id="days_allowed"
+                  type="number"
+                  min={0}
+                  value={leaveTypeForm.days_allowed}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, days_allowed: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="min_days">Minimum Days Required</Label>
+                <Input
+                  id="min_days"
+                  type="number"
+                  min={1}
+                  value={leaveTypeForm.min_days}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 1 })}
+                />
+                <p className="text-xs text-muted-foreground">E.g., Annual Leave must be at least 7 days</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="is_paid">Paid Leave</Label>
+                <p className="text-sm text-muted-foreground">Employee receives salary during this leave</p>
+              </div>
+              <Switch
+                id="is_paid"
+                checked={leaveTypeForm.is_paid}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, is_paid: checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="requires_document">Document Required</Label>
+                <p className="text-sm text-muted-foreground">Require supporting documents (e.g., medical certificate)</p>
+              </div>
+              <Switch
+                id="requires_document"
+                checked={leaveTypeForm.requires_document}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, requires_document: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditLeaveTypeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveLeaveType} disabled={updateLeaveType.isPending}>
+              {updateLeaveType.isPending ? 'Saving...' : 'Save Policy'}
             </Button>
           </DialogFooter>
         </DialogContent>

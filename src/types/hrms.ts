@@ -53,7 +53,10 @@ export interface LeaveType {
   description: string | null;
   days_allowed: number;
   is_paid: boolean;
+  min_days: number;
+  requires_document: boolean;
   created_at: string;
+  updated_at: string | null;
 }
 
 export interface LeaveRequest {
@@ -72,9 +75,14 @@ export interface LeaveRequest {
   rejected_by: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
+  document_url: string | null;
+  document_required: boolean;
+  manager_comments: string | null;
+  amendment_notes: string | null;
+  amended_at: string | null;
   created_at: string;
   updated_at: string;
-  employee?: Profile;
+  employee?: Partial<Profile>;
   leave_type?: LeaveType;
 }
 

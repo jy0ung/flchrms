@@ -139,8 +139,12 @@ export type Database = {
       }
       leave_requests: {
         Row: {
+          amended_at: string | null
+          amendment_notes: string | null
           created_at: string
           days_count: number
+          document_required: boolean | null
+          document_url: string | null
           employee_id: string
           end_date: string
           hr_approved_at: string | null
@@ -149,6 +153,7 @@ export type Database = {
           leave_type_id: string
           manager_approved_at: string | null
           manager_approved_by: string | null
+          manager_comments: string | null
           reason: string | null
           rejected_at: string | null
           rejected_by: string | null
@@ -158,8 +163,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amended_at?: string | null
+          amendment_notes?: string | null
           created_at?: string
           days_count: number
+          document_required?: boolean | null
+          document_url?: string | null
           employee_id: string
           end_date: string
           hr_approved_at?: string | null
@@ -168,6 +177,7 @@ export type Database = {
           leave_type_id: string
           manager_approved_at?: string | null
           manager_approved_by?: string | null
+          manager_comments?: string | null
           reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -177,8 +187,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amended_at?: string | null
+          amendment_notes?: string | null
           created_at?: string
           days_count?: number
+          document_required?: boolean | null
+          document_url?: string | null
           employee_id?: string
           end_date?: string
           hr_approved_at?: string | null
@@ -187,6 +201,7 @@ export type Database = {
           leave_type_id?: string
           manager_approved_at?: string | null
           manager_approved_by?: string | null
+          manager_comments?: string | null
           reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -240,7 +255,10 @@ export type Database = {
           description: string | null
           id: string
           is_paid: boolean | null
+          min_days: number | null
           name: string
+          requires_document: boolean | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -248,7 +266,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_paid?: boolean | null
+          min_days?: number | null
           name: string
+          requires_document?: boolean | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -256,7 +277,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_paid?: boolean | null
+          min_days?: number | null
           name?: string
+          requires_document?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
       }
