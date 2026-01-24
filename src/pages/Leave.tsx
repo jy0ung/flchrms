@@ -16,6 +16,7 @@ import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
 import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
+import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function Leave() {
@@ -39,11 +40,13 @@ export default function Leave() {
   const [amendmentNotes, setAmendmentNotes] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
 
-  // Upload document helper for new requests
+  // Upload document helper for new requests - uses user ID folder for RLS compliance
   const handleUploadDocument = async (file: File): Promise<string> => {
+    if (!user) throw new Error('User not authenticated');
+    
     const fileExt = file.name.split('.').pop();
-    const tempId = `temp-${Date.now()}`;
-    const filePath = `${tempId}/${Date.now()}.${fileExt}`;
+    // Use user ID as folder for RLS policy compliance
+    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('leave-documents')
@@ -51,11 +54,8 @@ export default function Leave() {
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('leave-documents')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    // Store the file path instead of URL - signed URLs will be generated on demand
+    return filePath;
   };
 
   const handleSubmit = async (data: {
@@ -282,6 +282,9 @@ export default function Leave() {
                           </td>
                           <td className="p-4">
                             <div className="flex flex-wrap gap-2">
+                              {request.document_url && (
+                                <DocumentViewButton documentPath={request.document_url} />
+                              )}
                               {canAmend(request) && (
                                 <Button size="sm" variant="outline" onClick={() => handleAmend(request)}>
                                   <Upload className="w-4 h-4 mr-1" />
@@ -415,11 +418,7 @@ export default function Leave() {
                                 </>
                               )}
                               {request.document_url && (
-                                <Button size="sm" variant="ghost" asChild>
-                                  <a href={request.document_url} target="_blank" rel="noopener noreferrer">
-                                    <FileText className="w-4 h-4" />
-                                  </a>
-                                </Button>
+                                <DocumentViewButton documentPath={request.document_url} />
                               )}
                             </div>
                           </td>

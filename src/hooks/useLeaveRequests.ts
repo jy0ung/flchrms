@@ -219,10 +219,15 @@ export function useCancelLeaveRequest() {
 }
 
 export function useUploadLeaveDocument() {
+  const { user } = useAuth();
+  
   return useMutation({
-    mutationFn: async ({ file, requestId }: { file: File; requestId: string }) => {
+    mutationFn: async ({ file }: { file: File; requestId?: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      
       const fileExt = file.name.split('.').pop();
-      const filePath = `${requestId}/${Date.now()}.${fileExt}`;
+      // Use user ID as folder for RLS policy compliance
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('leave-documents')
@@ -230,14 +235,32 @@ export function useUploadLeaveDocument() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      // Use signed URL instead of public URL for security
+      const { data, error: signedUrlError } = await supabase.storage
         .from('leave-documents')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-      return publicUrl;
+      if (signedUrlError) throw signedUrlError;
+      
+      // Store the file path, not the signed URL (signed URLs expire)
+      return filePath;
     },
     onError: (error: Error) => {
       toast.error('Failed to upload document: ' + error.message);
+    },
+  });
+}
+
+// Hook to get a signed URL for viewing a document
+export function useGetDocumentUrl() {
+  return useMutation({
+    mutationFn: async (filePath: string) => {
+      const { data, error } = await supabase.storage
+        .from('leave-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      return data.signedUrl;
     },
   });
 }
