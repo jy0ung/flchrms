@@ -42,7 +42,12 @@ export function useCreateLeaveRequest() {
       const { data, error } = await supabase
         .from('leave_requests')
         .insert({
-          ...request,
+          leave_type_id: request.leave_type_id,
+          start_date: request.start_date,
+          end_date: request.end_date,
+          days_count: request.days_count,
+          reason: request.reason || null,
+          document_url: request.document_url || null,
           employee_id: user!.id,
         })
         .select()
@@ -53,6 +58,7 @@ export function useCreateLeaveRequest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       toast.success('Leave request submitted successfully');
     },
     onError: (error: Error) => {
@@ -123,6 +129,7 @@ export function useApproveLeaveRequest() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (variables.action === 'approve') {
         toast.success('Leave request approved');
       } else if (variables.action === 'reject') {
