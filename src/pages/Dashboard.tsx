@@ -5,7 +5,8 @@ import { useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendan
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Calendar, Clock, GraduationCap, BarChart3, Play, Square, Megaphone } from 'lucide-react';
+import { ExecutiveSummary } from '@/components/dashboard/ExecutiveSummary';
+import { Users, Calendar, Clock, GraduationCap, Play, Square, Megaphone } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
@@ -16,6 +17,8 @@ export default function Dashboard() {
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
+  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin';
+
   const statCards = [
     { title: 'Total Employees', value: stats?.totalEmployees || 0, icon: Users, color: 'text-info' },
     { title: 'Present Today', value: stats?.presentToday || 0, icon: Clock, color: 'text-success' },
@@ -23,7 +26,7 @@ export default function Dashboard() {
     { title: 'Active Trainings', value: stats?.activeTrainings || 0, icon: GraduationCap, color: 'text-accent' },
   ];
 
-  const priorityColors = {
+  const priorityColors: Record<string, string> = {
     low: 'bg-muted text-muted-foreground',
     normal: 'bg-info/10 text-info',
     high: 'bg-warning/10 text-warning',
@@ -41,6 +44,9 @@ export default function Dashboard() {
           {format(new Date(), 'EEEE, MMMM d, yyyy')} • {role && <span className="capitalize">{role}</span>}
         </p>
       </div>
+
+      {/* Executive Summary for Managers/Admin/HR */}
+      {isManagerOrAbove && <ExecutiveSummary />}
 
       {/* Quick Actions - Clock In/Out */}
       <Card className="card-stat">
@@ -85,24 +91,26 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => (
-          <Card key={stat.title} className="card-stat">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
+      {/* Stats Grid - Only show for regular employees or as quick reference */}
+      {!isManagerOrAbove && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statCards.map((stat) => (
+            <Card key={stat.title} className="card-stat">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                  </div>
+                  <div className={`p-3 rounded-xl bg-muted ${stat.color}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
                 </div>
-                <div className={`p-3 rounded-xl bg-muted ${stat.color}`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Announcements */}
       <Card className="card-stat">
@@ -125,12 +133,12 @@ export default function Dashboard() {
                       <h4 className="font-semibold">{announcement.title}</h4>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{announcement.content}</p>
                     </div>
-                    <Badge className={priorityColors[announcement.priority]}>
+                    <Badge className={priorityColors[announcement.priority as string] || priorityColors.normal}>
                       {announcement.priority}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {format(new Date(announcement.published_at), 'MMM d, yyyy')}
+                    {format(new Date(announcement.published_at!), 'MMM d, yyyy')}
                   </p>
                 </div>
               ))}
