@@ -5,8 +5,9 @@ import { useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendan
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExecutiveSummary } from '@/components/dashboard/ExecutiveSummary';
-import { Users, Calendar, Clock, GraduationCap, Play, Square, Megaphone } from 'lucide-react';
+import { QuickStats } from '@/components/dashboard/QuickStats';
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
+import { Users, Calendar, Clock, GraduationCap, Play, Square, Megaphone, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
@@ -34,76 +35,105 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
           Welcome back, {profile?.first_name}!
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm md:text-base text-muted-foreground">
           {format(new Date(), 'EEEE, MMMM d, yyyy')} • {role && <span className="capitalize">{role}</span>}
         </p>
       </div>
 
-      {/* Executive Summary for Managers/Admin/HR */}
-      {isManagerOrAbove && <ExecutiveSummary />}
+      {/* Executive Summary Header for Managers/Admin/HR */}
+      {isManagerOrAbove && (
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Building2 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Executive Summary</h2>
+            <p className="text-sm text-muted-foreground">
+              {role === 'manager' ? 'Department Overview' : 'Company Overview'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stats for Managers/Admin/HR */}
+      {isManagerOrAbove && <QuickStats />}
+
+      {/* Charts for Managers/Admin/HR */}
+      {isManagerOrAbove && <DashboardCharts />}
 
       {/* Quick Actions - Clock In/Out */}
       <Card className="card-stat">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-base md:text-lg flex items-center gap-2">
             <Clock className="w-5 h-5 text-accent" />
             Today's Attendance
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <div className="space-y-1">
-            {todayAttendance ? (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Clocked in at {format(new Date(todayAttendance.clock_in!), 'h:mm a')}
-                </p>
-                {todayAttendance.clock_out && (
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              {todayAttendance ? (
+                <>
                   <p className="text-sm text-muted-foreground">
-                    Clocked out at {format(new Date(todayAttendance.clock_out), 'h:mm a')}
+                    Clocked in at {format(new Date(todayAttendance.clock_in!), 'h:mm a')}
                   </p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">You haven't clocked in today</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {!todayAttendance ? (
-              <Button onClick={() => clockIn.mutate()} disabled={clockIn.isPending} className="bg-success hover:bg-success/90">
-                <Play className="w-4 h-4 mr-2" />
-                Clock In
-              </Button>
-            ) : !todayAttendance.clock_out ? (
-              <Button onClick={() => clockOut.mutate()} disabled={clockOut.isPending} variant="destructive">
-                <Square className="w-4 h-4 mr-2" />
-                Clock Out
-              </Button>
-            ) : (
-              <Badge className="badge-success">Completed</Badge>
-            )}
+                  {todayAttendance.clock_out && (
+                    <p className="text-sm text-muted-foreground">
+                      Clocked out at {format(new Date(todayAttendance.clock_out), 'h:mm a')}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">You haven't clocked in today</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {!todayAttendance ? (
+                <Button 
+                  onClick={() => clockIn.mutate()} 
+                  disabled={clockIn.isPending} 
+                  className="bg-success hover:bg-success/90 w-full sm:w-auto"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Clock In
+                </Button>
+              ) : !todayAttendance.clock_out ? (
+                <Button 
+                  onClick={() => clockOut.mutate()} 
+                  disabled={clockOut.isPending} 
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  Clock Out
+                </Button>
+              ) : (
+                <Badge className="badge-success">Completed</Badge>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stats Grid - Only show for regular employees or as quick reference */}
+      {/* Stats Grid - Only show for regular employees */}
       {!isManagerOrAbove && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {statCards.map((stat) => (
             <Card key={stat.title} className="card-stat">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+              <CardContent className="pt-4 md:pt-6 p-4 md:p-6">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground truncate">{stat.title}</p>
+                    <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stat.value}</p>
                   </div>
-                  <div className={`p-3 rounded-xl bg-muted ${stat.color}`}>
-                    <stat.icon className="w-6 h-6" />
+                  <div className={`p-2 md:p-3 rounded-xl bg-muted shrink-0 ${stat.color}`}>
+                    <stat.icon className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                 </div>
               </CardContent>
@@ -114,26 +144,26 @@ export default function Dashboard() {
 
       {/* Announcements */}
       <Card className="card-stat">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base md:text-lg flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-accent" />
             Announcements
           </CardTitle>
-          <CardDescription>Latest company updates</CardDescription>
+          <CardDescription className="text-xs md:text-sm">Latest company updates</CardDescription>
         </CardHeader>
         <CardContent>
           {announcements?.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No announcements yet</p>
+            <p className="text-muted-foreground text-center py-6 md:py-8 text-sm">No announcements yet</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {announcements?.slice(0, 3).map((announcement) => (
-                <div key={announcement.id} className="p-4 rounded-lg bg-muted/50 border border-border">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h4 className="font-semibold">{announcement.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{announcement.content}</p>
+                <div key={announcement.id} className="p-3 md:p-4 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-sm md:text-base truncate">{announcement.title}</h4>
+                      <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">{announcement.content}</p>
                     </div>
-                    <Badge className={priorityColors[announcement.priority as string] || priorityColors.normal}>
+                    <Badge className={`shrink-0 text-xs ${priorityColors[announcement.priority as string] || priorityColors.normal}`}>
                       {announcement.priority}
                     </Badge>
                   </div>
