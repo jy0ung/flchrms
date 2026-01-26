@@ -3,11 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
-  BarChart3, Megaphone, Settings, LogOut, Building2, UserCircle, Shield
+  BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -26,7 +29,7 @@ const adminNavigation = [
   { name: 'HR Admin', href: '/admin', icon: Shield },
 ];
 
-export function AppSidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, role, signOut } = useAuth();
   const location = useLocation();
 
@@ -34,8 +37,12 @@ export function AppSidebar() {
     ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
     : 'U';
 
+  const handleNavClick = () => {
+    onNavigate?.();
+  };
+
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0">
+    <>
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
@@ -57,6 +64,7 @@ export function AppSidebar() {
             <NavLink
               key={item.name}
               to={item.href}
+              onClick={handleNavClick}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive 
@@ -80,6 +88,7 @@ export function AppSidebar() {
                 <NavLink
                   key={item.name}
                   to={item.href}
+                  onClick={handleNavClick}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive 
@@ -105,11 +114,12 @@ export function AppSidebar() {
                 <NavLink
                   key={item.name}
                   to={item.href}
+                  onClick={handleNavClick}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive 
-                      ? 'bg-red-500/20 text-red-400' 
-                      : 'text-red-400/70 hover:bg-red-500/10 hover:text-red-400'
+                      ? 'bg-destructive/20 text-destructive' 
+                      : 'text-destructive/70 hover:bg-destructive/10 hover:text-destructive'
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -127,6 +137,7 @@ export function AppSidebar() {
       <div className="p-4 space-y-3">
         <NavLink 
           to="/profile"
+          onClick={handleNavClick}
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
             location.pathname === '/profile'
@@ -154,6 +165,38 @@ export function AppSidebar() {
           Sign Out
         </Button>
       </div>
+    </>
+  );
+}
+
+export function AppSidebar() {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="fixed top-4 left-4 z-50 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-sidebar-border">
+          <div className="flex flex-col h-full">
+            <SidebarContent onNavigate={() => setOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0">
+      <SidebarContent />
     </aside>
   );
 }
