@@ -102,6 +102,60 @@ export type Database = {
           },
         ]
       }
+      department_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          end_date: string | null
+          event_date: string
+          event_type: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_date: string
+          event_type?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_date?: string
+          event_type?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_events_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -131,6 +185,104 @@ export type Database = {
           {
             foreignKeyName: "departments_manager_id_fkey"
             columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          category: Database["public"]["Enums"]["document_category"]
+          created_at: string
+          description: string | null
+          employee_id: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holidays: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          id: string
+          is_recurring: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holidays_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -553,6 +705,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "hr" | "manager" | "employee"
+      document_category: "contract" | "certificate" | "official" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -681,6 +834,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "hr", "manager", "employee"],
+      document_category: ["contract", "certificate", "official", "other"],
     },
   },
 } as const

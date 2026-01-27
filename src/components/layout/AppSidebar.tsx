@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
-  BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X
+  BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X,
+  CalendarDays, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,9 +16,11 @@ import { useState } from 'react';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leave Management', href: '/leave', icon: Calendar },
+  { name: 'Team Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
+  { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
 
