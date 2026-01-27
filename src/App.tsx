@@ -16,6 +16,8 @@ import Performance from "./pages/Performance";
 import Announcements from "./pages/Announcements";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import Documents from "./pages/Documents";
+import TeamCalendar from "./pages/TeamCalendar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
               <Route path="/training" element={<Training />} />
               <Route path="/performance" element={<Performance />} />
               <Route path="/announcements" element={<Announcements />} />
+              <Route path="/calendar" element={<TeamCalendar />} />
+              <Route path="/documents" element={<Documents />} />
               <Route path="/profile" element={<Profile />} />
               {/* Protected routes - Admin/HR/Manager only */}
               <Route element={<ProtectedRoute allowedRoles={['admin', 'hr', 'manager']} />}>
