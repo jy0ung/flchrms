@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Upload, FileText, X } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, startOfDay } from 'date-fns';
 import { LeaveType } from '@/types/hrms';
 import { LeaveBalance } from '@/hooks/useLeaveBalance';
 
@@ -70,10 +70,16 @@ export function LeaveRequestForm({
       return;
     }
 
-    // Validate minimum days
-    if (selectedType && daysRequested < selectedType.min_days) {
-      setValidationError(`${selectedType.name} requires a minimum of ${selectedType.min_days} days.`);
-      return;
+    // Validate advance notice (min_days = days before leave date)
+    if (selectedType && selectedType.min_days > 1) {
+      const today = startOfDay(new Date());
+      const leaveStartDate = startOfDay(new Date(startDate));
+      const daysUntilLeave = differenceInDays(leaveStartDate, today);
+      
+      if (daysUntilLeave < selectedType.min_days) {
+        setValidationError(`${selectedType.name} requires at least ${selectedType.min_days} days advance notice. Your leave starts in ${daysUntilLeave} day(s).`);
+        return;
+      }
     }
 
     // Validate balance
@@ -137,7 +143,7 @@ export function LeaveRequestForm({
                     <span>{type.name}</span>
                     <span className="text-muted-foreground text-xs">
                       {balance ? `${balance.days_remaining} days left` : ''}
-                      {type.min_days > 1 && ` • min ${type.min_days}d`}
+                      {type.min_days > 1 && ` • ${type.min_days}d notice`}
                     </span>
                   </div>
                 </SelectItem>
