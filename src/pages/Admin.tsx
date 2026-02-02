@@ -468,7 +468,7 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>Leave Type</TableHead>
                       <TableHead>Days Allowed</TableHead>
-                      <TableHead>Minimum Days</TableHead>
+                      <TableHead>Advance Notice</TableHead>
                       <TableHead>Paid Leave</TableHead>
                       <TableHead>Document Required</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -489,7 +489,7 @@ export default function Admin() {
                           <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{leaveType.min_days || 1} day(s) min</Badge>
+                          <Badge variant="secondary">{leaveType.min_days || 1} day(s) notice</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
@@ -739,7 +739,7 @@ export default function Admin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="min_days">Minimum Days Required</Label>
+                <Label htmlFor="min_days">Advance Notice (Days)</Label>
                 <Input
                   id="min_days"
                   type="number"
@@ -747,7 +747,7 @@ export default function Admin() {
                   value={leaveTypeForm.min_days}
                   onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 1 })}
                 />
-                <p className="text-xs text-muted-foreground">E.g., Annual Leave must be at least 7 days</p>
+                <p className="text-xs text-muted-foreground">E.g., Annual Leave requires 7 days advance notice</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
