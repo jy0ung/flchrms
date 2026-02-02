@@ -36,10 +36,11 @@ import {
 } from '@/components/ui/table';
 import { 
   Shield, Users, Search, Edit, UserCog, Building, Mail, Phone,
-  Briefcase, Calendar, AlertTriangle, FileText, Settings
+  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload
 } from 'lucide-react';
 import { AppRole, Profile, EmployeeStatus, LeaveType } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
+import { BatchUpdateDialog } from '@/components/admin/BatchUpdateDialog';
 
 export default function Admin() {
   const { role } = useAuth();
@@ -55,6 +56,7 @@ export default function Admin() {
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
   const [editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen] = useState(false);
+  const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
   const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType | null>(null);
@@ -64,7 +66,7 @@ export default function Admin() {
     name: '',
     description: '',
     days_allowed: 0,
-    min_days: 1,
+    min_days: 0,
     is_paid: true,
     requires_document: false,
   });
@@ -280,14 +282,23 @@ export default function Admin() {
                   <CardTitle>Employee Management</CardTitle>
                   <CardDescription>View and edit employee profiles</CardDescription>
                 </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search employees..."
-                    className="pl-10"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setBatchUpdateDialogOpen(true)}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Batch Update
+                  </Button>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search employees..."
+                      className="pl-10"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -489,7 +500,9 @@ export default function Admin() {
                           <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{leaveType.min_days || 1} day(s) notice</Badge>
+                          <Badge variant="secondary">
+                            {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
@@ -743,11 +756,11 @@ export default function Admin() {
                 <Input
                   id="min_days"
                   type="number"
-                  min={1}
+                  min={0}
                   value={leaveTypeForm.min_days}
-                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 0 })}
                 />
-                <p className="text-xs text-muted-foreground">E.g., Annual Leave requires 7 days advance notice</p>
+                <p className="text-xs text-muted-foreground">Set to 0 for emergency leave (no advance notice required)</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -783,6 +796,14 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Batch Update Dialog */}
+      <BatchUpdateDialog
+        open={batchUpdateDialogOpen}
+        onOpenChange={setBatchUpdateDialogOpen}
+        employees={employees}
+        departments={departments}
+      />
     </div>
   );
 }
