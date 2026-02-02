@@ -70,14 +70,15 @@ export function LeaveRequestForm({
       return;
     }
 
-    // Validate advance notice (min_days = days before leave date)
-    if (selectedType && selectedType.min_days > 1) {
+    // Validate advance notice (min_days = days before leave date, 0 = no notice required)
+    const minDaysNotice = selectedType?.min_days ?? 0;
+    if (minDaysNotice > 0) {
       const today = startOfDay(new Date());
       const leaveStartDate = startOfDay(new Date(startDate));
       const daysUntilLeave = differenceInDays(leaveStartDate, today);
       
-      if (daysUntilLeave < selectedType.min_days) {
-        setValidationError(`${selectedType.name} requires at least ${selectedType.min_days} days advance notice. Your leave starts in ${daysUntilLeave} day(s).`);
+      if (daysUntilLeave < minDaysNotice) {
+        setValidationError(`${selectedType?.name} requires at least ${minDaysNotice} days advance notice. Your leave starts in ${daysUntilLeave} day(s).`);
         return;
       }
     }
@@ -143,7 +144,8 @@ export function LeaveRequestForm({
                     <span>{type.name}</span>
                     <span className="text-muted-foreground text-xs">
                       {balance ? `${balance.days_remaining} days left` : ''}
-                      {type.min_days > 1 && ` • ${type.min_days}d notice`}
+                      {type.min_days > 0 && ` • ${type.min_days}d notice`}
+                      {type.min_days === 0 && ' • No notice'}
                     </span>
                   </div>
                 </SelectItem>
