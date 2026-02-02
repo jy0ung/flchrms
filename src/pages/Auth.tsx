@@ -69,7 +69,7 @@ export default function Auth() {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">FLC-HRMS</CardTitle>
-            <CardDescription>Fook Loi Human Resource Management System</CardDescription>
+            <CardDescription>Fook Loi Group HR Management System</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
