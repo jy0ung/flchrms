@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   UserCheck, 
@@ -21,9 +22,11 @@ interface QuickStatProps {
   trend?: 'up' | 'down' | 'neutral';
   trendLabel?: string;
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
-function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, variant = 'default' }: QuickStatProps) {
+function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, variant = 'default', onClick, clickable }: QuickStatProps) {
   const variantStyles = {
     default: 'bg-muted/50 text-muted-foreground',
     success: 'bg-success/10 text-success',
@@ -35,7 +38,13 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
   return (
-    <Card className="relative overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className={cn(
+        "relative overflow-hidden transition-shadow",
+        clickable && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20"
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-4 md:p-6">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1 min-w-0 flex-1">
@@ -68,6 +77,9 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
             </span>
           </div>
         )}
+        {clickable && (
+          <p className="mt-2 text-xs text-primary font-medium">Click to view details →</p>
+        )}
       </CardContent>
     </Card>
   );
@@ -76,8 +88,9 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
 export function QuickStats() {
   const { role } = useAuth();
   const { data: stats, isLoading } = useExecutiveStats();
+  const navigate = useNavigate();
 
-  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin';
+  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin' || role === 'general_manager' || role === 'director';
 
   if (!isManagerOrAbove) return null;
 
@@ -121,6 +134,8 @@ export function QuickStats() {
         subtitle={`${stats.onLeaveToday} on leave today`}
         icon={Calendar}
         variant={stats.pendingLeaveRequests > 5 ? 'warning' : 'default'}
+        clickable={stats.pendingLeaveRequests > 0}
+        onClick={() => navigate('/leave')}
       />
       <QuickStat
         title="Pending Reviews"

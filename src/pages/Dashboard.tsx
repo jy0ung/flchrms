@@ -18,7 +18,7 @@ export default function Dashboard() {
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
-  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin';
+  const isManagerOrAbove = role === 'manager' || role === 'general_manager' || role === 'director' || role === 'hr' || role === 'admin';
 
   const statCards = [
     { title: 'Total Employees', value: stats?.totalEmployees || 0, icon: Users, color: 'text-info' },

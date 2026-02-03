@@ -129,15 +129,35 @@ export default function Leave() {
 
   const statusConfig: Record<LeaveStatus, { color: string; icon: React.ReactNode; label: string }> = {
     pending: { color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30', icon: <Clock className="w-3 h-3" />, label: 'Pending Manager' },
-    manager_approved: { color: 'bg-blue-500/20 text-blue-600 border-blue-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting HR' },
+    manager_approved: { color: 'bg-blue-500/20 text-blue-600 border-blue-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting GM' },
+    gm_approved: { color: 'bg-cyan-500/20 text-cyan-600 border-cyan-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting HR' },
+    director_approved: { color: 'bg-amber-500/20 text-amber-600 border-amber-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting HR' },
     hr_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved' },
     rejected: { color: 'bg-red-500/20 text-red-600 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: 'Rejected' },
     cancelled: { color: 'bg-muted text-muted-foreground', icon: <X className="w-3 h-3" />, label: 'Cancelled' },
   };
 
   const canApprove = (request: LeaveRequest) => {
+    // Multi-level approval workflow:
+    // Employee -> Manager -> GM -> HR
+    // Manager -> GM -> HR
+    // GM -> Director -> HR
+    
+    // Manager can approve pending requests
     if (role === 'manager' && request.status === 'pending') return true;
-    if ((role === 'hr' || role === 'admin') && (request.status === 'pending' || request.status === 'manager_approved')) return true;
+    
+    // GM can approve manager_approved requests (or pending if the employee is a manager)
+    if (role === 'general_manager' && (request.status === 'manager_approved' || request.status === 'pending')) return true;
+    
+    // Director can approve gm_approved requests (when GM submits their own leave)
+    if (role === 'director' && request.status === 'gm_approved') return true;
+    
+    // HR/Admin can approve gm_approved or director_approved requests (final approval)
+    // HR can also view and approve at any stage for visibility
+    if ((role === 'hr' || role === 'admin') && 
+        (request.status === 'pending' || request.status === 'manager_approved' || 
+         request.status === 'gm_approved' || request.status === 'director_approved')) return true;
+    
     return false;
   };
 
@@ -195,14 +215,38 @@ export default function Leave() {
       {/* Workflow Legend */}
       <Card className="bg-muted/30 border-dashed">
         <CardContent className="py-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-            <span className="font-medium">Workflow:</span>
-            <div className="flex items-center gap-1">
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">1. Employee Submits</Badge>
-              <span>→</span>
-              <Badge variant="outline" className="bg-blue-500/10 text-blue-600">2. Manager Reviews</Badge>
-              <span>→</span>
-              <Badge variant="outline" className="bg-green-500/10 text-green-600">3. HR Approves</Badge>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium">Employee Workflow:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">Employee</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600">Manager</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium">Manager Workflow:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-600">Manager</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium">GM Workflow:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600">Director</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -309,8 +353,8 @@ export default function Leave() {
         </div>
       )}
 
-      {/* Team Requests Section - for managers/hr/admin */}
-      {(role === 'manager' || role === 'hr' || role === 'admin') && teamRequests.length > 0 && (
+      {/* Team Requests Section - for managers/gm/director/hr/admin */}
+      {(role === 'manager' || role === 'general_manager' || role === 'director' || role === 'hr' || role === 'admin') && teamRequests.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Team Requests</h2>
           <Card className="card-stat">
