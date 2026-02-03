@@ -56,6 +56,30 @@ export function useDepartments() {
   });
 }
 
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+      const { data, error } = await supabase
+        .from('departments')
+        .insert({ name, description: description || null })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      toast.success('Department created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to create department: ' + error.message);
+    },
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 

@@ -32,6 +32,15 @@ const adminNavigation = [
   { name: 'HR Admin', href: '/admin', icon: Shield },
 ];
 
+const roleDisplayNames: Record<string, string> = {
+  admin: 'Admin',
+  hr: 'HR',
+  director: 'Director',
+  general_manager: 'General Manager',
+  manager: 'Manager',
+  employee: 'Employee',
+};
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, role, signOut } = useAuth();
   const location = useLocation();
@@ -81,8 +90,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
         
-        {/* HR/Admin/Manager Navigation - Employee Directory */}
-        {(role === 'admin' || role === 'hr' || role === 'manager') && (
+        {/* HR/Admin/Manager/GM/Director Navigation - Employee Directory */}
+        {(role === 'admin' || role === 'hr' || role === 'manager' || role === 'general_manager' || role === 'director') && (
           <>
             <Separator className="my-2 bg-sidebar-border" />
             {hrNavigation.map((item) => {
@@ -155,7 +164,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
-            <p className="text-xs text-sidebar-foreground/50 capitalize">{role || 'Employee'}</p>
+            <p className="text-xs text-sidebar-foreground/50">{role ? roleDisplayNames[role] || role : 'Employee'}</p>
           </div>
         </NavLink>
         

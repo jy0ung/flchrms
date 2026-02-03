@@ -295,12 +295,17 @@ export type Database = {
           amendment_notes: string | null
           created_at: string
           days_count: number
+          director_approved_at: string | null
+          director_approved_by: string | null
           document_required: boolean | null
           document_url: string | null
           employee_id: string
           end_date: string
+          gm_approved_at: string | null
+          gm_approved_by: string | null
           hr_approved_at: string | null
           hr_approved_by: string | null
+          hr_notified_at: string | null
           id: string
           leave_type_id: string
           manager_approved_at: string | null
@@ -319,12 +324,17 @@ export type Database = {
           amendment_notes?: string | null
           created_at?: string
           days_count: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           document_required?: boolean | null
           document_url?: string | null
           employee_id: string
           end_date: string
+          gm_approved_at?: string | null
+          gm_approved_by?: string | null
           hr_approved_at?: string | null
           hr_approved_by?: string | null
+          hr_notified_at?: string | null
           id?: string
           leave_type_id: string
           manager_approved_at?: string | null
@@ -343,12 +353,17 @@ export type Database = {
           amendment_notes?: string | null
           created_at?: string
           days_count?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           document_required?: boolean | null
           document_url?: string | null
           employee_id?: string
           end_date?: string
+          gm_approved_at?: string | null
+          gm_approved_by?: string | null
           hr_approved_at?: string | null
           hr_approved_by?: string | null
+          hr_notified_at?: string | null
           id?: string
           leave_type_id?: string
           manager_approved_at?: string | null
@@ -364,8 +379,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "leave_requests_director_approved_by_fkey"
+            columns: ["director_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_gm_approved_by_fkey"
+            columns: ["gm_approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -704,7 +733,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "hr" | "manager" | "employee"
+      app_role:
+        | "admin"
+        | "hr"
+        | "manager"
+        | "employee"
+        | "general_manager"
+        | "director"
       document_category: "contract" | "certificate" | "official" | "other"
     }
     CompositeTypes: {
@@ -833,7 +868,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "hr", "manager", "employee"],
+      app_role: [
+        "admin",
+        "hr",
+        "manager",
+        "employee",
+        "general_manager",
+        "director",
+      ],
       document_category: ["contract", "certificate", "official", "other"],
     },
   },

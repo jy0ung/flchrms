@@ -1,6 +1,6 @@
-export type AppRole = 'admin' | 'hr' | 'manager' | 'employee';
+export type AppRole = 'admin' | 'hr' | 'manager' | 'employee' | 'general_manager' | 'director';
 
-export type LeaveStatus = 'pending' | 'manager_approved' | 'hr_approved' | 'rejected' | 'cancelled';
+export type LeaveStatus = 'pending' | 'manager_approved' | 'gm_approved' | 'director_approved' | 'hr_approved' | 'rejected' | 'cancelled';
 
 export type EmployeeStatus = 'active' | 'inactive' | 'on_leave' | 'terminated';
 
@@ -70,8 +70,13 @@ export interface LeaveRequest {
   status: LeaveStatus;
   manager_approved_by: string | null;
   manager_approved_at: string | null;
+  gm_approved_by: string | null;
+  gm_approved_at: string | null;
+  director_approved_by: string | null;
+  director_approved_at: string | null;
   hr_approved_by: string | null;
   hr_approved_at: string | null;
+  hr_notified_at: string | null;
   rejected_by: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;

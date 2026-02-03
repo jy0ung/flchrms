@@ -42,8 +42,8 @@ const App = () => (
               <Route path="/calendar" element={<TeamCalendar />} />
               <Route path="/documents" element={<Documents />} />
               <Route path="/profile" element={<Profile />} />
-              {/* Protected routes - Admin/HR/Manager only */}
-              <Route element={<ProtectedRoute allowedRoles={['admin', 'hr', 'manager']} />}>
+              {/* Protected routes - Admin/HR/Manager/GM/Director only */}
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'hr', 'manager', 'general_manager', 'director']} />}>
                 <Route path="/employees" element={<Employees />} />
               </Route>
               {/* Admin routes - Admin/HR only */}
