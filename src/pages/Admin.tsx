@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees, useDepartments, useUpdateProfile, useCreateDepartment } from '@/hooks/useEmployees';
 import { useUserRoles, useUpdateUserRole } from '@/hooks/useUserRoles';
-import { useLeaveTypes, useUpdateLeaveType } from '@/hooks/useLeaveTypes';
+import { useLeaveTypes, useUpdateLeaveType, useCreateLeaveType, useDeleteLeaveType } from '@/hooks/useLeaveTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,16 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,7 +46,7 @@ import {
 } from '@/components/ui/table';
 import { 
   Shield, Users, Search, Edit, UserCog, Building, Mail, Phone,
-  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload, Plus
+  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload, Plus, Trash2
 } from 'lucide-react';
 import { AppRole, Profile, EmployeeStatus, LeaveType } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
@@ -51,12 +61,16 @@ export default function Admin() {
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
   const updateLeaveType = useUpdateLeaveType();
+  const createLeaveType = useCreateLeaveType();
+  const deleteLeaveType = useDeleteLeaveType();
   const createDepartment = useCreateDepartment();
 
   const [search, setSearch] = useState('');
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
   const [editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen] = useState(false);
+  const [createLeaveTypeDialogOpen, setCreateLeaveTypeDialogOpen] = useState(false);
+  const [deleteLeaveTypeDialogOpen, setDeleteLeaveTypeDialogOpen] = useState(false);
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
@@ -178,11 +192,35 @@ export default function Admin() {
       name: leaveType.name,
       description: leaveType.description || '',
       days_allowed: leaveType.days_allowed,
-      min_days: leaveType.min_days || 1,
+      min_days: leaveType.min_days || 0,
       is_paid: leaveType.is_paid,
       requires_document: leaveType.requires_document || false,
     });
     setEditLeaveTypeDialogOpen(true);
+  };
+
+  const handleCreateLeaveType = () => {
+    setLeaveTypeForm({
+      name: '',
+      description: '',
+      days_allowed: 0,
+      min_days: 0,
+      is_paid: true,
+      requires_document: false,
+    });
+    setCreateLeaveTypeDialogOpen(true);
+  };
+
+  const handleSaveNewLeaveType = async () => {
+    await createLeaveType.mutateAsync({
+      name: leaveTypeForm.name,
+      description: leaveTypeForm.description || null,
+      days_allowed: leaveTypeForm.days_allowed,
+      min_days: leaveTypeForm.min_days,
+      is_paid: leaveTypeForm.is_paid,
+      requires_document: leaveTypeForm.requires_document,
+    });
+    setCreateLeaveTypeDialogOpen(false);
   };
 
   const handleSaveLeaveType = async () => {
@@ -200,6 +238,19 @@ export default function Admin() {
       },
     });
     setEditLeaveTypeDialogOpen(false);
+  };
+
+  const handleDeleteLeaveType = async () => {
+    if (!selectedLeaveType) return;
+    
+    await deleteLeaveType.mutateAsync(selectedLeaveType.id);
+    setDeleteLeaveTypeDialogOpen(false);
+    setSelectedLeaveType(null);
+  };
+
+  const openDeleteLeaveTypeDialog = (leaveType: LeaveType) => {
+    setSelectedLeaveType(leaveType);
+    setDeleteLeaveTypeDialogOpen(true);
   };
 
   const stats = {
@@ -533,8 +584,12 @@ export default function Admin() {
                     <Settings className="w-5 h-5" />
                     Leave Policy Configuration
                   </CardTitle>
-                  <CardDescription>Configure leave types, minimum days, and document requirements</CardDescription>
+                  <CardDescription>Configure leave types, advance notice, and document requirements</CardDescription>
                 </div>
+                <Button onClick={handleCreateLeaveType}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Leave Type
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -581,22 +636,39 @@ export default function Admin() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={leaveType.requires_document ? 'bg-orange-500/20 text-orange-600' : 'bg-muted text-muted-foreground'}>
+                          <Badge className={leaveType.requires_document ? 'bg-amber-500/20 text-amber-600' : 'bg-muted text-muted-foreground'}>
                             {leaveType.requires_document ? 'Required' : 'Optional'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditLeaveType(leaveType)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Policy
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditLeaveType(leaveType)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => openDeleteLeaveTypeDialog(leaveType)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {(!leaveTypes || leaveTypes.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No leave types configured. Add your first leave type.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               )}
@@ -953,6 +1025,116 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Leave Type Dialog */}
+      <Dialog open={createLeaveTypeDialogOpen} onOpenChange={setCreateLeaveTypeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Leave Type</DialogTitle>
+            <DialogDescription>
+              Create a new leave type with its policy settings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_leave_name">Leave Type Name</Label>
+              <Input
+                id="new_leave_name"
+                value={leaveTypeForm.name}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, name: e.target.value })}
+                placeholder="e.g. Annual Leave, Sick Leave"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_leave_description">Description</Label>
+              <Input
+                id="new_leave_description"
+                value={leaveTypeForm.description}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, description: e.target.value })}
+                placeholder="Brief description of this leave type"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new_days_allowed">Days Allowed Per Year</Label>
+                <Input
+                  id="new_days_allowed"
+                  type="number"
+                  min={0}
+                  value={leaveTypeForm.days_allowed}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, days_allowed: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new_min_days">Advance Notice (Days)</Label>
+                <Input
+                  id="new_min_days"
+                  type="number"
+                  min={0}
+                  value={leaveTypeForm.min_days}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 0 })}
+                />
+                <p className="text-xs text-muted-foreground">Set to 0 for emergency leave (no advance notice required)</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="new_is_paid">Paid Leave</Label>
+                <p className="text-sm text-muted-foreground">Employee receives salary during this leave</p>
+              </div>
+              <Switch
+                id="new_is_paid"
+                checked={leaveTypeForm.is_paid}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, is_paid: checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="new_requires_document">Document Required</Label>
+                <p className="text-sm text-muted-foreground">Require supporting documents (e.g., medical certificate)</p>
+              </div>
+              <Switch
+                id="new_requires_document"
+                checked={leaveTypeForm.requires_document}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, requires_document: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateLeaveTypeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveNewLeaveType} 
+              disabled={!leaveTypeForm.name.trim() || createLeaveType.isPending}
+            >
+              {createLeaveType.isPending ? 'Creating...' : 'Create Leave Type'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Leave Type Confirmation */}
+      <AlertDialog open={deleteLeaveTypeDialogOpen} onOpenChange={setDeleteLeaveTypeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Leave Type</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedLeaveType?.name}"? This action cannot be undone.
+              Existing leave requests using this type may be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteLeaveType}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLeaveType.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
