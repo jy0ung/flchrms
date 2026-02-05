@@ -118,6 +118,8 @@ export function QuickStats() {
         variant="info"
         trend={stats.newHiresThisMonth > 0 ? 'up' : 'neutral'}
         trendLabel={stats.newHiresThisMonth > 0 ? `+${stats.newHiresThisMonth} new` : 'No new hires'}
+        clickable
+        onClick={() => navigate('/employees')}
       />
       <QuickStat
         title="Attendance Rate"
@@ -127,6 +129,8 @@ export function QuickStats() {
         variant={stats.attendanceRate >= 80 ? 'success' : stats.attendanceRate >= 60 ? 'warning' : 'danger'}
         trend={attendanceTrend}
         trendLabel={`${stats.avgAttendanceThisMonth}% monthly avg`}
+        clickable
+        onClick={() => navigate('/attendance')}
       />
       <QuickStat
         title="Pending Leaves"
@@ -134,7 +138,7 @@ export function QuickStats() {
         subtitle={`${stats.onLeaveToday} on leave today`}
         icon={Calendar}
         variant={stats.pendingLeaveRequests > 5 ? 'warning' : 'default'}
-        clickable={stats.pendingLeaveRequests > 0}
+        clickable
         onClick={() => navigate('/leave')}
       />
       <QuickStat
@@ -143,6 +147,8 @@ export function QuickStats() {
         subtitle={`${stats.completedReviewsThisMonth} completed`}
         icon={ClipboardList}
         variant={stats.pendingReviews > 0 ? 'warning' : 'success'}
+        clickable
+        onClick={() => navigate('/performance')}
       />
     </div>
   );
