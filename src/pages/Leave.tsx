@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Plus, Check, X, FileText, Upload, MessageSquare, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
+ import { Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,6 +19,7 @@ import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
 import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { supabase } from '@/integrations/supabase/client';
+ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function Leave() {
   const { role, user } = useAuth();
@@ -212,50 +214,58 @@ export default function Leave() {
       {/* Leave Balance Card - show for all users */}
       <LeaveBalanceCard />
 
-      {/* Workflow Legend */}
-      <Card className="bg-muted/30 border-dashed">
-        <CardContent className="py-4">
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium">Employee Workflow:</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">Employee</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-600">Manager</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium">Manager Workflow:</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-600">Manager</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium">GM Workflow:</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600">GM</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600">Director</Badge>
-                <span>→</span>
-                <Badge variant="outline" className="bg-green-500/10 text-green-600">HR Notified</Badge>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* My Requests Section */}
       {myRequests.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">My Requests</h2>
+           <div className="flex items-center gap-2">
+             <h2 className="text-lg font-semibold">My Requests</h2>
+             <Popover>
+               <PopoverTrigger asChild>
+                 <button className="text-muted-foreground hover:text-foreground transition-colors">
+                   <Info className="w-4 h-4" />
+                 </button>
+               </PopoverTrigger>
+               <PopoverContent className="w-80" align="start">
+                 <div className="space-y-3">
+                   <h4 className="font-semibold text-sm">Approval Workflow</h4>
+                   <div className="space-y-2 text-xs text-muted-foreground">
+                     <div className="space-y-1">
+                       <span className="font-medium text-foreground">Employee:</span>
+                       <div className="flex items-center gap-1 flex-wrap">
+                         <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
+                       </div>
+                     </div>
+                     <div className="space-y-1">
+                       <span className="font-medium text-foreground">Manager:</span>
+                       <div className="flex items-center gap-1 flex-wrap">
+                         <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
+                       </div>
+                     </div>
+                     <div className="space-y-1">
+                       <span className="font-medium text-foreground">GM:</span>
+                       <div className="flex items-center gap-1 flex-wrap">
+                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                         <span>→</span>
+                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </PopoverContent>
+             </Popover>
+           </div>
           <Card className="card-stat">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
