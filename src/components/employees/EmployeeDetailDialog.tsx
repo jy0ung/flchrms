@@ -2,12 +2,12 @@ import { Profile, Department, AppRole } from '@/types/hrms';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
   Mail, Phone, Building, Briefcase, Calendar, 
   Hash, User, Clock
@@ -47,80 +47,88 @@ export function EmployeeDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Employee Details</DialogTitle>
+          <DialogTitle className="sr-only">Employee Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            View detailed information about {employee.first_name} {employee.last_name}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Header with Avatar */}
-          <div className="flex items-center gap-4">
-            <Avatar className="w-16 h-16">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Column - Profile Header */}
+          <div className="flex flex-col items-center text-center md:w-1/3 py-4">
+            <Avatar className="w-20 h-20 mb-4">
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                 {employee.first_name[0]}{employee.last_name[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold">
-                {employee.first_name} {employee.last_name}
-              </h3>
-              <p className="text-muted-foreground">{employee.job_title || 'No job title'}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge className={statusColors[employee.status]}>
-                  {employee.status}
-                </Badge>
-                <Badge className={roleColors[userRole]}>
-                  {userRole}
-                </Badge>
-              </div>
+            <h3 className="text-lg font-semibold">
+              {employee.first_name} {employee.last_name}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">{employee.job_title || 'No job title'}</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Badge className={statusColors[employee.status]}>
+                {employee.status}
+              </Badge>
+              <Badge className={roleColors[userRole]}>
+                {userRole.replace('_', ' ')}
+              </Badge>
+            </div>
+            
+            {/* Contact Quick Actions */}
+            <div className="mt-4 pt-4 border-t border-border w-full space-y-2">
+              <a 
+                href={`mailto:${employee.email}`} 
+                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Mail className="w-4 h-4" />
+                <span className="truncate max-w-[150px]">{employee.email}</span>
+              </a>
+              {employee.phone && (
+                <a 
+                  href={`tel:${employee.phone}`}
+                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>{employee.phone}</span>
+                </a>
+              )}
             </div>
           </div>
 
-          <Separator />
-
-          {/* Contact Information */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Contact Information</h4>
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{employee.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{employee.phone || 'Not provided'}</span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Work Information */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Work Information</h4>
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3">
+          {/* Right Column - Details Grid */}
+          <div className="flex-1 md:border-l md:border-border md:pl-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Employee ID */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <Hash className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Employee ID</span>
                   <p className="text-sm font-mono">{employee.employee_id || 'Not assigned'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Department */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <Building className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Department</span>
                   <p className="text-sm">{employee.department?.name || 'Not assigned'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Job Title */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <Briefcase className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Job Title</span>
                   <p className="text-sm">{employee.job_title || 'Not specified'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Hire Date */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Hire Date</span>
@@ -131,16 +139,9 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* System Information */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">System Information</h4>
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3">
+              
+              {/* Account Created */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Account Created</span>
@@ -149,11 +150,15 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* User ID */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <User className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">User ID</span>
-                  <p className="text-sm font-mono text-xs truncate max-w-[300px]">{employee.id}</p>
+                  <p className="text-xs font-mono truncate max-w-[150px]" title={employee.id}>
+                    {employee.id}
+                  </p>
                 </div>
               </div>
             </div>
