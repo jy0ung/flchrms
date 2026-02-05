@@ -92,6 +92,19 @@ export function useDeleteLeaveType() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First check if there are any leave requests using this leave type
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('leave_requests')
+        .select('id')
+        .eq('leave_type_id', id)
+        .limit(1);
+      
+      if (checkError) throw checkError;
+      
+      if (existingRequests && existingRequests.length > 0) {
+        throw new Error('Cannot delete this leave type because it has existing leave requests. Consider deactivating it instead.');
+      }
+      
       const { error } = await supabase
         .from('leave_types')
         .delete()
