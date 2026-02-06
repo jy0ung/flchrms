@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
   BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X,
-  CalendarDays, FileText
+  CalendarDays, FileText, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Leave Management', href: '/leave', icon: Calendar },
   { name: 'Team Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: Clock },
+  { name: 'Payroll', href: '/payroll', icon: Wallet },
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
   { name: 'Documents', href: '/documents', icon: FileText },
