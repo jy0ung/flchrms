@@ -18,6 +18,7 @@ export function useEmployees() {
       if (error) throw error;
       return data as (Profile & { department: Department | null })[];
     },
+    staleTime: 60000, // Cache for 1 minute to reduce refetches
   });
 }
 

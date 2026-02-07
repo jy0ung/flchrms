@@ -24,9 +24,9 @@ export function SalaryManagement() {
     return name.includes(search.toLowerCase()) || empId.includes(search.toLowerCase());
   });
 
-  // Employees without salary structures
+  // Only show active employees without salary structures in the dropdown
   const employeesWithoutSalary = employees?.filter(
-    emp => !salaries?.some((s: any) => s.employee_id === emp.id)
+    emp => emp.status === 'active' && !salaries?.some((s: any) => s.employee_id === emp.id)
   );
 
   if (isLoading) {
