@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -68,9 +69,15 @@ export function SalaryStructureDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const basicSalaryNum = Number(basicSalary) || 0;
+    if (basicSalaryNum <= 0) {
+      toast.error('Basic salary must be greater than 0');
+      return;
+    }
+
     const data = {
       employee_id: employeeId,
-      basic_salary: Number(basicSalary) || 0,
+      basic_salary: basicSalaryNum,
       housing_allowance: Number(housingAllowance) || 0,
       transport_allowance: Number(transportAllowance) || 0,
       meal_allowance: Number(mealAllowance) || 0,

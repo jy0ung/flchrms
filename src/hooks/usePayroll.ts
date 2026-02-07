@@ -25,14 +25,18 @@ export function useSalaryStructures() {
       if (salaryError) throw salaryError;
       if (!salaries?.length) return [];
 
-      // Get employee details separately to avoid foreign key issues
+      // Get employee details separately using explicit foreign key
       const employeeIds = salaries.map(s => s.employee_id);
       const { data: employees, error: empError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, employee_id, department_id, departments(name)')
+        .select('id, first_name, last_name, email, employee_id, department_id, department:departments!profiles_department_id_fkey(name)')
         .in('id', employeeIds);
       
-      if (empError) throw empError;
+      if (empError) {
+        console.error('Failed to fetch employee profiles:', empError);
+        // Return salaries without employee info rather than failing
+        return salaries.map(salary => ({ ...salary, employee: null }));
+      }
 
       // Merge the data
       return salaries.map(salary => ({
@@ -40,6 +44,7 @@ export function useSalaryStructures() {
         employee: employees?.find(e => e.id === salary.employee_id) || null
       }));
     },
+    staleTime: 30000, // Cache for 30 seconds to reduce refetches
   });
 }
 
@@ -60,6 +65,7 @@ export function useEmployeeSalaryStructure(employeeId?: string) {
       return data as SalaryStructure | null;
     },
     enabled: !!employeeId,
+    staleTime: 30000,
   });
 }
 
