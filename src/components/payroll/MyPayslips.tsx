@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { FileText, Download, Eye, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileText, Eye, Wallet, TrendingUp } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
 
@@ -38,8 +38,27 @@ export function MyPayslips() {
     ?.filter(p => new Date(p.created_at).getFullYear() === new Date().getFullYear())
     .reduce((sum, p) => sum + p.net_salary, 0) || 0;
 
+  // Calculate total allowances if salary exists
+  const totalAllowances = salary ? (
+    Number(salary.housing_allowance || 0) +
+    Number(salary.transport_allowance || 0) +
+    Number(salary.meal_allowance || 0) +
+    Number(salary.other_allowances || 0)
+  ) : 0;
+
   return (
     <div className="space-y-6">
+      {/* No salary structure warning */}
+      {!salary && (
+        <Card className="border-warning bg-warning/5">
+          <CardContent className="py-4">
+            <p className="text-sm text-warning">
+              Your salary structure has not been configured yet. Please contact HR for assistance.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -48,8 +67,13 @@ export function MyPayslips() {
               <div>
                 <p className="text-sm text-muted-foreground">Basic Salary</p>
                 <p className="text-2xl font-bold">
-                  {salary ? `RM ${salary.basic_salary.toLocaleString()}` : 'Not set'}
+                  {salary ? `RM ${Number(salary.basic_salary).toLocaleString()}` : '—'}
                 </p>
+                {totalAllowances > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +RM {totalAllowances.toLocaleString()} allowances
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-lg bg-primary/10 text-primary">
                 <Wallet className="w-5 h-5" />
@@ -65,9 +89,14 @@ export function MyPayslips() {
                 <p className="text-sm text-muted-foreground">Last Net Pay</p>
                 <p className="text-2xl font-bold">
                   {latestPayslip 
-                    ? `RM ${latestPayslip.net_salary.toLocaleString()}`
-                    : 'N/A'}
+                    ? `RM ${Number(latestPayslip.net_salary).toLocaleString()}`
+                    : '—'}
                 </p>
+                {latestPayslip && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(latestPayslip.created_at), 'MMM yyyy')}
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-lg bg-success/10 text-success">
                 <TrendingUp className="w-5 h-5" />
@@ -84,9 +113,12 @@ export function MyPayslips() {
                 <p className="text-2xl font-bold">
                   RM {totalEarningsThisYear.toLocaleString()}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date().getFullYear()} total
+                </p>
               </div>
               <div className="p-3 rounded-lg bg-info/10 text-info">
-                <TrendingDown className="w-5 h-5" />
+                <TrendingUp className="w-5 h-5" />
               </div>
             </div>
           </CardContent>

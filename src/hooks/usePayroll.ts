@@ -15,20 +15,30 @@ export function useSalaryStructures() {
   return useQuery({
     queryKey: ['salary-structures'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get salary structures
+      const { data: salaries, error: salaryError } = await supabase
         .from('salary_structures')
-        .select(`
-          *,
-          employee:profiles!salary_structures_employee_id_fkey(
-            id, first_name, last_name, email, employee_id,
-            department:departments(name)
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (salaryError) throw salaryError;
+      if (!salaries?.length) return [];
+
+      // Get employee details separately to avoid foreign key issues
+      const employeeIds = salaries.map(s => s.employee_id);
+      const { data: employees, error: empError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, employee_id, department_id, departments(name)')
+        .in('id', employeeIds);
+      
+      if (empError) throw empError;
+
+      // Merge the data
+      return salaries.map(salary => ({
+        ...salary,
+        employee: employees?.find(e => e.id === salary.employee_id) || null
+      }));
     },
   });
 }
@@ -272,26 +282,35 @@ export function usePayslips(periodId?: string) {
   return useQuery({
     queryKey: ['payslips', periodId],
     queryFn: async () => {
+      // Build query for payslips with payroll period
       let query = supabase
         .from('payslips')
-        .select(`
-          *,
-          employee:profiles!payslips_employee_id_fkey(
-            id, first_name, last_name, email, employee_id,
-            department:departments(name)
-          ),
-          payroll_period:payroll_periods(*)
-        `)
+        .select('*, payroll_period:payroll_periods(*)')
         .order('created_at', { ascending: false });
       
       if (periodId) {
         query = query.eq('payroll_period_id', periodId);
       }
       
-      const { data, error } = await query;
+      const { data: payslips, error: payslipError } = await query;
       
-      if (error) throw error;
-      return data as Payslip[];
+      if (payslipError) throw payslipError;
+      if (!payslips?.length) return [];
+
+      // Get employee details separately
+      const employeeIds = [...new Set(payslips.map(p => p.employee_id))];
+      const { data: employees, error: empError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, employee_id, department_id, departments(name)')
+        .in('id', employeeIds);
+      
+      if (empError) throw empError;
+
+      // Merge the data
+      return payslips.map(payslip => ({
+        ...payslip,
+        employee: employees?.find(e => e.id === payslip.employee_id) || null
+      })) as Payslip[];
     },
   });
 }
@@ -332,19 +351,34 @@ export function useGeneratePayslips() {
       
       if (periodError) throw periodError;
 
-      // Get all active employees with salary structures
+      // Get all active salary structures
       const { data: salaryStructures, error: salaryError } = await supabase
         .from('salary_structures')
-        .select(`
-          *,
-          employee:profiles!salary_structures_employee_id_fkey(id, status)
-        `)
+        .select('*')
         .eq('is_active', true);
       
       if (salaryError) throw salaryError;
+      if (!salaryStructures?.length) {
+        toast.error('No salary structures found. Please configure salaries first.');
+        return 0;
+      }
 
-      // Filter to only active employees
-      const activeStructures = salaryStructures?.filter(
+      // Get employee statuses separately
+      const employeeIds = salaryStructures.map(s => s.employee_id);
+      const { data: employees, error: empError } = await supabase
+        .from('profiles')
+        .select('id, status')
+        .in('id', employeeIds);
+      
+      if (empError) throw empError;
+
+      // Merge and filter to only active employees
+      const structuresWithEmployee = salaryStructures.map(s => ({
+        ...s,
+        employee: employees?.find(e => e.id === s.employee_id)
+      }));
+
+      const activeStructures = structuresWithEmployee.filter(
         (s: any) => s.employee?.status === 'active'
       ) || [];
 
