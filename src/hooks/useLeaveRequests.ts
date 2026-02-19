@@ -77,13 +77,15 @@ export function useApproveLeaveRequest() {
       action, 
       rejectionReason,
       documentRequired,
-      managerComments
+      managerComments,
+      employeeRole
     }: { 
       requestId: string; 
       action: 'approve' | 'reject' | 'request_document'; 
       rejectionReason?: string;
       documentRequired?: boolean;
       managerComments?: string;
+      employeeRole?: string; // Role of the employee who submitted the request
     }) => {
       let updateData: Record<string, unknown> = {};
       
@@ -102,19 +104,55 @@ export function useApproveLeaveRequest() {
           document_required: true,
           manager_comments: managerComments || 'Please provide supporting documentation.',
         };
-      } else if (role === 'manager') {
-        updateData = {
-          status: 'manager_approved' as LeaveStatus,
-          manager_approved_by: user!.id,
-          manager_approved_at: new Date().toISOString(),
-          manager_comments: managerComments || null,
-        };
-      } else if (role === 'hr' || role === 'admin') {
-        updateData = {
-          status: 'hr_approved' as LeaveStatus,
-          hr_approved_by: user!.id,
-          hr_approved_at: new Date().toISOString(),
-        };
+      } else if (action === 'approve') {
+        // Multi-level approval workflow based on approver role and employee role
+        // Employee workflow: Employee -> Manager -> GM -> HR
+        // Manager workflow: Manager -> GM -> HR  
+        // GM workflow: GM -> Director -> HR
+        
+        if (role === 'manager') {
+          // Manager approves -> next step is GM
+          updateData = {
+            status: 'manager_approved' as LeaveStatus,
+            manager_approved_by: user!.id,
+            manager_approved_at: new Date().toISOString(),
+            manager_comments: managerComments || null,
+          };
+        } else if (role === 'general_manager') {
+          // GM approves -> next step depends on who submitted
+          // If submitted by GM, next is Director; otherwise HR gets notified
+          if (employeeRole === 'general_manager') {
+            // GM submitted -> needs Director approval
+            updateData = {
+              status: 'gm_approved' as LeaveStatus,
+              gm_approved_by: user!.id,
+              gm_approved_at: new Date().toISOString(),
+            };
+          } else {
+            // Regular employee or manager submitted -> GM approved, notify HR
+            updateData = {
+              status: 'gm_approved' as LeaveStatus,
+              gm_approved_by: user!.id,
+              gm_approved_at: new Date().toISOString(),
+              hr_notified_at: new Date().toISOString(),
+            };
+          }
+        } else if (role === 'director') {
+          // Director approves -> HR notified
+          updateData = {
+            status: 'director_approved' as LeaveStatus,
+            director_approved_by: user!.id,
+            director_approved_at: new Date().toISOString(),
+            hr_notified_at: new Date().toISOString(),
+          };
+        } else if (role === 'hr' || role === 'admin') {
+          // HR/Admin final approval
+          updateData = {
+            status: 'hr_approved' as LeaveStatus,
+            hr_approved_by: user!.id,
+            hr_approved_at: new Date().toISOString(),
+          };
+        }
       }
 
       const { data, error } = await supabase

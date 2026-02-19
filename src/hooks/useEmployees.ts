@@ -18,6 +18,7 @@ export function useEmployees() {
       if (error) throw error;
       return data as (Profile & { department: Department | null })[];
     },
+    staleTime: 60000, // Cache for 1 minute to reduce refetches
   });
 }
 
@@ -52,6 +53,30 @@ export function useDepartments() {
       
       if (error) throw error;
       return data as Department[];
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
+      const { data, error } = await supabase
+        .from('departments')
+        .insert({ name, description: description || null })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      toast.success('Department created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to create department: ' + error.message);
     },
   });
 }

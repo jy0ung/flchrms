@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
   BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X,
-  CalendarDays, FileText
+  CalendarDays, FileText, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Leave Management', href: '/leave', icon: Calendar },
   { name: 'Team Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: Clock },
+  { name: 'Payroll', href: '/payroll', icon: Wallet },
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
   { name: 'Documents', href: '/documents', icon: FileText },
@@ -31,6 +32,15 @@ const hrNavigation = [
 const adminNavigation = [
   { name: 'HR Admin', href: '/admin', icon: Shield },
 ];
+
+const roleDisplayNames: Record<string, string> = {
+  admin: 'Admin',
+  hr: 'HR',
+  director: 'Director',
+  general_manager: 'General Manager',
+  manager: 'Manager',
+  employee: 'Employee',
+};
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { profile, role, signOut } = useAuth();
@@ -81,8 +91,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
         
-        {/* HR/Admin/Manager Navigation - Employee Directory */}
-        {(role === 'admin' || role === 'hr' || role === 'manager') && (
+        {/* HR/Admin/Manager/GM/Director Navigation - Employee Directory */}
+        {(role === 'admin' || role === 'hr' || role === 'manager' || role === 'general_manager' || role === 'director') && (
           <>
             <Separator className="my-2 bg-sidebar-border" />
             {hrNavigation.map((item) => {
@@ -155,7 +165,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
-            <p className="text-xs text-sidebar-foreground/50 capitalize">{role || 'Employee'}</p>
+            <p className="text-xs text-sidebar-foreground/50">{role ? roleDisplayNames[role] || role : 'Employee'}</p>
           </div>
         </NavLink>
         

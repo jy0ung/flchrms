@@ -102,6 +102,42 @@ export type Database = {
           },
         ]
       }
+      deduction_types: {
+        Row: {
+          created_at: string
+          deduction_type: Database["public"]["Enums"]["deduction_type"]
+          default_value: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_mandatory: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deduction_type?: Database["public"]["Enums"]["deduction_type"]
+          default_value?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_mandatory?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deduction_type?: Database["public"]["Enums"]["deduction_type"]
+          default_value?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_mandatory?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       department_events: {
         Row: {
           created_at: string
@@ -248,6 +284,51 @@ export type Database = {
           },
         ]
       }
+      employee_deductions: {
+        Row: {
+          amount: number
+          created_at: string
+          deduction_type_id: string
+          employee_id: string
+          id: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          deduction_type_id: string
+          employee_id: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          deduction_type_id?: string
+          employee_id?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_deductions_deduction_type_id_fkey"
+            columns: ["deduction_type_id"]
+            isOneToOne: false
+            referencedRelation: "deduction_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_deductions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -295,12 +376,17 @@ export type Database = {
           amendment_notes: string | null
           created_at: string
           days_count: number
+          director_approved_at: string | null
+          director_approved_by: string | null
           document_required: boolean | null
           document_url: string | null
           employee_id: string
           end_date: string
+          gm_approved_at: string | null
+          gm_approved_by: string | null
           hr_approved_at: string | null
           hr_approved_by: string | null
+          hr_notified_at: string | null
           id: string
           leave_type_id: string
           manager_approved_at: string | null
@@ -319,12 +405,17 @@ export type Database = {
           amendment_notes?: string | null
           created_at?: string
           days_count: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           document_required?: boolean | null
           document_url?: string | null
           employee_id: string
           end_date: string
+          gm_approved_at?: string | null
+          gm_approved_by?: string | null
           hr_approved_at?: string | null
           hr_approved_by?: string | null
+          hr_notified_at?: string | null
           id?: string
           leave_type_id: string
           manager_approved_at?: string | null
@@ -343,12 +434,17 @@ export type Database = {
           amendment_notes?: string | null
           created_at?: string
           days_count?: number
+          director_approved_at?: string | null
+          director_approved_by?: string | null
           document_required?: boolean | null
           document_url?: string | null
           employee_id?: string
           end_date?: string
+          gm_approved_at?: string | null
+          gm_approved_by?: string | null
           hr_approved_at?: string | null
           hr_approved_by?: string | null
+          hr_notified_at?: string | null
           id?: string
           leave_type_id?: string
           manager_approved_at?: string | null
@@ -364,8 +460,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "leave_requests_director_approved_by_fkey"
+            columns: ["director_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_gm_approved_by_fkey"
+            columns: ["gm_approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -435,6 +545,137 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payroll_periods: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          name: string
+          payment_date: string | null
+          processed_at: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          name: string
+          payment_date?: string | null
+          processed_at?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          payment_date?: string | null
+          processed_at?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_periods_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          allowances_breakdown: Json | null
+          basic_salary: number
+          created_at: string
+          days_absent: number | null
+          days_leave: number | null
+          days_worked: number | null
+          deductions_breakdown: Json | null
+          employee_id: string
+          gross_salary: number
+          id: string
+          net_salary: number
+          overtime_amount: number | null
+          overtime_hours: number | null
+          paid_at: string | null
+          payroll_period_id: string
+          status: Database["public"]["Enums"]["payslip_status"] | null
+          total_allowances: number | null
+          total_deductions: number | null
+          updated_at: string
+          working_days: number | null
+        }
+        Insert: {
+          allowances_breakdown?: Json | null
+          basic_salary?: number
+          created_at?: string
+          days_absent?: number | null
+          days_leave?: number | null
+          days_worked?: number | null
+          deductions_breakdown?: Json | null
+          employee_id: string
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          paid_at?: string | null
+          payroll_period_id: string
+          status?: Database["public"]["Enums"]["payslip_status"] | null
+          total_allowances?: number | null
+          total_deductions?: number | null
+          updated_at?: string
+          working_days?: number | null
+        }
+        Update: {
+          allowances_breakdown?: Json | null
+          basic_salary?: number
+          created_at?: string
+          days_absent?: number | null
+          days_leave?: number | null
+          days_worked?: number | null
+          deductions_breakdown?: Json | null
+          employee_id?: string
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          paid_at?: string | null
+          payroll_period_id?: string
+          status?: Database["public"]["Enums"]["payslip_status"] | null
+          total_allowances?: number | null
+          total_deductions?: number | null
+          updated_at?: string
+          working_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_payroll_period_id_fkey"
+            columns: ["payroll_period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       performance_reviews: {
         Row: {
@@ -562,6 +803,56 @@ export type Database = {
           {
             foreignKeyName: "profiles_manager_id_fkey"
             columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_structures: {
+        Row: {
+          basic_salary: number
+          created_at: string
+          effective_date: string
+          employee_id: string
+          housing_allowance: number | null
+          id: string
+          is_active: boolean | null
+          meal_allowance: number | null
+          other_allowances: number | null
+          transport_allowance: number | null
+          updated_at: string
+        }
+        Insert: {
+          basic_salary?: number
+          created_at?: string
+          effective_date?: string
+          employee_id: string
+          housing_allowance?: number | null
+          id?: string
+          is_active?: boolean | null
+          meal_allowance?: number | null
+          other_allowances?: number | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          basic_salary?: number
+          created_at?: string
+          effective_date?: string
+          employee_id?: string
+          housing_allowance?: number | null
+          id?: string
+          is_active?: boolean | null
+          meal_allowance?: number | null
+          other_allowances?: number | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_structures_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -704,8 +995,17 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "hr" | "manager" | "employee"
+      app_role:
+        | "admin"
+        | "hr"
+        | "manager"
+        | "employee"
+        | "general_manager"
+        | "director"
+      deduction_type: "fixed" | "percentage"
       document_category: "contract" | "certificate" | "official" | "other"
+      payroll_status: "draft" | "processing" | "completed" | "cancelled"
+      payslip_status: "pending" | "paid" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -833,8 +1133,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "hr", "manager", "employee"],
+      app_role: [
+        "admin",
+        "hr",
+        "manager",
+        "employee",
+        "general_manager",
+        "director",
+      ],
+      deduction_type: ["fixed", "percentage"],
       document_category: ["contract", "certificate", "official", "other"],
+      payroll_status: ["draft", "processing", "completed", "cancelled"],
+      payslip_status: ["pending", "paid", "cancelled"],
     },
   },
 } as const

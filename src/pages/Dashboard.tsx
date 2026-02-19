@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +13,20 @@ import { format } from 'date-fns';
 
 export default function Dashboard() {
   const { profile, role } = useAuth();
+  const navigate = useNavigate();
   const { data: stats } = useDashboardStats();
   const { data: announcements } = useAnnouncements();
   const { data: todayAttendance } = useTodayAttendance();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
-  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin';
+  const isManagerOrAbove = role === 'manager' || role === 'general_manager' || role === 'director' || role === 'hr' || role === 'admin';
 
   const statCards = [
-    { title: 'Total Employees', value: stats?.totalEmployees || 0, icon: Users, color: 'text-info' },
-    { title: 'Present Today', value: stats?.presentToday || 0, icon: Clock, color: 'text-success' },
-    { title: 'Pending Leaves', value: stats?.pendingLeaves || 0, icon: Calendar, color: 'text-warning' },
-    { title: 'Active Trainings', value: stats?.activeTrainings || 0, icon: GraduationCap, color: 'text-accent' },
+    { title: 'Total Employees', value: stats?.totalEmployees || 0, icon: Users, color: 'text-info', route: '/employees', clickable: isManagerOrAbove },
+    { title: 'Present Today', value: stats?.presentToday || 0, icon: Clock, color: 'text-success', route: '/attendance', clickable: isManagerOrAbove },
+    { title: 'Pending Leaves', value: stats?.pendingLeaves || 0, icon: Calendar, color: 'text-warning', route: '/leave', clickable: isManagerOrAbove },
+    { title: 'Active Trainings', value: stats?.activeTrainings || 0, icon: GraduationCap, color: 'text-accent', route: '/training', clickable: isManagerOrAbove },
   ];
 
   const priorityColors: Record<string, string> = {
@@ -125,7 +127,7 @@ export default function Dashboard() {
       {!isManagerOrAbove && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {statCards.map((stat) => (
-            <Card key={stat.title} className="card-stat">
+             <Card key={stat.title} className="card-stat">
               <CardContent className="pt-4 md:pt-6 p-4 md:p-6">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEmployees, useDepartments, useUpdateProfile } from '@/hooks/useEmployees';
+import { useEmployees, useDepartments, useUpdateProfile, useCreateDepartment } from '@/hooks/useEmployees';
 import { useUserRoles, useUpdateUserRole } from '@/hooks/useUserRoles';
-import { useLeaveTypes, useUpdateLeaveType } from '@/hooks/useLeaveTypes';
+import { useLeaveTypes, useUpdateLeaveType, useCreateLeaveType, useDeleteLeaveType } from '@/hooks/useLeaveTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,16 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,7 +46,7 @@ import {
 } from '@/components/ui/table';
 import { 
   Shield, Users, Search, Edit, UserCog, Building, Mail, Phone,
-  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload
+  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload, Plus, Trash2
 } from 'lucide-react';
 import { AppRole, Profile, EmployeeStatus, LeaveType } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
@@ -51,11 +61,16 @@ export default function Admin() {
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
   const updateLeaveType = useUpdateLeaveType();
+  const createLeaveType = useCreateLeaveType();
+  const deleteLeaveType = useDeleteLeaveType();
+  const createDepartment = useCreateDepartment();
 
   const [search, setSearch] = useState('');
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
   const [editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen] = useState(false);
+  const [createLeaveTypeDialogOpen, setCreateLeaveTypeDialogOpen] = useState(false);
+  const [deleteLeaveTypeDialogOpen, setDeleteLeaveTypeDialogOpen] = useState(false);
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
@@ -79,6 +94,7 @@ export default function Admin() {
     phone: string;
     job_title: string;
     department_id: string;
+    employee_id: string;
     status: EmployeeStatus;
   }>({
     first_name: '',
@@ -87,8 +103,14 @@ export default function Admin() {
     phone: '',
     job_title: '',
     department_id: '',
+    employee_id: '',
     status: 'active',
   });
+  
+  // Create department state
+  const [createDeptDialogOpen, setCreateDeptDialogOpen] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [newDeptDescription, setNewDeptDescription] = useState('');
 
   // Restrict access to admin/hr only
   if (role !== 'admin' && role !== 'hr') {
@@ -109,6 +131,8 @@ export default function Admin() {
   const roleColors: Record<AppRole, string> = {
     admin: 'bg-red-500/20 text-red-400 border-red-500/30',
     hr: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    director: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    general_manager: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
     manager: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     employee: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
   };
@@ -122,6 +146,7 @@ export default function Admin() {
       phone: employee.phone || '',
       job_title: employee.job_title || '',
       department_id: employee.department_id || 'none',
+      employee_id: employee.employee_id || '',
       status: employee.status || 'active' as EmployeeStatus,
     });
     setEditProfileDialogOpen(true);
@@ -144,6 +169,7 @@ export default function Admin() {
         phone: editForm.phone || null,
         job_title: editForm.job_title || null,
         department_id: editForm.department_id === 'none' ? null : editForm.department_id || null,
+        employee_id: editForm.employee_id || null,
         status: editForm.status,
       },
     });
@@ -166,11 +192,35 @@ export default function Admin() {
       name: leaveType.name,
       description: leaveType.description || '',
       days_allowed: leaveType.days_allowed,
-      min_days: leaveType.min_days || 1,
+      min_days: leaveType.min_days || 0,
       is_paid: leaveType.is_paid,
       requires_document: leaveType.requires_document || false,
     });
     setEditLeaveTypeDialogOpen(true);
+  };
+
+  const handleCreateLeaveType = () => {
+    setLeaveTypeForm({
+      name: '',
+      description: '',
+      days_allowed: 0,
+      min_days: 0,
+      is_paid: true,
+      requires_document: false,
+    });
+    setCreateLeaveTypeDialogOpen(true);
+  };
+
+  const handleSaveNewLeaveType = async () => {
+    await createLeaveType.mutateAsync({
+      name: leaveTypeForm.name,
+      description: leaveTypeForm.description || null,
+      days_allowed: leaveTypeForm.days_allowed,
+      min_days: leaveTypeForm.min_days,
+      is_paid: leaveTypeForm.is_paid,
+      requires_document: leaveTypeForm.requires_document,
+    });
+    setCreateLeaveTypeDialogOpen(false);
   };
 
   const handleSaveLeaveType = async () => {
@@ -188,6 +238,19 @@ export default function Admin() {
       },
     });
     setEditLeaveTypeDialogOpen(false);
+  };
+
+  const handleDeleteLeaveType = async () => {
+    if (!selectedLeaveType) return;
+    
+    await deleteLeaveType.mutateAsync(selectedLeaveType.id);
+    setDeleteLeaveTypeDialogOpen(false);
+    setSelectedLeaveType(null);
+  };
+
+  const openDeleteLeaveTypeDialog = (leaveType: LeaveType) => {
+    setSelectedLeaveType(leaveType);
+    setDeleteLeaveTypeDialogOpen(true);
   };
 
   const stats = {
@@ -263,6 +326,10 @@ export default function Admin() {
           <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Employee Profiles
+          </TabsTrigger>
+          <TabsTrigger value="departments" className="flex items-center gap-2">
+            <Building className="w-4 h-4" />
+            Departments
           </TabsTrigger>
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
@@ -367,6 +434,59 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
+        {/* Departments Tab */}
+        <TabsContent value="departments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Department Management
+                  </CardTitle>
+                  <CardDescription>Create and manage company departments</CardDescription>
+                </div>
+                <Button onClick={() => setCreateDeptDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Department
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Department Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Employees</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {departments?.map((dept) => {
+                    const employeeCount = employees?.filter(e => e.department_id === dept.id).length || 0;
+                    return (
+                      <TableRow key={dept.id}>
+                        <TableCell className="font-medium">{dept.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{dept.description || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{employeeCount} employees</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {(!departments || departments.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        No departments yet. Create your first department.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="roles" className="space-y-4">
           <Card>
             <CardHeader>
@@ -427,6 +547,8 @@ export default function Admin() {
                             <div className="text-sm text-muted-foreground">
                               {currentRole === 'admin' && 'Full system access, role management'}
                               {currentRole === 'hr' && 'Employee management, leave approval, announcements'}
+                              {currentRole === 'director' && 'Director level leave approvals'}
+                              {currentRole === 'general_manager' && 'GM level leave approvals, team oversight'}
                               {currentRole === 'manager' && 'Team oversight, leave approval, performance reviews'}
                               {currentRole === 'employee' && 'Self-service, own data access'}
                             </div>
@@ -462,8 +584,12 @@ export default function Admin() {
                     <Settings className="w-5 h-5" />
                     Leave Policy Configuration
                   </CardTitle>
-                  <CardDescription>Configure leave types, minimum days, and document requirements</CardDescription>
+                  <CardDescription>Configure leave types, advance notice, and document requirements</CardDescription>
                 </div>
+                <Button onClick={handleCreateLeaveType}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Leave Type
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -510,22 +636,39 @@ export default function Admin() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={leaveType.requires_document ? 'bg-orange-500/20 text-orange-600' : 'bg-muted text-muted-foreground'}>
+                          <Badge className={leaveType.requires_document ? 'bg-amber-500/20 text-amber-600' : 'bg-muted text-muted-foreground'}>
                             {leaveType.requires_document ? 'Required' : 'Optional'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditLeaveType(leaveType)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Policy
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditLeaveType(leaveType)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => openDeleteLeaveTypeDialog(leaveType)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {(!leaveTypes || leaveTypes.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No leave types configured. Add your first leave type.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               )}
@@ -581,13 +724,24 @@ export default function Admin() {
                 onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="job_title">Job Title</Label>
-              <Input
-                id="job_title"
-                value={editForm.job_title}
-                onChange={(e) => setEditForm({ ...editForm, job_title: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="job_title">Job Title</Label>
+                <Input
+                  id="job_title"
+                  value={editForm.job_title}
+                  onChange={(e) => setEditForm({ ...editForm, job_title: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="employee_id">Employee ID</Label>
+                <Input
+                  id="employee_id"
+                  value={editForm.employee_id}
+                  onChange={(e) => setEditForm({ ...editForm, employee_id: e.target.value })}
+                  placeholder="e.g. EMP-001"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -678,6 +832,18 @@ export default function Admin() {
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-400" />
                       Manager - Team oversight & approvals
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="general_manager">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      General Manager - GM level approvals
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="director">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                      Director - Director level approvals
                     </div>
                   </SelectItem>
                   <SelectItem value="hr">
@@ -798,12 +964,177 @@ export default function Admin() {
       </Dialog>
 
       {/* Batch Update Dialog */}
+      {/* Batch Update Dialog */}
       <BatchUpdateDialog
         open={batchUpdateDialogOpen}
         onOpenChange={setBatchUpdateDialogOpen}
         employees={employees}
         departments={departments}
       />
+
+      {/* Create Department Dialog */}
+      <Dialog open={createDeptDialogOpen} onOpenChange={setCreateDeptDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Department</DialogTitle>
+            <DialogDescription>
+              Add a new department to the organization
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="dept_name">Department Name</Label>
+              <Input
+                id="dept_name"
+                value={newDeptName}
+                onChange={(e) => setNewDeptName(e.target.value)}
+                placeholder="e.g. Engineering, Marketing"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dept_description">Description (Optional)</Label>
+              <Input
+                id="dept_description"
+                value={newDeptDescription}
+                onChange={(e) => setNewDeptDescription(e.target.value)}
+                placeholder="Brief description of this department"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDeptDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                createDepartment.mutate({ 
+                  name: newDeptName, 
+                  description: newDeptDescription 
+                }, {
+                  onSuccess: () => {
+                    setCreateDeptDialogOpen(false);
+                    setNewDeptName('');
+                    setNewDeptDescription('');
+                  }
+                });
+              }} 
+              disabled={!newDeptName.trim() || createDepartment.isPending}
+            >
+              {createDepartment.isPending ? 'Creating...' : 'Create Department'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Leave Type Dialog */}
+      <Dialog open={createLeaveTypeDialogOpen} onOpenChange={setCreateLeaveTypeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Leave Type</DialogTitle>
+            <DialogDescription>
+              Create a new leave type with its policy settings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_leave_name">Leave Type Name</Label>
+              <Input
+                id="new_leave_name"
+                value={leaveTypeForm.name}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, name: e.target.value })}
+                placeholder="e.g. Annual Leave, Sick Leave"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_leave_description">Description</Label>
+              <Input
+                id="new_leave_description"
+                value={leaveTypeForm.description}
+                onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, description: e.target.value })}
+                placeholder="Brief description of this leave type"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new_days_allowed">Days Allowed Per Year</Label>
+                <Input
+                  id="new_days_allowed"
+                  type="number"
+                  min={0}
+                  value={leaveTypeForm.days_allowed}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, days_allowed: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new_min_days">Advance Notice (Days)</Label>
+                <Input
+                  id="new_min_days"
+                  type="number"
+                  min={0}
+                  value={leaveTypeForm.min_days}
+                  onChange={(e) => setLeaveTypeForm({ ...leaveTypeForm, min_days: parseInt(e.target.value) || 0 })}
+                />
+                <p className="text-xs text-muted-foreground">Set to 0 for emergency leave (no advance notice required)</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="new_is_paid">Paid Leave</Label>
+                <p className="text-sm text-muted-foreground">Employee receives salary during this leave</p>
+              </div>
+              <Switch
+                id="new_is_paid"
+                checked={leaveTypeForm.is_paid}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, is_paid: checked })}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label htmlFor="new_requires_document">Document Required</Label>
+                <p className="text-sm text-muted-foreground">Require supporting documents (e.g., medical certificate)</p>
+              </div>
+              <Switch
+                id="new_requires_document"
+                checked={leaveTypeForm.requires_document}
+                onCheckedChange={(checked) => setLeaveTypeForm({ ...leaveTypeForm, requires_document: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateLeaveTypeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveNewLeaveType} 
+              disabled={!leaveTypeForm.name.trim() || createLeaveType.isPending}
+            >
+              {createLeaveType.isPending ? 'Creating...' : 'Create Leave Type'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Leave Type Confirmation */}
+      <AlertDialog open={deleteLeaveTypeDialogOpen} onOpenChange={setDeleteLeaveTypeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Leave Type</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedLeaveType?.name}"? This action cannot be undone.
+              Existing leave requests using this type may be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteLeaveType}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLeaveType.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

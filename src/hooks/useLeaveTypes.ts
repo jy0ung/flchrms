@@ -18,6 +18,44 @@ export function useLeaveTypes() {
   });
 }
 
+export function useCreateLeaveType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newLeaveType: {
+      name: string;
+      description?: string | null;
+      days_allowed: number;
+      min_days: number;
+      is_paid: boolean;
+      requires_document: boolean;
+    }) => {
+      const { data, error } = await supabase
+        .from('leave_types')
+        .insert({
+          name: newLeaveType.name,
+          description: newLeaveType.description || null,
+          days_allowed: newLeaveType.days_allowed,
+          min_days: newLeaveType.min_days,
+          is_paid: newLeaveType.is_paid,
+          requires_document: newLeaveType.requires_document,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave-types'] });
+      toast.success('Leave type created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to create leave type: ' + error.message);
+    },
+  });
+}
+
 export function useUpdateLeaveType() {
   const queryClient = useQueryClient();
 
@@ -45,6 +83,41 @@ export function useUpdateLeaveType() {
     },
     onError: (error: Error) => {
       toast.error('Failed to update leave policy: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteLeaveType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First check if there are any leave requests using this leave type
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('leave_requests')
+        .select('id')
+        .eq('leave_type_id', id)
+        .limit(1);
+      
+      if (checkError) throw checkError;
+      
+      if (existingRequests && existingRequests.length > 0) {
+        throw new Error('Cannot delete this leave type because it has existing leave requests. Consider deactivating it instead.');
+      }
+      
+      const { error } = await supabase
+        .from('leave_types')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave-types'] });
+      toast.success('Leave type deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to delete leave type: ' + error.message);
     },
   });
 }
