@@ -26,7 +26,7 @@ export function useDashboardStats() {
       const { count: pendingLeaves } = await supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'manager_approved']);
+        .in('status', ['pending', 'manager_approved', 'gm_approved', 'director_approved']);
 
       // Get active trainings
       const { count: activeTrainings } = await supabase

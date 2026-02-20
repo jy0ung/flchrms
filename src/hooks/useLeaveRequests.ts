@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LeaveRequest, LeaveStatus } from '@/types/hrms';
+import { AppRole, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { buildLeaveApprovalUpdate } from '@/lib/leave-workflow';
 
 export function useLeaveRequests() {
   const { role, user } = useAuth();
@@ -87,72 +88,48 @@ export function useApproveLeaveRequest() {
       managerComments?: string;
       employeeRole?: string; // Role of the employee who submitted the request
     }) => {
-      let updateData: Record<string, unknown> = {};
-      
-      if (action === 'reject') {
-        updateData = {
-          status: 'rejected' as LeaveStatus,
-          rejected_by: user!.id,
-          rejected_at: new Date().toISOString(),
-          rejection_reason: rejectionReason || null,
-          document_required: documentRequired || false,
-          manager_comments: managerComments || null,
-        };
-      } else if (action === 'request_document') {
-        // Manager requests supporting document - keeps status as pending but marks document required
-        updateData = {
-          document_required: true,
-          manager_comments: managerComments || 'Please provide supporting documentation.',
-        };
-      } else if (action === 'approve') {
-        // Multi-level approval workflow based on approver role and employee role
-        // Employee workflow: Employee -> Manager -> GM -> HR
-        // Manager workflow: Manager -> GM -> HR  
-        // GM workflow: GM -> Director -> HR
-        
-        if (role === 'manager') {
-          // Manager approves -> next step is GM
-          updateData = {
-            status: 'manager_approved' as LeaveStatus,
-            manager_approved_by: user!.id,
-            manager_approved_at: new Date().toISOString(),
-            manager_comments: managerComments || null,
-          };
-        } else if (role === 'general_manager') {
-          // GM approves -> next step depends on who submitted
-          // If submitted by GM, next is Director; otherwise HR gets notified
-          if (employeeRole === 'general_manager') {
-            // GM submitted -> needs Director approval
-            updateData = {
-              status: 'gm_approved' as LeaveStatus,
-              gm_approved_by: user!.id,
-              gm_approved_at: new Date().toISOString(),
-            };
-          } else {
-            // Regular employee or manager submitted -> GM approved, notify HR
-            updateData = {
-              status: 'gm_approved' as LeaveStatus,
-              gm_approved_by: user!.id,
-              gm_approved_at: new Date().toISOString(),
-              hr_notified_at: new Date().toISOString(),
-            };
-          }
-        } else if (role === 'director') {
-          // Director approves -> HR notified
-          updateData = {
-            status: 'director_approved' as LeaveStatus,
-            director_approved_by: user!.id,
-            director_approved_at: new Date().toISOString(),
-            hr_notified_at: new Date().toISOString(),
-          };
-        } else if (role === 'hr' || role === 'admin') {
-          // HR/Admin final approval
-          updateData = {
-            status: 'hr_approved' as LeaveStatus,
-            hr_approved_by: user!.id,
-            hr_approved_at: new Date().toISOString(),
-          };
+      if (!user || !role) {
+        throw new Error('Only authenticated approvers can process leave requests.');
+      }
+
+      const { data: existingRequest, error: requestError } = await supabase
+        .from('leave_requests')
+        .select('status, employee_id')
+        .eq('id', requestId)
+        .single();
+
+      if (requestError) throw requestError;
+      if (!existingRequest.status) {
+        throw new Error('Leave request status is missing.');
+      }
+
+      let requesterRole: AppRole = 'employee';
+
+      if (employeeRole) {
+        requesterRole = employeeRole as AppRole;
+      } else {
+        const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
+          _user_id: existingRequest.employee_id,
+        });
+
+        if (roleError) throw roleError;
+        if (roleData) {
+          requesterRole = roleData as AppRole;
         }
+      }
+
+      const updateData = buildLeaveApprovalUpdate({
+        action,
+        approverRole: role,
+        approverId: user.id,
+        currentStatus: existingRequest.status as LeaveStatus,
+        requesterRole,
+        rejectionReason,
+        managerComments,
+      });
+
+      if (action === 'reject') {
+        updateData.document_required = documentRequired || false;
       }
 
       const { data, error } = await supabase

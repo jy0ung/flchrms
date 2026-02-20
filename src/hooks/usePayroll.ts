@@ -9,6 +9,33 @@ import {
   PayrollPeriod, 
   Payslip 
 } from '@/types/payroll';
+import { calculateOverlappingLeaveDays, calculateWorkingDays } from '@/lib/payroll';
+
+interface ProfileStatusRow {
+  id: string;
+  status: string;
+}
+
+interface AttendanceRow {
+  employee_id: string;
+  status: string;
+  date: string;
+}
+
+interface LeaveRangeRow {
+  employee_id: string;
+  start_date: string;
+  end_date: string;
+}
+
+interface DeductionWithTypeRow {
+  employee_id: string;
+  amount: number;
+  deduction_type?: {
+    name: string;
+    deduction_type: 'fixed' | 'percentage';
+  } | null;
+}
 
 // Salary Structures
 export function useSalaryStructures() {
@@ -379,14 +406,17 @@ export function useGeneratePayslips() {
       if (empError) throw empError;
 
       // Merge and filter to only active employees
-      const structuresWithEmployee = salaryStructures.map(s => ({
-        ...s,
-        employee: employees?.find(e => e.id === s.employee_id)
+      const structuresWithEmployee = salaryStructures.map((salaryStructure) => ({
+        ...salaryStructure,
+        employee: (employees as ProfileStatusRow[] | null)?.find(
+          (employee) => employee.id === salaryStructure.employee_id,
+        ) || null,
       }));
 
       const activeStructures = structuresWithEmployee.filter(
-        (s: any) => s.employee?.status === 'active'
-      ) || [];
+        (structure): structure is typeof structure & { employee: ProfileStatusRow } =>
+          structure.employee?.status === 'active',
+      );
 
       // Get attendance data for the period
       const { data: attendanceData, error: attendanceError } = await supabase
@@ -400,10 +430,9 @@ export function useGeneratePayslips() {
       // Get leave data for the period
       const { data: leaveData, error: leaveError } = await supabase
         .from('leave_requests')
-        .select('employee_id, days_count')
+        .select('employee_id, start_date, end_date')
         .eq('status', 'hr_approved')
-        .gte('start_date', period.start_date)
-        .lte('end_date', period.end_date);
+        .or(`and(start_date.lte.${period.end_date},end_date.gte.${period.start_date})`);
       
       if (leaveError) throw leaveError;
 
@@ -418,30 +447,34 @@ export function useGeneratePayslips() {
       
       if (deductionsError) throw deductionsError;
 
-      // Calculate working days in period (excluding weekends)
-      const startDate = new Date(period.start_date);
-      const endDate = new Date(period.end_date);
-      let workingDays = 0;
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        if (d.getDay() !== 0 && d.getDay() !== 6) workingDays++;
-      }
+      const workingDays = calculateWorkingDays(period.start_date, period.end_date);
+      const attendanceRows = (attendanceData ?? []) as AttendanceRow[];
+      const leaveRows = (leaveData ?? []) as LeaveRangeRow[];
+      const deductionRows = (allDeductions ?? []) as DeductionWithTypeRow[];
 
       // Generate payslips for each employee
-      const payslips = activeStructures.map((structure: any) => {
-        const employeeAttendance = attendanceData?.filter(
-          a => a.employee_id === structure.employee_id
-        ) || [];
-        const employeeLeave = leaveData?.filter(
-          l => l.employee_id === structure.employee_id
-        ) || [];
-        const employeeDeductions = allDeductions?.filter(
-          (d: any) => d.employee_id === structure.employee_id
-        ) || [];
+      const payslips = activeStructures.map((structure) => {
+        const employeeAttendance = attendanceRows.filter(
+          (attendance) => attendance.employee_id === structure.employee_id,
+        );
+        const employeeLeave = leaveRows.filter(
+          (leave) => leave.employee_id === structure.employee_id,
+        );
+        const employeeDeductions = deductionRows.filter(
+          (deduction) => deduction.employee_id === structure.employee_id,
+        );
 
         const daysWorked = employeeAttendance.filter(
-          a => a.status === 'present' || a.status === 'late'
+          (attendance) => attendance.status === 'present' || attendance.status === 'late',
         ).length;
-        const daysLeave = employeeLeave.reduce((sum, l) => sum + l.days_count, 0);
+        const daysLeave = employeeLeave.reduce((sum, leave) => (
+          sum + calculateOverlappingLeaveDays(
+            period.start_date,
+            period.end_date,
+            leave.start_date,
+            leave.end_date,
+          )
+        ), 0);
         const daysAbsent = Math.max(0, workingDays - daysWorked - daysLeave);
 
         // Calculate allowances
@@ -460,7 +493,7 @@ export function useGeneratePayslips() {
 
         // Calculate gross salary (pro-rated based on days worked)
         const basicSalary = Number(structure.basic_salary);
-        const dailyRate = basicSalary / workingDays;
+        const dailyRate = workingDays > 0 ? basicSalary / workingDays : 0;
         const proratedBasic = dailyRate * (daysWorked + daysLeave);
         const grossSalary = proratedBasic + totalAllowances;
 
@@ -468,15 +501,15 @@ export function useGeneratePayslips() {
         let totalDeductions = 0;
         const deductionsBreakdown: Record<string, number> = {};
 
-        employeeDeductions.forEach((ded: any) => {
+        employeeDeductions.forEach((deduction) => {
           let amount = 0;
-          if (ded.deduction_type?.deduction_type === 'percentage') {
-            amount = (grossSalary * ded.amount) / 100;
+          if (deduction.deduction_type?.deduction_type === 'percentage') {
+            amount = (grossSalary * Number(deduction.amount)) / 100;
           } else {
-            amount = ded.amount;
+            amount = Number(deduction.amount);
           }
           totalDeductions += amount;
-          deductionsBreakdown[ded.deduction_type?.name || 'Other'] = amount;
+          deductionsBreakdown[deduction.deduction_type?.name || 'Other'] = amount;
         });
 
         const netSalary = grossSalary - totalDeductions;
@@ -511,10 +544,12 @@ export function useGeneratePayslips() {
       }
 
       // Update period status
-      await supabase
+      const { error: updateError } = await supabase
         .from('payroll_periods')
         .update({ status: 'processing', processed_at: new Date().toISOString() })
         .eq('id', periodId);
+
+      if (updateError) throw updateError;
 
       return payslips.length;
     },
@@ -534,9 +569,15 @@ export function useUpdatePayslipStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'pending' | 'paid' | 'cancelled' }) => {
-      const updates: any = { status };
+      const updates: {
+        status: 'pending' | 'paid' | 'cancelled';
+        paid_at?: string | null;
+      } = { status };
+
       if (status === 'paid') {
         updates.paid_at = new Date().toISOString();
+      } else {
+        updates.paid_at = null;
       }
 
       const { data, error } = await supabase

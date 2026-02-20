@@ -14,13 +14,18 @@ import {
 } from '@/components/ui/dialog';
 import { useCreateSalaryStructure, useUpdateSalaryStructure } from '@/hooks/usePayroll';
 import { Profile, Department } from '@/types/hrms';
+import { SalaryStructure } from '@/types/payroll';
 import { DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
+
+type SalaryStructureWithEmployee = SalaryStructure & {
+  employee?: (Profile & { department: Department | null }) | null;
+};
 
 interface SalaryStructureDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  salary?: any;
+  salary?: SalaryStructureWithEmployee | null;
   employees?: (Profile & { department: Department | null })[];
 }
 

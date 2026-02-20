@@ -28,6 +28,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Use
 import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+const ALL_DEPARTMENTS_VALUE = 'all';
+
 const eventTypeColors: Record<string, string> = {
   leave: 'bg-info/20 text-info border-info/30',
   holiday: 'bg-success/20 text-success border-success/30',
@@ -67,7 +69,7 @@ export default function TeamCalendar() {
     event_date: '', 
     end_date: '', 
     description: '', 
-    department_id: '',
+    department_id: ALL_DEPARTMENTS_VALUE,
     event_type: 'meeting' 
   });
 
@@ -100,10 +102,17 @@ export default function TeamCalendar() {
     if (!eventForm.title || !eventForm.event_date) return;
     await createEvent.mutateAsync({
       ...eventForm,
-      department_id: eventForm.department_id || undefined,
+      department_id: eventForm.department_id === ALL_DEPARTMENTS_VALUE ? undefined : eventForm.department_id,
       end_date: eventForm.end_date || undefined,
     });
-    setEventForm({ title: '', event_date: '', end_date: '', description: '', department_id: '', event_type: 'meeting' });
+    setEventForm({
+      title: '',
+      event_date: '',
+      end_date: '',
+      description: '',
+      department_id: ALL_DEPARTMENTS_VALUE,
+      event_type: 'meeting',
+    });
     setIsEventDialogOpen(false);
   };
 
@@ -191,7 +200,7 @@ export default function TeamCalendar() {
                           <SelectValue placeholder="All departments" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Departments</SelectItem>
+                          <SelectItem value={ALL_DEPARTMENTS_VALUE}>All Departments</SelectItem>
                           {departments?.map((dept) => (
                             <SelectItem key={dept.id} value={dept.id}>
                               {dept.name}

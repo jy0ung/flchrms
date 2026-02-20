@@ -8,25 +8,33 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { format } from 'date-fns';
 import { Plus, Search, DollarSign, Edit } from 'lucide-react';
 import { SalaryStructureDialog } from './SalaryStructureDialog';
+import { SalaryStructure } from '@/types/payroll';
+import { Department, Profile } from '@/types/hrms';
+
+type EmployeeWithDepartment = Profile & { department: Department | null };
+type SalaryStructureWithEmployee = SalaryStructure & {
+  employee: EmployeeWithDepartment | null;
+};
 
 export function SalaryManagement() {
   const { data: salaries, isLoading: salariesLoading } = useSalaryStructures();
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const [search, setSearch] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingSalary, setEditingSalary] = useState<any>(null);
+  const [editingSalary, setEditingSalary] = useState<SalaryStructureWithEmployee | null>(null);
+  const salaryRows = (salaries || []) as SalaryStructureWithEmployee[];
 
   const isLoading = salariesLoading || employeesLoading;
 
-  const filteredSalaries = salaries?.filter((s: any) => {
-    const name = `${s.employee?.first_name} ${s.employee?.last_name}`.toLowerCase();
-    const empId = s.employee?.employee_id?.toLowerCase() || '';
+  const filteredSalaries = salaryRows.filter((salary) => {
+    const name = `${salary.employee?.first_name || ''} ${salary.employee?.last_name || ''}`.toLowerCase();
+    const empId = salary.employee?.employee_id?.toLowerCase() || '';
     return name.includes(search.toLowerCase()) || empId.includes(search.toLowerCase());
   });
 
   // Only show active employees without salary structures in the dropdown
   const employeesWithoutSalary = employees?.filter(
-    emp => emp.status === 'active' && !salaries?.some((s: any) => s.employee_id === emp.id)
+    (employee) => employee.status === 'active' && !salaryRows.some((salary) => salary.employee_id === employee.id),
   );
 
   if (isLoading) {
@@ -97,7 +105,7 @@ export function SalaryManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSalaries.map((salary: any) => {
+                  {filteredSalaries.map((salary) => {
                     const totalAllowances = 
                       Number(salary.housing_allowance || 0) +
                       Number(salary.transport_allowance || 0) +

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { CALENDAR_VISIBLE_LEAVE_STATUSES } from '@/lib/leave-workflow';
 
 export interface Holiday {
   id: string;
@@ -40,6 +41,20 @@ export interface CalendarEvent {
   status?: string;
   employeeName?: string;
   description?: string;
+}
+
+interface LeaveCalendarRow {
+  id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  employee?: {
+    first_name: string;
+    last_name: string;
+  } | null;
+  leave_type?: {
+    name: string;
+  } | null;
 }
 
 export function useHolidays() {
@@ -197,6 +212,8 @@ export function useCalendarEvents(month: Date) {
   const { user } = useAuth();
   const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
   const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  const monthStartDate = startOfMonth.toISOString().split('T')[0];
+  const monthEndDate = endOfMonth.toISOString().split('T')[0];
 
   return useQuery({
     queryKey: ['calendar-events', month.getMonth(), month.getFullYear()],
@@ -211,20 +228,21 @@ export function useCalendarEvents(month: Date) {
           employee:profiles!leave_requests_employee_id_fkey(first_name, last_name),
           leave_type:leave_types(name)
         `)
-        .in('status', ['manager_approved', 'hr_approved'])
-        .or(`start_date.lte.${endOfMonth.toISOString()},end_date.gte.${startOfMonth.toISOString()}`);
+        .in('status', CALENDAR_VISIBLE_LEAVE_STATUSES)
+        .or(`and(start_date.lte.${monthEndDate},end_date.gte.${monthStartDate})`);
 
       if (leavesError) throw leavesError;
 
-      leaves?.forEach((leave: any) => {
+      leaves?.forEach((leave: LeaveCalendarRow) => {
+        const employeeName = `${leave.employee?.first_name || ''} ${leave.employee?.last_name || ''}`.trim();
         events.push({
           id: leave.id,
-          title: `${leave.employee?.first_name} ${leave.employee?.last_name} - ${leave.leave_type?.name || 'Leave'}`,
+          title: `${employeeName || 'Employee'} - ${leave.leave_type?.name || 'Leave'}`,
           date: new Date(leave.start_date),
           endDate: new Date(leave.end_date),
           type: 'leave',
           status: leave.status,
-          employeeName: `${leave.employee?.first_name} ${leave.employee?.last_name}`,
+          employeeName: employeeName || 'Employee',
         });
       });
 

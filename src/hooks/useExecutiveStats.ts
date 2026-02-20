@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { calculateWorkingDays } from '@/lib/payroll';
+import { calculateAbsentEmployees, COMPLETED_REVIEW_STATUSES } from '@/lib/executive-stats';
 
 export interface ExecutiveStats {
   // Headcount
@@ -104,6 +106,28 @@ export function useExecutiveStats() {
         employeeIds = deptEmployees?.map(e => e.id) || [];
       }
 
+      if (departmentFilter && employeeIds.length === 0) {
+        return {
+          totalEmployees: totalEmployees || 0,
+          activeEmployees: activeEmployees || 0,
+          newHiresThisMonth: newHiresThisMonth || 0,
+          presentToday: 0,
+          absentToday: activeEmployees || 0,
+          attendanceRate: 0,
+          avgAttendanceThisMonth: 0,
+          pendingLeaveRequests: 0,
+          approvedLeavesThisMonth: 0,
+          onLeaveToday: 0,
+          activeTrainings: 0,
+          completedTrainingsThisMonth: 0,
+          trainingCompletionRate: 0,
+          pendingReviews: 0,
+          completedReviewsThisMonth: 0,
+          departmentName,
+          departmentEmployeeCount: activeEmployees || 0,
+        };
+      }
+
       // Present today
       let presentQuery = supabase
         .from('attendance')
@@ -114,12 +138,6 @@ export function useExecutiveStats() {
         presentQuery = presentQuery.in('employee_id', employeeIds);
       }
       const { count: presentToday } = await presentQuery;
-
-      // Calculate absent (active employees - present - on leave)
-      const absentToday = Math.max(0, (activeEmployees || 0) - (presentToday || 0));
-      
-      // Attendance rate
-      const attendanceRate = activeEmployees ? Math.round(((presentToday || 0) / activeEmployees) * 100) : 0;
 
       // Average attendance this month
       let monthAttendanceQuery = supabase
@@ -133,7 +151,7 @@ export function useExecutiveStats() {
       }
       const { count: totalAttendanceRecords } = await monthAttendanceQuery;
       
-      const workingDays = Math.max(1, new Date().getDate()); // Approximate working days
+      const workingDays = Math.max(1, calculateWorkingDays(monthStart, today));
       const expectedRecords = (activeEmployees || 1) * workingDays;
       const avgAttendanceThisMonth = Math.round(((totalAttendanceRecords || 0) / expectedRecords) * 100);
 
@@ -141,7 +159,7 @@ export function useExecutiveStats() {
       let pendingLeaveQuery = supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'manager_approved']);
+        .in('status', ['pending', 'manager_approved', 'gm_approved', 'director_approved']);
       if (departmentFilter && employeeIds.length > 0) {
         pendingLeaveQuery = pendingLeaveQuery.in('employee_id', employeeIds);
       }
@@ -170,6 +188,16 @@ export function useExecutiveStats() {
         onLeaveTodayQuery = onLeaveTodayQuery.in('employee_id', employeeIds);
       }
       const { count: onLeaveToday } = await onLeaveTodayQuery;
+
+      // Calculate absent (active employees - present - on leave)
+      const absentToday = calculateAbsentEmployees(
+        activeEmployees || 0,
+        presentToday || 0,
+        onLeaveToday || 0,
+      );
+      
+      // Attendance rate
+      const attendanceRate = activeEmployees ? Math.round(((presentToday || 0) / activeEmployees) * 100) : 0;
 
       // Active trainings
       let activeTrainingsQuery = supabase
@@ -229,7 +257,7 @@ export function useExecutiveStats() {
       let completedReviewsQuery = supabase
         .from('performance_reviews')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed')
+        .in('status', [...COMPLETED_REVIEW_STATUSES])
         .gte('submitted_at', monthStart)
         .lte('submitted_at', monthEnd);
       if (departmentFilter && employeeIds.length > 0) {
