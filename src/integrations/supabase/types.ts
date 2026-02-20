@@ -759,6 +759,7 @@ export type Database = {
           phone: string | null
           status: string | null
           updated_at: string
+          username: string
         }
         Insert: {
           avatar_url?: string | null
@@ -775,6 +776,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string
+          username?: string
         }
         Update: {
           avatar_url?: string | null
@@ -791,6 +793,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string
+          username?: string
         }
         Relationships: [
           {
@@ -992,6 +995,10 @@ export type Database = {
       is_manager_of: {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
+      }
+      resolve_login_email: {
+        Args: { _identifier: string }
+        Returns: string | null
       }
     }
     Enums: {

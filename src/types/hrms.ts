@@ -16,6 +16,7 @@ export interface Profile {
   id: string;
   employee_id: string | null;
   email: string;
+  username: string;
   first_name: string;
   last_name: string;
   phone: string | null;

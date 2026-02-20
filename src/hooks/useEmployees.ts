@@ -73,10 +73,80 @@ export function useCreateDepartment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast.success('Department created successfully');
     },
     onError: (error: Error) => {
       toast.error('Failed to create department: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Pick<Department, 'name' | 'description'>;
+    }) => {
+      const { data, error } = await supabase
+        .from('departments')
+        .update({
+          name: updates.name.trim(),
+          description: updates.description || null,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Department updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update department: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (departmentId: string) => {
+      const { count, error: countError } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('department_id', departmentId);
+
+      if (countError) throw countError;
+
+      if ((count || 0) > 0) {
+        throw new Error('Department cannot be deleted while employees are assigned to it.');
+      }
+
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', departmentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Department deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to delete department: ' + error.message);
     },
   });
 }

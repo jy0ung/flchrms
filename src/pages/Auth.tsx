@@ -24,10 +24,10 @@ export default function Auth() {
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const identifier = formData.get('identifier') as string;
     const password = formData.get('password') as string;
 
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(identifier, password);
     
     if (error) {
       toast.error(error.message);
@@ -81,12 +81,26 @@ export default function Auth() {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input id="signin-email" name="email" type="email" placeholder="you@company.com" required />
+                  <Label htmlFor="signin-identifier">Email or Username</Label>
+                  <Input
+                    id="signin-identifier"
+                    name="identifier"
+                    type="text"
+                    placeholder="you@company.com or your.username"
+                    autoComplete="username"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
-                  <Input id="signin-password" name="password" type="password" placeholder="••••••••" required />
+                  <Input
+                    id="signin-password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

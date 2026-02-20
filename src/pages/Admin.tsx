@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEmployees, useDepartments, useUpdateProfile, useCreateDepartment } from '@/hooks/useEmployees';
+import {
+  useEmployees,
+  useDepartments,
+  useUpdateProfile,
+  useCreateDepartment,
+  useUpdateDepartment,
+  useDeleteDepartment,
+} from '@/hooks/useEmployees';
 import { useUserRoles, useUpdateUserRole } from '@/hooks/useUserRoles';
 import { useLeaveTypes, useUpdateLeaveType, useCreateLeaveType, useDeleteLeaveType } from '@/hooks/useLeaveTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -46,7 +53,7 @@ import {
 } from '@/components/ui/table';
 import { 
   Shield, Users, Search, Edit, UserCog, Building, Mail, Phone,
-  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload, Plus, Trash2
+  Briefcase, Calendar, AlertTriangle, FileText, Settings, Upload, Plus, Trash2, RotateCcw
 } from 'lucide-react';
 import { AppRole, Profile, EmployeeStatus, LeaveType } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
@@ -64,17 +71,25 @@ export default function Admin() {
   const createLeaveType = useCreateLeaveType();
   const deleteLeaveType = useDeleteLeaveType();
   const createDepartment = useCreateDepartment();
+  const updateDepartment = useUpdateDepartment();
+  const deleteDepartment = useDeleteDepartment();
 
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<EmployeeStatus | 'all'>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [departmentSearch, setDepartmentSearch] = useState('');
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
   const [editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen] = useState(false);
   const [createLeaveTypeDialogOpen, setCreateLeaveTypeDialogOpen] = useState(false);
   const [deleteLeaveTypeDialogOpen, setDeleteLeaveTypeDialogOpen] = useState(false);
+  const [editDepartmentDialogOpen, setEditDepartmentDialogOpen] = useState(false);
+  const [deleteDepartmentDialogOpen, setDeleteDepartmentDialogOpen] = useState(false);
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
   const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<{ id: string; name: string; description: string | null } | null>(null);
   
   // Leave type edit form state
   const [leaveTypeForm, setLeaveTypeForm] = useState({
@@ -111,17 +126,39 @@ export default function Admin() {
   const [createDeptDialogOpen, setCreateDeptDialogOpen] = useState(false);
   const [newDeptName, setNewDeptName] = useState('');
   const [newDeptDescription, setNewDeptDescription] = useState('');
+  const [departmentForm, setDepartmentForm] = useState({
+    name: '',
+    description: '',
+  });
 
   // Restrict access to admin/hr only
   if (role !== 'admin' && role !== 'hr') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const filteredEmployees = employees?.filter(emp =>
-    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-    emp.email.toLowerCase().includes(search.toLowerCase()) ||
-    emp.employee_id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredEmployeesBySearch = employees?.filter((employee) => {
+    const searchText = search.toLowerCase();
+    return (
+      `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchText) ||
+      employee.email.toLowerCase().includes(searchText) ||
+      employee.employee_id?.toLowerCase().includes(searchText)
+    );
+  });
+
+  const filteredEmployees = filteredEmployeesBySearch?.filter((employee) => {
+    const matchesStatus = statusFilter === 'all' || employee.status === statusFilter;
+    const matchesDepartment = departmentFilter === 'all' || employee.department_id === departmentFilter;
+
+    return matchesStatus && matchesDepartment;
+  });
+
+  const filteredDepartments = departments?.filter((department) => {
+    const searchText = departmentSearch.toLowerCase();
+    return (
+      department.name.toLowerCase().includes(searchText) ||
+      (department.description || '').toLowerCase().includes(searchText)
+    );
+  });
 
   const getUserRole = (userId: string): AppRole => {
     const userRole = userRoles?.find(ur => ur.user_id === userId);
@@ -184,6 +221,56 @@ export default function Admin() {
       newRole: selectedRole,
     });
     setEditRoleDialogOpen(false);
+  };
+
+  const handleArchiveEmployee = async (employee: Profile) => {
+    await updateProfile.mutateAsync({
+      id: employee.id,
+      updates: { status: 'terminated' },
+    });
+  };
+
+  const handleRestoreEmployee = async (employee: Profile) => {
+    await updateProfile.mutateAsync({
+      id: employee.id,
+      updates: { status: 'active' },
+    });
+  };
+
+  const handleEditDepartment = (department: { id: string; name: string; description: string | null }) => {
+    setSelectedDepartment(department);
+    setDepartmentForm({
+      name: department.name,
+      description: department.description || '',
+    });
+    setEditDepartmentDialogOpen(true);
+  };
+
+  const handleSaveDepartment = async () => {
+    if (!selectedDepartment || !departmentForm.name.trim()) return;
+
+    await updateDepartment.mutateAsync({
+      id: selectedDepartment.id,
+      updates: {
+        name: departmentForm.name.trim(),
+        description: departmentForm.description.trim() || null,
+      },
+    });
+    setEditDepartmentDialogOpen(false);
+    setSelectedDepartment(null);
+  };
+
+  const openDeleteDepartmentDialog = (department: { id: string; name: string; description: string | null }) => {
+    setSelectedDepartment(department);
+    setDeleteDepartmentDialogOpen(true);
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!selectedDepartment) return;
+
+    await deleteDepartment.mutateAsync(selectedDepartment.id);
+    setDeleteDepartmentDialogOpen(false);
+    setSelectedDepartment(null);
   };
 
   const handleEditLeaveType = (leaveType: LeaveType) => {
@@ -347,7 +434,7 @@ export default function Admin() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Employee Management</CardTitle>
-                  <CardDescription>View and edit employee profiles</CardDescription>
+                  <CardDescription>View, filter, update, and archive employee profiles</CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button 
@@ -357,6 +444,31 @@ export default function Admin() {
                     <Upload className="w-4 h-4 mr-2" />
                     Batch Update
                   </Button>
+                  <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as EmployeeStatus | 'all')}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="on_leave">On Leave</SelectItem>
+                      <SelectItem value="terminated">Terminated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {departments?.map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -417,16 +529,46 @@ export default function Admin() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditProfile(employee)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditProfile(employee)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {employee.status === 'terminated' ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-emerald-600 hover:text-emerald-700"
+                                onClick={() => handleRestoreEmployee(employee)}
+                                disabled={updateProfile.isPending}
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleArchiveEmployee(employee)}
+                                disabled={updateProfile.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {(!filteredEmployees || filteredEmployees.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No employees match the current filters.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               )}
@@ -444,12 +586,23 @@ export default function Admin() {
                     <Building className="w-5 h-5" />
                     Department Management
                   </CardTitle>
-                  <CardDescription>Create and manage company departments</CardDescription>
+                  <CardDescription>Create, update, and delete company departments</CardDescription>
                 </div>
-                <Button onClick={() => setCreateDeptDialogOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Department
-                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search departments..."
+                      className="pl-10"
+                      value={departmentSearch}
+                      onChange={(e) => setDepartmentSearch(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={() => setCreateDeptDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Department
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -459,10 +612,11 @@ export default function Admin() {
                     <TableHead>Department Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Employees</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {departments?.map((dept) => {
+                  {filteredDepartments?.map((dept) => {
                     const employeeCount = employees?.filter(e => e.department_id === dept.id).length || 0;
                     return (
                       <TableRow key={dept.id}>
@@ -471,13 +625,41 @@ export default function Admin() {
                         <TableCell>
                           <Badge variant="outline">{employeeCount} employees</Badge>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditDepartment(dept)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => openDeleteDepartmentDialog(dept)}
+                              disabled={employeeCount > 0 || deleteDepartment.isPending}
+                              title={employeeCount > 0 ? 'Remove or reassign employees before deleting this department.' : 'Delete department'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                   {(!departments || departments.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         No departments yet. Create your first department.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {departments && departments.length > 0 && filteredDepartments?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No departments match the current search.
                       </TableCell>
                     </TableRow>
                   )}
@@ -521,7 +703,7 @@ export default function Admin() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployees?.map((employee) => {
+                    {filteredEmployeesBySearch?.map((employee) => {
                       const currentRole = getUserRole(employee.id);
                       return (
                         <TableRow key={employee.id}>
@@ -1025,6 +1207,72 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={editDepartmentDialogOpen} onOpenChange={setEditDepartmentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Department</DialogTitle>
+            <DialogDescription>
+              Update settings for {selectedDepartment?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_dept_name">Department Name</Label>
+              <Input
+                id="edit_dept_name"
+                value={departmentForm.name}
+                onChange={(e) => setDepartmentForm({ ...departmentForm, name: e.target.value })}
+                placeholder="e.g. Engineering, Marketing"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_dept_description">Description (Optional)</Label>
+              <Input
+                id="edit_dept_description"
+                value={departmentForm.description}
+                onChange={(e) => setDepartmentForm({ ...departmentForm, description: e.target.value })}
+                placeholder="Brief description of this department"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDepartmentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveDepartment}
+              disabled={!departmentForm.name.trim() || updateDepartment.isPending}
+            >
+              {updateDepartment.isPending ? 'Saving...' : 'Save Department'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Department Confirmation */}
+      <AlertDialog open={deleteDepartmentDialogOpen} onOpenChange={setDeleteDepartmentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedDepartment?.name}"? This action cannot be undone.
+              Departments with assigned employees cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDepartment}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteDepartment.isPending}
+            >
+              {deleteDepartment.isPending ? 'Deleting...' : 'Delete Department'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create Leave Type Dialog */}
       <Dialog open={createLeaveTypeDialogOpen} onOpenChange={setCreateLeaveTypeDialogOpen}>

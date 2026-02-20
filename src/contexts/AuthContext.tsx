@@ -9,7 +9,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (identifier: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -93,9 +93,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identifier: string, password: string) => {
+    const normalizedIdentifier = identifier.trim();
+
+    if (!normalizedIdentifier) {
+      return { error: new Error('Email or username is required') };
+    }
+
+    let emailToUse = normalizedIdentifier;
+
+    if (!normalizedIdentifier.includes('@')) {
+      const { data: resolvedEmail, error: resolveError } = await supabase.rpc('resolve_login_email', {
+        _identifier: normalizedIdentifier,
+      });
+
+      if (resolveError) {
+        console.error('Error resolving login email:', resolveError);
+        return { error: new Error('Unable to sign in at the moment') };
+      }
+
+      if (!resolvedEmail) {
+        return { error: new Error('Invalid login credentials') };
+      }
+
+      emailToUse = resolvedEmail;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailToUse,
       password,
     });
     return { error: error as Error | null };

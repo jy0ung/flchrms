@@ -1043,3 +1043,241 @@ ALTER COLUMN requires_document SET DEFAULT false,
 ALTER COLUMN requires_document SET NOT NULL,
 ALTER COLUMN is_paid SET DEFAULT true,
 ALTER COLUMN is_paid SET NOT NULL;
+
+-- Source: 20260220124000_2f4fcb26-5e8b-4e9a-87e8-80fbf2f1d6a3.sql
+-- Add username-based authentication support
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS username TEXT;
+
+-- Normalize user-supplied usernames to a safe format
+CREATE OR REPLACE FUNCTION public.normalize_username(_value TEXT)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT NULLIF(
+    regexp_replace(
+      regexp_replace(lower(coalesce(_value, '')), '[^a-z0-9._-]+', '', 'g'),
+      '^[._-]+|[._-]+$',
+      '',
+      'g'
+    ),
+    ''
+  );
+$$;
+REVOKE ALL ON FUNCTION public.normalize_username(TEXT) FROM PUBLIC;
+
+-- Ensure each profile has a unique username
+CREATE OR REPLACE FUNCTION public.generate_unique_username(_base TEXT, _profile_id UUID DEFAULT NULL)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  normalized_base TEXT;
+  candidate TEXT;
+  suffix INTEGER := 0;
+BEGIN
+  normalized_base := public.normalize_username(_base);
+
+  IF normalized_base IS NULL THEN
+    normalized_base := 'user';
+  END IF;
+
+  LOOP
+    candidate := CASE
+      WHEN suffix = 0 THEN normalized_base
+      ELSE normalized_base || '_' || suffix::TEXT
+    END;
+
+    EXIT WHEN NOT EXISTS (
+      SELECT 1
+      FROM public.profiles p
+      WHERE lower(p.username) = lower(candidate)
+        AND (_profile_id IS NULL OR p.id <> _profile_id)
+    );
+
+    suffix := suffix + 1;
+  END LOOP;
+
+  RETURN candidate;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.generate_unique_username(TEXT, UUID) FROM PUBLIC;
+
+-- Auto-populate username on insert/update
+CREATE OR REPLACE FUNCTION public.set_profile_username()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  base_username TEXT;
+BEGIN
+  base_username := coalesce(
+    nullif(trim(NEW.username), ''),
+    nullif(trim(NEW.employee_id), ''),
+    split_part(coalesce(NEW.email, ''), '@', 1),
+    split_part(NEW.id::TEXT, '-', 1)
+  );
+
+  NEW.username := public.generate_unique_username(base_username, NEW.id);
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.set_profile_username() FROM PUBLIC;
+
+DROP TRIGGER IF EXISTS set_profiles_username ON public.profiles;
+CREATE TRIGGER set_profiles_username
+BEFORE INSERT OR UPDATE OF username, email, employee_id ON public.profiles
+FOR EACH ROW
+EXECUTE FUNCTION public.set_profile_username();
+
+-- Backfill existing profiles
+UPDATE public.profiles
+SET username = coalesce(
+  nullif(trim(username), ''),
+  nullif(trim(employee_id), ''),
+  split_part(email, '@', 1),
+  split_part(id::TEXT, '-', 1)
+);
+
+ALTER TABLE public.profiles
+ALTER COLUMN username SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_unique_idx
+ON public.profiles (lower(username));
+
+-- Resolve sign-in identifier (username/email/employee_id) to auth email for password login
+CREATE OR REPLACE FUNCTION public.resolve_login_email(_identifier TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  normalized_identifier TEXT;
+  resolved_email TEXT;
+BEGIN
+  normalized_identifier := lower(trim(coalesce(_identifier, '')));
+
+  IF normalized_identifier = '' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT p.email
+  INTO resolved_email
+  FROM public.profiles p
+  WHERE lower(p.username) = normalized_identifier
+     OR lower(coalesce(p.employee_id, '')) = normalized_identifier
+     OR lower(p.email) = normalized_identifier
+  LIMIT 1;
+
+  RETURN resolved_email;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.resolve_login_email(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.resolve_login_email(TEXT) TO anon, authenticated;
+
+-- Source: 20260220134500_9f3cc184-6f8a-4bba-a13d-17a53f4b5d58.sql
+-- Performance optimization migration
+-- 1) Add indexes for all unindexed foreign keys in public schema
+CREATE INDEX IF NOT EXISTS idx_departments_manager_id ON public.departments (manager_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_department_id ON public.profiles (department_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_manager_id ON public.profiles (manager_id);
+
+CREATE INDEX IF NOT EXISTS idx_leave_requests_director_approved_by ON public.leave_requests (director_approved_by);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_employee_id ON public.leave_requests (employee_id);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_gm_approved_by ON public.leave_requests (gm_approved_by);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_hr_approved_by ON public.leave_requests (hr_approved_by);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_leave_type_id ON public.leave_requests (leave_type_id);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_manager_approved_by ON public.leave_requests (manager_approved_by);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_rejected_by ON public.leave_requests (rejected_by);
+
+CREATE INDEX IF NOT EXISTS idx_training_programs_created_by ON public.training_programs (created_by);
+CREATE INDEX IF NOT EXISTS idx_training_enrollments_program_id ON public.training_enrollments (program_id);
+
+CREATE INDEX IF NOT EXISTS idx_performance_reviews_employee_id ON public.performance_reviews (employee_id);
+CREATE INDEX IF NOT EXISTS idx_performance_reviews_reviewer_id ON public.performance_reviews (reviewer_id);
+
+CREATE INDEX IF NOT EXISTS idx_announcements_published_by ON public.announcements (published_by);
+CREATE INDEX IF NOT EXISTS idx_documents_employee_id ON public.documents (employee_id);
+CREATE INDEX IF NOT EXISTS idx_documents_uploaded_by ON public.documents (uploaded_by);
+CREATE INDEX IF NOT EXISTS idx_holidays_created_by ON public.holidays (created_by);
+
+CREATE INDEX IF NOT EXISTS idx_department_events_created_by ON public.department_events (created_by);
+CREATE INDEX IF NOT EXISTS idx_department_events_department_id ON public.department_events (department_id);
+
+CREATE INDEX IF NOT EXISTS idx_employee_deductions_deduction_type_id ON public.employee_deductions (deduction_type_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_periods_created_by ON public.payroll_periods (created_by);
+CREATE INDEX IF NOT EXISTS idx_payslips_employee_id ON public.payslips (employee_id);
+
+-- 2) Stabilize user-id lookup used by RLS predicates
+CREATE OR REPLACE FUNCTION public.request_user_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT auth.uid();
+$$;
+REVOKE ALL ON FUNCTION public.request_user_id() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.request_user_id() TO anon, authenticated, service_role;
+
+-- 3) Rewrite existing public policies to use initplan-friendly uid expression
+DO $$
+DECLARE
+  p RECORD;
+  roles_sql TEXT;
+  using_sql TEXT;
+  check_sql TEXT;
+BEGIN
+  FOR p IN
+    SELECT schemaname, tablename, policyname, permissive, cmd, roles, qual, with_check
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND (
+        (qual IS NOT NULL AND qual LIKE '%auth.uid()%')
+        OR (with_check IS NOT NULL AND with_check LIKE '%auth.uid()%')
+      )
+    ORDER BY tablename, policyname
+  LOOP
+    roles_sql := array_to_string(
+      ARRAY(
+        SELECT CASE
+          WHEN r = 'public' THEN 'PUBLIC'
+          ELSE quote_ident(r)
+        END
+        FROM unnest(p.roles) AS r
+      ),
+      ', '
+    );
+
+    using_sql := CASE
+      WHEN p.qual IS NULL OR btrim(p.qual) = '' THEN ''
+      ELSE format(' USING (%s)', replace(p.qual, 'auth.uid()', '(select public.request_user_id())'))
+    END;
+
+    check_sql := CASE
+      WHEN p.with_check IS NULL OR btrim(p.with_check) = '' THEN ''
+      ELSE format(' WITH CHECK (%s)', replace(p.with_check, 'auth.uid()', '(select public.request_user_id())'))
+    END;
+
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', p.policyname, p.schemaname, p.tablename);
+
+    EXECUTE format(
+      'CREATE POLICY %I ON %I.%I AS %s FOR %s TO %s%s%s',
+      p.policyname,
+      p.schemaname,
+      p.tablename,
+      lower(p.permissive),
+      p.cmd,
+      roles_sql,
+      using_sql,
+      check_sql
+    );
+  END LOOP;
+END;
+$$;
