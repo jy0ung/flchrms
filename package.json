@@ -10,7 +10,16 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db:sql": "npm run test:rbac:sql && npm run test:state:sql",
+    "test:rbac": "npm run test:rbac:sql && npm run test:rbac:static",
+    "test:rbac:sql": "bash scripts/test-rbac-sql.sh",
+    "test:rbac:static": "bash scripts/test-rbac-static-ui.sh",
+    "test:rbac:e2e": "playwright test --grep @rbac",
+    "test:rbac:e2e:phase3b": "playwright test e2e/rbac-leave-cancellations.spec.ts e2e/rbac-admin-director-access.spec.ts e2e/rbac-calendar-visibility.spec.ts",
+    "test:e2e:notifications": "playwright test e2e/phase7-notifications.spec.ts",
+    "test:state:sql": "bash scripts/test-state-machine-sql.sh",
+    "seed:test:targeted": "bash scripts/seed-targeted-test-data.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -66,6 +75,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",

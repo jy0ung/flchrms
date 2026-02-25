@@ -1,25 +1,34 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCancelLeaveRequest, useAmendLeaveRequest, useUploadLeaveDocument } from '@/hooks/useLeaveRequests';
+import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCancelLeaveRequest, useAmendLeaveRequest, useProcessLeaveCancellationRequest, useUploadLeaveDocument } from '@/hooks/useLeaveRequests';
+import { useLeaveRequestDetailsDialog } from '@/hooks/useLeaveRequestDetailsDialog';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Plus, Check, X, FileText, Upload, MessageSquare, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
- import { Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Calendar, Plus, X, Clock, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
 import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
-import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
+import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
+import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
+import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
+import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
+import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
+import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
- import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
+  isDirector,
+  isEmployee,
+  isGeneralManager,
+  isManager,
+} from '@/lib/permissions';
 
 export default function Leave() {
   const { role, user } = useAuth();
@@ -29,6 +38,7 @@ export default function Leave() {
   const createRequest = useCreateLeaveRequest();
   const approveRequest = useApproveLeaveRequest();
   const cancelRequest = useCancelLeaveRequest();
+  const processCancellationRequest = useProcessLeaveCancellationRequest();
   const amendRequest = useAmendLeaveRequest();
   const uploadDocument = useUploadLeaveDocument();
   
@@ -36,11 +46,38 @@ export default function Leave() {
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'request_document'>('approve');
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+  const [cancellationDialogRequest, setCancellationDialogRequest] = useState<LeaveRequest | null>(null);
+  const [cancellationDialogMode, setCancellationDialogMode] = useState<'pending_cancel' | 'request_approved_cancel'>('pending_cancel');
+  const [cancellationRequestReason, setCancellationRequestReason] = useState('');
+  const [cancellationReviewDialogOpen, setCancellationReviewDialogOpen] = useState(false);
+  const [cancellationReviewRequest, setCancellationReviewRequest] = useState<LeaveRequest | null>(null);
+  const [cancellationReviewAction, setCancellationReviewAction] = useState<'approve' | 'reject'>('approve');
+  const [cancellationReviewComments, setCancellationReviewComments] = useState('');
+  const [cancellationReviewRejectionReason, setCancellationReviewRejectionReason] = useState('');
+  const [actionType, setActionType] = useState<LeaveActionDialogAction>('approve');
   const [managerComments, setManagerComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [amendmentNotes, setAmendmentNotes] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [myLeaveView, setMyLeaveView] = useState<'current' | 'history'>('current');
+  const [teamLeaveView, setTeamLeaveView] = useState<'current' | 'history'>('current');
+  const {
+    detailDialogOpen,
+    detailRequest,
+    detailEventsLoading,
+    detailActorsLoading,
+    detailApprovalTimelineEvents,
+    detailCancellationTimelineEvents,
+    getActorLabel,
+    handleOpenDetails,
+    handleDetailDialogOpenChange,
+  } = useLeaveRequestDetailsDialog();
+
+  const formatDateTime = (value: string | null | undefined) => {
+    if (!value) return '—';
+    return format(new Date(value), 'PPp');
+  };
 
   // Upload document helper for new requests - uses user ID folder for RLS compliance
   const handleUploadDocument = async (file: File): Promise<string> => {
@@ -76,7 +113,7 @@ export default function Leave() {
     });
   };
 
-  const handleAction = (request: LeaveRequest, action: 'approve' | 'reject' | 'request_document') => {
+  const handleAction = (request: LeaveRequest, action: LeaveActionDialogAction) => {
     setSelectedRequest(request);
     setActionType(action);
     setManagerComments('');
@@ -132,33 +169,112 @@ export default function Leave() {
   const statusConfig: Record<LeaveStatus, { color: string; icon: React.ReactNode; label: string }> = {
     pending: { color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30', icon: <Clock className="w-3 h-3" />, label: 'Pending Manager' },
     manager_approved: { color: 'bg-blue-500/20 text-blue-600 border-blue-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting GM' },
-    gm_approved: { color: 'bg-cyan-500/20 text-cyan-600 border-cyan-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting HR' },
-    director_approved: { color: 'bg-amber-500/20 text-amber-600 border-amber-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting HR' },
-    hr_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved' },
+    gm_approved: { color: 'bg-cyan-500/20 text-cyan-600 border-cyan-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting Director' },
+    director_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved' },
+    hr_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved (Legacy)' },
     rejected: { color: 'bg-red-500/20 text-red-600 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: 'Rejected' },
     cancelled: { color: 'bg-muted text-muted-foreground', icon: <X className="w-3 h-3" />, label: 'Cancelled' },
   };
 
+  const getStatusDisplay = (request: LeaveRequest) => {
+    if (request.status === 'cancelled' || request.status === 'rejected') {
+      return statusConfig[request.status];
+    }
+
+    if (request.final_approved_at) {
+      return statusConfig.director_approved;
+    }
+
+    return statusConfig[request.status];
+  };
+
+  const isCancellationPending = useCallback((request: LeaveRequest) =>
+    request.cancellation_status === 'pending' ||
+    request.cancellation_status === 'manager_approved' ||
+    request.cancellation_status === 'gm_approved' ||
+    request.cancellation_status === 'director_approved', []);
+
+  const getCancellationNextStageLabel = (request: LeaveRequest) => {
+    const route = (request.cancellation_route_snapshot || []).filter(
+      (stage): stage is 'manager' | 'general_manager' | 'director' =>
+        stage === 'manager' || stage === 'general_manager' || stage === 'director',
+    );
+
+    const labelMap = {
+      manager: 'Manager',
+      general_manager: 'GM',
+      director: 'Director',
+    } as const;
+
+    if (request.cancellation_status === 'pending') {
+      const nextStage = route[0];
+      return nextStage ? labelMap[nextStage] : null;
+    }
+
+    const currentStageByStatus = {
+      manager_approved: 'manager',
+      gm_approved: 'general_manager',
+      director_approved: 'director',
+    } as const;
+
+    if (
+      request.cancellation_status === 'manager_approved' ||
+      request.cancellation_status === 'gm_approved' ||
+      request.cancellation_status === 'director_approved'
+    ) {
+      const currentStage = currentStageByStatus[request.cancellation_status];
+      const currentIdx = route.indexOf(currentStage);
+      const nextStage = currentIdx >= 0 ? route[currentIdx + 1] : null;
+      return nextStage ? labelMap[nextStage] : null;
+    }
+
+    return null;
+  };
+
+  const getCancellationBadge = (request: LeaveRequest) => {
+    if (!request.cancellation_status) return null;
+
+    if (request.cancellation_status === 'rejected') {
+      return {
+        className: 'mt-1 text-red-500 border-red-500/30',
+        label: 'Cancellation Rejected',
+      };
+    }
+
+    if (request.cancellation_status === 'approved') {
+      return {
+        className: 'mt-1 text-muted-foreground border-border',
+        label: 'Cancellation Approved',
+      };
+    }
+
+    if (isCancellationPending(request)) {
+      const nextStage = getCancellationNextStageLabel(request);
+      return {
+        className: 'mt-1 text-amber-600 border-amber-500/30',
+        label: nextStage ? `Cancellation Pending ${nextStage}` : 'Cancellation Pending',
+      };
+    }
+
+    return null;
+  };
+
   const canApprove = (request: LeaveRequest) => {
-    // Multi-level approval workflow:
-    // Employee -> Manager -> GM -> HR
-    // Manager -> GM -> HR
-    // GM -> Director -> HR
-    
+    if (isCancellationPending(request)) return false;
+    if (request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled') return false;
+
+    // Multi-level approval workflow (route-specific and validated server-side using
+    // the request's workflow snapshot). These UI checks stay intentionally broad.
+
     // Manager can approve pending requests
-    if (role === 'manager' && request.status === 'pending') return true;
+    if (isManager(role) && request.status === 'pending') return true;
     
     // GM can approve manager_approved requests (or pending if the employee is a manager)
-    if (role === 'general_manager' && (request.status === 'manager_approved' || request.status === 'pending')) return true;
+    if (isGeneralManager(role) && (request.status === 'manager_approved' || request.status === 'pending')) return true;
     
-    // Director can approve gm_approved requests (when GM submits their own leave)
-    if (role === 'director' && request.status === 'gm_approved') return true;
-    
-    // HR/Admin can approve gm_approved or director_approved requests (final approval)
-    // HR can also view and approve at any stage for visibility
-    if ((role === 'hr' || role === 'admin') && 
-        (request.status === 'pending' || request.status === 'manager_approved' || 
-         request.status === 'gm_approved' || request.status === 'director_approved')) return true;
+    // Director can approve final-stage requests; allow pending here to cover routes
+    // that start directly at Director (e.g. HR/Admin/Director requester profiles).
+    if (isDirector(role) && (request.status === 'gm_approved' || request.status === 'pending')) return true;
     
     return false;
   };
@@ -166,6 +282,109 @@ export default function Leave() {
   const canAmend = (request: LeaveRequest) => {
     return request.employee_id === user?.id && (request.status === 'rejected' || (request.status === 'pending' && request.document_required));
   };
+
+  const isHistoricalRequest = useCallback((request: LeaveRequest) =>
+    !isCancellationPending(request) && (!!request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled'),
+  [isCancellationPending]);
+
+  const canCancelPendingRequest = (request: LeaveRequest) =>
+    request.employee_id === user?.id &&
+    request.status === 'pending' &&
+    !request.document_required;
+
+  const canRequestCancellation = (request: LeaveRequest) =>
+    request.employee_id === user?.id &&
+    !!request.final_approved_at &&
+    request.status !== 'cancelled' &&
+    !isCancellationPending(request);
+
+  const canApproveCancellation = (request: LeaveRequest) => {
+    if (!isCancellationPending(request)) return false;
+    if (request.status === 'cancelled' || !request.final_approved_at) return false;
+
+    if (isManager(role) && request.cancellation_status === 'pending') return true;
+    if (isGeneralManager(role) && (request.cancellation_status === 'pending' || request.cancellation_status === 'manager_approved')) return true;
+    if (isDirector(role) && (
+      request.cancellation_status === 'pending' ||
+      request.cancellation_status === 'gm_approved'
+    )) return true;
+
+    return false;
+  };
+
+  const handleCancellation = (request: LeaveRequest) => {
+    if (request.status === 'cancelled') return;
+
+    setCancellationDialogRequest(request);
+    setCancellationDialogMode(request.final_approved_at ? 'request_approved_cancel' : 'pending_cancel');
+    setCancellationRequestReason('');
+    setCancellationDialogOpen(true);
+  };
+
+  const handleCancellationReview = (request: LeaveRequest, action: 'approve' | 'reject') => {
+    if (!canApproveCancellation(request)) return;
+
+    setCancellationReviewRequest(request);
+    setCancellationReviewAction(action);
+    setCancellationReviewComments('');
+    setCancellationReviewRejectionReason('');
+    setCancellationReviewDialogOpen(true);
+  };
+
+  const submitCancellationRequest = () => {
+    if (!cancellationDialogRequest) return;
+
+    const requiresReason = cancellationDialogMode === 'request_approved_cancel';
+    const reason = cancellationRequestReason.trim();
+
+    if (requiresReason && !reason) return;
+
+    cancelRequest.mutate(
+      {
+        requestId: cancellationDialogRequest.id,
+        reason: requiresReason ? reason : undefined,
+      },
+      {
+        onSuccess: () => {
+          setCancellationDialogOpen(false);
+          setCancellationDialogRequest(null);
+          setCancellationRequestReason('');
+        },
+      },
+    );
+  };
+
+  const submitCancellationReview = () => {
+    if (!cancellationReviewRequest) return;
+
+    const rejectionReason = cancellationReviewRejectionReason.trim();
+    const comments = cancellationReviewComments.trim();
+
+    if (cancellationReviewAction === 'reject' && !rejectionReason) return;
+
+    processCancellationRequest.mutate(
+      {
+        requestId: cancellationReviewRequest.id,
+        action: cancellationReviewAction,
+        rejectionReason: cancellationReviewAction === 'reject' ? rejectionReason : undefined,
+        comments: comments || undefined,
+      },
+      {
+        onSuccess: () => {
+          setCancellationReviewDialogOpen(false);
+          setCancellationReviewRequest(null);
+          setCancellationReviewComments('');
+          setCancellationReviewRejectionReason('');
+        },
+      },
+    );
+  };
+
+  const shouldShowLeaveDetailsButton = (request: LeaveRequest) =>
+    !!request.final_approved_at ||
+    !!request.rejected_at ||
+    request.status === 'cancelled' ||
+    !!request.cancellation_status;
 
   // Filter own requests vs team requests for display
   const myRequests = useMemo(() => 
@@ -178,6 +397,31 @@ export default function Leave() {
     [requests, user?.id]
   );
 
+  const myCurrentRequests = useMemo(
+    () => myRequests.filter((request) => !isHistoricalRequest(request)),
+    [myRequests, isHistoricalRequest]
+  );
+
+  const myHistoryRequests = useMemo(
+    () => myRequests.filter((request) => isHistoricalRequest(request)),
+    [myRequests, isHistoricalRequest]
+  );
+
+  const teamCurrentRequests = useMemo(
+    () => teamRequests.filter((request) => !isHistoricalRequest(request)),
+    [teamRequests, isHistoricalRequest]
+  );
+
+  const teamHistoryRequests = useMemo(
+    () => teamRequests.filter((request) => isHistoricalRequest(request)),
+    [teamRequests, isHistoricalRequest]
+  );
+
+  const visibleMyRequests = myLeaveView === 'history' ? myHistoryRequests : myCurrentRequests;
+  const visibleTeamRequests = teamLeaveView === 'history' ? teamHistoryRequests : teamCurrentRequests;
+
+  const canViewTeamRequests = canViewTeamLeaveRequestsPermission(role);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -187,7 +431,7 @@ export default function Leave() {
             Leave Management
           </h1>
           <p className="text-muted-foreground mt-1">
-            {role === 'employee' ? 'Your leave requests and balance' : 'Manage leave requests'}
+            {isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -214,277 +458,13 @@ export default function Leave() {
       {/* Leave Balance Card - show for all users */}
       <LeaveBalanceCard />
 
-      {/* My Requests Section */}
-      {myRequests.length > 0 && (
-        <div className="space-y-3">
-           <div className="flex items-center gap-2">
-             <h2 className="text-lg font-semibold">My Requests</h2>
-             <Popover>
-               <PopoverTrigger asChild>
-                 <button className="text-muted-foreground hover:text-foreground transition-colors">
-                   <Info className="w-4 h-4" />
-                 </button>
-               </PopoverTrigger>
-               <PopoverContent className="w-80" align="start">
-                 <div className="space-y-3">
-                   <h4 className="font-semibold text-sm">Approval Workflow</h4>
-                   <div className="space-y-2 text-xs text-muted-foreground">
-                     <div className="space-y-1">
-                       <span className="font-medium text-foreground">Employee:</span>
-                       <div className="flex items-center gap-1 flex-wrap">
-                         <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
-                       </div>
-                     </div>
-                     <div className="space-y-1">
-                       <span className="font-medium text-foreground">Manager:</span>
-                       <div className="flex items-center gap-1 flex-wrap">
-                         <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
-                       </div>
-                     </div>
-                     <div className="space-y-1">
-                       <span className="font-medium text-foreground">GM:</span>
-                       <div className="flex items-center gap-1 flex-wrap">
-                         <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                         <span>→</span>
-                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600">HR</Badge>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </PopoverContent>
-             </Popover>
-           </div>
-          <Card className="card-stat">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myRequests.map(request => {
-                      const status = statusConfig[request.status];
-                      return (
-                        <tr key={request.id} className="border-t border-border table-row-hover">
-                          <td className="p-4">
-                            <div>
-                              {request.leave_type?.name}
-                              {request.leave_type?.requires_document && (
-                                <Badge variant="outline" className="ml-2 text-xs">Doc Required</Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <p>{format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}</p>
-                            <p className="text-sm text-muted-foreground">{request.days_count} days</p>
-                          </td>
-                          <td className="p-4">
-                            <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
-                              {status.icon}
-                              {status.label}
-                            </Badge>
-                            {request.document_required && !request.document_url && request.status === 'pending' && (
-                              <Badge variant="outline" className="mt-1 text-orange-500 border-orange-500/30 flex items-center gap-1">
-                                <Upload className="w-3 h-3" />
-                                Doc Requested
-                              </Badge>
-                            )}
-                            {request.document_url && (
-                              <Badge variant="outline" className="mt-1 text-green-500 border-green-500/30 flex items-center gap-1">
-                                <FileText className="w-3 h-3" />
-                                Doc Attached
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-4 max-w-xs">
-                            {request.reason && (
-                              <p className="text-sm text-muted-foreground truncate" title={request.reason}>
-                                <MessageSquare className="w-3 h-3 inline mr-1" />
-                                {request.reason}
-                              </p>
-                            )}
-                            {request.rejection_reason && (
-                              <p className="text-sm text-red-500 truncate" title={request.rejection_reason}>
-                                <XCircle className="w-3 h-3 inline mr-1" />
-                                {request.rejection_reason}
-                              </p>
-                            )}
-                            {request.manager_comments && (
-                              <p className="text-sm text-blue-500 truncate" title={request.manager_comments}>
-                                <MessageSquare className="w-3 h-3 inline mr-1" />
-                                {request.manager_comments}
-                              </p>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex flex-wrap gap-2">
-                              {request.document_url && (
-                                <DocumentViewButton documentPath={request.document_url} />
-                              )}
-                              {canAmend(request) && (
-                                <Button size="sm" variant="outline" onClick={() => handleAmend(request)}>
-                                  <Upload className="w-4 h-4 mr-1" />
-                                  Amend
-                                </Button>
-                              )}
-                              {request.status === 'pending' && !request.document_required && (
-                                <Button size="sm" variant="ghost" onClick={() => cancelRequest.mutate(request.id)}>
-                                  Cancel
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Team Requests Section - for managers/gm/director/hr/admin */}
-      {(role === 'manager' || role === 'general_manager' || role === 'director' || role === 'hr' || role === 'admin') && teamRequests.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Team Requests</h2>
-          <Card className="card-stat">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamRequests.map(request => {
-                      const status = statusConfig[request.status];
-                      return (
-                        <tr key={request.id} className="border-t border-border table-row-hover">
-                          <td className="p-4">
-                            <p className="font-medium">{request.employee?.first_name} {request.employee?.last_name}</p>
-                            <p className="text-sm text-muted-foreground">{request.employee?.email}</p>
-                          </td>
-                          <td className="p-4">
-                            <div>
-                              {request.leave_type?.name}
-                              {request.leave_type?.requires_document && (
-                                <Badge variant="outline" className="ml-2 text-xs">Doc Required</Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <p>{format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}</p>
-                            <p className="text-sm text-muted-foreground">{request.days_count} days</p>
-                          </td>
-                          <td className="p-4">
-                            <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
-                              {status.icon}
-                              {status.label}
-                            </Badge>
-                            {request.document_required && !request.document_url && request.status === 'pending' && (
-                              <Badge variant="outline" className="mt-1 text-orange-500 border-orange-500/30 flex items-center gap-1">
-                                <Upload className="w-3 h-3" />
-                                Doc Requested
-                              </Badge>
-                            )}
-                            {request.document_url && (
-                              <Badge variant="outline" className="mt-1 text-green-500 border-green-500/30 flex items-center gap-1">
-                                <FileText className="w-3 h-3" />
-                                Doc Attached
-                              </Badge>
-                            )}
-                            {request.amended_at && (
-                              <Badge variant="outline" className="mt-1 text-blue-500 border-blue-500/30 text-xs">
-                                Amended
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-4 max-w-xs">
-                            {request.reason && (
-                              <p className="text-sm text-muted-foreground truncate" title={request.reason}>
-                                <MessageSquare className="w-3 h-3 inline mr-1" />
-                                {request.reason}
-                              </p>
-                            )}
-                            {request.rejection_reason && (
-                              <p className="text-sm text-red-500 truncate" title={request.rejection_reason}>
-                                <XCircle className="w-3 h-3 inline mr-1" />
-                                {request.rejection_reason}
-                              </p>
-                            )}
-                            {request.manager_comments && (
-                              <p className="text-sm text-blue-500 truncate" title={request.manager_comments}>
-                                <MessageSquare className="w-3 h-3 inline mr-1" />
-                                {request.manager_comments}
-                              </p>
-                            )}
-                            {request.amendment_notes && (
-                              <p className="text-sm text-purple-500 truncate" title={request.amendment_notes}>
-                                <FileText className="w-3 h-3 inline mr-1" />
-                                Amendment: {request.amendment_notes}
-                              </p>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex flex-wrap gap-2">
-                              {canApprove(request) && (
-                                <>
-                                  <Button size="sm" variant="outline" className="text-green-600 hover:bg-green-500/10"
-                                    onClick={() => handleAction(request, 'approve')}>
-                                    <Check className="w-4 h-4" />
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-500/10"
-                                    onClick={() => handleAction(request, 'reject')}>
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                  {role === 'manager' && (
-                                    <Button size="sm" variant="outline" className="text-orange-600 hover:bg-orange-500/10"
-                                      onClick={() => handleAction(request, 'request_document')}>
-                                      <FileText className="w-4 h-4" />
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                              {request.document_url && (
-                                <DocumentViewButton documentPath={request.document_url} />
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Loading state */}
+      {isLoading && (
+        <Card className="card-stat">
+          <CardContent className="p-8 text-center text-muted-foreground">
+            Loading leave requests...
+          </CardContent>
+        </Card>
       )}
 
       {/* Empty state */}
@@ -496,119 +476,209 @@ export default function Leave() {
         </Card>
       )}
 
-      {/* Loading state */}
-      {isLoading && (
-        <Card className="card-stat">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            Loading leave requests...
-          </CardContent>
-        </Card>
+      {!isLoading && (requests?.length || 0) > 0 && (
+        <Tabs
+          defaultValue={canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0 ? 'team' : 'my'}
+          className="space-y-4"
+        >
+          <TabsList className={canViewTeamRequests ? 'grid w-full grid-cols-2 max-w-md' : 'grid w-full grid-cols-1 max-w-xs'}>
+            <TabsTrigger value="my">
+              My Leave
+              <span className="ml-2 text-xs text-muted-foreground">({myRequests.length})</span>
+            </TabsTrigger>
+            {canViewTeamRequests && (
+              <TabsTrigger value="team">
+                Team Leave
+                <span className="ml-2 text-xs text-muted-foreground">({teamRequests.length})</span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="my" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">My Requests</h2>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Info className="w-4 h-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
+                    </p>
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <div className="space-y-1">
+                        <span className="font-medium text-foreground">Employee:</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="font-medium text-foreground">Manager:</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="font-medium text-foreground">GM:</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
+                          <span>→</span>
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
+              <TabsList className="grid w-full grid-cols-2 max-w-sm">
+                <TabsTrigger value="current">
+                  Current
+                  <span className="ml-2 text-xs text-muted-foreground">({myCurrentRequests.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  History
+                  <span className="ml-2 text-xs text-muted-foreground">({myHistoryRequests.length})</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <MyLeaveRequestsTable
+                requests={visibleMyRequests}
+                emptyMessage={myLeaveView === 'history' ? 'No leave history yet.' : 'No active leave requests right now.'}
+                getStatusDisplay={getStatusDisplay}
+                getCancellationBadge={getCancellationBadge}
+                canAmend={canAmend}
+                canCancelPendingRequest={canCancelPendingRequest}
+                canRequestCancellation={canRequestCancellation}
+                onAmend={handleAmend}
+                onCancel={handleCancellation}
+              />
+            </Tabs>
+          </TabsContent>
+
+          {canViewTeamRequests && (
+            <TabsContent value="team" className="space-y-3">
+              <h2 className="text-lg font-semibold">Team Requests</h2>
+              <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
+                <TabsList className="grid w-full grid-cols-2 max-w-sm">
+                  <TabsTrigger value="current">
+                    Current
+                    <span className="ml-2 text-xs text-muted-foreground">({teamCurrentRequests.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="history">
+                    History
+                    <span className="ml-2 text-xs text-muted-foreground">({teamHistoryRequests.length})</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TeamLeaveRequestsTable
+                  requests={visibleTeamRequests}
+                  emptyMessage={teamLeaveView === 'history' ? 'No leave approval history yet.' : 'No active team leave requests available.'}
+                  role={role}
+                  getStatusDisplay={getStatusDisplay}
+                  getCancellationBadge={getCancellationBadge}
+                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
+                  canApproveCancellation={canApproveCancellation}
+                  canApprove={canApprove}
+                  onOpenDetails={(request) => void handleOpenDetails(request)}
+                  onCancellationReview={handleCancellationReview}
+                  onAction={handleAction}
+                />
+              </Tabs>
+            </TabsContent>
+          )}
+        </Tabs>
       )}
 
-      {/* Action Dialog (Approve/Reject/Request Document) */}
-      <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === 'approve' && 'Approve Leave Request'}
-              {actionType === 'reject' && 'Reject Leave Request'}
-              {actionType === 'request_document' && 'Request Supporting Document'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedRequest?.employee?.first_name} {selectedRequest?.employee?.last_name} - {selectedRequest?.leave_type?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {actionType === 'reject' && (
-              <div className="space-y-2">
-                <Label>Rejection Reason</Label>
-                <Textarea 
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Explain why this request is being rejected..."
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>{actionType === 'request_document' ? 'Document Request Message' : 'Comments (Optional)'}</Label>
-              <Textarea 
-                value={managerComments}
-                onChange={(e) => setManagerComments(e.target.value)}
-                placeholder={actionType === 'request_document' ? 'Specify what documents are needed...' : 'Add any comments...'}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setActionDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={submitAction}
-              disabled={approveRequest.isPending}
-              variant={actionType === 'reject' ? 'destructive' : 'default'}
-            >
-              {actionType === 'approve' && 'Approve'}
-              {actionType === 'reject' && 'Reject'}
-              {actionType === 'request_document' && 'Request Document'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LeaveDetailsDialog
+        open={detailDialogOpen}
+        onOpenChange={handleDetailDialogOpenChange}
+        request={detailRequest}
+        role={role}
+        actorsLoading={detailActorsLoading}
+        eventsLoading={detailEventsLoading}
+        approvalTimelineEvents={detailApprovalTimelineEvents}
+        cancellationTimelineEvents={detailCancellationTimelineEvents}
+        formatDateTime={formatDateTime}
+        getActorLabel={getActorLabel}
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={getCancellationBadge}
+      />
 
-      {/* Amendment Dialog */}
-      <Dialog open={amendDialogOpen} onOpenChange={setAmendDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Amend Leave Request</DialogTitle>
-            <DialogDescription>
-              Update your request and attach any required documents
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedRequest?.rejection_reason && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Rejection reason:</strong> {selectedRequest.rejection_reason}
-                </AlertDescription>
-              </Alert>
-            )}
-            {selectedRequest?.manager_comments && (
-              <Alert>
-                <MessageSquare className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Manager's note:</strong> {selectedRequest.manager_comments}
-                </AlertDescription>
-              </Alert>
-            )}
-            <div className="space-y-2">
-              <Label>Amendment Notes</Label>
-              <Textarea 
-                value={amendmentNotes}
-                onChange={(e) => setAmendmentNotes(e.target.value)}
-                placeholder="Explain the changes or provide additional information..."
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Supporting Document</Label>
-              <Input 
-                type="file"
-                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              />
-              <p className="text-xs text-muted-foreground">Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAmendDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={submitAmendment}
-              disabled={amendRequest.isPending || uploadDocument.isPending || !amendmentNotes}
-            >
-              Submit Amendment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LeaveActionDialog
+        open={actionDialogOpen}
+        onOpenChange={setActionDialogOpen}
+        request={selectedRequest}
+        actionType={actionType}
+        rejectionReason={rejectionReason}
+        onRejectionReasonChange={setRejectionReason}
+        managerComments={managerComments}
+        onManagerCommentsChange={setManagerComments}
+        onSubmit={submitAction}
+        isPending={approveRequest.isPending}
+      />
+
+      <LeaveAmendDialog
+        open={amendDialogOpen}
+        onOpenChange={setAmendDialogOpen}
+        request={selectedRequest}
+        amendmentNotes={amendmentNotes}
+        onAmendmentNotesChange={setAmendmentNotes}
+        onDocumentFileChange={setDocumentFile}
+        onSubmit={submitAmendment}
+        isPending={amendRequest.isPending}
+        isUploading={uploadDocument.isPending}
+      />
+
+      <LeaveCancellationDialogs
+        requestDialogOpen={cancellationDialogOpen}
+        onRequestDialogOpenChange={(openState) => {
+          setCancellationDialogOpen(openState);
+          if (!openState) {
+            setCancellationDialogRequest(null);
+            setCancellationRequestReason('');
+          }
+        }}
+        requestDialogRequest={cancellationDialogRequest}
+        requestDialogMode={cancellationDialogMode}
+        requestReason={cancellationRequestReason}
+        onRequestReasonChange={setCancellationRequestReason}
+        onSubmitRequest={submitCancellationRequest}
+        requestSubmitPending={cancelRequest.isPending}
+        reviewDialogOpen={cancellationReviewDialogOpen}
+        onReviewDialogOpenChange={(openState) => {
+          setCancellationReviewDialogOpen(openState);
+          if (!openState) {
+            setCancellationReviewRequest(null);
+            setCancellationReviewComments('');
+            setCancellationReviewRejectionReason('');
+          }
+        }}
+        reviewDialogRequest={cancellationReviewRequest}
+        reviewAction={cancellationReviewAction}
+        reviewComments={cancellationReviewComments}
+        onReviewCommentsChange={setCancellationReviewComments}
+        reviewRejectionReason={cancellationReviewRejectionReason}
+        onReviewRejectionReasonChange={setCancellationReviewRejectionReason}
+        onSubmitReview={submitCancellationReview}
+        reviewSubmitPending={processCancellationRequest.isPending}
+      />
     </div>
   );
 }

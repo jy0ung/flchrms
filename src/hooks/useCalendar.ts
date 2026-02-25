@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { CALENDAR_VISIBLE_LEAVE_STATUSES } from '@/lib/leave-workflow';
+import { format, parseISO } from 'date-fns';
 
 export interface Holiday {
   id: string;
@@ -40,21 +40,24 @@ export interface CalendarEvent {
   type: 'leave' | 'holiday' | 'event';
   status?: string;
   employeeName?: string;
+  leaveTypeName?: string;
   description?: string;
 }
 
-interface LeaveCalendarRow {
+interface LeaveCalendarRpcRow {
   id: string;
   start_date: string;
   end_date: string;
   status: string;
-  employee?: {
-    first_name: string;
-    last_name: string;
-  } | null;
-  leave_type?: {
-    name: string;
-  } | null;
+  final_approved_at?: string | null;
+  employee_first_name: string | null;
+  employee_last_name: string | null;
+  leave_type_name: string | null;
+}
+
+function parseDateOnlyLocal(value: string) {
+  // Supabase DATE columns come back as YYYY-MM-DD. Parse as local date to avoid UTC shift.
+  return parseISO(value);
 }
 
 export function useHolidays() {
@@ -212,8 +215,8 @@ export function useCalendarEvents(month: Date) {
   const { user } = useAuth();
   const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
   const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-  const monthStartDate = startOfMonth.toISOString().split('T')[0];
-  const monthEndDate = endOfMonth.toISOString().split('T')[0];
+  const monthStartDate = format(startOfMonth, 'yyyy-MM-dd');
+  const monthEndDate = format(endOfMonth, 'yyyy-MM-dd');
 
   return useQuery({
     queryKey: ['calendar-events', month.getMonth(), month.getFullYear()],
@@ -221,28 +224,24 @@ export function useCalendarEvents(month: Date) {
       const events: CalendarEvent[] = [];
 
       // Fetch approved leave requests
-      const { data: leaves, error: leavesError } = await supabase
-        .from('leave_requests')
-        .select(`
-          id, start_date, end_date, status,
-          employee:profiles!leave_requests_employee_id_fkey(first_name, last_name),
-          leave_type:leave_types(name)
-        `)
-        .in('status', CALENDAR_VISIBLE_LEAVE_STATUSES)
-        .or(`and(start_date.lte.${monthEndDate},end_date.gte.${monthStartDate})`);
+      const { data: leaves, error: leavesError } = await supabase.rpc('get_calendar_visible_leaves', {
+        _start_date: monthStartDate,
+        _end_date: monthEndDate,
+      });
 
       if (leavesError) throw leavesError;
 
-      leaves?.forEach((leave: LeaveCalendarRow) => {
-        const employeeName = `${leave.employee?.first_name || ''} ${leave.employee?.last_name || ''}`.trim();
+      leaves?.forEach((leave: LeaveCalendarRpcRow) => {
+        const employeeName = `${leave.employee_first_name || ''} ${leave.employee_last_name || ''}`.trim();
         events.push({
           id: leave.id,
-          title: `${employeeName || 'Employee'} - ${leave.leave_type?.name || 'Leave'}`,
-          date: new Date(leave.start_date),
-          endDate: new Date(leave.end_date),
+          title: `${employeeName || 'Employee'} - ${leave.leave_type_name || 'Leave'}`,
+          date: parseDateOnlyLocal(leave.start_date),
+          endDate: parseDateOnlyLocal(leave.end_date),
           type: 'leave',
           status: leave.status,
           employeeName: employeeName || 'Employee',
+          leaveTypeName: leave.leave_type_name || 'Leave',
         });
       });
 
@@ -250,8 +249,8 @@ export function useCalendarEvents(month: Date) {
       const { data: holidays, error: holidaysError } = await supabase
         .from('holidays')
         .select('*')
-        .gte('date', startOfMonth.toISOString().split('T')[0])
-        .lte('date', endOfMonth.toISOString().split('T')[0]);
+        .gte('date', monthStartDate)
+        .lte('date', monthEndDate);
 
       if (holidaysError) throw holidaysError;
 
@@ -259,7 +258,7 @@ export function useCalendarEvents(month: Date) {
         events.push({
           id: holiday.id,
           title: holiday.name,
-          date: new Date(holiday.date),
+          date: parseDateOnlyLocal(holiday.date),
           type: 'holiday',
           description: holiday.description || undefined,
         });
@@ -269,8 +268,8 @@ export function useCalendarEvents(month: Date) {
       const { data: deptEvents, error: eventsError } = await supabase
         .from('department_events')
         .select('*')
-        .gte('event_date', startOfMonth.toISOString().split('T')[0])
-        .lte('event_date', endOfMonth.toISOString().split('T')[0]);
+        .gte('event_date', monthStartDate)
+        .lte('event_date', monthEndDate);
 
       if (eventsError) throw eventsError;
 
@@ -278,8 +277,8 @@ export function useCalendarEvents(month: Date) {
         events.push({
           id: event.id,
           title: event.title,
-          date: new Date(event.event_date),
-          endDate: event.end_date ? new Date(event.end_date) : undefined,
+          date: parseDateOnlyLocal(event.event_date),
+          endDate: event.end_date ? parseDateOnlyLocal(event.end_date) : undefined,
           type: 'event',
           description: event.description || undefined,
         });

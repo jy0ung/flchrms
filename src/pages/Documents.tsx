@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FileText, Upload, Trash2, Download, Search, Filter, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
 
 const categoryColors: Record<DocumentCategory, string> = {
   contract: 'bg-primary/10 text-primary',
@@ -37,8 +38,8 @@ export default function Documents() {
   const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | 'all'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  const isHROrAdmin = role === 'hr' || role === 'admin';
-  const { data: documents, isLoading } = useDocuments(isHROrAdmin ? selectedEmployee : user?.id);
+  const canManageDocuments = canManageDocumentsPermission(role);
+  const { data: documents, isLoading } = useDocuments(canManageDocuments ? selectedEmployee : user?.id);
   const { data: employees } = useEmployees();
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
@@ -63,7 +64,7 @@ export default function Documents() {
   const handleUpload = async () => {
     if (!uploadForm.file || !uploadForm.title) return;
 
-    const employeeId = isHROrAdmin ? uploadForm.employeeId : user?.id;
+    const employeeId = canManageDocuments ? uploadForm.employeeId : user?.id;
     if (!employeeId) return;
 
     await uploadDocument.mutateAsync({
@@ -101,10 +102,10 @@ export default function Documents() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Document Management</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {isHROrAdmin ? 'Manage employee contracts, certificates, and official documents' : 'View your documents'}
+            {canManageDocuments ? 'Manage employee contracts, certificates, and official documents' : 'View your documents'}
           </p>
         </div>
-        {isHROrAdmin && (
+        {canManageDocuments && (
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -226,7 +227,7 @@ export default function Documents() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
-            {isHROrAdmin && (
+            {canManageDocuments && (
               <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="All Employees" />
@@ -268,7 +269,7 @@ export default function Documents() {
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium">No documents found</h3>
               <p className="text-muted-foreground text-sm mt-1">
-                {isHROrAdmin ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
+                {canManageDocuments ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
               </p>
             </div>
           ) : (
@@ -278,7 +279,7 @@ export default function Documents() {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead className="hidden md:table-cell">Category</TableHead>
-                    {isHROrAdmin && <TableHead className="hidden sm:table-cell">Employee</TableHead>}
+                    {canManageDocuments && <TableHead className="hidden sm:table-cell">Employee</TableHead>}
                     <TableHead className="hidden lg:table-cell">Size</TableHead>
                     <TableHead className="hidden md:table-cell">Uploaded</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -305,7 +306,7 @@ export default function Documents() {
                           {categoryLabels[doc.category]}
                         </Badge>
                       </TableCell>
-                      {isHROrAdmin && (
+                      {canManageDocuments && (
                         <TableCell className="hidden sm:table-cell">
                           {doc.employee?.first_name} {doc.employee?.last_name}
                         </TableCell>
@@ -326,7 +327,7 @@ export default function Documents() {
                           >
                             <Download className="w-4 h-4" />
                           </Button>
-                          {isHROrAdmin && (
+                          {canManageDocuments && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">

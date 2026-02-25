@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { BALANCE_PENDING_STATUSES } from '@/lib/leave-workflow';
-
 export interface LeaveBalance {
   leave_type_id: string;
   leave_type_name: string;
@@ -31,7 +29,8 @@ export function useLeaveBalance(employeeId?: string) {
         .from('leave_requests')
         .select('leave_type_id, days_count')
         .eq('employee_id', targetId!)
-        .eq('status', 'hr_approved');
+        .not('final_approved_at', 'is', null)
+        .not('status', 'in', '(cancelled,rejected)');
 
       if (approvedError) throw approvedError;
 
@@ -40,7 +39,8 @@ export function useLeaveBalance(employeeId?: string) {
         .from('leave_requests')
         .select('leave_type_id, days_count')
         .eq('employee_id', targetId!)
-        .in('status', BALANCE_PENDING_STATUSES);
+        .is('final_approved_at', null)
+        .not('status', 'in', '(rejected,cancelled)');
 
       if (pendingError) throw pendingError;
 

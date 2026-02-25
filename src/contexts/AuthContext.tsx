@@ -17,12 +17,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const BLOCKED_ACCOUNT_STATUSES = new Set<Profile['status']>(['inactive', 'terminated']);
+
+function normalizeLoginIdentifier(identifier: string) {
+  const trimmed = identifier.trim();
+  const isEmail = trimmed.includes('@');
+
+  return {
+    value: isEmail ? trimmed : trimmed.toLowerCase(),
+    isEmail,
+  };
+}
+
+function isBlockedAccountStatus(status: string | null | undefined): status is Extract<Profile['status'], 'inactive' | 'terminated'> {
+  return !!status && BLOCKED_ACCOUNT_STATUSES.has(status as Profile['status']);
+}
+
+async function resolveLoginEmail(identifier: string) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
+
+  if (supabaseUrl && publishableKey) {
+    try {
+      const response = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/resolve_login_email`, {
+        method: 'POST',
+        headers: {
+          apikey: publishableKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ _identifier: identifier }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { email: typeof data === 'string' ? data : null, error: null };
+      }
+
+      console.error('Error resolving login email via direct RPC fetch:', response.status, await response.text());
+    } catch (error) {
+      console.error('Error resolving login email via direct RPC fetch:', error);
+    }
+  }
+
+  // Fallback for environments where the standard client RPC path works.
+  const { data, error } = await supabase.rpc('resolve_login_email', {
+    _identifier: identifier,
+  });
+
+  return { email: data ?? null, error };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const resetAuthState = () => {
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRole(null);
+  };
+
+  const getProfileStatus = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('status')
+      .eq('id', userId)
+      .single();
+
+    return {
+      status: data?.status as string | null | undefined,
+      error,
+    };
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -34,6 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      if (isBlockedAccountStatus(profileData.status)) {
+        // Safety net for restored sessions after HR/Admin changes account status.
+        await supabase.auth.signOut();
+        resetAuthState();
         return;
       }
 
@@ -91,21 +169,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signIn = async (identifier: string, password: string) => {
-    const normalizedIdentifier = identifier.trim();
+    const normalizedIdentifier = normalizeLoginIdentifier(identifier);
 
-    if (!normalizedIdentifier) {
-      return { error: new Error('Email or username is required') };
+    if (!normalizedIdentifier.value) {
+      return { error: new Error('Email, username, or employee ID is required') };
     }
 
-    let emailToUse = normalizedIdentifier;
+    let emailToUse = normalizedIdentifier.value;
 
-    if (!normalizedIdentifier.includes('@')) {
-      const { data: resolvedEmail, error: resolveError } = await supabase.rpc('resolve_login_email', {
-        _identifier: normalizedIdentifier,
-      });
+    if (!normalizedIdentifier.isEmail) {
+      // Transitional approach: resolve identifier to email in a definer RPC.
+      // A future edge function login endpoint can avoid returning the email to the client entirely.
+      const { email: resolvedEmail, error: resolveError } = await resolveLoginEmail(normalizedIdentifier.value);
 
       if (resolveError) {
         console.error('Error resolving login email:', resolveError);
@@ -119,11 +197,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       emailToUse = resolvedEmail;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: emailToUse,
       password,
     });
-    return { error: error as Error | null };
+
+    if (error) {
+      return { error: error as Error | null };
+    }
+
+    if (data.user) {
+      const { status, error: statusError } = await getProfileStatus(data.user.id);
+
+      if (statusError) {
+        console.error('Error checking account status after sign-in:', statusError);
+        await supabase.auth.signOut();
+        resetAuthState();
+        return { error: new Error('Unable to sign in at the moment') };
+      }
+
+      if (isBlockedAccountStatus(status)) {
+        await supabase.auth.signOut();
+        resetAuthState();
+        return { error: new Error('This account is inactive. Please contact HR/Admin.') };
+      }
+    }
+
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
@@ -145,10 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setRole(null);
+    resetAuthState();
   };
 
   return (

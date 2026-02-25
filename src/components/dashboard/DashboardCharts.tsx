@@ -4,6 +4,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Resp
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 
 const chartConfig = {
   present: { label: 'Present', color: 'hsl(var(--success))' },
@@ -20,7 +21,7 @@ export function DashboardCharts() {
   const { role } = useAuth();
   const { data: stats, isLoading } = useExecutiveStats();
 
-  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin';
+  const isManagerOrAbove = canViewManagerDashboardWidgets(role);
 
   if (!isManagerOrAbove) return null;
 

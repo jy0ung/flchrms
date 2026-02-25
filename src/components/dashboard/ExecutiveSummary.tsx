@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
+import {
   Users, 
   UserCheck, 
   UserPlus, 
@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Building2
 } from 'lucide-react';
+import { canViewExecutiveSummary, isManager } from '@/lib/permissions';
 
 interface StatCardProps {
   title: string;
@@ -81,10 +82,10 @@ export function ExecutiveSummary() {
   const { role, profile } = useAuth();
   const { data: stats, isLoading } = useExecutiveStats();
   
-  const isManager = role === 'manager';
-  const isAdminOrHR = role === 'admin' || role === 'hr';
+  const managerViewer = isManager(role);
+  const isExecutiveViewer = canViewExecutiveSummary(role) && !managerViewer;
 
-  if (!isManager && !isAdminOrHR) {
+  if (!managerViewer && !isExecutiveViewer) {
     return null;
   }
 
@@ -103,7 +104,7 @@ export function ExecutiveSummary() {
 
   if (!stats) return null;
 
-  const scopeLabel = isManager && stats.departmentName 
+  const scopeLabel = managerViewer && stats.departmentName 
     ? `${stats.departmentName} Department` 
     : 'Company Overview';
 
@@ -148,7 +149,7 @@ export function ExecutiveSummary() {
             icon={UserPlus}
             variant="info"
           />
-          {isManager && stats.departmentEmployeeCount !== undefined && (
+          {managerViewer && stats.departmentEmployeeCount !== undefined && (
             <StatCard
               title="Dept. Size"
               value={stats.departmentEmployeeCount}

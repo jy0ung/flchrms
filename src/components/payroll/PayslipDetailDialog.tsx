@@ -13,6 +13,7 @@ import { FileText, Calendar, Clock } from 'lucide-react';
 
 interface PayslipDetailDialogProps {
   payslip: Payslip | null;
+  hideAmounts?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -23,11 +24,24 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
 };
 
-export function PayslipDetailDialog({ payslip, open, onOpenChange }: PayslipDetailDialogProps) {
+export function PayslipDetailDialog({
+  payslip,
+  hideAmounts = false,
+  open,
+  onOpenChange,
+}: PayslipDetailDialogProps) {
   if (!payslip) return null;
 
   const allowances = payslip.allowances_breakdown || {};
   const deductions = payslip.deductions_breakdown || {};
+  const formatCurrency = (value: number | null | undefined) => {
+    if (hideAmounts) return 'RM •••••';
+    return `RM ${Number(value || 0).toLocaleString()}`;
+  };
+  const formatDeductionCurrency = (value: number | null | undefined) => {
+    if (hideAmounts) return '- RM •••••';
+    return `- RM ${Number(value || 0).toLocaleString()}`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,26 +101,26 @@ export function PayslipDetailDialog({ payslip, open, onOpenChange }: PayslipDeta
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Basic Salary</span>
-                <span>RM {payslip.basic_salary.toLocaleString()}</span>
+                <span>{formatCurrency(payslip.basic_salary)}</span>
               </div>
               {Object.entries(allowances).map(([key, value]) => (
                 value > 0 && (
                   <div key={key} className="flex justify-between text-sm">
                     <span className="text-muted-foreground capitalize">{key} Allowance</span>
-                    <span>RM {Number(value).toLocaleString()}</span>
+                    <span>{formatCurrency(Number(value))}</span>
                   </div>
                 )
               ))}
               {payslip.overtime_amount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Overtime ({payslip.overtime_hours}h)</span>
-                  <span>RM {payslip.overtime_amount.toLocaleString()}</span>
+                  <span>{formatCurrency(payslip.overtime_amount)}</span>
                 </div>
               )}
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
                 <span>Gross Salary</span>
-                <span>RM {payslip.gross_salary.toLocaleString()}</span>
+                <span>{formatCurrency(payslip.gross_salary)}</span>
               </div>
             </div>
           </div>
@@ -120,13 +134,13 @@ export function PayslipDetailDialog({ payslip, open, onOpenChange }: PayslipDeta
               {Object.entries(deductions).map(([key, value]) => (
                 <div key={key} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{key}</span>
-                  <span className="text-destructive">- RM {Number(value).toLocaleString()}</span>
+                  <span className="text-destructive">{formatDeductionCurrency(Number(value))}</span>
                 </div>
               ))}
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
                 <span>Total Deductions</span>
-                <span className="text-destructive">- RM {payslip.total_deductions.toLocaleString()}</span>
+                <span className="text-destructive">{formatDeductionCurrency(payslip.total_deductions)}</span>
               </div>
             </div>
           </div>
@@ -138,7 +152,7 @@ export function PayslipDetailDialog({ payslip, open, onOpenChange }: PayslipDeta
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Net Salary</span>
               <span className="text-2xl font-bold text-primary">
-                RM {payslip.net_salary.toLocaleString()}
+                {formatCurrency(payslip.net_salary)}
               </span>
             </div>
           </div>

@@ -1,6 +1,14 @@
 export type AppRole = 'admin' | 'hr' | 'manager' | 'employee' | 'general_manager' | 'director';
 
 export type LeaveStatus = 'pending' | 'manager_approved' | 'gm_approved' | 'director_approved' | 'hr_approved' | 'rejected' | 'cancelled';
+export type LeaveApprovalStage = 'manager' | 'general_manager' | 'director';
+export type LeaveCancellationStatus =
+  | 'pending'
+  | 'manager_approved'
+  | 'gm_approved'
+  | 'director_approved'
+  | 'approved'
+  | 'rejected';
 
 export type EmployeeStatus = 'active' | 'inactive' | 'on_leave' | 'terminated';
 
@@ -69,6 +77,7 @@ export interface LeaveRequest {
   days_count: number;
   reason: string | null;
   status: LeaveStatus;
+  approval_route_snapshot: LeaveApprovalStage[] | null;
   manager_approved_by: string | null;
   manager_approved_at: string | null;
   gm_approved_by: string | null;
@@ -78,6 +87,30 @@ export interface LeaveRequest {
   hr_approved_by: string | null;
   hr_approved_at: string | null;
   hr_notified_at: string | null;
+  final_approved_by: string | null;
+  final_approved_by_role: AppRole | null;
+  final_approved_at: string | null;
+  cancellation_status: LeaveCancellationStatus | null;
+  cancellation_route_snapshot: LeaveApprovalStage[] | null;
+  cancellation_requested_by: string | null;
+  cancellation_requested_at: string | null;
+  cancellation_reason: string | null;
+  cancellation_comments: string | null;
+  cancellation_manager_approved_by: string | null;
+  cancellation_manager_approved_at: string | null;
+  cancellation_gm_approved_by: string | null;
+  cancellation_gm_approved_at: string | null;
+  cancellation_director_approved_by: string | null;
+  cancellation_director_approved_at: string | null;
+  cancellation_final_approved_by: string | null;
+  cancellation_final_approved_by_role: AppRole | null;
+  cancellation_final_approved_at: string | null;
+  cancellation_rejected_by: string | null;
+  cancellation_rejected_at: string | null;
+  cancellation_rejection_reason: string | null;
+  cancelled_by: string | null;
+  cancelled_by_role: AppRole | null;
+  cancelled_at: string | null;
   rejected_by: string | null;
   rejected_at: string | null;
   rejection_reason: string | null;
@@ -90,6 +123,28 @@ export interface LeaveRequest {
   updated_at: string;
   employee?: Partial<Profile>;
   leave_type?: LeaveType;
+}
+
+export interface LeaveApprovalWorkflow {
+  id: string;
+  requester_role: AppRole;
+  department_id: string | null;
+  approval_stages: LeaveApprovalStage[];
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveCancellationWorkflow {
+  id: string;
+  requester_role: AppRole;
+  department_id: string | null;
+  approval_stages: LeaveApprovalStage[];
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Attendance {

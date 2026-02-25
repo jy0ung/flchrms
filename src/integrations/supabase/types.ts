@@ -370,10 +370,92 @@ export type Database = {
           },
         ]
       }
+      leave_request_events: {
+        Row: {
+          actor_role: Database["public"]["Enums"]["app_role"] | null
+          actor_user_id: string | null
+          created_at: string
+          event_type: string
+          from_cancellation_status: string | null
+          from_status: string | null
+          id: string
+          leave_request_id: string
+          metadata: Json
+          occurred_at: string
+          to_cancellation_status: string | null
+          to_status: string | null
+        }
+        Insert: {
+          actor_role?: Database["public"]["Enums"]["app_role"] | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type: string
+          from_cancellation_status?: string | null
+          from_status?: string | null
+          id?: string
+          leave_request_id: string
+          metadata?: Json
+          occurred_at?: string
+          to_cancellation_status?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          actor_role?: Database["public"]["Enums"]["app_role"] | null
+          actor_user_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_cancellation_status?: string | null
+          from_status?: string | null
+          id?: string
+          leave_request_id?: string
+          metadata?: Json
+          occurred_at?: string
+          to_cancellation_status?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_request_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_request_events_leave_request_id_fkey"
+            columns: ["leave_request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
+          approval_route_snapshot: string[] | null
           amended_at: string | null
           amendment_notes: string | null
+          cancellation_comments: string | null
+          cancellation_director_approved_at: string | null
+          cancellation_director_approved_by: string | null
+          cancellation_final_approved_at: string | null
+          cancellation_final_approved_by: string | null
+          cancellation_final_approved_by_role: Database["public"]["Enums"]["app_role"] | null
+          cancellation_gm_approved_at: string | null
+          cancellation_gm_approved_by: string | null
+          cancellation_manager_approved_at: string | null
+          cancellation_manager_approved_by: string | null
+          cancellation_reason: string | null
+          cancellation_rejected_at: string | null
+          cancellation_rejected_by: string | null
+          cancellation_rejection_reason: string | null
+          cancellation_requested_at: string | null
+          cancellation_requested_by: string | null
+          cancellation_route_snapshot: string[] | null
+          cancellation_status: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_role: Database["public"]["Enums"]["app_role"] | null
           created_at: string
           days_count: number
           director_approved_at: string | null
@@ -382,6 +464,9 @@ export type Database = {
           document_url: string | null
           employee_id: string
           end_date: string
+          final_approved_at: string | null
+          final_approved_by: string | null
+          final_approved_by_role: Database["public"]["Enums"]["app_role"] | null
           gm_approved_at: string | null
           gm_approved_by: string | null
           hr_approved_at: string | null
@@ -401,8 +486,30 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_route_snapshot?: string[] | null
           amended_at?: string | null
           amendment_notes?: string | null
+          cancellation_comments?: string | null
+          cancellation_director_approved_at?: string | null
+          cancellation_director_approved_by?: string | null
+          cancellation_final_approved_at?: string | null
+          cancellation_final_approved_by?: string | null
+          cancellation_final_approved_by_role?: Database["public"]["Enums"]["app_role"] | null
+          cancellation_gm_approved_at?: string | null
+          cancellation_gm_approved_by?: string | null
+          cancellation_manager_approved_at?: string | null
+          cancellation_manager_approved_by?: string | null
+          cancellation_reason?: string | null
+          cancellation_rejected_at?: string | null
+          cancellation_rejected_by?: string | null
+          cancellation_rejection_reason?: string | null
+          cancellation_requested_at?: string | null
+          cancellation_requested_by?: string | null
+          cancellation_route_snapshot?: string[] | null
+          cancellation_status?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_role?: Database["public"]["Enums"]["app_role"] | null
           created_at?: string
           days_count: number
           director_approved_at?: string | null
@@ -411,6 +518,9 @@ export type Database = {
           document_url?: string | null
           employee_id: string
           end_date: string
+          final_approved_at?: string | null
+          final_approved_by?: string | null
+          final_approved_by_role?: Database["public"]["Enums"]["app_role"] | null
           gm_approved_at?: string | null
           gm_approved_by?: string | null
           hr_approved_at?: string | null
@@ -430,8 +540,30 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_route_snapshot?: string[] | null
           amended_at?: string | null
           amendment_notes?: string | null
+          cancellation_comments?: string | null
+          cancellation_director_approved_at?: string | null
+          cancellation_director_approved_by?: string | null
+          cancellation_final_approved_at?: string | null
+          cancellation_final_approved_by?: string | null
+          cancellation_final_approved_by_role?: Database["public"]["Enums"]["app_role"] | null
+          cancellation_gm_approved_at?: string | null
+          cancellation_gm_approved_by?: string | null
+          cancellation_manager_approved_at?: string | null
+          cancellation_manager_approved_by?: string | null
+          cancellation_reason?: string | null
+          cancellation_rejected_at?: string | null
+          cancellation_rejected_by?: string | null
+          cancellation_rejection_reason?: string | null
+          cancellation_requested_at?: string | null
+          cancellation_requested_by?: string | null
+          cancellation_route_snapshot?: string[] | null
+          cancellation_status?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_role?: Database["public"]["Enums"]["app_role"] | null
           created_at?: string
           days_count?: number
           director_approved_at?: string | null
@@ -440,6 +572,9 @@ export type Database = {
           document_url?: string | null
           employee_id?: string
           end_date?: string
+          final_approved_at?: string | null
+          final_approved_by?: string | null
+          final_approved_by_role?: Database["public"]["Enums"]["app_role"] | null
           gm_approved_at?: string | null
           gm_approved_by?: string | null
           hr_approved_at?: string | null
@@ -506,6 +641,88 @@ export type Database = {
             columns: ["rejected_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_approval_workflows: {
+        Row: {
+          approval_stages: string[]
+          created_at: string
+          department_id: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          approval_stages: string[]
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          approval_stages?: string[]
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          requester_role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_approval_workflows_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_cancellation_workflows: {
+        Row: {
+          approval_stages: string[]
+          created_at: string
+          department_id: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          approval_stages: string[]
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          approval_stages?: string[]
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          requester_role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_cancellation_workflows_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -972,11 +1189,367 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_config_events: {
+        Row: {
+          action: string
+          changed_by_role: Database["public"]["Enums"]["app_role"] | null
+          changed_by_user_id: string | null
+          created_at: string
+          department_id: string | null
+          id: string
+          metadata: Json
+          new_values: Json | null
+          old_values: Json | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          workflow_row_id: string
+          workflow_table: string
+          workflow_type: string
+        }
+        Insert: {
+          action: string
+          changed_by_role?: Database["public"]["Enums"]["app_role"] | null
+          changed_by_user_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          metadata?: Json
+          new_values?: Json | null
+          old_values?: Json | null
+          requester_role: Database["public"]["Enums"]["app_role"]
+          workflow_row_id: string
+          workflow_table: string
+          workflow_type: string
+        }
+        Update: {
+          action?: string
+          changed_by_role?: Database["public"]["Enums"]["app_role"] | null
+          changed_by_user_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          metadata?: Json
+          new_values?: Json | null
+          old_values?: Json | null
+          requester_role?: Database["public"]["Enums"]["app_role"]
+          workflow_row_id?: string
+          workflow_table?: string
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_config_events_changed_by_user_id_fkey"
+            columns: ["changed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notifications: {
+        Row: {
+          category: string
+          created_at: string
+          event_type: string
+          id: string
+          leave_request_event_id: string | null
+          leave_request_id: string | null
+          message: string
+          metadata: Json
+          read_at: string | null
+          source_id: string | null
+          source_table: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          event_type: string
+          id?: string
+          leave_request_event_id?: string | null
+          leave_request_id?: string | null
+          message: string
+          metadata?: Json
+          read_at?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          leave_request_event_id?: string | null
+          leave_request_id?: string | null
+          message?: string
+          metadata?: Json
+          read_at?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_leave_request_event_id_fkey"
+            columns: ["leave_request_event_id"]
+            isOneToOne: false
+            referencedRelation: "leave_request_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_leave_request_id_fkey"
+            columns: ["leave_request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notification_preferences: {
+        Row: {
+          admin_enabled: boolean
+          created_at: string
+          email_admin_enabled: boolean
+          email_leave_enabled: boolean
+          email_system_enabled: boolean
+          leave_enabled: boolean
+          system_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_enabled?: boolean
+          created_at?: string
+          email_admin_enabled?: boolean
+          email_leave_enabled?: boolean
+          email_system_enabled?: boolean
+          leave_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_enabled?: boolean
+          created_at?: string
+          email_admin_enabled?: boolean
+          email_leave_enabled?: boolean
+          email_system_enabled?: boolean
+          leave_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_delivery_queue: {
+        Row: {
+          attempts: number
+          body_text: string
+          category: string
+          channel: string
+          created_at: string
+          event_type: string
+          failed_at: string | null
+          id: string
+          last_error: string | null
+          leased_at: string | null
+          leased_by: string | null
+          next_attempt_at: string
+          notification_id: string
+          payload: Json
+          recipient_email: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          body_text: string
+          category: string
+          channel?: string
+          created_at?: string
+          event_type: string
+          failed_at?: string | null
+          id?: string
+          last_error?: string | null
+          leased_at?: string | null
+          leased_by?: string | null
+          next_attempt_at?: string
+          notification_id: string
+          payload?: Json
+          recipient_email: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          body_text?: string
+          category?: string
+          channel?: string
+          created_at?: string
+          event_type?: string
+          failed_at?: string | null
+          id?: string
+          last_error?: string | null
+          leased_at?: string | null
+          leased_by?: string | null
+          next_attempt_at?: string
+          notification_id?: string
+          payload?: Json
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_queue_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "user_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      amend_leave_request: {
+        Args: {
+          _amendment_notes: string
+          _document_url?: string | null
+          _reason?: string | null
+          _request_id: string
+        }
+        Returns: Database["public"]["Tables"]["leave_requests"]["Row"]
+      }
+      admin_reset_user_password: {
+        Args: { _new_password: string; _target_user_id: string }
+        Returns: undefined
+      }
+      delete_user_notifications: {
+        Args: { _older_than_days?: number; _read_only?: boolean }
+        Returns: number
+      }
+      notification_email_category_enabled: {
+        Args: { _category: string; _user_id: string }
+        Returns: boolean
+      }
+      notification_worker_claim_email_queue: {
+        Args: {
+          _batch_size?: number
+          _lease_seconds?: number
+          _max_attempts?: number
+          _worker_id?: string | null
+        }
+        Returns: Database["public"]["Tables"]["notification_delivery_queue"]["Row"][]
+      }
+      notification_worker_finalize_email_queue_item: {
+        Args: {
+          _error?: string | null
+          _outcome: string
+          _queue_id: string
+          _retry_delay_seconds?: number
+          _worker_id?: string | null
+        }
+        Returns: Database["public"]["Tables"]["notification_delivery_queue"]["Row"]
+      }
+      notification_admin_email_queue_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      notification_admin_list_email_queue: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: Database["public"]["Tables"]["notification_delivery_queue"]["Row"][]
+      }
+      notification_admin_requeue_email_queue_item: {
+        Args: { _delay_seconds?: number; _queue_id: string }
+        Returns: Database["public"]["Tables"]["notification_delivery_queue"]["Row"]
+      }
+      notification_admin_discard_email_queue_item: {
+        Args: { _queue_id: string; _reason?: string | null }
+        Returns: Database["public"]["Tables"]["notification_delivery_queue"]["Row"]
+      }
+      run_notification_retention_job: {
+        Args: {
+          _failed_queue_days?: number
+          _read_notifications_days?: number
+          _sent_queue_days?: number
+        }
+        Returns: Json
+      }
+      get_calendar_visible_leaves: {
+        Args: { _end_date: string; _start_date: string }
+        Returns: {
+          employee_first_name: string | null
+          employee_last_name: string | null
+          end_date: string
+          final_approved_at: string | null
+          id: string
+          leave_type_name: string | null
+          start_date: string
+          status: string
+        }[]
+      }
+      get_employee_directory_profiles: {
+        Args: { _profile_id?: string | null }
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          department: Json | null
+          department_id: string | null
+          email: string
+          employee_id: string | null
+          first_name: string
+          hire_date: string | null
+          id: string
+          job_title: string | null
+          last_name: string
+          manager_id: string | null
+          phone: string | null
+          status: string | null
+          updated_at: string
+          username: string
+        }[]
+      }
+      request_leave_cancellation: {
+        Args: { _reason?: string | null; _request_id: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -995,6 +1568,14 @@ export type Database = {
       is_manager_of: {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
+      }
+      mark_user_notifications_read: {
+        Args: { _notification_ids?: string[] | null }
+        Returns: number
+      }
+      mark_user_notifications_unread: {
+        Args: { _notification_ids: string[] }
+        Returns: number
       }
       resolve_login_email: {
         Args: { _identifier: string }

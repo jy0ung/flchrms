@@ -72,3 +72,26 @@ export function useUpdateUserRole() {
     },
   });
 }
+
+export function useDeleteUserRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Role assignment removed. User now falls back to Employee access.');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to delete role: ' + error.message);
+    },
+  });
+}

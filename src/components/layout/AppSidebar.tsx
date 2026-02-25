@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
   BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X,
-  CalendarDays, FileText, Wallet
+  CalendarDays, FileText, Wallet, Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,10 +12,12 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
+import { canAccessAdminPage, canViewEmployeeDirectory } from '@/lib/permissions';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leave Management', href: '/leave', icon: Calendar },
+  { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Team Calendar', href: '/calendar', icon: CalendarDays },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Payroll', href: '/payroll', icon: Wallet },
@@ -92,7 +94,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
         
         {/* HR/Admin/Manager/GM/Director Navigation - Employee Directory */}
-        {(role === 'admin' || role === 'hr' || role === 'manager' || role === 'general_manager' || role === 'director') && (
+        {canViewEmployeeDirectory(role) && (
           <>
             <Separator className="my-2 bg-sidebar-border" />
             {hrNavigation.map((item) => {
@@ -117,8 +119,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </>
         )}
         
-        {/* Admin Navigation - Only visible to HR/Admin */}
-        {(role === 'admin' || role === 'hr') && (
+        {/* Admin Navigation - Visible to Admin/HR/Director */}
+        {canAccessAdminPage(role) && (
           <>
             <Separator className="my-2 bg-sidebar-border" />
             {adminNavigation.map((item) => {

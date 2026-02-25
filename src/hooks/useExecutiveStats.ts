@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { calculateWorkingDays } from '@/lib/payroll';
 import { calculateAbsentEmployees, COMPLETED_REVIEW_STATUSES } from '@/lib/executive-stats';
+import { canQueryExecutiveStats, isManager as isManagerRole } from '@/lib/permissions';
 
 export interface ExecutiveStats {
   // Headcount
@@ -42,8 +43,8 @@ export function useExecutiveStats() {
   const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
   
-  const isManager = role === 'manager';
-  const isAdminOrHR = role === 'admin' || role === 'hr';
+  const isManager = isManagerRole(role);
+  const isExecutiveViewer = canQueryExecutiveStats(role) && !isManager;
 
   return useQuery({
     queryKey: ['executive-stats', user?.id, role, profile?.department_id],
@@ -159,7 +160,8 @@ export function useExecutiveStats() {
       let pendingLeaveQuery = supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'manager_approved', 'gm_approved', 'director_approved']);
+        .is('final_approved_at', null)
+        .not('status', 'in', '(rejected,cancelled)');
       if (departmentFilter && employeeIds.length > 0) {
         pendingLeaveQuery = pendingLeaveQuery.in('employee_id', employeeIds);
       }
@@ -169,7 +171,8 @@ export function useExecutiveStats() {
       let approvedLeavesQuery = supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'hr_approved')
+        .not('final_approved_at', 'is', null)
+        .not('status', 'in', '(cancelled,rejected)')
         .gte('start_date', monthStart)
         .lte('start_date', monthEnd);
       if (departmentFilter && employeeIds.length > 0) {
@@ -181,7 +184,8 @@ export function useExecutiveStats() {
       let onLeaveTodayQuery = supabase
         .from('leave_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'hr_approved')
+        .not('final_approved_at', 'is', null)
+        .not('status', 'in', '(cancelled,rejected)')
         .lte('start_date', today)
         .gte('end_date', today);
       if (departmentFilter && employeeIds.length > 0) {
@@ -285,7 +289,7 @@ export function useExecutiveStats() {
         departmentEmployeeCount: departmentFilter ? (activeEmployees || 0) : undefined,
       };
     },
-    enabled: !!user && (isManager || isAdminOrHR),
+    enabled: !!user && (isManager || isExecutiveViewer),
     staleTime: 60000, // Cache for 1 minute
   });
 }

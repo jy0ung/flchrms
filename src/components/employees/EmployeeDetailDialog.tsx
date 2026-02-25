@@ -13,12 +13,17 @@ import {
   Hash, User, Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  canViewSensitiveEmployeeContact,
+  canViewSensitiveEmployeeIdentifiers,
+} from '@/lib/permissions';
 
 interface EmployeeDetailDialogProps {
   employee: (Profile & { department: Department | null }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userRole?: AppRole;
+  viewerRole?: AppRole | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -41,9 +46,13 @@ export function EmployeeDetailDialog({
   employee, 
   open, 
   onOpenChange,
-  userRole = 'employee'
+  userRole = 'employee',
+  viewerRole = 'employee',
 }: EmployeeDetailDialogProps) {
   if (!employee) return null;
+
+  const showSensitiveIdentifiers = canViewSensitiveEmployeeIdentifiers(viewerRole);
+  const showSensitiveContact = canViewSensitiveEmployeeContact(viewerRole);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,7 +94,7 @@ export function EmployeeDetailDialog({
                 <Mail className="w-4 h-4" />
                 <span className="truncate max-w-[150px]">{employee.email}</span>
               </a>
-              {employee.phone && (
+              {showSensitiveContact && employee.phone && (
                 <a 
                   href={`tel:${employee.phone}`}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -105,7 +114,9 @@ export function EmployeeDetailDialog({
                 <Hash className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Employee ID</span>
-                  <p className="text-sm font-mono">{employee.employee_id || 'Not assigned'}</p>
+                  <p className="text-sm font-mono">
+                    {showSensitiveIdentifiers ? (employee.employee_id || 'Not assigned') : 'Restricted'}
+                  </p>
                 </div>
               </div>
               
@@ -156,8 +167,8 @@ export function EmployeeDetailDialog({
                 <User className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">User ID</span>
-                  <p className="text-xs font-mono truncate max-w-[150px]" title={employee.id}>
-                    {employee.id}
+                  <p className="text-xs font-mono truncate max-w-[150px]" title={showSensitiveIdentifiers ? employee.id : 'Restricted'}>
+                    {showSensitiveIdentifiers ? employee.id : 'Restricted'}
                   </p>
                 </div>
               </div>

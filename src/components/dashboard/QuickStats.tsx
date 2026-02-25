@@ -13,6 +13,7 @@ import {
   Minus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 
 interface QuickStatProps {
   title: string;
@@ -90,7 +91,7 @@ export function QuickStats() {
   const { data: stats, isLoading } = useExecutiveStats();
   const navigate = useNavigate();
 
-  const isManagerOrAbove = role === 'manager' || role === 'hr' || role === 'admin' || role === 'general_manager' || role === 'director';
+  const isManagerOrAbove = canViewManagerDashboardWidgets(role);
 
   if (!isManagerOrAbove) return null;
 

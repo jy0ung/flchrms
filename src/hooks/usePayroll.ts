@@ -431,7 +431,8 @@ export function useGeneratePayslips() {
       const { data: leaveData, error: leaveError } = await supabase
         .from('leave_requests')
         .select('employee_id, start_date, end_date')
-        .eq('status', 'hr_approved')
+        .not('final_approved_at', 'is', null)
+        .not('status', 'in', '(cancelled,rejected)')
         .or(`and(start_date.lte.${period.end_date},end_date.gte.${period.start_date})`);
       
       if (leaveError) throw leaveError;
