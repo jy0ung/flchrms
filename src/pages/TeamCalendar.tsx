@@ -25,8 +25,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Users, Plane, CalendarPlus } from 'lucide-react';
-import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isWithinInterval } from 'date-fns';
+import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import {
+  canManageDepartmentEvents as canManageDepartmentEventsPermission,
+  canManageHolidays as canManageHolidaysPermission,
+  canViewCalendarLeaveTypeLabel,
+} from '@/lib/permissions';
 
 const ALL_DEPARTMENTS_VALUE = 'all';
 
@@ -49,8 +54,9 @@ export default function TeamCalendar() {
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
 
-  const isHROrAdmin = role === 'hr' || role === 'admin';
-  const isManager = role === 'manager';
+  const canManageHolidays = canManageHolidaysPermission(role);
+  const canManageDepartmentEvents = canManageDepartmentEventsPermission(role);
+  const canViewLeaveTypeLabel = canViewCalendarLeaveTypeLabel(role);
 
   const { data: calendarEvents, isLoading } = useCalendarEvents(currentMonth);
   const { data: holidays } = useHolidays();
@@ -85,9 +91,19 @@ export default function TeamCalendar() {
   const getEventsForDate = (date: Date): CalendarEvent[] => {
     return calendarEvents?.filter((event) => {
       if (event.endDate) {
-        return isWithinInterval(date, { start: event.date, end: event.endDate });
+        return isWithinInterval(startOfDay(date), {
+          start: startOfDay(event.date),
+          end: endOfDay(event.endDate),
+        });
       }
       return isSameDay(event.date, date);
+    }).sort((a, b) => {
+      if (a.type === b.type) {
+        return (a.employeeName || a.title).localeCompare(b.employeeName || b.title);
+      }
+
+      const typeOrder = { leave: 0, holiday: 1, event: 2 } as const;
+      return typeOrder[a.type] - typeOrder[b.type];
     }) || [];
   };
 
@@ -117,6 +133,21 @@ export default function TeamCalendar() {
   };
 
   const selectedDayEvents = selectedDate ? getEventsForDate(selectedDate) : [];
+  const todayStart = startOfDay(new Date());
+  const parseCalendarDate = (value: string) => parseISO(value);
+  const upcomingHolidays = (holidays || [])
+    .map((holiday) => ({ holiday, parsedDate: parseCalendarDate(holiday.date) }))
+    .filter(({ parsedDate }) => !Number.isNaN(parsedDate.getTime()) && parsedDate >= todayStart)
+    .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime())
+    .map(({ holiday }) => holiday)
+    .slice(0, 5);
+
+  const getEventPrimaryLabel = (event: CalendarEvent) => {
+    if (event.type === 'leave') {
+      return canViewLeaveTypeLabel ? event.title : (event.employeeName || 'Employee');
+    }
+    return event.title;
+  };
 
   return (
     <div className="space-y-6">
@@ -129,7 +160,7 @@ export default function TeamCalendar() {
           </p>
         </div>
         <div className="flex gap-2">
-          {(isHROrAdmin || isManager) && (
+          {canManageDepartmentEvents && (
             <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
@@ -189,7 +220,7 @@ export default function TeamCalendar() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {isHROrAdmin && (
+                  {canManageHolidays && (
                     <div className="space-y-2">
                       <Label>Department (Optional)</Label>
                       <Select
@@ -229,7 +260,7 @@ export default function TeamCalendar() {
               </DialogContent>
             </Dialog>
           )}
-          {isHROrAdmin && (
+          {canManageHolidays && (
             <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -330,7 +361,7 @@ export default function TeamCalendar() {
 
                     return (
                       <div
-                        key={date.toISOString()}
+                        key={format(date, 'yyyy-MM-dd')}
                         className={cn(
                           'h-24 md:h-28 border-b border-r p-1 cursor-pointer transition-colors hover:bg-muted/50',
                           isToday && 'bg-primary/5',
@@ -353,7 +384,7 @@ export default function TeamCalendar() {
                                 eventTypeColors[event.type]
                               )}
                             >
-                              <span className="hidden sm:inline">{event.title}</span>
+                              <span className="hidden sm:inline">{event.type === 'leave' ? event.employeeName : event.title}</span>
                               <span className="sm:hidden">{eventTypeIcons[event.type]}</span>
                             </div>
                           ))}
@@ -415,17 +446,22 @@ export default function TeamCalendar() {
                         eventTypeColors[event.type]
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          {eventTypeIcons[event.type]}
-                          <span className="font-medium text-sm">{event.title}</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {eventTypeIcons[event.type]}
+                            <span className="font-medium text-sm">{getEventPrimaryLabel(event)}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {event.type}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-[10px] capitalize">
-                          {event.type}
-                        </Badge>
-                      </div>
                       {event.description && (
                         <p className="text-xs mt-1 opacity-80">{event.description}</p>
+                      )}
+                      {event.type === 'leave' && canViewLeaveTypeLabel && event.employeeName && (
+                        <p className="text-xs mt-1 opacity-80">
+                          On leave: {event.employeeName}
+                        </p>
                       )}
                       {event.endDate && !isSameDay(event.date, event.endDate) && (
                         <p className="text-xs mt-1 opacity-60">
@@ -449,15 +485,15 @@ export default function TeamCalendar() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {holidays?.filter(h => new Date(h.date) >= new Date()).slice(0, 5).map((holiday) => (
+                {upcomingHolidays.map((holiday) => (
                   <div key={holiday.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                     <div>
                       <p className="text-sm font-medium">{holiday.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(holiday.date), 'EEEE, MMM d')}
+                        {format(parseISO(holiday.date), 'EEEE, MMM d')}
                       </p>
                     </div>
-                    {isHROrAdmin && (
+                    {canManageHolidays && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
@@ -485,7 +521,7 @@ export default function TeamCalendar() {
                     )}
                   </div>
                 ))}
-                {(!holidays || holidays.filter(h => new Date(h.date) >= new Date()).length === 0) && (
+                {upcomingHolidays.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No upcoming holidays
                   </p>

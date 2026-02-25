@@ -1,9 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, LeaveRequest, LeaveStatus } from '@/types/hrms';
+import { AppRole, LeaveApprovalStage, LeaveCancellationStatus, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { buildLeaveApprovalUpdate } from '@/lib/leave-workflow';
+import {
+  buildLeaveApprovalUpdate,
+  buildLeaveCancellationApprovalUpdate,
+  normalizeLeaveApprovalStages,
+  normalizeLeaveCancellationApprovalStages,
+} from '@/lib/leave-workflow';
 
 export function useLeaveRequests() {
   const { role, user } = useAuth();
@@ -79,7 +84,7 @@ export function useApproveLeaveRequest() {
       rejectionReason,
       documentRequired,
       managerComments,
-      employeeRole
+      employeeRole,
     }: { 
       requestId: string; 
       action: 'approve' | 'reject' | 'request_document'; 
@@ -94,7 +99,7 @@ export function useApproveLeaveRequest() {
 
       const { data: existingRequest, error: requestError } = await supabase
         .from('leave_requests')
-        .select('status, employee_id')
+        .select('status, employee_id, approval_route_snapshot')
         .eq('id', requestId)
         .single();
 
@@ -118,6 +123,36 @@ export function useApproveLeaveRequest() {
         }
       }
 
+      let workflowStages = normalizeLeaveApprovalStages(existingRequest.approval_route_snapshot || undefined);
+
+      if (workflowStages.length === 0) {
+        const { data: employeeProfile } = await supabase
+          .from('profiles')
+          .select('department_id')
+          .eq('id', existingRequest.employee_id)
+          .maybeSingle();
+
+        const employeeDepartmentId = employeeProfile?.department_id || null;
+
+        const { data: workflowRow, error: workflowError } = await supabase
+          .from('leave_approval_workflows')
+          .select('approval_stages, is_active')
+          .eq('requester_role', 'employee')
+          .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
+          .order('department_id', { ascending: true, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+
+        // If the workflow table/migration is missing in an environment, fall back to defaults.
+        if (workflowError && workflowError.code !== 'PGRST116' && workflowError.code !== '42P01') {
+          throw workflowError;
+        }
+
+        if (workflowRow?.is_active !== false) {
+          workflowStages = normalizeLeaveApprovalStages(workflowRow?.approval_stages || undefined);
+        }
+      }
+
       const updateData = buildLeaveApprovalUpdate({
         action,
         approverRole: role,
@@ -126,6 +161,7 @@ export function useApproveLeaveRequest() {
         requesterRole,
         rejectionReason,
         managerComments,
+        workflowStages,
       });
 
       if (action === 'reject') {
@@ -174,31 +210,17 @@ export function useAmendLeaveRequest() {
       documentUrl?: string;
       reason?: string;
     }) => {
-      const updateData: Record<string, unknown> = {
-        status: 'pending' as LeaveStatus,
-        amendment_notes: amendmentNotes,
-        amended_at: new Date().toISOString(),
-        rejected_by: null,
-        rejected_at: null,
-        rejection_reason: null,
-      };
-
-      if (documentUrl) {
-        updateData.document_url = documentUrl;
-      }
-
-      if (reason) {
-        updateData.reason = reason;
-      }
-
-      const { data, error } = await supabase
-        .from('leave_requests')
-        .update(updateData)
-        .eq('id', requestId)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('amend_leave_request', {
+        _request_id: requestId,
+        _amendment_notes: amendmentNotes,
+        _document_url: documentUrl ?? null,
+        _reason: reason ?? null,
+      });
       
       if (error) throw error;
+      if (!data) {
+        throw new Error('Failed to amend leave request');
+      }
       return data;
     },
     onSuccess: () => {
@@ -215,20 +237,163 @@ export function useCancelLeaveRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('leave_requests')
-        .update({ status: 'cancelled' as LeaveStatus })
-        .eq('id', requestId);
+    mutationFn: async ({
+      requestId,
+      reason,
+    }: {
+      requestId: string;
+      reason?: string;
+    }) => {
+      const { data, error } = await supabase.rpc('request_leave_cancellation', {
+        _request_id: requestId,
+        _reason: reason || null,
+      });
       
       if (error) throw error;
+      return (data || 'requested') as string;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      toast.success('Leave request cancelled');
+      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      if (result === 'cancelled') {
+        toast.success('Leave request cancelled');
+        return;
+      }
+      if (result === 'already_cancelled') {
+        toast.success('Leave request is already cancelled');
+        return;
+      }
+      toast.success('Leave cancellation request submitted');
     },
     onError: (error: Error) => {
       toast.error('Failed to cancel leave request: ' + error.message);
+    },
+  });
+}
+
+export function useProcessLeaveCancellationRequest() {
+  const queryClient = useQueryClient();
+  const { user, role } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      action,
+      rejectionReason,
+      comments,
+      employeeRole,
+    }: {
+      requestId: string;
+      action: 'approve' | 'reject';
+      rejectionReason?: string;
+      comments?: string;
+      employeeRole?: string;
+    }) => {
+      if (!user || !role) {
+        throw new Error('Only authenticated approvers can process cancellation requests.');
+      }
+
+      const { data: existingRequest, error: requestError } = await supabase
+        .from('leave_requests')
+        .select(`
+          status,
+          final_approved_at,
+          employee_id,
+          cancellation_status,
+          cancellation_route_snapshot
+        `)
+        .eq('id', requestId)
+        .single();
+
+      if (requestError) throw requestError;
+
+      if (!existingRequest.final_approved_at || existingRequest.status === 'cancelled') {
+        throw new Error('This leave request is not eligible for cancellation approval.');
+      }
+
+      if (!existingRequest.cancellation_status) {
+        throw new Error('No cancellation request is pending for this leave.');
+      }
+
+      const activeCancellationStatuses = ['pending', 'manager_approved', 'gm_approved', 'director_approved'];
+      if (!activeCancellationStatuses.includes(existingRequest.cancellation_status)) {
+        throw new Error('This cancellation request is already resolved.');
+      }
+
+      let requesterRole: AppRole = 'employee';
+
+      if (employeeRole) {
+        requesterRole = employeeRole as AppRole;
+      } else {
+        const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
+          _user_id: existingRequest.employee_id,
+        });
+
+        if (roleError) throw roleError;
+        if (roleData) requesterRole = roleData as AppRole;
+      }
+
+      let workflowStages = normalizeLeaveCancellationApprovalStages(existingRequest.cancellation_route_snapshot || undefined);
+
+      if (workflowStages.length === 0) {
+        const { data: employeeProfile } = await supabase
+          .from('profiles')
+          .select('department_id')
+          .eq('id', existingRequest.employee_id)
+          .maybeSingle();
+
+        const employeeDepartmentId = employeeProfile?.department_id || null;
+
+        const { data: workflowRow, error: workflowError } = await supabase
+          .from('leave_cancellation_workflows')
+          .select('approval_stages, is_active')
+          .eq('requester_role', 'employee')
+          .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
+          .order('department_id', { ascending: true, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (workflowError && workflowError.code !== 'PGRST116' && workflowError.code !== '42P01') {
+          throw workflowError;
+        }
+
+        if (workflowRow?.is_active !== false) {
+          workflowStages = normalizeLeaveCancellationApprovalStages(workflowRow?.approval_stages || undefined);
+        }
+      }
+
+      const updateData = buildLeaveCancellationApprovalUpdate({
+        action,
+        approverRole: role,
+        approverId: user.id,
+        requesterRole,
+        currentCancellationStatus: existingRequest.cancellation_status as LeaveCancellationStatus,
+        rejectionReason,
+        comments,
+        workflowStages,
+      });
+
+      const { data, error } = await supabase
+        .from('leave_requests')
+        .update(updateData)
+        .eq('id', requestId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      if (variables.action === 'approve') {
+        toast.success('Cancellation request processed');
+      } else {
+        toast.success('Cancellation request rejected');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to process cancellation request: ' + error.message);
     },
   });
 }

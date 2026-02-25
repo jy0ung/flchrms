@@ -1,5 +1,6 @@
 import { useEmployees } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { Profile, Department, AppRole } from '@/types/hrms';
 import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
 
 export default function Employees() {
+  const { role: viewerRole } = useAuth();
   const { data: employees, isLoading } = useEmployees();
   const { data: userRoles } = useUserRoles();
   const [search, setSearch] = useState('');
@@ -224,6 +226,7 @@ export default function Employees() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         userRole={selectedEmployee ? getUserRole(selectedEmployee.id) : 'employee'}
+        viewerRole={viewerRole}
       />
     </div>
   );

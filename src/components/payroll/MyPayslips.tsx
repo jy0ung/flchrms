@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { FileText, Eye, Wallet, TrendingUp } from 'lucide-react';
+import { FileText, Eye, EyeOff, Wallet, TrendingUp } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
 
@@ -15,12 +17,22 @@ const statusColors: Record<string, string> = {
   paid: 'bg-success/20 text-success border-success/30',
   cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
 };
+const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
 export function MyPayslips() {
   const { user } = useAuth();
   const { data: payslips, isLoading: payslipsLoading } = useMyPayslips();
   const { data: salary, isLoading: salaryLoading } = useEmployeeSalaryStructure(user?.id);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
+  const [hideAmounts, setHideAmounts] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hideAmounts ? '1' : '0');
+  }, [hideAmounts]);
 
   if (payslipsLoading || salaryLoading) {
     return (
@@ -46,8 +58,32 @@ export function MyPayslips() {
     Number(salary.other_allowances || 0)
   ) : 0;
 
+  const formatCurrency = (value: number | null | undefined) => {
+    if (hideAmounts) return 'RM •••••';
+    if (value === null || value === undefined) return '—';
+    return `RM ${Number(value).toLocaleString()}`;
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
+          {hideAmounts ? (
+            <EyeOff className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <Eye className="w-4 h-4 text-muted-foreground" />
+          )}
+          <Label htmlFor="hide-payroll-amounts" className="text-sm">
+            Hide salary amounts
+          </Label>
+          <Switch
+            id="hide-payroll-amounts"
+            checked={hideAmounts}
+            onCheckedChange={setHideAmounts}
+          />
+        </div>
+      </div>
+
       {/* No salary structure warning */}
       {!salary && (
         <Card className="border-warning bg-warning/5">
@@ -67,11 +103,11 @@ export function MyPayslips() {
               <div>
                 <p className="text-sm text-muted-foreground">Basic Salary</p>
                 <p className="text-2xl font-bold">
-                  {salary ? `RM ${Number(salary.basic_salary).toLocaleString()}` : '—'}
+                  {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
                 </p>
                 {totalAllowances > 0 && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    +RM {totalAllowances.toLocaleString()} allowances
+                    {hideAmounts ? '+RM ••••• allowances' : `+RM ${totalAllowances.toLocaleString()} allowances`}
                   </p>
                 )}
               </div>
@@ -89,7 +125,7 @@ export function MyPayslips() {
                 <p className="text-sm text-muted-foreground">Last Net Pay</p>
                 <p className="text-2xl font-bold">
                   {latestPayslip 
-                    ? `RM ${Number(latestPayslip.net_salary).toLocaleString()}`
+                    ? formatCurrency(Number(latestPayslip.net_salary))
                     : '—'}
                 </p>
                 {latestPayslip && (
@@ -111,7 +147,7 @@ export function MyPayslips() {
               <div>
                 <p className="text-sm text-muted-foreground">YTD Earnings</p>
                 <p className="text-2xl font-bold">
-                  RM {totalEarningsThisYear.toLocaleString()}
+                  {formatCurrency(totalEarningsThisYear)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {new Date().getFullYear()} total
@@ -166,7 +202,7 @@ export function MyPayslips() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="font-semibold">
-                        RM {payslip.net_salary.toLocaleString()}
+                        {formatCurrency(payslip.net_salary)}
                       </p>
                       <Badge className={statusColors[payslip.status]}>
                         {payslip.status}
@@ -189,6 +225,7 @@ export function MyPayslips() {
 
       <PayslipDetailDialog
         payslip={selectedPayslip}
+        hideAmounts={hideAmounts}
         open={!!selectedPayslip}
         onOpenChange={(open) => !open && setSelectedPayslip(null)}
       />

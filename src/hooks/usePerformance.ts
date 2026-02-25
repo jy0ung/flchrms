@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PerformanceReview, Profile } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { canConductPerformanceReviews } from '@/lib/permissions';
 
 export function useMyReviews() {
   const { user } = useAuth();
@@ -44,7 +45,7 @@ export function useReviewsToConduct() {
       if (error) throw error;
       return data as (PerformanceReview & { employee: Profile })[];
     },
-    enabled: !!user && (role === 'manager' || role === 'hr' || role === 'admin'),
+    enabled: !!user && canConductPerformanceReviews(role),
   });
 }
 

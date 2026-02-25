@@ -6,11 +6,12 @@ import { PayrollManagement } from '@/components/payroll/PayrollManagement';
 import { SalaryManagement } from '@/components/payroll/SalaryManagement';
 import { DeductionManagement } from '@/components/payroll/DeductionManagement';
 import { Wallet, FileText, Settings, Calculator } from 'lucide-react';
+import { canManagePayroll as canManagePayrollPermission } from '@/lib/permissions';
 
 export default function Payroll() {
   const { role } = useAuth();
-  const isHRorAdmin = role === 'hr' || role === 'admin';
-  const [activeTab, setActiveTab] = useState(isHRorAdmin ? 'payroll' : 'payslips');
+  const canManagePayroll = canManagePayrollPermission(role);
+  const [activeTab, setActiveTab] = useState(canManagePayroll ? 'payroll' : 'payslips');
 
   return (
     <div className="space-y-6">
@@ -18,7 +19,7 @@ export default function Payroll() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Payroll</h1>
           <p className="text-muted-foreground">
-            {isHRorAdmin 
+            {canManagePayroll
               ? 'Manage salaries, process payroll, and generate payslips'
               : 'View your payslips and salary information'}
           </p>
@@ -27,7 +28,7 @@ export default function Payroll() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl">
-          {isHRorAdmin && (
+          {canManagePayroll && (
             <>
               <TabsTrigger value="payroll" className="flex items-center gap-2">
                 <Wallet className="w-4 h-4" />
@@ -49,7 +50,7 @@ export default function Payroll() {
           </TabsTrigger>
         </TabsList>
 
-        {isHRorAdmin && (
+        {canManagePayroll && (
           <>
             <TabsContent value="payroll" className="space-y-6">
               <PayrollManagement />

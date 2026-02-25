@@ -10,6 +10,7 @@ import { QuickStats } from '@/components/dashboard/QuickStats';
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 import { Users, Calendar, Clock, GraduationCap, Play, Square, Megaphone, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { canViewManagerDashboardWidgets, isManager } from '@/lib/permissions';
 
 export default function Dashboard() {
   const { profile, role } = useAuth();
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
-  const isManagerOrAbove = role === 'manager' || role === 'general_manager' || role === 'director' || role === 'hr' || role === 'admin';
+  const isManagerOrAbove = canViewManagerDashboardWidgets(role);
 
   const statCards = [
     { title: 'Total Employees', value: stats?.totalEmployees || 0, icon: Users, color: 'text-info', route: '/employees', clickable: isManagerOrAbove },
@@ -57,7 +58,7 @@ export default function Dashboard() {
           <div>
             <h2 className="text-lg font-semibold">Executive Summary</h2>
             <p className="text-sm text-muted-foreground">
-              {role === 'manager' ? 'Department Overview' : 'Company Overview'}
+              {isManager(role) ? 'Department Overview' : 'Company Overview'}
             </p>
           </div>
         </div>

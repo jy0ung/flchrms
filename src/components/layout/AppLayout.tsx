@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { Loader2 } from 'lucide-react';
+import { NotificationsBell } from './NotificationsBell';
 
 export function AppLayout() {
   const { user, isLoading } = useAuth();
@@ -21,7 +22,10 @@ export function AppLayout() {
   return (
     <div className="min-h-screen flex w-full bg-background">
       <AppSidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto relative">
+        <div className="fixed top-4 right-4 z-40 md:right-6 lg:right-8">
+          <NotificationsBell />
+        </div>
         <div className="p-4 pt-16 md:pt-6 md:p-6 lg:p-8 animate-fadeIn">
           <Outlet />
         </div>
