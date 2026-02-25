@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/layout/RouteErrorBoundary";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
@@ -66,6 +67,7 @@ const App = () => (
           </RouteErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
+      <SpeedInsights />
     </TooltipProvider>
   </QueryClientProvider>
 );
