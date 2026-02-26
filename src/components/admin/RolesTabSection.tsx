@@ -2,7 +2,6 @@ import { AlertTriangle, UserCog } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -11,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DataTableShell, StatusBadge } from '@/components/system';
 import { getRolePermissionSummary } from '@/lib/admin-permissions';
 import type { AppRole, Profile } from '@/types/hrms';
 
@@ -33,30 +33,27 @@ export function RolesTabSection({
 }: RolesTabSectionProps) {
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <CardTitle className="flex items-center gap-2">
-                Role Management
-                <Badge variant="destructive" className="text-xs">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Admin/Director
-                </Badge>
-              </CardTitle>
-              <CardDescription>Assign and modify user roles. Be careful - changes take effect immediately.</CardDescription>
-            </div>
+      <DataTableShell
+        title="Role Management"
+        description="Assign and modify user roles. Be careful - changes take effect immediately."
+        headerActions={
+          <StatusBadge
+            status="warning"
+            labelOverride="Admin/Director"
+            showIcon
+            className="text-xs"
+          />
+        }
+        loading={rolesLoading}
+        loadingSkeleton={
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          {rolesLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-              ))}
-            </div>
-          ) : (
-            <>
+        }
+        content={
+          <>
               <div className="space-y-3 md:hidden">
                 {employees?.map((employee) => {
                   const currentRole = getUserRole(employee.id);
@@ -105,7 +102,7 @@ export function RolesTabSection({
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                  <TableBody>
                       {employees?.map((employee) => {
                         const currentRole = getUserRole(employee.id);
                         return (
@@ -148,14 +145,13 @@ export function RolesTabSection({
                           </TableRow>
                         );
                       })}
-                    </TableBody>
-                  </Table>
-                </div>
+                  </TableBody>
+                </Table>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </>
+        }
+      />
     </div>
   );
 }

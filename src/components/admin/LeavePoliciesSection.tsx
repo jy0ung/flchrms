@@ -1,7 +1,6 @@
-import { Edit, Plus, Settings, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -10,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DataTableShell, StatusBadge } from '@/components/system';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
 import { WorkflowConfigAuditSection } from '@/components/admin/WorkflowConfigAuditSection';
@@ -36,33 +36,27 @@ export function LeavePoliciesSection({
 }: LeavePoliciesSectionProps) {
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Leave Policy Configuration
-              </CardTitle>
-              <CardDescription>Configure leave types, advance notice, and document requirements</CardDescription>
-            </div>
-            {canManageLeaveTypes && (
-              <Button className="w-full rounded-full sm:w-auto" onClick={onCreateLeaveType}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Leave Type
-              </Button>
-            )}
+      <DataTableShell
+        title="Leave Policy Configuration"
+        description="Configure leave types, advance notice, and document requirements"
+        headerActions={
+          canManageLeaveTypes ? (
+            <Button className="w-full rounded-full sm:w-auto" onClick={onCreateLeaveType}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Leave Type
+            </Button>
+          ) : null
+        }
+        loading={leaveTypesLoading}
+        loadingSkeleton={
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          {leaveTypesLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-              ))}
-            </div>
-          ) : (
-            <>
+        }
+        content={
+          <>
               <div className="space-y-3 md:hidden">
                 {leaveTypes?.map((leaveType) => (
                   <div key={leaveType.id} className="rounded-xl border p-4 shadow-sm">
@@ -79,12 +73,11 @@ export function LeavePoliciesSection({
                       <Badge variant="secondary">
                         {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
                       </Badge>
-                      <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
-                        {leaveType.is_paid ? 'Paid' : 'Unpaid'}
-                      </Badge>
-                      <Badge className={leaveType.requires_document ? 'bg-amber-500/20 text-amber-600' : 'bg-muted text-muted-foreground'}>
-                        {leaveType.requires_document ? 'Required' : 'Optional'}
-                      </Badge>
+                      <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
+                      <StatusBadge
+                        status={leaveType.requires_document ? 'warning' : 'info'}
+                        labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
+                      />
                     </div>
                     {canManageLeaveTypes && (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -150,14 +143,13 @@ export function LeavePoliciesSection({
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
-                              {leaveType.is_paid ? 'Paid' : 'Unpaid'}
-                            </Badge>
+                            <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
                           </TableCell>
                           <TableCell>
-                            <Badge className={leaveType.requires_document ? 'bg-amber-500/20 text-amber-600' : 'bg-muted text-muted-foreground'}>
-                              {leaveType.requires_document ? 'Required' : 'Optional'}
-                            </Badge>
+                            <StatusBadge
+                              status={leaveType.requires_document ? 'warning' : 'info'}
+                              labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
+                            />
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -176,6 +168,7 @@ export function LeavePoliciesSection({
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-full text-destructive hover:text-destructive"
+                                    aria-label={`Delete leave type ${leaveType.name}`}
                                     onClick={() => onDeleteLeaveType(leaveType)}
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -197,10 +190,9 @@ export function LeavePoliciesSection({
                   </Table>
                 </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
 
       <LeaveWorkflowBuildersSection departments={departments} />
       <WorkflowConfigAuditSection departments={departments} />

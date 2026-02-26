@@ -9,17 +9,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import type { LeaveType } from '@/types/hrms';
 import type { AdminLeaveTypeForm } from '@/components/admin/admin-form-types';
 
@@ -144,44 +137,50 @@ export function AdminLeaveTypeDialogs({
 }: AdminLeaveTypeDialogsProps) {
   return (
     <>
-      <Dialog open={editLeaveTypeDialogOpen} onOpenChange={onEditLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Edit Leave Policy</DialogTitle>
-            <DialogDescription>
-              Configure policy settings for {selectedLeaveType?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <LeaveTypeFormFields
-            prefix="edit"
-            leaveTypeForm={leaveTypeForm}
-            onLeaveTypeFormChange={onLeaveTypeFormChange}
-          />
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <ModalScaffold
+        open={editLeaveTypeDialogOpen}
+        onOpenChange={onEditLeaveTypeDialogOpenChange}
+        title="Edit Leave Policy"
+        description={`Configure policy settings for ${selectedLeaveType?.name ?? 'leave type'}`}
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Policy Settings">
+            <LeaveTypeFormFields
+              prefix="edit"
+              leaveTypeForm={leaveTypeForm}
+              onLeaveTypeFormChange={onLeaveTypeFormChange}
+            />
+          </ModalSection>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditLeaveTypeDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button className="w-full sm:w-auto" onClick={onSaveLeaveType} disabled={updateLeaveTypePending}>
               {updateLeaveTypePending ? 'Saving...' : 'Save Policy'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={createLeaveTypeDialogOpen} onOpenChange={onCreateLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Add New Leave Type</DialogTitle>
-            <DialogDescription>
-              Create a new leave type with its policy settings
-            </DialogDescription>
-          </DialogHeader>
-          <LeaveTypeFormFields
-            prefix="new"
-            leaveTypeForm={leaveTypeForm}
-            onLeaveTypeFormChange={onLeaveTypeFormChange}
-          />
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <ModalScaffold
+        open={createLeaveTypeDialogOpen}
+        onOpenChange={onCreateLeaveTypeDialogOpenChange}
+        title="Add New Leave Type"
+        description="Create a new leave type with its policy settings"
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Policy Settings">
+            <LeaveTypeFormFields
+              prefix="new"
+              leaveTypeForm={leaveTypeForm}
+              onLeaveTypeFormChange={onLeaveTypeFormChange}
+            />
+          </ModalSection>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onCreateLeaveTypeDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -192,9 +191,9 @@ export function AdminLeaveTypeDialogs({
             >
               {createLeaveTypePending ? 'Creating...' : 'Create Leave Type'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
       <AlertDialog open={deleteLeaveTypeDialogOpen} onOpenChange={onDeleteLeaveTypeDialogOpenChange}>
         <AlertDialogContent>

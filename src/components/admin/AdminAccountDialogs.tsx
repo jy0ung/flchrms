@@ -1,14 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
 import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
 
@@ -75,17 +67,20 @@ export function AdminAccountDialogs({
 }: AdminAccountDialogsProps) {
   return (
     <>
-      <Dialog open={editProfileDialogOpen} onOpenChange={onEditProfileDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}</DialogTitle>
-            <DialogDescription>
-              {isAdminLimitedProfileEditor
-                ? `Admin can update the username alias only for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}.`
-                : `Update profile information for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+      <ModalScaffold
+        open={editProfileDialogOpen}
+        onOpenChange={onEditProfileDialogOpenChange}
+        title={isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}
+        description={
+          isAdminLimitedProfileEditor
+            ? `Admin can update the username alias only for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}.`
+            : `Update profile information for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}`
+        }
+        maxWidth="2xl"
+        body={(
+          <div className="space-y-4">
+          <ModalSection title={isAdminLimitedProfileEditor ? 'Account Access' : 'Profile Information'}>
+          <div className="grid gap-4">
             {isAdminLimitedProfileEditor ? (
               <div className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-4">
@@ -217,7 +212,11 @@ export function AdminAccountDialogs({
               </>
             )}
           </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          </ModalSection>
+          </div>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -228,20 +227,19 @@ export function AdminAccountDialogs({
                   ? 'Save Username Alias'
                   : 'Save Changes'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={resetPasswordDialogOpen} onOpenChange={onResetPasswordDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Reset User Password</DialogTitle>
-            <DialogDescription>
-              Set a new temporary password for {selectedEmployee?.first_name} {selectedEmployee?.last_name}. They will be signed out from existing sessions.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
+      <ModalScaffold
+        open={resetPasswordDialogOpen}
+        onOpenChange={onResetPasswordDialogOpenChange}
+        title="Reset User Password"
+        description={`Set a new temporary password for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. They will be signed out from existing sessions.`}
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Password Reset">
+          <div className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="font-medium">
                 {selectedEmployee?.first_name} {selectedEmployee?.last_name}
@@ -284,28 +282,29 @@ export function AdminAccountDialogs({
               Username alias changes remain restricted to HR/Admin only and are enforced in the database.
             </p>
           </div>
-
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          </ModalSection>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
               Cancel
             </Button>
             <Button className="w-full sm:w-auto" onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
               {resetPasswordPending ? 'Resetting...' : 'Reset Password'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={editRoleDialogOpen} onOpenChange={onEditRoleDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Change User Role</DialogTitle>
-            <DialogDescription>
-              Update the system role for {selectedEmployee?.first_name} {selectedEmployee?.last_name}.
-              This will affect their permissions immediately.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
+      <ModalScaffold
+        open={editRoleDialogOpen}
+        onOpenChange={onEditRoleDialogOpenChange}
+        title="Change User Role"
+        description={`Update the system role for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. This will affect their permissions immediately.`}
+        maxWidth="xl"
+        body={(
+          <div className="space-y-4">
+            <ModalSection title="Selected User" tone="muted">
             <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
               <Avatar className="w-12 h-12">
                 <AvatarFallback className="bg-primary text-primary-foreground">
@@ -317,6 +316,8 @@ export function AdminAccountDialogs({
                 <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
               </div>
             </div>
+            </ModalSection>
+            <ModalSection title="Role Assignment">
             <div className="space-y-2">
               <Label>Select Role Assignment</Label>
               <Select value={selectedRole} onValueChange={(value) => onSelectedRoleChange(value as AppRole)}>
@@ -363,17 +364,22 @@ export function AdminAccountDialogs({
                 </SelectContent>
               </Select>
             </div>
+            </ModalSection>
+            <ModalSection tone="warning" compact>
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-sm text-amber-400 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 Role changes take effect immediately. The user may need to refresh their browser to see updated permissions.
               </p>
             </div>
+            </ModalSection>
             <p className="text-xs text-muted-foreground">
               Removing a role assignment reverts the user to the default `employee` role.
             </p>
           </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -388,9 +394,9 @@ export function AdminAccountDialogs({
             <Button className="w-full sm:w-auto" onClick={onSaveRole} disabled={updateRolePending}>
               {updateRolePending ? 'Updating...' : 'Update Role'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
     </>
   );
 }

@@ -1,8 +1,6 @@
-import { Building, Edit, Plus, Search, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -11,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DataTableShell, SectionToolbar } from '@/components/system';
 import type { Department, Profile } from '@/types/hrms';
 
 interface DepartmentsTabSectionProps {
@@ -40,36 +39,31 @@ export function DepartmentsTabSection({
 }: DepartmentsTabSectionProps) {
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Department Management
-              </CardTitle>
-              <CardDescription>Create, update, and delete company departments</CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search departments..."
-                  className="pl-10"
-                  value={departmentSearch}
-                  onChange={(e) => onDepartmentSearchChange(e.target.value)}
-                />
-              </div>
-              {canManageDepartments && (
-                <Button className="w-full rounded-full sm:w-auto" onClick={onOpenCreateDepartment}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Department
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <DataTableShell
+        title="Department Management"
+        description="Create, update, and delete company departments"
+        headerActions={
+          canManageDepartments ? (
+            <Button className="w-full rounded-full sm:w-auto" onClick={onOpenCreateDepartment}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Department
+            </Button>
+          ) : null
+        }
+        toolbar={
+          <SectionToolbar
+            ariaLabel="Department management search"
+            search={{
+              value: departmentSearch,
+              onChange: onDepartmentSearchChange,
+              placeholder: 'Search departments...',
+              ariaLabel: 'Search departments',
+            }}
+            density="compact"
+          />
+        }
+        content={
+          <>
           <div className="space-y-3 md:hidden">
             {filteredDepartments?.map((dept) => {
               const employeeCount = employees?.filter((e) => e.department_id === dept.id).length || 0;
@@ -145,6 +139,7 @@ export function DepartmentsTabSection({
                                   variant="ghost"
                                   size="sm"
                                   className="rounded-full"
+                                  aria-label={`Edit department ${dept.name}`}
                                   onClick={() => onEditDepartment(dept)}
                                 >
                                   <Edit className="w-4 h-4" />
@@ -153,6 +148,7 @@ export function DepartmentsTabSection({
                                   variant="ghost"
                                   size="sm"
                                   className="rounded-full text-destructive hover:text-destructive"
+                                  aria-label={`Delete department ${dept.name}`}
                                   onClick={() => onDeleteDepartment(dept)}
                                   disabled={employeeCount > 0 || deleteDepartmentPending}
                                   title={employeeCount > 0 ? 'Remove or reassign employees before deleting this department.' : 'Delete department'}
@@ -184,8 +180,9 @@ export function DepartmentsTabSection({
               </Table>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
     </div>
   );
 }

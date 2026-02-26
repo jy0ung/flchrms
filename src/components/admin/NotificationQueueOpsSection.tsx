@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatusBadge } from '@/components/system';
 import {
   useNotificationQueueOps,
   type NotificationQueueItemWithUser,
@@ -245,28 +246,12 @@ function buildQueueHealthAlerts(
   return alerts;
 }
 
-function statusBadgeClass(status: string) {
-  if (status === 'failed') return 'bg-red-500/15 text-red-700 border-red-500/20';
-  if (status === 'pending') return 'bg-amber-500/15 text-amber-700 border-amber-500/20';
-  if (status === 'processing') return 'bg-blue-500/15 text-blue-700 border-blue-500/20';
-  if (status === 'sent') return 'bg-green-500/15 text-green-700 border-green-500/20';
-  if (status === 'discarded') return 'bg-muted text-muted-foreground';
-  return 'bg-muted text-muted-foreground';
-}
-
 function canRequeue(status: string) {
   return status !== 'sent';
 }
 
 function canDiscard(status: string) {
   return status !== 'sent' && status !== 'discarded';
-}
-
-function workerRunStatusBadgeClass(status: string) {
-  if (status === 'failed') return 'bg-red-500/15 text-red-700 border-red-500/20';
-  if (status === 'running') return 'bg-blue-500/15 text-blue-700 border-blue-500/20';
-  if (status === 'completed') return 'bg-green-500/15 text-green-700 border-green-500/20';
-  return 'bg-muted text-muted-foreground';
 }
 
 function QueueOpsRow({
@@ -289,9 +274,7 @@ function QueueOpsRow({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className={statusBadgeClass(row.status)}>
-              {row.status}
-            </Badge>
+            <StatusBadge status={row.status} labelOverride={row.status} size="sm" />
             <Badge variant="secondary">#{row.attempts} attempt{row.attempts === 1 ? '' : 's'}</Badge>
             <Badge variant="outline" className="font-mono text-[10px]">
               {row.event_type}
@@ -358,9 +341,7 @@ function WorkerRunRow({ row }: { row: NotificationEmailWorkerRunRow }) {
     <div className="rounded-lg border p-3 space-y-1">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Badge variant="outline" className={workerRunStatusBadgeClass(row.run_status)}>
-            {row.run_status}
-          </Badge>
+          <StatusBadge status={row.run_status} labelOverride={row.run_status} size="sm" />
           <Badge variant="secondary" className="font-mono text-[10px]">
             {row.provider}
           </Badge>

@@ -1,15 +1,8 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import { 
   Download, 
   Upload, 
@@ -269,136 +262,130 @@ export function BatchUpdateDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
-            Batch Update Employees
-          </DialogTitle>
-          <DialogDescription>
-            Download the template, update employee information, and upload to apply changes.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          {/* Step 1: Download Template */}
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-            <div>
-              <p className="font-medium">Step 1: Download Template</p>
-              <p className="text-sm text-muted-foreground">
-                Get the CSV template with current employee data
-              </p>
-            </div>
-            <Button variant="outline" onClick={generateTemplate}>
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-          </div>
-
-          {/* Step 2: Upload File */}
-          <div className="p-4 border rounded-lg">
-            <div className="flex items-center justify-between mb-3">
+    <ModalScaffold
+      open={open}
+      onOpenChange={handleClose}
+      title="Batch Update Employees"
+      description="Download the template, update employee information, and upload to apply changes."
+      maxWidth="xl"
+      body={(
+        <div className="space-y-4">
+          <ModalSection title="Step 1: Download Template" tone="muted">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium">Step 2: Upload Updated File</p>
-                <p className="text-sm text-muted-foreground">
-                  Upload the modified CSV file
-                </p>
+                <p className="text-sm text-muted-foreground">Get the CSV template with current employee data</p>
               </div>
-            </div>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            
-            {file ? (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
-                <FileSpreadsheet className="w-5 h-5 text-accent" />
-                <span className="flex-1 text-sm truncate">{file.name}</span>
-                <span className="text-xs text-muted-foreground">{parsedData.length} records</span>
-                <Button variant="ghost" size="sm" onClick={resetState}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Choose CSV File
+              <Button variant="outline" onClick={generateTemplate}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
               </Button>
-            )}
-          </div>
-
-          {/* Validation Errors */}
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="w-4 h-4" />
-              <AlertDescription>
-                <p className="font-medium mb-1">Validation errors found:</p>
-                <ul className="text-xs space-y-1 max-h-32 overflow-y-auto">
-                  {validationErrors.slice(0, 5).map((err, idx) => (
-                    <li key={idx}>• {err}</li>
-                  ))}
-                  {validationErrors.length > 5 && (
-                    <li className="text-muted-foreground">...and {validationErrors.length - 5} more errors</li>
-                  )}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Processing Progress */}
-          {isProcessing && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Processing updates...</span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} />
             </div>
-          )}
+          </ModalSection>
 
-          {/* Result */}
-          {result && (
-            <Alert className={result.failed > 0 ? 'border-amber-500' : 'border-green-500'}>
-              <CheckCircle2 className={`w-4 h-4 ${result.failed > 0 ? 'text-amber-500' : 'text-green-500'}`} />
-              <AlertDescription>
-                <p className="font-medium">
-                  Update complete: {result.success} succeeded, {result.failed} failed
-                </p>
-                {result.errors.length > 0 && (
-                  <ul className="text-xs mt-2 space-y-1">
-                    {result.errors.slice(0, 3).map((err, idx) => (
+          <ModalSection title="Step 2: Upload Updated File">
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Upload the modified CSV file</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {file ? (
+                <div className="flex items-center gap-2 rounded-md bg-muted p-3">
+                  <FileSpreadsheet className="w-5 h-5 text-accent" />
+                  <span className="flex-1 truncate text-sm">{file.name}</span>
+                  <span className="text-xs text-muted-foreground">{parsedData.length} records</span>
+                  <Button variant="ghost" size="sm" onClick={resetState}>
+                    <span className="sr-only">Clear selected file</span>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Choose CSV File
+                </Button>
+              )}
+            </div>
+          </ModalSection>
+
+          {validationErrors.length > 0 && (
+            <ModalSection title="Validation Errors" tone="danger">
+              <Alert variant="destructive">
+                <AlertCircle className="w-4 h-4" />
+                <AlertDescription>
+                  <p className="mb-1 font-medium">Validation errors found:</p>
+                  <ul className="max-h-32 space-y-1 overflow-y-auto text-xs">
+                    {validationErrors.slice(0, 5).map((err, idx) => (
                       <li key={idx}>• {err}</li>
                     ))}
+                    {validationErrors.length > 5 && (
+                      <li className="text-muted-foreground">...and {validationErrors.length - 5} more errors</li>
+                    )}
                   </ul>
-                )}
-              </AlertDescription>
-            </Alert>
+                </AlertDescription>
+              </Alert>
+            </ModalSection>
+          )}
+
+          {isProcessing && (
+            <ModalSection title="Processing Progress" tone="muted" compact>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Processing updates...</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} />
+              </div>
+            </ModalSection>
+          )}
+
+          {result && (
+            <ModalSection
+              title="Batch Update Result"
+              tone={result.failed > 0 ? 'warning' : 'success'}
+              compact
+            >
+              <Alert className={result.failed > 0 ? 'border-amber-500' : 'border-green-500'}>
+                <CheckCircle2 className={`w-4 h-4 ${result.failed > 0 ? 'text-amber-500' : 'text-green-500'}`} />
+                <AlertDescription>
+                  <p className="font-medium">
+                    Update complete: {result.success} succeeded, {result.failed} failed
+                  </p>
+                  {result.errors.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {result.errors.slice(0, 3).map((err, idx) => (
+                        <li key={idx}>• {err}</li>
+                      ))}
+                    </ul>
+                  )}
+                </AlertDescription>
+              </Alert>
+            </ModalSection>
           )}
         </div>
-
-        <DialogFooter>
+      )}
+      footer={(
+        <>
           <Button variant="outline" onClick={() => handleClose(false)}>
             {result ? 'Close' : 'Cancel'}
           </Button>
           {!result && (
-            <Button 
+            <Button
               onClick={handleUpload}
               disabled={parsedData.length === 0 || validationErrors.length > 0 || isProcessing}
             >
               {isProcessing ? 'Processing...' : `Update ${parsedData.length} Records`}
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    />
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useEmployees,
@@ -11,9 +12,9 @@ import { useAdminDepartmentManagement } from '@/hooks/admin/useAdminDepartmentMa
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { TabsContent } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/system';
 import { AppRole } from '@/types/hrms';
 import { Navigate } from 'react-router-dom';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
 import { AdminTabsShell } from '@/components/admin/AdminTabsShell';
 import { EmployeesTabSection } from '@/components/admin/EmployeesTabSection';
@@ -152,7 +153,16 @@ export default function Admin() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader />
+      <PageHeader
+        title="HR Admin Dashboard"
+        description="Manage employee profiles, access roles, leave policies, and system operations."
+        chipsSlot={
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-2.5 py-1 text-[11px] font-medium text-foreground">
+            <Shield className="h-3.5 w-3.5" aria-hidden="true" />
+            Admin Surface
+          </span>
+        }
+      />
       <AdminStatsCards stats={stats} />
 
       <AdminTabsShell defaultValue={defaultAdminTab}>

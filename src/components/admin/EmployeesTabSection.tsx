@@ -1,9 +1,7 @@
-import { Building, Edit, KeyRound, RotateCcw, Search, Trash2, Upload } from 'lucide-react';
+import { Edit, KeyRound, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -19,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { DataTableShell, SectionToolbar, StatusBadge } from '@/components/system';
 import { BatchUpdateDialog } from '@/components/admin/BatchUpdateDialog';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
 
@@ -79,15 +78,62 @@ export function EmployeesTabSection({
 }: EmployeesTabSectionProps) {
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div className="min-w-0">
-              <CardTitle>Employee Management</CardTitle>
-              <CardDescription>View, filter, update, and archive employee profiles</CardDescription>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[auto_auto_auto_minmax(16rem,1fr)] xl:items-center">
-              {canManageEmployeeProfiles && (
+      <DataTableShell
+        title="Employee Management"
+        description="View, filter, update, and archive employee profiles"
+        toolbar={
+          <SectionToolbar
+            ariaLabel="Employee management filters"
+            search={{
+              value: search,
+              onChange: onSearchChange,
+              placeholder: 'Search employees...',
+              ariaLabel: 'Search employees',
+              inputProps: { className: 'pl-10' },
+            }}
+            filters={[
+              {
+                id: 'employee-status-filter',
+                label: 'Status',
+                minWidthClassName: 'sm:min-w-[160px]',
+                control: (
+                  <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as EmployeeStatus | 'all')}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="on_leave">On Leave</SelectItem>
+                      <SelectItem value="terminated">Terminated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ),
+              },
+              {
+                id: 'employee-department-filter',
+                label: 'Department',
+                minWidthClassName: 'sm:min-w-[180px]',
+                control: (
+                  <Select value={departmentFilter} onValueChange={onDepartmentFilterChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {departments?.map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ),
+              },
+            ]}
+            actions={
+              canManageEmployeeProfiles ? (
                 <Button
                   variant="outline"
                   className="w-full sm:w-auto rounded-full"
@@ -96,53 +142,20 @@ export function EmployeesTabSection({
                   <Upload className="w-4 h-4 mr-2" />
                   Batch Update
                 </Button>
-              )}
-              <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as EmployeeStatus | 'all')}>
-                <SelectTrigger className="w-full sm:min-w-[160px]">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="on_leave">On Leave</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={departmentFilter} onValueChange={onDepartmentFilterChange}>
-                <SelectTrigger className="w-full sm:min-w-[180px]">
-                  <SelectValue placeholder="All departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments?.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search employees..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                />
-              </div>
-            </div>
+              ) : null
+            }
+          />
+        }
+        loading={employeesLoading}
+        loadingSkeleton={
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {employeesLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-              ))}
-            </div>
-          ) : (
-            <>
+        }
+        content={
+          <>
               <div className="space-y-3 md:hidden">
                 {filteredEmployees?.map((employee) => {
                   const currentRole = getUserRole(employee.id);
@@ -175,9 +188,11 @@ export function EmployeesTabSection({
                         </div>
                         <div className="rounded-md bg-muted/40 px-3 py-2">
                           <p className="text-muted-foreground">Status</p>
-                          <Badge variant={employee.status === 'active' ? 'default' : 'secondary'} className="mt-1">
-                            {employee.status}
-                          </Badge>
+                          <StatusBadge
+                            status={employee.status === 'terminated' ? 'error' : employee.status}
+                            labelOverride={employee.status.replace('_', ' ')}
+                            className="mt-1"
+                          />
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -282,9 +297,10 @@ export function EmployeesTabSection({
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
-                              {employee.status}
-                            </Badge>
+                            <StatusBadge
+                              status={employee.status === 'terminated' ? 'error' : employee.status}
+                              labelOverride={employee.status.replace('_', ' ')}
+                            />
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -294,6 +310,7 @@ export function EmployeesTabSection({
                                   size="sm"
                                   className="rounded-full"
                                   title={isAdminLimitedProfileEditor ? 'Edit username alias' : 'Edit profile'}
+                                  aria-label={`${isAdminLimitedProfileEditor ? 'Edit username alias' : 'Edit profile'} for ${employee.first_name} ${employee.last_name}`}
                                   onClick={() => onEditProfile(employee)}
                                 >
                                   <Edit className="w-4 h-4" />
@@ -305,6 +322,7 @@ export function EmployeesTabSection({
                                   size="sm"
                                   className="rounded-full"
                                   title="Reset password"
+                                  aria-label={`Reset password for ${employee.first_name} ${employee.last_name}`}
                                   onClick={() => onResetPassword(employee)}
                                   disabled={resetPasswordPending}
                                 >
@@ -317,6 +335,7 @@ export function EmployeesTabSection({
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-full text-emerald-600 hover:text-emerald-700"
+                                    aria-label={`Restore ${employee.first_name} ${employee.last_name}`}
                                     onClick={() => onRestoreEmployee(employee)}
                                     disabled={updateProfilePending}
                                   >
@@ -327,6 +346,7 @@ export function EmployeesTabSection({
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-full text-destructive hover:text-destructive"
+                                    aria-label={`Archive ${employee.first_name} ${employee.last_name}`}
                                     onClick={() => onArchiveEmployee(employee)}
                                     disabled={updateProfilePending}
                                   >
@@ -349,10 +369,9 @@ export function EmployeesTabSection({
                   </Table>
                 </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
 
       <BatchUpdateDialog
         open={batchUpdateDialogOpen}

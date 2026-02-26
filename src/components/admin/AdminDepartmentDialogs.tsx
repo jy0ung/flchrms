@@ -9,16 +9,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import type { Department } from '@/types/hrms';
 import type { AdminDepartmentForm } from '@/components/admin/admin-form-types';
 
@@ -67,35 +60,38 @@ export function AdminDepartmentDialogs({
 }: AdminDepartmentDialogsProps) {
   return (
     <>
-      <Dialog open={createDepartmentDialogOpen} onOpenChange={onCreateDepartmentDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create New Department</DialogTitle>
-            <DialogDescription>
-              Add a new department to the organization
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="dept_name">Department Name</Label>
-              <Input
-                id="dept_name"
-                value={newDepartmentName}
-                onChange={(e) => onNewDepartmentNameChange(e.target.value)}
-                placeholder="e.g. Engineering, Marketing"
-              />
+      <ModalScaffold
+        open={createDepartmentDialogOpen}
+        onOpenChange={onCreateDepartmentDialogOpenChange}
+        title="Create New Department"
+        description="Add a new department to the organization"
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Department Details">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dept_name">Department Name</Label>
+                <Input
+                  id="dept_name"
+                  value={newDepartmentName}
+                  onChange={(e) => onNewDepartmentNameChange(e.target.value)}
+                  placeholder="e.g. Engineering, Marketing"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dept_description">Description (Optional)</Label>
+                <Input
+                  id="dept_description"
+                  value={newDepartmentDescription}
+                  onChange={(e) => onNewDepartmentDescriptionChange(e.target.value)}
+                  placeholder="Brief description of this department"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="dept_description">Description (Optional)</Label>
-              <Input
-                id="dept_description"
-                value={newDepartmentDescription}
-                onChange={(e) => onNewDepartmentDescriptionChange(e.target.value)}
-                placeholder="Brief description of this department"
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          </ModalSection>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onCreateDepartmentDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -106,39 +102,42 @@ export function AdminDepartmentDialogs({
             >
               {createDepartmentPending ? 'Creating...' : 'Create Department'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={editDepartmentDialogOpen} onOpenChange={onEditDepartmentDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Edit Department</DialogTitle>
-            <DialogDescription>
-              Update settings for {selectedDepartment?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit_dept_name">Department Name</Label>
-              <Input
-                id="edit_dept_name"
-                value={departmentForm.name}
-                onChange={(e) => onDepartmentFormChange({ ...departmentForm, name: e.target.value })}
-                placeholder="e.g. Engineering, Marketing"
-              />
+      <ModalScaffold
+        open={editDepartmentDialogOpen}
+        onOpenChange={onEditDepartmentDialogOpenChange}
+        title="Edit Department"
+        description={`Update settings for ${selectedDepartment?.name ?? 'department'}`}
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Department Details">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_dept_name">Department Name</Label>
+                <Input
+                  id="edit_dept_name"
+                  value={departmentForm.name}
+                  onChange={(e) => onDepartmentFormChange({ ...departmentForm, name: e.target.value })}
+                  placeholder="e.g. Engineering, Marketing"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_dept_description">Description (Optional)</Label>
+                <Input
+                  id="edit_dept_description"
+                  value={departmentForm.description}
+                  onChange={(e) => onDepartmentFormChange({ ...departmentForm, description: e.target.value })}
+                  placeholder="Brief description of this department"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit_dept_description">Description (Optional)</Label>
-              <Input
-                id="edit_dept_description"
-                value={departmentForm.description}
-                onChange={(e) => onDepartmentFormChange({ ...departmentForm, description: e.target.value })}
-                placeholder="Brief description of this department"
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          </ModalSection>
+        )}
+        footer={(
+          <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditDepartmentDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -149,9 +148,9 @@ export function AdminDepartmentDialogs({
             >
               {updateDepartmentPending ? 'Saving...' : 'Save Department'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
       <AlertDialog open={deleteDepartmentDialogOpen} onOpenChange={onDeleteDepartmentDialogOpenChange}>
         <AlertDialogContent>
