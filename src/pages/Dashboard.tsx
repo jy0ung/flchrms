@@ -40,19 +40,27 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-          Welcome back, {profile?.first_name}!
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground">
-          {format(new Date(), 'EEEE, MMMM d, yyyy')} • {role && <span className="capitalize">{role}</span>}
-        </p>
-      </div>
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Building2 className="w-4 h-4" />
+              Dashboard
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              Welcome back, {profile?.first_name}!
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {format(new Date(), 'EEEE, MMMM d, yyyy')} • {role && <span className="capitalize">{role}</span>}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Executive Summary Header for Managers/Admin/HR */}
       {isManagerOrAbove && (
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="p-2 rounded-xl bg-primary/10">
             <Building2 className="w-5 h-5 text-primary" />
           </div>
           <div>
@@ -71,7 +79,7 @@ export default function Dashboard() {
       {isManagerOrAbove && <DashboardCharts />}
 
       {/* Quick Actions - Clock In/Out */}
-      <Card className="card-stat">
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base md:text-lg flex items-center gap-2">
             <Clock className="w-5 h-5 text-accent" />
@@ -101,7 +109,7 @@ export default function Dashboard() {
                 <Button 
                   onClick={() => clockIn.mutate()} 
                   disabled={clockIn.isPending} 
-                  className="bg-success hover:bg-success/90 w-full sm:w-auto"
+                  className="bg-success hover:bg-success/90 w-full sm:w-auto rounded-full"
                 >
                   <Play className="w-4 h-4 mr-2" />
                   Clock In
@@ -111,7 +119,7 @@ export default function Dashboard() {
                   onClick={() => clockOut.mutate()} 
                   disabled={clockOut.isPending} 
                   variant="destructive"
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto rounded-full"
                 >
                   <Square className="w-4 h-4 mr-2" />
                   Clock Out
@@ -128,7 +136,7 @@ export default function Dashboard() {
       {!isManagerOrAbove && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {statCards.map((stat) => (
-             <Card key={stat.title} className="card-stat">
+             <Card key={stat.title} className="card-stat border-border/60 shadow-sm">
               <CardContent className="pt-4 md:pt-6 p-4 md:p-6">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -146,7 +154,7 @@ export default function Dashboard() {
       )}
 
       {/* Announcements */}
-      <Card className="card-stat">
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base md:text-lg flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-accent" />
@@ -160,7 +168,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3 md:space-y-4">
               {announcements?.slice(0, 3).map((announcement) => (
-                <div key={announcement.id} className="p-3 md:p-4 rounded-lg bg-muted/50 border border-border">
+                <div key={announcement.id} className="p-3 md:p-4 rounded-xl bg-muted/30 border border-border/60 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <h4 className="font-semibold text-sm md:text-base truncate">{announcement.title}</h4>

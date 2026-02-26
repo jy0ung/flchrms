@@ -152,23 +152,31 @@ export default function TeamCalendar() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Team Calendar</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            View leave schedules, holidays, and department events
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <CalendarDays className="w-4 h-4" />
+                Shared Calendar
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Team Calendar</h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  View leave schedules, holidays, and department events
+                </p>
+              </div>
+            </div>
+            <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto">
           {canManageDepartmentEvents && (
             <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 rounded-full w-full lg:w-auto">
                   <CalendarPlus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Event</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add Department Event</DialogTitle>
                   <DialogDescription>
@@ -184,7 +192,7 @@ export default function TeamCalendar() {
                       placeholder="e.g., Team Meeting"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Start Date</Label>
                       <Input
@@ -208,7 +216,7 @@ export default function TeamCalendar() {
                       value={eventForm.event_type}
                       onValueChange={(value) => setEventForm({ ...eventForm, event_type: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="rounded-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -227,7 +235,7 @@ export default function TeamCalendar() {
                         value={eventForm.department_id}
                         onValueChange={(value) => setEventForm({ ...eventForm, department_id: value })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="rounded-full">
                           <SelectValue placeholder="All departments" />
                         </SelectTrigger>
                         <SelectContent>
@@ -248,12 +256,13 @@ export default function TeamCalendar() {
                       onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                       placeholder="Event details..."
                       rows={3}
+                      className="resize-y min-h-[96px]"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEventDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddEvent} disabled={!eventForm.title || !eventForm.event_date || createEvent.isPending}>
+                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsEventDialogOpen(false)}>Cancel</Button>
+                  <Button className="w-full sm:w-auto rounded-full" onClick={handleAddEvent} disabled={!eventForm.title || !eventForm.event_date || createEvent.isPending}>
                     {createEvent.isPending ? 'Creating...' : 'Create Event'}
                   </Button>
                 </DialogFooter>
@@ -263,12 +272,12 @@ export default function TeamCalendar() {
           {canManageHolidays && (
             <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2 rounded-full w-full lg:w-auto">
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Holiday</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] sm:max-w-xl">
                 <DialogHeader>
                   <DialogTitle>Add Company Holiday</DialogTitle>
                   <DialogDescription>
@@ -299,38 +308,41 @@ export default function TeamCalendar() {
                       onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
                       placeholder="Additional details..."
                       rows={3}
+                      className="resize-y min-h-[96px]"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsHolidayDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddHoliday} disabled={!holidayForm.name || !holidayForm.date || createHoliday.isPending}>
+                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsHolidayDialogOpen(false)}>Cancel</Button>
+                  <Button className="w-full sm:w-auto rounded-full" onClick={handleAddHoliday} disabled={!holidayForm.name || !holidayForm.date || createHoliday.isPending}>
                     {createHoliday.isPending ? 'Adding...' : 'Add Holiday'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 card-stat border-border/60 shadow-sm">
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2">
                 <CalendarDays className="w-5 h-5" />
                 {format(currentMonth, 'MMMM yyyy')}
               </CardTitle>
-              <div className="flex gap-1">
-                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-1">
+                <Button variant="outline" size="icon" className="rounded-full" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setCurrentMonth(new Date())}>
                   Today
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                <Button variant="outline" size="icon" className="rounded-full" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -338,11 +350,12 @@ export default function TeamCalendar() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-96 w-full rounded-xl" />
             ) : (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <div className="min-w-[640px] border border-border/60 rounded-xl overflow-hidden">
                 {/* Day headers */}
-                <div className="grid grid-cols-7 bg-muted">
+                <div className="grid grid-cols-7 bg-muted/60">
                   {daysOfWeek.map((day) => (
                     <div key={day} className="p-2 text-center text-xs font-medium text-muted-foreground border-b">
                       {day}
@@ -353,7 +366,7 @@ export default function TeamCalendar() {
                 <div className="grid grid-cols-7">
                   {paddedDays.map((date, index) => {
                     if (!date) {
-                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/30" />;
+                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/20" />;
                     }
                     const dayEvents = getEventsForDate(date);
                     const isToday = isSameDay(date, new Date());
@@ -363,7 +376,7 @@ export default function TeamCalendar() {
                       <div
                         key={format(date, 'yyyy-MM-dd')}
                         className={cn(
-                          'h-24 md:h-28 border-b border-r p-1 cursor-pointer transition-colors hover:bg-muted/50',
+                          'h-24 md:h-28 border-b border-r p-1.5 cursor-pointer transition-colors hover:bg-muted/40',
                           isToday && 'bg-primary/5',
                           isSelected && 'ring-2 ring-primary ring-inset'
                         )}
@@ -380,7 +393,7 @@ export default function TeamCalendar() {
                             <div
                               key={event.id}
                               className={cn(
-                                'text-[10px] px-1 py-0.5 rounded truncate border',
+                                'text-[10px] px-1 py-0.5 rounded-md truncate border',
                                 eventTypeColors[event.type]
                               )}
                             >
@@ -399,10 +412,11 @@ export default function TeamCalendar() {
                   })}
                 </div>
               </div>
+              </div>
             )}
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-4 text-xs">
+            <div className="flex flex-wrap gap-4 mt-4 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-info/20 border border-info/30" />
                 <span>Leave</span>
@@ -422,7 +436,7 @@ export default function TeamCalendar() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Selected Date Details */}
-          <Card>
+          <Card className="card-stat border-border/60 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
                 {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : 'Select a date'}
@@ -442,7 +456,7 @@ export default function TeamCalendar() {
                     <div
                       key={event.id}
                       className={cn(
-                        'p-3 rounded-lg border',
+                        'p-3 rounded-xl border shadow-sm',
                         eventTypeColors[event.type]
                       )}
                     >
@@ -476,7 +490,7 @@ export default function TeamCalendar() {
           </Card>
 
           {/* Upcoming Holidays */}
-          <Card>
+          <Card className="card-stat border-border/60 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <PartyPopper className="w-4 h-4" />
@@ -486,7 +500,7 @@ export default function TeamCalendar() {
             <CardContent>
               <div className="space-y-2">
                 {upcomingHolidays.map((holiday) => (
-                  <div key={holiday.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                  <div key={holiday.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/60 bg-muted/20">
                     <div>
                       <p className="text-sm font-medium">{holiday.name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -496,7 +510,7 @@ export default function TeamCalendar() {
                     {canManageHolidays && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Button variant="outline" size="icon" className="h-8 w-8 rounded-full text-destructive hover:text-destructive">
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </AlertDialogTrigger>

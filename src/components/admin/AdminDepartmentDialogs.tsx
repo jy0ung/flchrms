@@ -68,7 +68,7 @@ export function AdminDepartmentDialogs({
   return (
     <>
       <Dialog open={createDepartmentDialogOpen} onOpenChange={onCreateDepartmentDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Create New Department</DialogTitle>
             <DialogDescription>
@@ -95,11 +95,12 @@ export function AdminDepartmentDialogs({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onCreateDepartmentDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onCreateDepartmentDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
+              className="w-full sm:w-auto"
               onClick={onCreateDepartment}
               disabled={!newDepartmentName.trim() || createDepartmentPending}
             >
@@ -110,7 +111,7 @@ export function AdminDepartmentDialogs({
       </Dialog>
 
       <Dialog open={editDepartmentDialogOpen} onOpenChange={onEditDepartmentDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Department</DialogTitle>
             <DialogDescription>
@@ -137,11 +138,12 @@ export function AdminDepartmentDialogs({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditDepartmentDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditDepartmentDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
+              className="w-full sm:w-auto"
               onClick={onSaveDepartment}
               disabled={!departmentForm.name.trim() || updateDepartmentPending}
             >
@@ -160,7 +162,7 @@ export function AdminDepartmentDialogs({
               Departments with assigned employees cannot be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={onDeleteDepartment}

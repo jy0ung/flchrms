@@ -19,7 +19,16 @@
     "test:rbac:e2e:phase3b": "playwright test e2e/rbac-leave-cancellations.spec.ts e2e/rbac-admin-director-access.spec.ts e2e/rbac-calendar-visibility.spec.ts",
     "test:e2e:notifications": "playwright test e2e/phase7-notifications.spec.ts",
     "test:state:sql": "bash scripts/test-state-machine-sql.sh",
-    "seed:test:targeted": "bash scripts/seed-targeted-test-data.sh"
+    "seed:test:targeted": "bash scripts/seed-targeted-test-data.sh",
+    "db:bootstrap:verify:local": "bash scripts/db-bootstrap-verify-local.sh",
+    "db:bootstrap:verify:local:defaults": "bash scripts/db-bootstrap-verify-local.sh --apply-bootstrap-defaults",
+    "db:bootstrap:verify:local:seeded": "bash scripts/db-bootstrap-verify-local.sh --seed-targeted",
+    "db:bootstrap:verify:local:seeded-defaults": "bash scripts/db-bootstrap-verify-local.sh --apply-bootstrap-defaults --seed-targeted",
+    "db:bootstrap:platform:apply:local": "bash scripts/apply-bootstrap-platform-local.sh",
+    "db:bootstrap:defaults:apply:local": "bash scripts/apply-bootstrap-defaults-local.sh",
+    "db:build:default-schema:compat": "bash scripts/build-default-schema-compat.sh",
+    "db:snapshot:public": "bash scripts/export-public-schema-snapshot.sh",
+    "types:supabase:gen:local": "bash scripts/generate-supabase-types-local.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

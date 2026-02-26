@@ -82,7 +82,7 @@ export function DepartmentWorkflowBuilderCard({
   savePendingLabel = 'Saving...',
 }: DepartmentWorkflowBuilderCardProps) {
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm">
       <CardHeader>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -94,6 +94,7 @@ export function DepartmentWorkflowBuilderCard({
           </div>
           <Button
             variant="outline"
+            className="w-full rounded-full md:w-auto"
             onClick={onResetDefaults}
             disabled={resetDefaultsPending}
           >
@@ -102,7 +103,7 @@ export function DepartmentWorkflowBuilderCard({
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {loading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
@@ -134,14 +135,14 @@ export function DepartmentWorkflowBuilderCard({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4 space-y-4">
+            <div className="rounded-xl border bg-card/60 p-4 space-y-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="font-medium">{routeTitle}</p>
                   <p className="text-xs text-muted-foreground">Scope: {scopeLabel}</p>
                   <p className="text-xs text-muted-foreground">Current route profile: {routePreview}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border px-3 py-1.5">
                   <Label htmlFor={activeSwitchId} className="text-sm">Active</Label>
                   <Switch
                     id={activeSwitchId}
@@ -157,7 +158,7 @@ export function DepartmentWorkflowBuilderCard({
                   const isFinalStage = draft.approval_stages[draft.approval_stages.length - 1] === stage;
 
                   return (
-                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
                       <div>
                         <p className="text-sm font-medium">{LEAVE_APPROVAL_STAGE_LABELS[stage]}</p>
                         <p className="text-[11px] text-muted-foreground">
@@ -180,14 +181,15 @@ export function DepartmentWorkflowBuilderCard({
                   value={draft.notes}
                   onChange={(e) => onNotesChange(e.target.value)}
                   placeholder={notesPlaceholder}
+                  className="rounded-lg"
                 />
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button type="button" variant="outline" onClick={onResetRoute}>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" className="w-full rounded-full sm:w-auto" onClick={onResetRoute}>
                   Reset Route
                 </Button>
-                <Button type="button" onClick={onSaveProfile} disabled={savePending}>
+                <Button type="button" className="w-full rounded-full sm:w-auto" onClick={onSaveProfile} disabled={savePending}>
                   {savePending ? savePendingLabel : saveIdleLabel}
                 </Button>
               </div>

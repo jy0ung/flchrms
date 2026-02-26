@@ -29,7 +29,7 @@ export function DashboardCharts() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-64 md:h-72" />
+          <Skeleton key={i} className="h-64 md:h-72 rounded-xl" />
         ))}
       </div>
     );
@@ -72,7 +72,7 @@ export function DashboardCharts() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {/* Attendance Distribution */}
-      <Card className="col-span-1">
+      <Card className="col-span-1 border-border/60 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base md:text-lg">Today's Attendance</CardTitle>
           <CardDescription className="text-xs md:text-sm">Employee presence overview</CardDescription>
@@ -118,7 +118,7 @@ export function DashboardCharts() {
       </Card>
 
       {/* Leave Requests */}
-      <Card className="col-span-1">
+      <Card className="col-span-1 border-border/60 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base md:text-lg">Leave Requests</CardTitle>
           <CardDescription className="text-xs md:text-sm">This month's status breakdown</CardDescription>
@@ -152,7 +152,7 @@ export function DashboardCharts() {
       </Card>
 
       {/* Training Progress */}
-      <Card className="col-span-1">
+      <Card className="col-span-1 border-border/60 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-base md:text-lg">Training Progress</CardTitle>
           <CardDescription className="text-xs md:text-sm">{stats.trainingCompletionRate}% completion rate</CardDescription>

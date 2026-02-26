@@ -51,7 +51,7 @@ function LeaveTypeFormFields({
   onLeaveTypeFormChange: (next: AdminLeaveTypeForm) => void;
 }) {
   return (
-    <div className="grid gap-4 py-4">
+      <div className="grid gap-4 py-4">
       <div className="space-y-2">
         <Label htmlFor={`${prefix}_leave_name`}>Leave Type Name</Label>
         <Input
@@ -70,7 +70,7 @@ function LeaveTypeFormFields({
           placeholder="Brief description of this leave type"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`${prefix}_days_allowed`}>Days Allowed Per Year</Label>
           <Input
@@ -95,7 +95,7 @@ function LeaveTypeFormFields({
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center justify-between gap-4 p-4 border rounded-lg">
         <div>
           <Label htmlFor={`${prefix}_is_paid`}>Paid Leave</Label>
           <p className="text-sm text-muted-foreground">Employee receives salary during this leave</p>
@@ -106,7 +106,7 @@ function LeaveTypeFormFields({
           onCheckedChange={(checked) => onLeaveTypeFormChange({ ...leaveTypeForm, is_paid: checked })}
         />
       </div>
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center justify-between gap-4 p-4 border rounded-lg">
         <div>
           <Label htmlFor={`${prefix}_requires_document`}>Document Required</Label>
           <p className="text-sm text-muted-foreground">
@@ -145,7 +145,7 @@ export function AdminLeaveTypeDialogs({
   return (
     <>
       <Dialog open={editLeaveTypeDialogOpen} onOpenChange={onEditLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Leave Policy</DialogTitle>
             <DialogDescription>
@@ -157,11 +157,11 @@ export function AdminLeaveTypeDialogs({
             leaveTypeForm={leaveTypeForm}
             onLeaveTypeFormChange={onLeaveTypeFormChange}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditLeaveTypeDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditLeaveTypeDialogOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={onSaveLeaveType} disabled={updateLeaveTypePending}>
+            <Button className="w-full sm:w-auto" onClick={onSaveLeaveType} disabled={updateLeaveTypePending}>
               {updateLeaveTypePending ? 'Saving...' : 'Save Policy'}
             </Button>
           </DialogFooter>
@@ -169,7 +169,7 @@ export function AdminLeaveTypeDialogs({
       </Dialog>
 
       <Dialog open={createLeaveTypeDialogOpen} onOpenChange={onCreateLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Add New Leave Type</DialogTitle>
             <DialogDescription>
@@ -181,11 +181,12 @@ export function AdminLeaveTypeDialogs({
             leaveTypeForm={leaveTypeForm}
             onLeaveTypeFormChange={onLeaveTypeFormChange}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onCreateLeaveTypeDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onCreateLeaveTypeDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
+              className="w-full sm:w-auto"
               onClick={onSaveNewLeaveType}
               disabled={!leaveTypeForm.name.trim() || createLeaveTypePending}
             >
@@ -204,7 +205,7 @@ export function AdminLeaveTypeDialogs({
               Existing leave requests using this type may be affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={onDeleteLeaveType}

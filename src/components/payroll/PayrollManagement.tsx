@@ -41,7 +41,7 @@ export function PayrollManagement() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
       </div>
     );
   }
@@ -50,14 +50,14 @@ export function PayrollManagement() {
     <div className="space-y-6">
       {/* Actions */}
       <div className="flex justify-end">
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button className="rounded-full w-full sm:w-auto" onClick={() => setShowCreateDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Payroll Period
         </Button>
       </div>
 
       {/* Payroll Periods */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -83,33 +83,34 @@ export function PayrollManagement() {
               {periods.map(period => (
                 <div
                   key={period.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="rounded-xl border border-border/60 p-4 shadow-sm transition-colors hover:bg-muted/30"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
                       <Calendar className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{period.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(period.start_date), 'MMM d')} - {' '}
-                        {format(new Date(period.end_date), 'MMM d, yyyy')}
-                      </p>
-                      {period.payment_date && (
-                        <p className="text-xs text-muted-foreground">
-                          Payment: {format(new Date(period.payment_date), 'MMM d, yyyy')}
+                      </div>
+                      <div>
+                        <p className="font-medium">{period.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(period.start_date), 'MMM d')} -{' '}
+                          {format(new Date(period.end_date), 'MMM d, yyyy')}
                         </p>
-                      )}
+                        {period.payment_date && (
+                          <p className="text-xs text-muted-foreground">
+                            Payment: {format(new Date(period.payment_date), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={statusColors[period.status]}>
-                      {period.status}
-                    </Badge>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      <Badge className={statusColors[period.status]}>
+                        {period.status}
+                      </Badge>
                       {period.status === 'draft' && (
                         <Button
                           size="sm"
+                          className="rounded-full"
                           onClick={() => handleGeneratePayslips(period.id)}
                           disabled={generatePayslips.isPending}
                         >
@@ -121,6 +122,7 @@ export function PayrollManagement() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="rounded-full"
                           onClick={() => handleCompletePeriod(period.id)}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -129,10 +131,12 @@ export function PayrollManagement() {
                       )}
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
+                        className="rounded-full"
                         onClick={() => setSelectedPeriod(period)}
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 mr-1" />
+                        View Payslips
                       </Button>
                     </div>
                   </div>

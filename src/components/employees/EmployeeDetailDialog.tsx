@@ -56,7 +56,7 @@ export function EmployeeDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="sr-only">Employee Details</DialogTitle>
           <DialogDescription className="sr-only">
@@ -64,9 +64,9 @@ export function EmployeeDetailDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col gap-6 md:flex-row">
           {/* Left Column - Profile Header */}
-          <div className="flex flex-col items-center text-center md:w-1/3 py-4">
+          <div className="flex flex-col items-center text-center md:w-1/3 py-4 rounded-xl border border-border/60 bg-muted/20">
             <Avatar className="w-20 h-20 mb-4">
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                 {employee.first_name[0]}{employee.last_name[0]}
@@ -86,10 +86,10 @@ export function EmployeeDetailDialog({
             </div>
             
             {/* Contact Quick Actions */}
-            <div className="mt-4 pt-4 border-t border-border w-full space-y-2">
+            <div className="mt-4 pt-4 border-t border-border w-full space-y-2 px-4">
               <a 
                 href={`mailto:${employee.email}`} 
-                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors rounded-full border border-transparent hover:border-border/60 px-3 py-2"
               >
                 <Mail className="w-4 h-4" />
                 <span className="truncate max-w-[150px]">{employee.email}</span>
@@ -97,7 +97,7 @@ export function EmployeeDetailDialog({
               {showSensitiveContact && employee.phone && (
                 <a 
                   href={`tel:${employee.phone}`}
-                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors rounded-full border border-transparent hover:border-border/60 px-3 py-2"
                 >
                   <Phone className="w-4 h-4" />
                   <span>{employee.phone}</span>
@@ -110,7 +110,7 @@ export function EmployeeDetailDialog({
           <div className="flex-1 md:border-l md:border-border md:pl-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Employee ID */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <Hash className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Employee ID</span>
@@ -121,7 +121,7 @@ export function EmployeeDetailDialog({
               </div>
               
               {/* Department */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <Building className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Department</span>
@@ -130,7 +130,7 @@ export function EmployeeDetailDialog({
               </div>
               
               {/* Job Title */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <Briefcase className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Job Title</span>
@@ -139,7 +139,7 @@ export function EmployeeDetailDialog({
               </div>
               
               {/* Hire Date */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Hire Date</span>
@@ -152,7 +152,7 @@ export function EmployeeDetailDialog({
               </div>
               
               {/* Account Created */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Account Created</span>
@@ -163,7 +163,7 @@ export function EmployeeDetailDialog({
               </div>
               
               {/* User ID */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-border/60 bg-muted/30">
                 <User className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">User ID</span>

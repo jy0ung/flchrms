@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Building2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
+import { Building2, Eye, EyeOff, KeyRound, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 
 function hasRecoveryParams() {
   if (typeof window === 'undefined') return false;
@@ -173,21 +173,72 @@ export default function Auth() {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4">
-        <Card className="w-full max-w-md shadow-xl border-border/50">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold">FLC-HRMS</CardTitle>
-              <CardDescription>Fook Loi Group HR Management System</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background px-4 py-8 sm:py-10">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="hidden border-border/60 bg-gradient-to-br from-primary/10 via-background to-accent/10 shadow-sm lg:block">
+            <CardContent className="p-7 xl:p-9">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Secure Workforce Operations
+                </div>
+
+                <div className="space-y-3">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                    <Building2 className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground xl:text-4xl">FLC-HRMS</h1>
+                    <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground xl:text-base">
+                      Centralized HR management for leave workflows, payroll operations, employee records, and internal updates.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="rounded-xl border border-border/60 bg-background/70 p-4 backdrop-blur">
+                    <div className="flex items-start gap-3">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Role-based access controls</p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          Access is restricted by role, department, and workflow stage.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/60 bg-background/70 p-4 backdrop-blur">
+                    <div className="flex items-start gap-3">
+                      <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">Flexible sign-in</p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          Sign in using email, username, or employee ID.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="w-full border-border/60 shadow-xl shadow-black/5">
+            <CardHeader className="space-y-4 pb-5 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm lg:hidden">
+                <Building2 className="h-7 w-7" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold tracking-tight">FLC-HRMS</CardTitle>
+                <CardDescription className="mt-1">
+                  Fook Loi Group HR Management System
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
             {isRecoveryMode ? (
-              <div className="space-y-4">
-                <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="space-y-5">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
                   <div className="flex items-start gap-3">
                     <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
                     <div>
@@ -242,14 +293,14 @@ export default function Auth() {
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button type="submit" className="w-full" disabled={isUpdatingRecoveryPassword}>
+                    <Button type="submit" className="h-10 w-full rounded-lg" disabled={isUpdatingRecoveryPassword}>
                       {isUpdatingRecoveryPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Update Password
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="h-10 w-full rounded-lg"
                       onClick={async () => {
                         await supabase.auth.signOut();
                         clearRecoveryState();
@@ -263,12 +314,12 @@ export default function Auth() {
               </div>
             ) : (
               <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="mb-6 grid h-auto w-full grid-cols-2 rounded-xl bg-muted/60 p-1">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="signin">
+                <TabsContent value="signin" className="mt-0">
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signin-identifier">Email, Username, or Employee ID</Label>
@@ -279,6 +330,7 @@ export default function Auth() {
                         placeholder="you@company.com, username, or EMP-001"
                         autoComplete="username"
                         required
+                        className="h-10 rounded-lg"
                       />
                     </div>
                     <div className="space-y-2">
@@ -301,7 +353,7 @@ export default function Auth() {
                           placeholder="••••••••"
                           autoComplete="current-password"
                           required
-                          className="pr-10"
+                          className="h-10 rounded-lg pr-10"
                         />
                         <Button
                           type="button"
@@ -315,28 +367,35 @@ export default function Auth() {
                         </Button>
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="h-10 w-full rounded-lg" disabled={isLoading}>
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       Sign In
                     </Button>
                   </form>
                 </TabsContent>
 
-                <TabsContent value="signup">
+                <TabsContent value="signup" className="mt-0">
                   <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input id="firstName" name="firstName" placeholder="John" required />
+                        <Input id="firstName" name="firstName" placeholder="John" required className="h-10 rounded-lg" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input id="lastName" name="lastName" placeholder="Doe" required />
+                        <Input id="lastName" name="lastName" placeholder="Doe" required className="h-10 rounded-lg" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" name="email" type="email" placeholder="you@company.com" required />
+                      <Input
+                        id="signup-email"
+                        name="email"
+                        type="email"
+                        placeholder="you@company.com"
+                        required
+                        className="h-10 rounded-lg"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
@@ -349,7 +408,7 @@ export default function Auth() {
                           minLength={6}
                           autoComplete="new-password"
                           required
-                          className="pr-10"
+                          className="h-10 rounded-lg pr-10"
                         />
                         <Button
                           type="button"
@@ -363,7 +422,7 @@ export default function Auth() {
                         </Button>
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="h-10 w-full rounded-lg" disabled={isLoading}>
                       {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       Create Account
                     </Button>
@@ -373,10 +432,11 @@ export default function Auth() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
@@ -394,13 +454,14 @@ export default function Auth() {
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
+                className="h-10 rounded-lg"
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+              <Button type="button" variant="outline" className="rounded-lg" onClick={() => setForgotPasswordOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isResetRequestLoading}>
+              <Button type="submit" className="rounded-lg" disabled={isResetRequestLoading}>
                 {isResetRequestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Send Reset Link
               </Button>

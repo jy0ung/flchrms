@@ -38,9 +38,9 @@ export function MyPayslips() {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28" />)}
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
-        <Skeleton className="h-64" />
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     );
   }
@@ -67,15 +67,17 @@ export function MyPayslips() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
+        <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
+          <div className="flex items-center gap-3 min-w-0">
           {hideAmounts ? (
             <EyeOff className="w-4 h-4 text-muted-foreground" />
           ) : (
             <Eye className="w-4 h-4 text-muted-foreground" />
           )}
-          <Label htmlFor="hide-payroll-amounts" className="text-sm">
-            Hide salary amounts
-          </Label>
+            <Label htmlFor="hide-payroll-amounts" className="text-sm">
+              Hide salary amounts
+            </Label>
+          </div>
           <Switch
             id="hide-payroll-amounts"
             checked={hideAmounts}
@@ -86,7 +88,7 @@ export function MyPayslips() {
 
       {/* No salary structure warning */}
       {!salary && (
-        <Card className="border-warning bg-warning/5">
+        <Card className="card-stat border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-4">
             <p className="text-sm text-warning">
               Your salary structure has not been configured yet. Please contact HR for assistance.
@@ -97,7 +99,7 @@ export function MyPayslips() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="card-stat border-border/60 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -118,7 +120,7 @@ export function MyPayslips() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-stat border-border/60 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -141,7 +143,7 @@ export function MyPayslips() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-stat border-border/60 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -162,7 +164,7 @@ export function MyPayslips() {
       </div>
 
       {/* Payslips List */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -181,40 +183,44 @@ export function MyPayslips() {
               {payslips.map(payslip => (
                 <div
                   key={payslip.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="rounded-xl border border-border/60 p-4 shadow-sm transition-colors hover:bg-muted/40"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <FileText className="w-5 h-5 text-primary" />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">
+                          {payslip.payroll_period?.name || 'Payslip'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {payslip.payroll_period?.start_date &&
+                            format(new Date(payslip.payroll_period.start_date), 'MMM d')} -{' '}
+                          {payslip.payroll_period?.end_date &&
+                            format(new Date(payslip.payroll_period.end_date), 'MMM d, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">
-                        {payslip.payroll_period?.name || 'Payslip'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {payslip.payroll_period?.start_date && 
-                          format(new Date(payslip.payroll_period.start_date), 'MMM d')} - {' '}
-                        {payslip.payroll_period?.end_date && 
-                          format(new Date(payslip.payroll_period.end_date), 'MMM d, yyyy')}
-                      </p>
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                      <div className="sm:text-right">
+                        <p className="font-semibold">
+                          {formatCurrency(payslip.net_salary)}
+                        </p>
+                        <Badge className={statusColors[payslip.status]}>
+                          {payslip.status}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => setSelectedPayslip(payslip)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatCurrency(payslip.net_salary)}
-                      </p>
-                      <Badge className={statusColors[payslip.status]}>
-                        {payslip.status}
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedPayslip(payslip)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               ))}

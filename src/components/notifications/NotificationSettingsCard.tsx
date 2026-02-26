@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +9,21 @@ import {
   type NotificationPreferenceCategory,
 } from '@/hooks/useNotifications';
 import { toast } from '@/hooks/use-toast';
+import {
+  getFloatingNotificationsVisible,
+  setFloatingNotificationsVisible,
+  UI_PREFERENCES_CHANGED_EVENT,
+  FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY,
+} from '@/lib/ui-preferences';
 
 interface NotificationSettingsCardProps {
   showHeader?: boolean;
 }
 
 export function NotificationSettingsCard({ showHeader = true }: NotificationSettingsCardProps) {
+  const [showFloatingNotificationsWidget, setShowFloatingNotificationsWidget] = useState(
+    getFloatingNotificationsVisible,
+  );
   const {
     preferences,
     isLoading: preferencesLoading,
@@ -21,6 +31,24 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
     updateCategoryEnabled,
     updateEmailCategoryEnabled,
   } = useNotificationPreferences();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const sync = () => setShowFloatingNotificationsWidget(getFloatingNotificationsVisible());
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY) {
+        sync();
+      }
+    };
+
+    window.addEventListener(UI_PREFERENCES_CHANGED_EVENT, sync as EventListener);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, sync as EventListener);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   const handleToggleCategoryPreference = async (
     category: NotificationPreferenceCategory,
@@ -107,7 +135,7 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
   ];
 
   return (
-    <Card>
+    <Card className="card-stat border-border/60 shadow-sm">
       {showHeader && (
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -119,26 +147,59 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
           </CardDescription>
         </CardHeader>
       )}
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+            Workspace UI
+          </p>
+          <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <Label htmlFor="floating_notifications_widget" className="text-sm font-medium">
+                Floating Notification Button
+              </Label>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                Show the quick notification widget in the top-right corner while browsing the app.
+              </p>
+            </div>
+            <div className="self-end sm:self-auto">
+              <Switch
+                id="floating_notifications_widget"
+                checked={showFloatingNotificationsWidget}
+                onCheckedChange={(checked) => {
+                  setShowFloatingNotificationsWidget(checked);
+                  setFloatingNotificationsVisible(checked);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
             In-App Notifications
           </p>
           <div className="space-y-3">
             {preferenceRows.map((row) => (
-              <div key={row.key} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+              <div
+                key={row.key}
+                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <Label htmlFor={`notification_pref_${row.key}`} className="text-sm font-medium">
                     {row.label}
                   </Label>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{row.description}</p>
                 </div>
-                <Switch
-                  id={`notification_pref_${row.key}`}
-                  checked={row.checked}
-                  disabled={preferencesLoading || preferencesUpdating}
-                  onCheckedChange={(checked) => void handleToggleCategoryPreference(row.key, checked)}
-                />
+                <div className="self-end sm:self-auto">
+                  <Switch
+                    id={`notification_pref_${row.key}`}
+                    checked={row.checked}
+                    disabled={preferencesLoading || preferencesUpdating}
+                    onCheckedChange={(checked) => void handleToggleCategoryPreference(row.key, checked)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -155,19 +216,24 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
           </p>
           <div className="space-y-3">
             {emailPreferenceRows.map((row) => (
-              <div key={`email_${row.key}`} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+              <div
+                key={`email_${row.key}`}
+                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <Label htmlFor={`email_notification_pref_${row.key}`} className="text-sm font-medium">
                     {row.label}
                   </Label>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{row.description}</p>
                 </div>
-                <Switch
-                  id={`email_notification_pref_${row.key}`}
-                  checked={row.checked}
-                  disabled={preferencesLoading || preferencesUpdating}
-                  onCheckedChange={(checked) => void handleToggleEmailCategoryPreference(row.key, checked)}
-                />
+                <div className="self-end sm:self-auto">
+                  <Switch
+                    id={`email_notification_pref_${row.key}`}
+                    checked={row.checked}
+                    disabled={preferencesLoading || preferencesUpdating}
+                    onCheckedChange={(checked) => void handleToggleEmailCategoryPreference(row.key, checked)}
+                  />
+                </div>
               </div>
             ))}
           </div>

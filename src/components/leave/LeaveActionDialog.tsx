@@ -33,7 +33,7 @@ export function LeaveActionDialog({
 }: LeaveActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {actionType === 'approve' && 'Approve Leave Request'}
@@ -52,6 +52,7 @@ export function LeaveActionDialog({
                 value={rejectionReason}
                 onChange={(e) => onRejectionReasonChange(e.target.value)}
                 placeholder="Explain why this request is being rejected..."
+                className="min-h-24 resize-y"
               />
             </div>
           )}
@@ -61,15 +62,17 @@ export function LeaveActionDialog({
               value={managerComments}
               onChange={(e) => onManagerCommentsChange(e.target.value)}
               placeholder={actionType === 'request_document' ? 'Specify what documents are needed...' : 'Add any comments...'}
+              className="min-h-24 resize-y"
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={onSubmit}
             disabled={isPending}
             variant={actionType === 'reject' ? 'destructive' : 'default'}
+            className="w-full sm:w-auto"
           >
             {actionType === 'approve' && 'Approve'}
             {actionType === 'reject' && 'Reject'}

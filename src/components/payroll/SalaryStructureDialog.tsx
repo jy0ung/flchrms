@@ -110,7 +110,7 @@ export function SalaryStructureDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
@@ -155,7 +155,7 @@ export function SalaryStructureDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="housingAllowance">Housing (RM)</Label>
               <Input
@@ -180,7 +180,7 @@ export function SalaryStructureDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="mealAllowance">Meal (RM)</Label>
               <Input
@@ -217,8 +217,8 @@ export function SalaryStructureDialog({
           </div>
 
           {/* Total Preview */}
-          <div className="p-4 rounded-lg bg-primary/10">
-            <div className="flex justify-between items-center">
+          <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">Total Monthly</span>
               <span className="text-xl font-bold text-primary">
                 RM {totalMonthly.toLocaleString()}
@@ -226,11 +226,20 @@ export function SalaryStructureDialog({
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={createSalary.isPending || updateSalary.isPending}>
+            <Button
+              type="submit"
+              className="w-full rounded-full sm:w-auto"
+              disabled={createSalary.isPending || updateSalary.isPending}
+            >
               {createSalary.isPending || updateSalary.isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

@@ -940,6 +940,28 @@ BEGIN
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public'
+      AND p.proname = 'notification_admin_email_dead_letter_analytics'
+      AND oidvectortypes(p.proargtypes) = 'integer, integer'
+      AND p.prosecdef = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+        WHERE cfg = 'search_path=pg_catalog, public'
+      )
+  ) THEN
+    RAISE EXCEPTION 'notification_admin_email_dead_letter_analytics(integer,integer) missing or not hardened.';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated', 'public.notification_admin_email_dead_letter_analytics(integer,integer)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.notification_admin_email_dead_letter_analytics(integer,integer)', 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'notification_admin_email_dead_letter_analytics(integer,integer) grants are incorrect (authenticated yes, anon no).';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
       AND p.proname = 'notification_admin_requeue_email_queue_item'
       AND oidvectortypes(p.proargtypes) = 'uuid, integer'
       AND p.prosecdef = true
@@ -977,6 +999,169 @@ BEGIN
      OR has_function_privilege('anon', 'public.notification_admin_discard_email_queue_item(uuid,text)', 'EXECUTE')
   THEN
     RAISE EXCEPTION 'notification_admin_discard_email_queue_item(uuid,text) grants are incorrect (authenticated yes, anon no).';
+  END IF;
+
+  -- Phase 9: worker telemetry table/RPCs + notification history indexes.
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'notification_email_worker_runs'
+  ) THEN
+    RAISE EXCEPTION 'notification_email_worker_runs table is missing.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'notification_email_worker_runs'
+      AND roles <> ARRAY['authenticated']::name[]
+  ) THEN
+    RAISE EXCEPTION 'notification_email_worker_runs policies must target authenticated only.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'notification_email_worker_runs'
+      AND policyname = 'notification_email_worker_runs_select_privileged'
+      AND cmd = 'SELECT'
+  ) THEN
+    RAISE EXCEPTION 'notification_email_worker_runs_select_privileged policy is missing.';
+  END IF;
+
+  IF NOT has_table_privilege('authenticated', 'public.notification_email_worker_runs', 'SELECT')
+     OR has_table_privilege('anon', 'public.notification_email_worker_runs', 'SELECT')
+  THEN
+    RAISE EXCEPTION 'notification_email_worker_runs table grants are incorrect (authenticated yes, anon no).';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'user_notifications'
+      AND indexname = 'idx_user_notifications_user_created'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'user_notifications'
+      AND indexname = 'idx_user_notifications_user_category_created'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'user_notifications'
+      AND indexname = 'idx_user_notifications_user_unread_created'
+  ) THEN
+    RAISE EXCEPTION 'Phase 9 user_notifications performance indexes are missing.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'notification_delivery_queue'
+      AND column_name = 'last_provider'
+  ) THEN
+    RAISE EXCEPTION 'notification_delivery_queue.last_provider column is missing.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'notification_delivery_queue'
+      AND indexname = 'idx_notification_delivery_queue_dead_letter_analytics'
+  ) THEN
+    RAISE EXCEPTION 'Dead-letter analytics queue index is missing.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'notification_worker_start_email_run'
+      AND oidvectortypes(p.proargtypes) = 'text, text, integer, integer, integer, integer, jsonb'
+      AND p.prosecdef = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+        WHERE cfg = 'search_path=pg_catalog, public'
+      )
+  ) THEN
+    RAISE EXCEPTION 'notification_worker_start_email_run(...) missing or not hardened.';
+  END IF;
+
+  IF has_function_privilege('authenticated', 'public.notification_worker_start_email_run(text,text,integer,integer,integer,integer,jsonb)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.notification_worker_start_email_run(text,text,integer,integer,integer,integer,jsonb)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.notification_worker_start_email_run(text,text,integer,integer,integer,integer,jsonb)', 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'notification_worker_start_email_run grants are incorrect (service_role only).';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'notification_worker_finish_email_run'
+      AND oidvectortypes(p.proargtypes) = 'uuid, integer, integer, integer, integer, integer, integer, text'
+      AND p.prosecdef = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+        WHERE cfg = 'search_path=pg_catalog, public'
+      )
+  ) THEN
+    RAISE EXCEPTION 'notification_worker_finish_email_run(...) missing or not hardened.';
+  END IF;
+
+  IF has_function_privilege('authenticated', 'public.notification_worker_finish_email_run(uuid,integer,integer,integer,integer,integer,integer,text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.notification_worker_finish_email_run(uuid,integer,integer,integer,integer,integer,integer,text)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.notification_worker_finish_email_run(uuid,integer,integer,integer,integer,integer,integer,text)', 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'notification_worker_finish_email_run grants are incorrect (service_role only).';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'notification_admin_email_worker_run_summary'
+      AND p.prosecdef = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+        WHERE cfg = 'search_path=pg_catalog, public'
+      )
+  ) THEN
+    RAISE EXCEPTION 'notification_admin_email_worker_run_summary missing or not hardened.';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated', 'public.notification_admin_email_worker_run_summary()', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.notification_admin_email_worker_run_summary()', 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'notification_admin_email_worker_run_summary() grants are incorrect (authenticated yes, anon no).';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'notification_admin_list_email_worker_runs'
+      AND oidvectortypes(p.proargtypes) = 'text, integer, integer'
+      AND p.prosecdef = true
+      AND EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+        WHERE cfg = 'search_path=pg_catalog, public'
+      )
+  ) THEN
+    RAISE EXCEPTION 'notification_admin_list_email_worker_runs(text,integer,integer) missing or not hardened.';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated', 'public.notification_admin_list_email_worker_runs(text,integer,integer)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.notification_admin_list_email_worker_runs(text,integer,integer)', 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'notification_admin_list_email_worker_runs(text,integer,integer) grants are incorrect (authenticated yes, anon no).';
   END IF;
 
   -- Strict server-side masked employee directory RPC (authenticated only, anon denied).

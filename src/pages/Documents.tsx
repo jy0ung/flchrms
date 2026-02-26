@@ -98,22 +98,30 @@ export default function Documents() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Document Management</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {canManageDocuments ? 'Manage employee contracts, certificates, and official documents' : 'View your documents'}
-          </p>
-        </div>
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <FolderOpen className="w-4 h-4" />
+                Document Center
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Document Management</h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {canManageDocuments ? 'Manage employee contracts, certificates, and official documents' : 'View your documents'}
+                </p>
+              </div>
+            </div>
         {canManageDocuments && (
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 rounded-full w-full lg:w-auto">
                 <Upload className="w-4 h-4" />
                 Upload Document
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Upload Document</DialogTitle>
                 <DialogDescription>
@@ -127,7 +135,7 @@ export default function Documents() {
                     value={uploadForm.employeeId}
                     onValueChange={(value) => setUploadForm({ ...uploadForm, employeeId: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-full">
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
@@ -153,7 +161,7 @@ export default function Documents() {
                     value={uploadForm.category}
                     onValueChange={(value) => setUploadForm({ ...uploadForm, category: value as DocumentCategory })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -166,13 +174,14 @@ export default function Documents() {
                 </div>
                 <div className="space-y-2">
                   <Label>Description (Optional)</Label>
-                  <Textarea
-                    value={uploadForm.description}
-                    onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-                    placeholder="Brief description of the document"
-                    rows={3}
-                  />
-                </div>
+                    <Textarea
+                      value={uploadForm.description}
+                      onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                      placeholder="Brief description of the document"
+                      rows={3}
+                      className="resize-y min-h-[96px]"
+                    />
+                  </div>
                 <div className="space-y-2">
                   <Label>File</Label>
                   <Input
@@ -185,9 +194,10 @@ export default function Documents() {
                   </p>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
                 <Button 
+                  className="w-full sm:w-auto rounded-full"
                   onClick={handleUpload} 
                   disabled={!uploadForm.file || !uploadForm.title || !uploadForm.employeeId || uploadDocument.isPending}
                 >
@@ -197,12 +207,14 @@ export default function Documents() {
             </DialogContent>
           </Dialog>
         )}
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto]">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -215,7 +227,7 @@ export default function Documents() {
               </div>
             </div>
             <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full lg:w-44 rounded-full">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -229,7 +241,7 @@ export default function Documents() {
             </Select>
             {canManageDocuments && (
               <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="w-full lg:w-56 rounded-full">
                   <SelectValue placeholder="All Employees" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,7 +259,7 @@ export default function Documents() {
       </Card>
 
       {/* Documents Table */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FolderOpen className="w-5 h-5" />
@@ -261,7 +273,7 @@ export default function Documents() {
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-12 w-full rounded-xl" />
               ))}
             </div>
           ) : filteredDocuments?.length === 0 ? (
@@ -273,7 +285,77 @@ export default function Documents() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              <div className="space-y-3 md:hidden">
+                {filteredDocuments?.map((doc) => (
+                  <div key={doc.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-muted/50 shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium break-words">{doc.title}</p>
+                          <Badge className={categoryColors[doc.category]}>
+                            {categoryLabels[doc.category]}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-1">{doc.file_name}</p>
+                        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          {canManageDocuments && (
+                            <p>
+                              Employee: {doc.employee?.first_name} {doc.employee?.last_name}
+                            </p>
+                          )}
+                          <p>Size: {formatFileSize(doc.file_size)}</p>
+                          <p>Uploaded: {format(new Date(doc.created_at), 'MMM d, yyyy')}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => handleDownload(doc)}
+                        disabled={getSignedUrl.isPending}
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Download
+                      </Button>
+                      {canManageDocuments && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{doc.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(doc)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -287,10 +369,10 @@ export default function Documents() {
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments?.map((doc) => (
-                    <TableRow key={doc.id}>
+                    <TableRow key={doc.id} className="hover:bg-muted/20">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-muted">
+                          <div className="p-2 rounded-xl bg-muted/60">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div>
@@ -320,18 +402,21 @@ export default function Documents() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full"
                             onClick={() => handleDownload(doc)}
                             disabled={getSignedUrl.isPending}
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-4 h-4 mr-1" />
+                            <span className="hidden lg:inline">Download</span>
                           </Button>
                           {canManageDocuments && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="w-4 h-4" />
+                                <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  <span className="hidden lg:inline">Delete</span>
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -359,7 +444,8 @@ export default function Documents() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

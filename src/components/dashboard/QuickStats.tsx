@@ -41,7 +41,7 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
   return (
     <Card 
       className={cn(
-        "relative overflow-hidden transition-shadow",
+        "relative overflow-hidden border-border/60 shadow-sm transition-shadow",
         clickable && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20"
       )}
       onClick={onClick}
@@ -79,7 +79,7 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
           </div>
         )}
         {clickable && (
-          <p className="mt-2 text-xs text-primary font-medium">Click to view details →</p>
+          <p className="mt-2 text-xs text-primary font-medium">Tap to view details →</p>
         )}
       </CardContent>
     </Card>
@@ -99,7 +99,7 @@ export function QuickStats() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-28 md:h-32" />
+          <Skeleton key={i} className="h-28 md:h-32 rounded-xl" />
         ))}
       </div>
     );

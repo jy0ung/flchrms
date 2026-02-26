@@ -53,7 +53,7 @@ export function CreatePayrollPeriodDialog({ open, onOpenChange }: CreatePayrollP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[95vw] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -76,7 +76,7 @@ export function CreatePayrollPeriodDialog({ open, onOpenChange }: CreatePayrollP
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <Input
@@ -114,11 +114,16 @@ export function CreatePayrollPeriodDialog({ open, onOpenChange }: CreatePayrollP
             </p>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={createPeriod.isPending}>
+            <Button type="submit" className="w-full rounded-full sm:w-auto" disabled={createPeriod.isPending}>
               {createPeriod.isPending ? 'Creating...' : 'Create Period'}
             </Button>
           </DialogFooter>

@@ -64,7 +64,7 @@ export default function Employees() {
   const LoadingGridSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(6)].map((_, i) => (
-        <Card key={i} className="card-stat">
+        <Card key={i} className="card-stat border-border/60 shadow-sm">
           <CardContent className="pt-6">
             <div className="animate-pulse space-y-4">
               <div className="flex items-center gap-4">
@@ -82,11 +82,11 @@ export default function Employees() {
   );
 
   const LoadingListSkeleton = () => (
-    <Card>
+    <Card className="card-stat border-border/60 shadow-sm">
       <CardContent className="pt-6">
         <div className="space-y-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
           ))}
         </div>
       </CardContent>
@@ -95,22 +95,32 @@ export default function Employees() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Users className="w-8 h-8 text-accent" />
-            Employee Directory
-          </h1>
-          <p className="text-muted-foreground mt-1">{employees?.length || 0} employees</p>
-        </div>
-      </div>
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Users className="w-4 h-4" />
+              Employee Directory
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                <Users className="w-7 h-7 text-accent" />
+                Employee Directory
+              </h1>
+              <p className="text-muted-foreground mt-1">{employees?.length || 0} employees</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative max-w-md flex-1">
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:max-w-md md:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
             placeholder="Search employees..." 
-            className="pl-10" 
+            className="pl-10 rounded-full" 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -119,15 +129,18 @@ export default function Employees() {
           type="single" 
           value={viewType} 
           onValueChange={(value) => value && setViewType(value as 'grid' | 'list')}
+          className="w-full justify-end md:w-auto"
         >
-          <ToggleGroupItem value="grid" aria-label="Grid view">
+          <ToggleGroupItem value="grid" aria-label="Grid view" className="rounded-full">
             <LayoutGrid className="w-4 h-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="list" aria-label="List view">
+          <ToggleGroupItem value="list" aria-label="List view" className="rounded-full">
             <List className="w-4 h-4" />
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         viewType === 'grid' ? <LoadingGridSkeleton /> : <LoadingListSkeleton />
@@ -136,7 +149,7 @@ export default function Employees() {
           {filteredEmployees?.map((employee) => (
             <Card 
               key={employee.id} 
-              className="card-stat hover:border-accent/50 cursor-pointer transition-all"
+              className="card-stat border-border/60 shadow-sm hover:border-accent/50 hover:shadow-md cursor-pointer transition-all"
               onClick={() => handleEmployeeClick(employee)}
             >
               <CardContent className="pt-6">
@@ -171,8 +184,45 @@ export default function Employees() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="card-stat border-border/60 shadow-sm">
           <CardContent className="pt-6">
+            <div className="space-y-3 md:hidden">
+              {filteredEmployees?.map((employee) => (
+                <div
+                  key={employee.id}
+                  className="rounded-xl border border-border/60 p-4 shadow-sm cursor-pointer"
+                  onClick={() => handleEmployeeClick(employee)}
+                >
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {employee.first_name[0]}{employee.last_name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">
+                          {employee.first_name} {employee.last_name}
+                        </p>
+                        <Badge className={statusColors[employee.status]}>
+                          {employee.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Badge className={roleColors[getUserRole(employee.id)]}>
+                          {getUserRole(employee.id)}
+                        </Badge>
+                        <Badge variant="outline">
+                          {employee.department?.name || 'No Department'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -217,6 +267,7 @@ export default function Employees() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}

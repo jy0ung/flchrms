@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Payslip } from '@/types/payroll';
 import { format } from 'date-fns';
-import { FileText, Calendar, Clock } from 'lucide-react';
+import { FileText, Calendar } from 'lucide-react';
 
 interface PayslipDetailDialogProps {
   payslip: Payslip | null;
@@ -45,9 +45,9 @@ export function PayslipDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Payslip Details
@@ -74,7 +74,7 @@ export function PayslipDetailDialog({
           </div>
 
           {/* Attendance Summary */}
-          <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-muted/50">
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 sm:grid-cols-4">
             <div className="text-center">
               <p className="text-2xl font-bold">{payslip.working_days}</p>
               <p className="text-xs text-muted-foreground">Working Days</p>
@@ -98,14 +98,14 @@ export function PayslipDetailDialog({
           {/* Earnings */}
           <div>
             <h4 className="font-semibold mb-3">Earnings</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
+            <div className="space-y-2 rounded-xl border border-border/60 bg-background/70 p-4">
+              <div className="flex items-start justify-between gap-4">
                 <span className="text-muted-foreground">Basic Salary</span>
                 <span>{formatCurrency(payslip.basic_salary)}</span>
               </div>
               {Object.entries(allowances).map(([key, value]) => (
                 value > 0 && (
-                  <div key={key} className="flex justify-between text-sm">
+                  <div key={key} className="flex items-start justify-between gap-4 text-sm">
                     <span className="text-muted-foreground capitalize">{key} Allowance</span>
                     <span>{formatCurrency(Number(value))}</span>
                   </div>
@@ -118,7 +118,7 @@ export function PayslipDetailDialog({
                 </div>
               )}
               <Separator className="my-2" />
-              <div className="flex justify-between font-medium">
+              <div className="flex items-start justify-between gap-4 font-medium">
                 <span>Gross Salary</span>
                 <span>{formatCurrency(payslip.gross_salary)}</span>
               </div>
@@ -130,15 +130,15 @@ export function PayslipDetailDialog({
           {/* Deductions */}
           <div>
             <h4 className="font-semibold mb-3">Deductions</h4>
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-xl border border-border/60 bg-background/70 p-4">
               {Object.entries(deductions).map(([key, value]) => (
-                <div key={key} className="flex justify-between text-sm">
+                <div key={key} className="flex items-start justify-between gap-4 text-sm">
                   <span className="text-muted-foreground">{key}</span>
                   <span className="text-destructive">{formatDeductionCurrency(Number(value))}</span>
                 </div>
               ))}
               <Separator className="my-2" />
-              <div className="flex justify-between font-medium">
+              <div className="flex items-start justify-between gap-4 font-medium">
                 <span>Total Deductions</span>
                 <span className="text-destructive">{formatDeductionCurrency(payslip.total_deductions)}</span>
               </div>
@@ -148,8 +148,8 @@ export function PayslipDetailDialog({
           <Separator />
 
           {/* Net Salary */}
-          <div className="p-4 rounded-lg bg-primary/10">
-            <div className="flex justify-between items-center">
+          <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-lg font-semibold">Net Salary</span>
               <span className="text-2xl font-bold text-primary">
                 {formatCurrency(payslip.net_salary)}

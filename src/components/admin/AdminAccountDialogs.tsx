@@ -76,7 +76,7 @@ export function AdminAccountDialogs({
   return (
     <>
       <Dialog open={editProfileDialogOpen} onOpenChange={onEditProfileDialogOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}</DialogTitle>
             <DialogDescription>
@@ -100,7 +100,7 @@ export function AdminAccountDialogs({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
                   <Input
@@ -156,7 +156,7 @@ export function AdminAccountDialogs({
             </div>
             {!isAdminLimitedProfileEditor && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="job_title">Job Title</Label>
                     <Input
@@ -176,7 +176,7 @@ export function AdminAccountDialogs({
                     <p className="text-xs text-muted-foreground">Recommended primary non-email login identifier.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <Select
@@ -217,11 +217,11 @@ export function AdminAccountDialogs({
               </>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={onSaveProfile} disabled={saveProfilePending}>
+            <Button className="w-full sm:w-auto" onClick={onSaveProfile} disabled={saveProfilePending}>
               {saveProfilePending
                 ? 'Saving...'
                 : isAdminLimitedProfileEditor
@@ -233,7 +233,7 @@ export function AdminAccountDialogs({
       </Dialog>
 
       <Dialog open={resetPasswordDialogOpen} onOpenChange={onResetPasswordDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Reset User Password</DialogTitle>
             <DialogDescription>
@@ -285,11 +285,11 @@ export function AdminAccountDialogs({
             </p>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
               Cancel
             </Button>
-            <Button onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
+            <Button className="w-full sm:w-auto" onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
               {resetPasswordPending ? 'Resetting...' : 'Reset Password'}
             </Button>
           </DialogFooter>
@@ -297,7 +297,7 @@ export function AdminAccountDialogs({
       </Dialog>
 
       <Dialog open={editRoleDialogOpen} onOpenChange={onEditRoleDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
@@ -373,18 +373,19 @@ export function AdminAccountDialogs({
               Removing a role assignment reverts the user to the default `employee` role.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              className="w-full sm:w-auto"
               onClick={onDeleteRole}
               disabled={deleteRolePending || !selectedEmployee}
             >
               {deleteRolePending ? 'Removing...' : 'Delete Role (Revert to Employee)'}
             </Button>
-            <Button onClick={onSaveRole} disabled={updateRolePending}>
+            <Button className="w-full sm:w-auto" onClick={onSaveRole} disabled={updateRolePending}>
               {updateRolePending ? 'Updating...' : 'Update Role'}
             </Button>
           </DialogFooter>

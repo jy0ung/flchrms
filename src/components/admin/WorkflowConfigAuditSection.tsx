@@ -93,7 +93,7 @@ function WorkflowAuditItem({
       : 'All Departments (Default)';
 
   return (
-    <div className="rounded-lg border p-3 space-y-2">
+    <div className="rounded-xl border bg-card/60 p-3 space-y-2 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{workflowTypeLabel(event.workflow_type)}</Badge>
@@ -142,7 +142,7 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
   }, [events, filter]);
 
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -157,6 +157,7 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
           <Button
             variant="outline"
             size="sm"
+            className="rounded-full"
             onClick={() => void refetch()}
             disabled={isFetching}
           >
@@ -167,7 +168,7 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
       </CardHeader>
       <CardContent className="space-y-4">
         <Tabs value={filter} onValueChange={(value) => setFilter(value as WorkflowAuditFilter)}>
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1 rounded-xl p-1">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="leave_approval">Approval</TabsTrigger>
             <TabsTrigger value="leave_cancellation">Cancellation</TabsTrigger>

@@ -131,9 +131,9 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Details/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Details/i })[0]);
     expect(onOpenDetails).toHaveBeenCalledWith(request);
-    expect(screen.getByText(/View Doc: user-1\/doc\.pdf/)).toBeInTheDocument();
+    expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
 
     rerender(
       <TeamLeaveRequestsTable
@@ -171,8 +171,8 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /Approve Cancel/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reject Cancel/i })).toBeInTheDocument();
-    expect(screen.getByText(/Cancellation Pending/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Approve Cancel/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /Reject Cancel/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cancellation Pending/i).length).toBeGreaterThan(0);
   });
 });

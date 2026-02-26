@@ -32,7 +32,7 @@ export function LeaveAmendDialog({
 }: LeaveAmendDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Amend Leave Request</DialogTitle>
           <DialogDescription>
@@ -63,6 +63,7 @@ export function LeaveAmendDialog({
               onChange={(e) => onAmendmentNotesChange(e.target.value)}
               placeholder="Explain the changes or provide additional information..."
               required
+              className="min-h-24 resize-y"
             />
           </div>
           <div className="space-y-2">
@@ -75,11 +76,12 @@ export function LeaveAmendDialog({
             <p className="text-xs text-muted-foreground">Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={onSubmit}
             disabled={isPending || isUploading || !amendmentNotes}
+            className="w-full sm:w-auto"
           >
             Submit Amendment
           </Button>

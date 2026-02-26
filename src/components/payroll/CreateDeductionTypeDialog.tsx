@@ -56,7 +56,7 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[95vw] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -86,11 +86,12 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the deduction"
-              rows={2}
+              rows={3}
+              className="resize-y min-h-[84px]"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Type</Label>
               <Select 
@@ -137,11 +138,16 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
             />
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={createDeduction.isPending}>
+            <Button type="submit" className="w-full rounded-full sm:w-auto" disabled={createDeduction.isPending}>
               {createDeduction.isPending ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>

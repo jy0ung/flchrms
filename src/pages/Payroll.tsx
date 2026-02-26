@@ -7,6 +7,7 @@ import { SalaryManagement } from '@/components/payroll/SalaryManagement';
 import { DeductionManagement } from '@/components/payroll/DeductionManagement';
 import { Wallet, FileText, Settings, Calculator } from 'lucide-react';
 import { canManagePayroll as canManagePayrollPermission } from '@/lib/permissions';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function Payroll() {
   const { role } = useAuth();
@@ -15,19 +16,31 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Payroll</h1>
-          <p className="text-muted-foreground">
-            {canManagePayroll
-              ? 'Manage salaries, process payroll, and generate payslips'
-              : 'View your payslips and salary information'}
-          </p>
-        </div>
-      </div>
+      <Card className="card-stat border-border/60 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Wallet className="w-4 h-4" />
+              Payroll Workspace
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Payroll</h1>
+              <p className="text-muted-foreground">
+                {canManagePayroll
+                  ? 'Manage salaries, process payroll, and generate payslips'
+                  : 'View your payslips and salary information'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 max-w-2xl">
+        <TabsList
+          className={`grid w-full rounded-xl bg-muted/40 p-1 ${
+            canManagePayroll ? 'grid-cols-2 lg:grid-cols-4 max-w-3xl' : 'grid-cols-1 max-w-sm'
+          }`}
+        >
           {canManagePayroll && (
             <>
               <TabsTrigger value="payroll" className="flex items-center gap-2">

@@ -14,7 +14,7 @@ export function DeductionManagement() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
       </div>
     );
   }
@@ -23,14 +23,14 @@ export function DeductionManagement() {
     <div className="space-y-6">
       {/* Actions */}
       <div className="flex justify-end">
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button className="rounded-full w-full sm:w-auto" onClick={() => setShowCreateDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Deduction Type
         </Button>
       </div>
 
       {/* Deduction Types */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -47,7 +47,7 @@ export function DeductionManagement() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {deductions.map(deduction => (
-                <Card key={deduction.id} className="relative overflow-hidden">
+                <Card key={deduction.id} className="relative overflow-hidden border-border/60 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">

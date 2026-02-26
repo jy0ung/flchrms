@@ -53,7 +53,7 @@ export function LeaveCancellationDialogs({
   return (
     <>
       <Dialog open={requestDialogOpen} onOpenChange={onRequestDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {requestDialogMode === 'request_approved_cancel'
@@ -73,6 +73,7 @@ export function LeaveCancellationDialogs({
                   onChange={(e) => onRequestReasonChange(e.target.value)}
                   placeholder="Explain why you are requesting cancellation..."
                   required
+                  className="min-h-24 resize-y"
                 />
                 <p className="text-xs text-muted-foreground">
                   This will submit a cancellation request for approver review.
@@ -87,14 +88,15 @@ export function LeaveCancellationDialogs({
               </Alert>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onRequestDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => onRequestDialogOpenChange(false)}>
               Close
             </Button>
             <Button
               onClick={onSubmitRequest}
               disabled={requestSubmitPending || (requestDialogMode === 'request_approved_cancel' && !requestReason.trim())}
               variant={requestDialogMode === 'pending_cancel' ? 'destructive' : 'default'}
+              className="w-full sm:w-auto"
             >
               {requestDialogMode === 'request_approved_cancel' ? 'Submit Cancellation Request' : 'Cancel Leave'}
             </Button>
@@ -103,7 +105,7 @@ export function LeaveCancellationDialogs({
       </Dialog>
 
       <Dialog open={reviewDialogOpen} onOpenChange={onReviewDialogOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-lg sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {reviewAction === 'approve'
@@ -123,6 +125,7 @@ export function LeaveCancellationDialogs({
                   onChange={(e) => onReviewRejectionReasonChange(e.target.value)}
                   placeholder="Explain why this cancellation request is being rejected..."
                   required
+                  className="min-h-24 resize-y"
                 />
               </div>
             )}
@@ -132,17 +135,19 @@ export function LeaveCancellationDialogs({
                 value={reviewComments}
                 onChange={(e) => onReviewCommentsChange(e.target.value)}
                 placeholder="Add any review comments..."
+                className="min-h-24 resize-y"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onReviewDialogOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => onReviewDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
               onClick={onSubmitReview}
               disabled={reviewSubmitPending || (reviewAction === 'reject' && !reviewRejectionReason.trim())}
               variant={reviewAction === 'reject' ? 'destructive' : 'default'}
+              className="w-full sm:w-auto"
             >
               {reviewAction === 'approve' ? 'Approve Cancellation' : 'Reject Cancellation'}
             </Button>

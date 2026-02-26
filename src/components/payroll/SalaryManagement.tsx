@@ -40,8 +40,8 @@ export function SalaryManagement() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-64" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
+        <Skeleton className="h-10 w-64 rounded-xl" />
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
       </div>
     );
   }
@@ -49,8 +49,8 @@ export function SalaryManagement() {
   return (
     <div className="space-y-6">
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search employees..."
@@ -59,7 +59,7 @@ export function SalaryManagement() {
             className="pl-9"
           />
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button className="rounded-full w-full md:w-auto" onClick={() => setShowCreateDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Salary Structure
         </Button>
@@ -67,7 +67,7 @@ export function SalaryManagement() {
 
       {/* Warning for employees without salary */}
       {employeesWithoutSalary && employeesWithoutSalary.length > 0 && (
-        <Card className="border-warning bg-warning/5">
+        <Card className="card-stat border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-3">
             <p className="text-sm text-warning">
               <strong>{employeesWithoutSalary.length}</strong> active employees without salary structure configured
@@ -77,7 +77,7 @@ export function SalaryManagement() {
       )}
 
       {/* Salary Structures List */}
-      <Card>
+      <Card className="card-stat border-border/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
@@ -92,8 +92,61 @@ export function SalaryManagement() {
               <p>No salary structures found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <>
+              <div className="space-y-3 md:hidden">
+                {filteredSalaries.map((salary) => {
+                  const totalAllowances =
+                    Number(salary.housing_allowance || 0) +
+                    Number(salary.transport_allowance || 0) +
+                    Number(salary.meal_allowance || 0) +
+                    Number(salary.other_allowances || 0);
+                  const total = Number(salary.basic_salary) + totalAllowances;
+
+                  return (
+                    <div key={salary.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium">
+                            {salary.employee?.first_name} {salary.employee?.last_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{salary.employee?.employee_id}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full"
+                          onClick={() => setEditingSalary(salary)}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <p className="text-xs text-muted-foreground">Basic</p>
+                          <p className="font-semibold">RM {Number(salary.basic_salary).toLocaleString()}</p>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <p className="text-xs text-muted-foreground">Allowances</p>
+                          <p className="font-semibold">RM {totalAllowances.toLocaleString()}</p>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <p className="text-xs text-muted-foreground">Total</p>
+                          <p className="font-semibold">RM {total.toLocaleString()}</p>
+                        </div>
+                        <div className="rounded-lg bg-muted/30 p-3">
+                          <p className="text-xs text-muted-foreground">Effective</p>
+                          <p className="font-semibold">{format(new Date(salary.effective_date), 'MMM d, yyyy')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
+                <table className="w-full min-w-[760px]">
                 <thead>
                   <tr className="border-b text-left">
                     <th className="pb-3 font-medium text-muted-foreground">Employee</th>
@@ -114,7 +167,7 @@ export function SalaryManagement() {
                     const total = Number(salary.basic_salary) + totalAllowances;
 
                     return (
-                      <tr key={salary.id} className="border-b last:border-0">
+                      <tr key={salary.id} className="border-b last:border-0 hover:bg-muted/20">
                         <td className="py-3">
                           <div>
                             <p className="font-medium">
@@ -139,19 +192,22 @@ export function SalaryManagement() {
                         </td>
                         <td className="py-3">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
+                            className="rounded-full"
                             onClick={() => setEditingSalary(salary)}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
                           </Button>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

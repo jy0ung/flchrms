@@ -59,12 +59,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-          <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
+      <div className="flex items-center gap-3 px-4 py-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary shadow-sm">
+          <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
         </div>
-        <div>
-          <h1 className="font-bold text-lg text-sidebar-primary-foreground">FLC-HRMS</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-bold text-sidebar-primary-foreground">FLC-HRMS</h1>
           <p className="text-xs text-sidebar-foreground/60">Fook Loi Corp</p>
         </div>
       </div>
@@ -72,7 +72,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <Separator className="bg-sidebar-border" />
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto p-3 scrollbar-thin">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -81,7 +81,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               to={item.href}
               onClick={handleNavClick}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'mb-1 flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive 
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
@@ -96,7 +96,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {/* HR/Admin/Manager/GM/Director Navigation - Employee Directory */}
         {canViewEmployeeDirectory(role) && (
           <>
-            <Separator className="my-2 bg-sidebar-border" />
+            <Separator className="my-3 bg-sidebar-border" />
             {hrNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -105,7 +105,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   to={item.href}
                   onClick={handleNavClick}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    'mb-1 flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive 
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
                       : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
@@ -122,7 +122,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {/* Admin Navigation - Visible to Admin/HR/Director */}
         {canAccessAdminPage(role) && (
           <>
-            <Separator className="my-2 bg-sidebar-border" />
+            <Separator className="my-3 bg-sidebar-border" />
             {adminNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -131,7 +131,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   to={item.href}
                   onClick={handleNavClick}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    'mb-1 flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive 
                       ? 'bg-destructive/20 text-destructive' 
                       : 'text-destructive/70 hover:bg-destructive/10 hover:text-destructive'
@@ -149,18 +149,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <Separator className="bg-sidebar-border" />
 
       {/* User Section */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-3 p-3">
         <NavLink 
           to="/profile"
           onClick={handleNavClick}
           className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
+            'flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm transition-colors',
             location.pathname === '/profile'
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50'
+              ? 'border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground/70 hover:border-sidebar-border/50 hover:bg-sidebar-accent/50'
           )}
         >
-          <Avatar className="w-8 h-8">
+          <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
               {initials}
             </AvatarFallback>
@@ -173,7 +173,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10"
+          className="h-10 w-full justify-start rounded-xl text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive"
           onClick={signOut}
         >
           <LogOut className="w-4 h-4 mr-3" />

@@ -42,7 +42,7 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, trendValue, varia
   };
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden border-border/60 shadow-sm">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -52,7 +52,7 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, trendValue, varia
               <p className="text-xs text-muted-foreground">{subtitle}</p>
             )}
           </div>
-          <div className={`p-2 rounded-lg ${variantStyles[variant]}`}>
+          <div className={`p-2 rounded-xl ${variantStyles[variant]}`}>
             <Icon className="w-4 h-4" />
           </div>
         </div>
@@ -92,10 +92,10 @@ export function ExecutiveSummary() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-8 w-64 rounded-xl" />
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
       </div>
@@ -111,9 +111,9 @@ export function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/60 bg-card p-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+          <div className="p-2 rounded-xl bg-primary/10">
             <Building2 className="w-5 h-5 text-primary" />
           </div>
           <div>

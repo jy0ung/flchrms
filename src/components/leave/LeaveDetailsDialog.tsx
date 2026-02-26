@@ -67,7 +67,7 @@ export function LeaveDetailsDialog({
   if (!request) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Leave Request Details</DialogTitle>
             <DialogDescription>
@@ -84,7 +84,7 @@ export function LeaveDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Leave Request Details</DialogTitle>
           <DialogDescription>
@@ -92,9 +92,9 @@ export function LeaveDetailsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border p-4 space-y-2">
+        <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-xl border bg-card/60 p-4 space-y-2 shadow-sm">
               <p className="text-sm font-semibold">Request Summary</p>
               <div className="text-sm space-y-1">
                 <p><span className="text-muted-foreground">Employee:</span> {request.employee?.first_name} {request.employee?.last_name}</p>
@@ -107,7 +107,7 @@ export function LeaveDetailsDialog({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-xl border bg-card/60 p-4 space-y-2 shadow-sm">
               <p className="text-sm font-semibold">Status</p>
               <div className="space-y-2">
                 <Badge className={`${statusDisplay.color} flex items-center gap-1 w-fit`}>
@@ -146,7 +146,7 @@ export function LeaveDetailsDialog({
             </div>
           </div>
 
-          <div className="rounded-lg border p-4 space-y-3">
+          <div className="rounded-xl border bg-card/60 p-4 space-y-3 shadow-sm">
             <p className="text-sm font-semibold">Approval Timeline</p>
             <div className="space-y-2 text-sm">
               {eventsLoading && (
@@ -154,7 +154,7 @@ export function LeaveDetailsDialog({
               )}
               {!eventsLoading && approvalTimelineEvents.length > 0 ? (
                 approvalTimelineEvents.map((event) => (
-                  <div key={event.id} className="rounded border bg-muted/20 px-3 py-2">
+                  <div key={event.id} className="rounded-lg border bg-muted/20 px-3 py-2">
                     <p className="font-medium">{event.label}</p>
                     <p className="text-muted-foreground">
                       {formatDateTime(event.at)}
@@ -218,7 +218,7 @@ export function LeaveDetailsDialog({
                   ]
                     .filter((item) => !!item.at)
                     .map((item) => (
-                      <div key={`${item.label}-${item.at}`} className="rounded border bg-muted/20 px-3 py-2">
+                      <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/20 px-3 py-2">
                         <p className="font-medium">{item.label}</p>
                         <p className="text-muted-foreground">
                           {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}
@@ -237,7 +237,7 @@ export function LeaveDetailsDialog({
           </div>
 
           {(request.cancellation_status || request.cancelled_at) && (
-            <div className="rounded-lg border p-4 space-y-3">
+            <div className="rounded-xl border bg-card/60 p-4 space-y-3 shadow-sm">
               <p className="text-sm font-semibold">Cancellation Timeline</p>
               <div className="space-y-2 text-sm">
                 {eventsLoading && (
@@ -245,7 +245,7 @@ export function LeaveDetailsDialog({
                 )}
                 {!eventsLoading && cancellationTimelineEvents.length > 0 ? (
                   cancellationTimelineEvents.map((event) => (
-                    <div key={event.id} className="rounded border bg-muted/20 px-3 py-2">
+                    <div key={event.id} className="rounded-lg border bg-muted/20 px-3 py-2">
                       <p className="font-medium">{event.label}</p>
                       <p className="text-muted-foreground">
                         {formatDateTime(event.at)}
@@ -310,7 +310,7 @@ export function LeaveDetailsDialog({
                     ]
                       .filter((item) => !!item.at)
                       .map((item) => (
-                        <div key={`${item.label}-${item.at}`} className="rounded border bg-muted/20 px-3 py-2">
+                        <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/20 px-3 py-2">
                           <p className="font-medium">{item.label}</p>
                           <p className="text-muted-foreground">
                             {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}
@@ -330,7 +330,7 @@ export function LeaveDetailsDialog({
           )}
 
           {(request.reason || request.manager_comments || request.amendment_notes) && (
-            <div className="rounded-lg border p-4 space-y-2 text-sm">
+            <div className="rounded-xl border bg-card/60 p-4 space-y-2 text-sm shadow-sm">
               <p className="font-semibold">Notes</p>
               {request.reason && (
                 <p><span className="text-muted-foreground">Reason:</span> {request.reason}</p>

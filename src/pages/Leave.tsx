@@ -424,9 +424,9 @@ export default function Leave() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold flex items-center gap-3 sm:text-3xl">
             <Calendar className="w-8 h-8 text-accent" />
             Leave Management
           </h1>
@@ -436,9 +436,12 @@ export default function Leave() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Request Leave</Button>
+            <Button className="w-full rounded-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" />
+              Request Leave
+            </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>New Leave Request</DialogTitle>
               <DialogDescription>Submit a new leave request for approval</DialogDescription>
@@ -481,7 +484,13 @@ export default function Leave() {
           defaultValue={canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0 ? 'team' : 'my'}
           className="space-y-4"
         >
-          <TabsList className={canViewTeamRequests ? 'grid w-full grid-cols-2 max-w-md' : 'grid w-full grid-cols-1 max-w-xs'}>
+          <TabsList
+            className={
+              canViewTeamRequests
+                ? 'grid h-auto w-full max-w-xl grid-cols-2 gap-1 rounded-xl p-1'
+                : 'grid h-auto w-full max-w-sm grid-cols-1 gap-1 rounded-xl p-1'
+            }
+          >
             <TabsTrigger value="my">
               My Leave
               <span className="ml-2 text-xs text-muted-foreground">({myRequests.length})</span>
@@ -495,15 +504,21 @@ export default function Leave() {
           </TabsList>
 
           <TabsContent value="my" className="space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold">My Requests</h2>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+                    aria-label="Approval workflow examples"
+                  >
                     <Info className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
+                <PopoverContent className="w-[min(90vw,26rem)]" align="start">
                   <div className="space-y-3">
                     <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
                     <p className="text-[11px] text-muted-foreground">
@@ -547,7 +562,7 @@ export default function Leave() {
             </div>
 
             <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
-              <TabsList className="grid w-full grid-cols-2 max-w-sm">
+              <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
                 <TabsTrigger value="current">
                   Current
                   <span className="ml-2 text-xs text-muted-foreground">({myCurrentRequests.length})</span>
@@ -576,7 +591,7 @@ export default function Leave() {
             <TabsContent value="team" className="space-y-3">
               <h2 className="text-lg font-semibold">Team Requests</h2>
               <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
-                <TabsList className="grid w-full grid-cols-2 max-w-sm">
+              <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
                   <TabsTrigger value="current">
                     Current
                     <span className="ml-2 text-xs text-muted-foreground">({teamCurrentRequests.length})</span>

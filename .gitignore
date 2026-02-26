@@ -26,3 +26,4 @@ playwright-report/
 test-results/
 .env.e2e.test-seed
 supabase/backups/
+supabase/.temp/
