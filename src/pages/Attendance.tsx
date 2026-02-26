@@ -1,9 +1,9 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
+import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Attendance() {
   const { data: history, isLoading } = useAttendanceHistory();
@@ -11,51 +11,37 @@ export default function Attendance() {
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
-  const statusColors: Record<string, string> = {
-    present: 'badge-success',
-    absent: 'badge-destructive',
-    late: 'badge-warning',
-    half_day: 'badge-info',
-    on_leave: 'bg-muted text-muted-foreground',
-  };
-
   return (
     <div className="space-y-6">
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="p-4 sm:p-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
-              <div>
-                <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
-                  <Clock className="h-5 w-5 text-accent" />
-                  Attendance
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">Track your work hours</p>
-              </div>
-            </div>
-            <div className="w-full lg:w-auto">
-              {!today ? (
-                <Button
-                  onClick={() => clockIn.mutate()}
-                  disabled={clockIn.isPending}
-                  className="h-9 w-full rounded-full bg-success hover:bg-success/90 lg:w-auto"
-                >
-                  <Play className="w-4 h-4 mr-2" /> Clock In
-                </Button>
-              ) : !today.clock_out ? (
-                <Button
-                  onClick={() => clockOut.mutate()}
-                  disabled={clockOut.isPending}
-                  variant="destructive"
-                  className="h-9 w-full rounded-full lg:w-auto"
-                >
-                  <Square className="w-4 h-4 mr-2" /> Clock Out
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="Attendance"
+        description="Track your work hours"
+        actions={
+          !today
+            ? [
+                {
+                  id: 'clock-in',
+                  label: 'Clock In',
+                  icon: Play,
+                  onClick: () => clockIn.mutate(),
+                  disabled: clockIn.isPending,
+                  variant: 'default',
+                },
+              ]
+            : !today.clock_out
+              ? [
+                  {
+                    id: 'clock-out',
+                    label: 'Clock Out',
+                    icon: Square,
+                    onClick: () => clockOut.mutate(),
+                    disabled: clockOut.isPending,
+                    variant: 'destructive',
+                  },
+                ]
+              : []
+        }
+      />
 
       {today && (
         <Card className="card-stat bg-accent/5 border-accent/20 shadow-sm">
@@ -72,24 +58,19 @@ export default function Attendance() {
                 <p className="text-sm text-muted-foreground">
                   Out: {today.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '-'}
                 </p>
-                <Badge className={`mt-2 ${statusColors[today.status]}`}>{today.status}</Badge>
+                <StatusBadge status={today.status} className="mt-2" />
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle>Attendance History</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 text-center text-muted-foreground">Loading...</div>
-          ) : history?.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No attendance records</div>
-          ) : (
-            <>
+      <DataTableShell
+        title="Attendance History"
+        loading={isLoading}
+        hasData={Boolean(history?.length)}
+        emptyState={<div className="p-8 text-center text-muted-foreground">No attendance records</div>}
+        mobileList={
           <div className="space-y-3 p-4 md:hidden">
             {history?.map((record) => (
               <div key={record.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
@@ -101,12 +82,14 @@ export default function Attendance() {
                       <p>Clock Out: {record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</p>
                     </div>
                   </div>
-                  <Badge className={statusColors[record.status]}>{record.status}</Badge>
+                  <StatusBadge status={record.status} />
                 </div>
               </div>
             ))}
           </div>
-          <div className="hidden md:block overflow-x-auto rounded-b-xl">
+        }
+        table={
+          <div className="overflow-x-auto rounded-b-xl">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
@@ -117,21 +100,21 @@ export default function Attendance() {
                 </tr>
               </thead>
               <tbody>
-                {history?.map(record => (
-                    <tr key={record.id} className="border-t border-border table-row-hover">
-                      <td className="p-4 font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</td>
-                      <td className="p-4">{record.clock_in ? format(new Date(record.clock_in), 'h:mm a') : '-'}</td>
-                      <td className="p-4">{record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</td>
-                      <td className="p-4"><Badge className={statusColors[record.status]}>{record.status}</Badge></td>
-                    </tr>
-                  ))}
+                {history?.map((record) => (
+                  <tr key={record.id} className="border-t border-border table-row-hover">
+                    <td className="p-4 font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</td>
+                    <td className="p-4">{record.clock_in ? format(new Date(record.clock_in), 'h:mm a') : '-'}</td>
+                    <td className="p-4">{record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</td>
+                    <td className="p-4">
+                      <StatusBadge status={record.status} />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

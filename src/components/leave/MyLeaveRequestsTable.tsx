@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { format } from 'date-fns';
 import { AlertCircle, FileText, MessageSquare, Upload, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -6,15 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
+import { StatusBadge } from '@/components/system';
 
 type LeaveStatusDisplay = {
-  color: string;
-  icon: ReactNode;
+  status: string;
   label: string;
 };
 
 type LeaveCancellationBadge = {
-  className: string;
+  status: string;
   label: string;
 } | null;
 
@@ -63,29 +62,21 @@ export function MyLeaveRequestsTable({
                             <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
                           )}
                           {request.document_required && !request.document_url && request.status === 'pending' && (
-                            <Badge variant="outline" className="text-[11px] text-orange-500 border-orange-500/30 flex items-center gap-1">
-                              <Upload className="w-3 h-3" />
-                              Doc Requested
-                            </Badge>
+                            <StatusBadge status="document_requested" className="text-[11px]" />
                           )}
                           {request.document_url && (
-                            <Badge variant="outline" className="text-[11px] text-green-500 border-green-500/30 flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              Doc Attached
-                            </Badge>
+                            <StatusBadge status="document_attached" className="text-[11px]" />
                           )}
                           {cancellationBadge && (
-                            <Badge variant="outline" className={`${cancellationBadge.className} text-[11px] flex items-center gap-1`}>
-                              <AlertCircle className="w-3 h-3" />
-                              {cancellationBadge.label}
-                            </Badge>
+                            <StatusBadge
+                              status={cancellationBadge.status}
+                              labelOverride={cancellationBadge.label}
+                              className="text-[11px]"
+                            />
                           )}
                         </div>
                       </div>
-                      <Badge className={`${status.color} shrink-0 flex items-center gap-1 w-fit`}>
-                        {status.icon}
-                        {status.label}
-                      </Badge>
+                      <StatusBadge status={status.status} labelOverride={status.label} className="shrink-0" />
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
@@ -195,27 +186,19 @@ export function MyLeaveRequestsTable({
                         <p className="text-sm text-muted-foreground">{request.days_count} days</p>
                       </td>
                       <td className="p-4">
-                        <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
-                          {status.icon}
-                          {status.label}
-                        </Badge>
+                        <StatusBadge status={status.status} labelOverride={status.label} />
                         {request.document_required && !request.document_url && request.status === 'pending' && (
-                          <Badge variant="outline" className="mt-1 text-orange-500 border-orange-500/30 flex items-center gap-1">
-                            <Upload className="w-3 h-3" />
-                            Doc Requested
-                          </Badge>
+                          <StatusBadge status="document_requested" className="mt-1" />
                         )}
                         {request.document_url && (
-                          <Badge variant="outline" className="mt-1 text-green-500 border-green-500/30 flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            Doc Attached
-                          </Badge>
+                          <StatusBadge status="document_attached" className="mt-1" />
                         )}
                         {cancellationBadge && (
-                          <Badge variant="outline" className={`${cancellationBadge.className} flex items-center gap-1`}>
-                            <AlertCircle className="w-3 h-3" />
-                            {cancellationBadge.label}
-                          </Badge>
+                          <StatusBadge
+                            status={cancellationBadge.status}
+                            labelOverride={cancellationBadge.label}
+                            className="mt-1"
+                          />
                         )}
                       </td>
                       <td className="p-4 max-w-xs">

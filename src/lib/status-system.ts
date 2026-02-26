@@ -23,10 +23,26 @@ const STATUS_REGISTRY: Record<string, Omit<StatusMeta, "key">> = {
   processing: { label: "Processing", tone: "info", iconKey: "clock" },
   approved: { label: "Approved", tone: "success", iconKey: "check" },
   completed: { label: "Completed", tone: "success", iconKey: "check" },
+  submitted: { label: "Submitted", tone: "info", iconKey: "info" },
+  acknowledged: { label: "Acknowledged", tone: "success", iconKey: "check" },
   active: { label: "Active", tone: "success", iconKey: "check" },
   inactive: { label: "Inactive", tone: "neutral", iconKey: "dot" },
   cancelled: { label: "Cancelled", tone: "neutral", iconKey: "x" },
   rejected: { label: "Rejected", tone: "danger", iconKey: "x" },
+  present: { label: "Present", tone: "success", iconKey: "check" },
+  absent: { label: "Absent", tone: "danger", iconKey: "x" },
+  late: { label: "Late", tone: "warning", iconKey: "clock" },
+  half_day: { label: "Half Day", tone: "info", iconKey: "clock" },
+  on_leave: { label: "On Leave", tone: "neutral", iconKey: "info" },
+  enrolled: { label: "Enrolled", tone: "info", iconKey: "info" },
+  dropped: { label: "Dropped", tone: "neutral", iconKey: "x" },
+  amended: { label: "Amended", tone: "info", iconKey: "info" },
+  document_requested: { label: "Doc Requested", tone: "warning", iconKey: "alert" },
+  document_attached: { label: "Doc Attached", tone: "success", iconKey: "check" },
+  manager_approved: { label: "Manager Approved", tone: "info", iconKey: "check" },
+  gm_approved: { label: "GM Approved", tone: "info", iconKey: "check" },
+  director_approved: { label: "Director Approved", tone: "success", iconKey: "check" },
+  hr_approved: { label: "HR Approved", tone: "success", iconKey: "check" },
   paid: { label: "Paid", tone: "success", iconKey: "check" },
   unpaid: { label: "Unpaid", tone: "warning", iconKey: "alert" },
   read: { label: "Read", tone: "neutral", iconKey: "dot" },
@@ -46,6 +62,9 @@ const STATUS_ALIASES: Record<string, string> = {
   terminated: "inactive",
   archived: "inactive",
   published: "active",
+  general_manager_approved: "gm_approved",
+  managerapproved: "manager_approved",
+  gmapproved: "gm_approved",
 };
 
 function humanizeStatusKey(input: string): string {
@@ -56,12 +75,15 @@ function humanizeStatusKey(input: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function normalizeStatusKey(status: string): string {
+export function normalizeStatusKey(status: string | null | undefined): string {
+  if (!status || typeof status !== "string") {
+    return "info";
+  }
   const normalized = status.trim().toLowerCase().replace(/\s+/g, "_");
   return STATUS_ALIASES[normalized] ?? normalized;
 }
 
-export function getStatusMeta(status: string): StatusMeta {
+export function getStatusMeta(status: string | null | undefined): StatusMeta {
   const key = normalizeStatusKey(status);
   const hit = STATUS_REGISTRY[key];
   if (hit) {

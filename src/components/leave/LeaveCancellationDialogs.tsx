@@ -1,10 +1,10 @@
 import { Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LeaveRequest } from '@/types/hrms';
+import { ModalScaffold, ModalSection } from '@/components/system';
 
 type CancellationDialogMode = 'pending_cancel' | 'request_approved_cancel';
 type CancellationReviewAction = 'approve' | 'reject';
@@ -52,21 +52,24 @@ export function LeaveCancellationDialogs({
 }: LeaveCancellationDialogsProps) {
   return (
     <>
-      <Dialog open={requestDialogOpen} onOpenChange={onRequestDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              {requestDialogMode === 'request_approved_cancel'
-                ? 'Request Leave Cancellation'
-                : 'Cancel Pending Leave Request'}
-            </DialogTitle>
-            <DialogDescription>
-              {requestDialogRequest?.employee?.first_name} {requestDialogRequest?.employee?.last_name} - {requestDialogRequest?.leave_type?.name}
-            </DialogDescription>
-          </DialogHeader>
+      <ModalScaffold
+        open={requestDialogOpen}
+        onOpenChange={onRequestDialogOpenChange}
+        maxWidth="xl"
+        title={
+          requestDialogMode === 'request_approved_cancel'
+            ? 'Request Leave Cancellation'
+            : 'Cancel Pending Leave Request'
+        }
+        description={`${requestDialogRequest?.employee?.first_name ?? ''} ${requestDialogRequest?.employee?.last_name ?? ''} - ${requestDialogRequest?.leave_type?.name ?? ''}`.trim()}
+        body={
           <div className="space-y-4">
             {requestDialogMode === 'request_approved_cancel' ? (
-              <div className="space-y-2">
+              <ModalSection
+                title="Cancellation Request"
+                description="Provide a reason so approvers can review the request."
+                tone="warning"
+              >
                 <Label>Cancellation Reason</Label>
                 <Textarea
                   value={requestReason}
@@ -78,17 +81,21 @@ export function LeaveCancellationDialogs({
                 <p className="text-xs text-muted-foreground">
                   This will submit a cancellation request for approver review.
                 </p>
-              </div>
+              </ModalSection>
             ) : (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  This pending leave request will be cancelled immediately.
-                </AlertDescription>
-              </Alert>
+              <ModalSection title="Immediate Cancellation" tone="muted">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    This pending leave request will be cancelled immediately.
+                  </AlertDescription>
+                </Alert>
+              </ModalSection>
             )}
           </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        }
+        footer={
+          <>
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => onRequestDialogOpenChange(false)}>
               Close
             </Button>
@@ -100,25 +107,20 @@ export function LeaveCancellationDialogs({
             >
               {requestDialogMode === 'request_approved_cancel' ? 'Submit Cancellation Request' : 'Cancel Leave'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      />
 
-      <Dialog open={reviewDialogOpen} onOpenChange={onReviewDialogOpenChange}>
-        <DialogContent className="max-w-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              {reviewAction === 'approve'
-                ? 'Approve Leave Cancellation'
-                : 'Reject Leave Cancellation'}
-            </DialogTitle>
-            <DialogDescription>
-              {reviewDialogRequest?.employee?.first_name} {reviewDialogRequest?.employee?.last_name} - {reviewDialogRequest?.leave_type?.name}
-            </DialogDescription>
-          </DialogHeader>
+      <ModalScaffold
+        open={reviewDialogOpen}
+        onOpenChange={onReviewDialogOpenChange}
+        maxWidth="xl"
+        title={reviewAction === 'approve' ? 'Approve Leave Cancellation' : 'Reject Leave Cancellation'}
+        description={`${reviewDialogRequest?.employee?.first_name ?? ''} ${reviewDialogRequest?.employee?.last_name ?? ''} - ${reviewDialogRequest?.leave_type?.name ?? ''}`.trim()}
+        body={
           <div className="space-y-4">
             {reviewAction === 'reject' && (
-              <div className="space-y-2">
+              <ModalSection title="Rejection Reason" tone="danger">
                 <Label>Rejection Reason</Label>
                 <Textarea
                   value={reviewRejectionReason}
@@ -127,9 +129,9 @@ export function LeaveCancellationDialogs({
                   required
                   className="min-h-24 resize-y"
                 />
-              </div>
+              </ModalSection>
             )}
-            <div className="space-y-2">
+            <ModalSection title="Reviewer Comments" description="Optional notes for the requester and audit trail.">
               <Label>Comments (Optional)</Label>
               <Textarea
                 value={reviewComments}
@@ -137,9 +139,11 @@ export function LeaveCancellationDialogs({
                 placeholder="Add any review comments..."
                 className="min-h-24 resize-y"
               />
-            </div>
+            </ModalSection>
           </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        }
+        footer={
+          <>
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => onReviewDialogOpenChange(false)}>
               Cancel
             </Button>
@@ -151,9 +155,9 @@ export function LeaveCancellationDialogs({
             >
               {reviewAction === 'approve' ? 'Approve Cancellation' : 'Reject Cancellation'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      />
     </>
   );
 }

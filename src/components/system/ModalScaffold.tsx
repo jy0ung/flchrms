@@ -58,6 +58,28 @@ export function ModalScaffold({
   headerClassName,
   footerClassName,
 }: ModalScaffoldProps) {
+  const lastActiveElementRef = React.useRef<HTMLElement | null>(null);
+  const wasOpenRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      const active = typeof document !== "undefined" ? document.activeElement : null;
+      lastActiveElementRef.current = active instanceof HTMLElement ? active : null;
+    }
+
+    if (!open && wasOpenRef.current) {
+      const target = lastActiveElementRef.current;
+      if (target && target.isConnected) {
+        // Controlled dialogs in this app often open without DialogTrigger.
+        // Restore focus to the previously active element for keyboard continuity.
+        target.focus();
+      }
+      lastActiveElementRef.current = null;
+    }
+
+    wasOpenRef.current = open;
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -82,4 +104,3 @@ export function ModalScaffold({
     </Dialog>
   );
 }
-

@@ -4,11 +4,9 @@ import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCan
 import { useLeaveRequestDetailsDialog } from '@/hooks/useLeaveRequestDetailsDialog';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Calendar, Plus, X, Clock, CheckCircle2, XCircle, Info } from 'lucide-react';
+import { Plus, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
@@ -22,6 +20,7 @@ import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTabl
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
 import {
   canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
   isDirector,
@@ -166,17 +165,17 @@ export default function Leave() {
     });
   };
 
-  const statusConfig: Record<LeaveStatus, { color: string; icon: React.ReactNode; label: string }> = {
-    pending: { color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30', icon: <Clock className="w-3 h-3" />, label: 'Pending Manager' },
-    manager_approved: { color: 'bg-blue-500/20 text-blue-600 border-blue-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting GM' },
-    gm_approved: { color: 'bg-cyan-500/20 text-cyan-600 border-cyan-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting Director' },
-    director_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved' },
-    hr_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved (Legacy)' },
-    rejected: { color: 'bg-red-500/20 text-red-600 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: 'Rejected' },
-    cancelled: { color: 'bg-muted text-muted-foreground', icon: <X className="w-3 h-3" />, label: 'Cancelled' },
+  const statusConfig: Record<LeaveStatus, { status: string; label: string }> = {
+    pending: { status: 'pending', label: 'Pending Manager' },
+    manager_approved: { status: 'manager_approved', label: 'Awaiting GM' },
+    gm_approved: { status: 'gm_approved', label: 'Awaiting Director' },
+    director_approved: { status: 'approved', label: 'Approved' },
+    hr_approved: { status: 'approved', label: 'Approved (Legacy)' },
+    rejected: { status: 'rejected', label: 'Rejected' },
+    cancelled: { status: 'cancelled', label: 'Cancelled' },
   };
 
-  const getStatusDisplay = (request: LeaveRequest) => {
+  const getStatusDisplay = (request: LeaveRequest): { status: string; label: string } => {
     if (request.status === 'cancelled' || request.status === 'rejected') {
       return statusConfig[request.status];
     }
@@ -236,14 +235,14 @@ export default function Leave() {
 
     if (request.cancellation_status === 'rejected') {
       return {
-        className: 'mt-1 text-red-500 border-red-500/30',
+        status: 'rejected',
         label: 'Cancellation Rejected',
       };
     }
 
     if (request.cancellation_status === 'approved') {
       return {
-        className: 'mt-1 text-muted-foreground border-border',
+        status: 'cancelled',
         label: 'Cancellation Approved',
       };
     }
@@ -251,7 +250,7 @@ export default function Leave() {
     if (isCancellationPending(request)) {
       const nextStage = getCancellationNextStageLabel(request);
       return {
-        className: 'mt-1 text-amber-600 border-amber-500/30',
+        status: 'pending',
         label: nextStage ? `Cancellation Pending ${nextStage}` : 'Cancellation Pending',
       };
     }
@@ -424,28 +423,31 @@ export default function Leave() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm sm:p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
-            <Calendar className="h-6 w-6 text-accent" />
-            Leave Management
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="h-9 w-full rounded-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Request Leave
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>New Leave Request</DialogTitle>
-              <DialogDescription>Submit a new leave request for approval</DialogDescription>
-            </DialogHeader>
+      <PageHeader
+        title="Leave Management"
+        description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
+        actions={[
+          {
+            id: 'request-leave',
+            label: 'Request Leave',
+            icon: Plus,
+            onClick: () => setOpen(true),
+            variant: 'default',
+          },
+        ]}
+      />
+
+      <ModalScaffold
+        open={open}
+        onOpenChange={setOpen}
+        title="New Leave Request"
+        description="Submit a new leave request for approval"
+        maxWidth="xl"
+        body={
+          <ModalSection
+            title="Request Details"
+            description="Provide the leave type, dates, reason, and supporting document when required."
+          >
             <LeaveRequestForm
               leaveTypes={leaveTypes}
               balances={balances}
@@ -454,29 +456,38 @@ export default function Leave() {
               isPending={createRequest.isPending}
               isUploading={false}
             />
-          </DialogContent>
-        </Dialog>
-      </div>
+          </ModalSection>
+        }
+        showCloseButton
+      />
 
       {/* Leave Balance Card - show for all users */}
       <LeaveBalanceCard />
 
       {/* Loading state */}
       {isLoading && (
-        <Card className="card-stat">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            Loading leave requests...
-          </CardContent>
-        </Card>
+        <DataTableShell
+          title="Leave Requests"
+          loading
+          loadingSkeleton={
+            <div className="p-8 text-center text-muted-foreground">
+              Loading leave requests...
+            </div>
+          }
+        />
       )}
 
       {/* Empty state */}
       {!isLoading && requests?.length === 0 && (
-        <Card className="card-stat">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            No leave requests yet. Click "Request Leave" to submit your first request.
-          </CardContent>
-        </Card>
+        <DataTableShell
+          title="Leave Requests"
+          hasData={false}
+          emptyState={
+            <div className="p-8 text-center text-muted-foreground">
+              No leave requests yet. Click "Request Leave" to submit your first request.
+            </div>
+          }
+        />
       )}
 
       {!isLoading && (requests?.length || 0) > 0 && (
@@ -504,9 +515,10 @@ export default function Leave() {
           </TabsList>
 
           <TabsContent value="my" className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold">My Requests</h2>
-              <Popover>
+            <DataTableShell
+              title="My Requests"
+              headerActions={
+                <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
@@ -559,9 +571,9 @@ export default function Leave() {
                   </div>
                 </PopoverContent>
               </Popover>
-            </div>
-
-            <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
+              }
+              content={
+                <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
               <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
                 <TabsTrigger value="current">
                   Current
@@ -573,24 +585,28 @@ export default function Leave() {
                 </TabsTrigger>
               </TabsList>
 
-              <MyLeaveRequestsTable
-                requests={visibleMyRequests}
-                emptyMessage={myLeaveView === 'history' ? 'No leave history yet.' : 'No active leave requests right now.'}
+                <MyLeaveRequestsTable
+                  requests={visibleMyRequests}
+                  emptyMessage={myLeaveView === 'history' ? 'No leave history yet.' : 'No active leave requests right now.'}
                 getStatusDisplay={getStatusDisplay}
                 getCancellationBadge={getCancellationBadge}
                 canAmend={canAmend}
                 canCancelPendingRequest={canCancelPendingRequest}
                 canRequestCancellation={canRequestCancellation}
                 onAmend={handleAmend}
-                onCancel={handleCancellation}
-              />
-            </Tabs>
+                  onCancel={handleCancellation}
+                />
+                </Tabs>
+              }
+            />
           </TabsContent>
 
           {canViewTeamRequests && (
             <TabsContent value="team" className="space-y-3">
-              <h2 className="text-lg font-semibold">Team Requests</h2>
-              <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
+              <DataTableShell
+                title="Team Requests"
+                content={
+                  <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
               <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
                   <TabsTrigger value="current">
                     Current
@@ -615,7 +631,9 @@ export default function Leave() {
                   onCancellationReview={handleCancellationReview}
                   onAction={handleAction}
                 />
-              </Tabs>
+                  </Tabs>
+                }
+              />
             </TabsContent>
           )}
         </Tabs>
