@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  UserCircle,
   Mail,
   Phone,
   Calendar,
@@ -24,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 const PROFILE_TABS = ['overview', 'edit', 'notifications'] as const;
 type ProfileTabValue = (typeof PROFILE_TABS)[number];
@@ -120,48 +120,19 @@ export default function Profile() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5">
-      <Card className="card-stat overflow-hidden border-border/60 shadow-sm">
-        <CardContent className="p-0">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-5 sm:p-6">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-                <UserCircle className="h-4 w-4" />
-                Account Workspace
-              </div>
-
-              <div className="space-y-1">
-                <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight md:text-3xl">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                    <UserCircle className="h-5 w-5" />
-                  </span>
-                  My Profile
-                </h1>
-                <p className="text-sm text-muted-foreground sm:text-base">
-                  Manage your account profile and notification settings.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                <Badge className="badge-info capitalize rounded-full px-2.5 py-1">{role}</Badge>
-                <Badge
-                  className={`${profile.status === 'active' ? 'badge-success' : 'badge-warning'} rounded-full px-2.5 py-1`}
-                >
-                  {profile.status}
-                </Badge>
-                {profile.username ? (
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
-                    @{profile.username}
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="My Profile"
+        description="Manage your account profile and notification settings."
+        chips={[
+          { id: 'role', label: role, tone: 'info' },
+          ...(profile.username ? [{ id: 'username', label: `@${profile.username}` }] : []),
+        ]}
+        chipsSlot={<StatusBadge status={profile.status} />}
+      />
 
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="p-5 sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+        <CardContent className="p-4 sm:p-5">
+          <div className="grid gap-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
             <Avatar className="mx-auto h-20 w-20 sm:h-24 sm:w-24 lg:mx-0">
               <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
                 {initials}
@@ -220,12 +191,10 @@ export default function Profile() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <Card className="card-stat border-border/60 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Current account profile details used across the HRMS.</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
+          <DataTableShell
+            title="Personal Information"
+            description="Current account profile details used across the HRMS."
+            content={
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex min-h-[84px] items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3.5 sm:p-4">
                   <div className="rounded-lg bg-muted/70 p-2">
@@ -266,31 +235,26 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            }
+          />
         </TabsContent>
 
         <TabsContent value="edit" className="space-y-4">
-          <Card className="card-stat border-border/60 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <UserCog className="w-4 h-4" />
-                Update Profile
-              </CardTitle>
-              <CardDescription>
-                Update your personal contact details used in the HRMS. Email, employee ID, and username are managed separately.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              {isAdminRestrictedEditor && (
+          <DataTableShell
+            title="Update Profile"
+            description="Update your personal contact details used in the HRMS. Email, employee ID, and username are managed separately."
+            alertBanner={
+              isAdminRestrictedEditor ? (
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-700">
                   System Admin profile edits are restricted in this form. Use HR Admin for username alias management.
                 </div>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="profile_first_name">First Name</Label>
+              ) : null
+            }
+            content={
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="profile_first_name">First Name</Label>
                     <Input
                       id="profile_first_name"
                       value={form.first_name}
@@ -298,11 +262,11 @@ export default function Profile() {
                       disabled={isAdminRestrictedEditor || isUpdating}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, first_name: event.target.value }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profile_last_name">Last Name</Label>
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile_last_name">Last Name</Label>
                     <Input
                       id="profile_last_name"
                       value={form.last_name}
@@ -310,14 +274,14 @@ export default function Profile() {
                       disabled={isAdminRestrictedEditor || isUpdating}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, last_name: event.target.value }))
-                    }
-                  />
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="profile_phone">Phone</Label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="profile_phone">Phone</Label>
                     <Input
                       id="profile_phone"
                       value={form.phone}
@@ -326,27 +290,28 @@ export default function Profile() {
                       disabled={isAdminRestrictedEditor || isUpdating}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, phone: event.target.value }))
-                    }
-                  />
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile_email">Email</Label>
+                    <Input id="profile_email" value={profile.email} className="rounded-lg" disabled />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profile_email">Email</Label>
-                  <Input id="profile_email" value={profile.email} className="rounded-lg" disabled />
-                </div>
-              </div>
 
-              <div className="flex justify-end pt-1">
-                <Button
-                  className="h-10 w-full rounded-lg sm:w-auto"
-                  onClick={() => void handleSaveProfile()}
-                  disabled={isAdminRestrictedEditor || isUpdating || !hasProfileChanges}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="flex justify-end pt-1">
+                  <Button
+                    className="h-10 w-full rounded-lg sm:w-auto"
+                    onClick={() => void handleSaveProfile()}
+                    disabled={isAdminRestrictedEditor || isUpdating || !hasProfileChanges}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            }
+          />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">

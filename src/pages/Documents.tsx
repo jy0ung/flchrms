@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, Upload, Trash2, Download, Search, Filter, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
+import { DataTableShell, PageHeader, SectionToolbar } from '@/components/system';
 
 const categoryColors: Record<DocumentCategory, string> = {
   contract: 'bg-primary/10 text-primary',
@@ -97,83 +98,75 @@ export default function Documents() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                <FolderOpen className="w-4 h-4" />
-                Document Center
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Document Management</h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                  {canManageDocuments ? 'Manage employee contracts, certificates, and official documents' : 'View your documents'}
-                </p>
-              </div>
-            </div>
-        {canManageDocuments && (
-          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 rounded-full w-full lg:w-auto">
-                <Upload className="w-4 h-4" />
-                Upload Document
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Upload Document</DialogTitle>
-                <DialogDescription>
-                  Upload a new document for an employee.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Employee</Label>
-                  <Select
-                    value={uploadForm.employeeId}
-                    onValueChange={(value) => setUploadForm({ ...uploadForm, employeeId: value })}
-                  >
-                    <SelectTrigger className="rounded-full">
-                      <SelectValue placeholder="Select employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees?.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.first_name} {emp.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Document Title</Label>
-                  <Input
-                    value={uploadForm.title}
-                    onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                    placeholder="e.g., Employment Contract 2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select
-                    value={uploadForm.category}
-                    onValueChange={(value) => setUploadForm({ ...uploadForm, category: value as DocumentCategory })}
-                  >
-                    <SelectTrigger className="rounded-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="contract">Contract</SelectItem>
-                      <SelectItem value="certificate">Certificate</SelectItem>
-                      <SelectItem value="official">Official</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Description (Optional)</Label>
+      <PageHeader
+        title="Document Management"
+        description={
+          canManageDocuments
+            ? 'Manage employee contracts, certificates, and official documents'
+            : 'View your documents'
+        }
+        actionsSlot={
+          canManageDocuments ? (
+            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-9 w-full gap-2 rounded-full lg:w-auto">
+                  <Upload className="w-4 h-4" />
+                  Upload Document
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Upload Document</DialogTitle>
+                  <DialogDescription>
+                    Upload a new document for an employee.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Employee</Label>
+                    <Select
+                      value={uploadForm.employeeId}
+                      onValueChange={(value) => setUploadForm({ ...uploadForm, employeeId: value })}
+                    >
+                      <SelectTrigger className="rounded-full">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees?.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            {emp.first_name} {emp.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Document Title</Label>
+                    <Input
+                      value={uploadForm.title}
+                      onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                      placeholder="e.g., Employment Contract 2024"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select
+                      value={uploadForm.category}
+                      onValueChange={(value) => setUploadForm({ ...uploadForm, category: value as DocumentCategory })}
+                    >
+                      <SelectTrigger className="rounded-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="contract">Contract</SelectItem>
+                        <SelectItem value="certificate">Certificate</SelectItem>
+                        <SelectItem value="official">Official</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description (Optional)</Label>
                     <Textarea
                       value={uploadForm.description}
                       onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
@@ -182,273 +175,274 @@ export default function Documents() {
                       className="resize-y min-h-[96px]"
                     />
                   </div>
-                <div className="space-y-2">
-                  <Label>File</Label>
-                  <Input
-                    type="file"
-                    onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Accepted: PDF, DOC, DOCX, JPG, PNG (max 10MB)
-                  </p>
+                  <div className="space-y-2">
+                    <Label>File</Label>
+                    <Input
+                      type="file"
+                      onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Accepted: PDF, DOC, DOCX, JPG, PNG (max 10MB)
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-                <Button 
-                  className="w-full sm:w-auto rounded-full"
-                  onClick={handleUpload} 
-                  disabled={!uploadForm.file || !uploadForm.title || !uploadForm.employeeId || uploadDocument.isPending}
-                >
-                  {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-          </div>
-        </CardContent>
-      </Card>
+                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+                  <Button
+                    className="w-full sm:w-auto rounded-full"
+                    onClick={handleUpload}
+                    disabled={!uploadForm.file || !uploadForm.title || !uploadForm.employeeId || uploadDocument.isPending}
+                  >
+                    {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          ) : null
+        }
+        toolbarSlot={
+          <SectionToolbar
+            density="compact"
+            search={{
+              value: searchTerm,
+              onChange: setSearchTerm,
+              placeholder: 'Search documents...',
+              ariaLabel: 'Search documents',
+              inputProps: { className: 'h-9' },
+            }}
+            filters={[
+              {
+                id: 'document-category',
+                control: (
+                  <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
+                    <SelectTrigger className="w-full lg:w-44 rounded-full">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                      <SelectItem value="certificate">Certificate</SelectItem>
+                      <SelectItem value="official">Official</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ),
+                minWidthClassName: "sm:min-w-[180px]",
+              },
+              ...(canManageDocuments
+                ? [
+                    {
+                      id: 'document-employee',
+                      control: (
+                        <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
+                          <SelectTrigger className="w-full lg:w-56 rounded-full">
+                            <SelectValue placeholder="All Employees" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Employees</SelectItem>
+                            {employees?.map((emp) => (
+                              <SelectItem key={emp.id} value={emp.id}>
+                                {emp.first_name} {emp.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ),
+                      minWidthClassName: "sm:min-w-[220px]",
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        }
+      />
 
-      {/* Filters */}
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto]">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
-              <SelectTrigger className="w-full lg:w-44 rounded-full">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="contract">Contract</SelectItem>
-                <SelectItem value="certificate">Certificate</SelectItem>
-                <SelectItem value="official">Official</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            {canManageDocuments && (
-              <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
-                <SelectTrigger className="w-full lg:w-56 rounded-full">
-                  <SelectValue placeholder="All Employees" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Employees</SelectItem>
-                  {employees?.map((emp) => (
-                    <SelectItem key={emp.id} value={emp.id}>
-                      {emp.first_name} {emp.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+      <DataTableShell
+        title="Documents"
+        description={`${filteredDocuments?.length || 0} document${filteredDocuments?.length !== 1 ? 's' : ''} found`}
+        hasData={(filteredDocuments?.length || 0) > 0}
+        loading={isLoading}
+        loadingSkeleton={
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-xl" />
+            ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Documents Table */}
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FolderOpen className="w-5 h-5" />
-            Documents
-          </CardTitle>
-          <CardDescription>
-            {filteredDocuments?.length || 0} document{filteredDocuments?.length !== 1 ? 's' : ''} found
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : filteredDocuments?.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No documents found</h3>
-              <p className="text-muted-foreground text-sm mt-1">
-                {canManageDocuments ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3 md:hidden">
-                {filteredDocuments?.map((doc) => (
-                  <div key={doc.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2.5 rounded-xl bg-muted/50 shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium break-words">{doc.title}</p>
-                          <Badge className={categoryColors[doc.category]}>
-                            {categoryLabels[doc.category]}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-1">{doc.file_name}</p>
-                        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                          {canManageDocuments && (
-                            <p>
-                              Employee: {doc.employee?.first_name} {doc.employee?.last_name}
-                            </p>
-                          )}
-                          <p>Size: {formatFileSize(doc.file_size)}</p>
-                          <p>Uploaded: {format(new Date(doc.created_at), 'MMM d, yyyy')}</p>
-                        </div>
-                      </div>
+        }
+        emptyState={
+          <div className="text-center py-12">
+            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium">No documents found</h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              {canManageDocuments ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
+            </p>
+          </div>
+        }
+        mobileList={
+          <div className="space-y-3">
+            {filteredDocuments?.map((doc) => (
+              <div key={doc.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-muted/50 shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium break-words">{doc.title}</p>
+                      <Badge className={categoryColors[doc.category]}>
+                        {categoryLabels[doc.category]}
+                      </Badge>
                     </div>
-                    <div className="mt-3 flex flex-wrap justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => handleDownload(doc)}
-                        disabled={getSignedUrl.isPending}
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        Download
-                      </Button>
+                    <p className="text-xs text-muted-foreground truncate mt-1">{doc.file_name}</p>
+                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                       {canManageDocuments && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{doc.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(doc)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <p>
+                          Employee: {doc.employee?.first_name} {doc.employee?.last_name}
+                        </p>
                       )}
+                      <p>Size: {formatFileSize(doc.file_size)}</p>
+                      <p>Uploaded: {format(new Date(doc.created_at), 'MMM d, yyyy')}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead className="hidden md:table-cell">Category</TableHead>
-                    {canManageDocuments && <TableHead className="hidden sm:table-cell">Employee</TableHead>}
-                    <TableHead className="hidden lg:table-cell">Size</TableHead>
-                    <TableHead className="hidden md:table-cell">Uploaded</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDocuments?.map((doc) => (
-                    <TableRow key={doc.id} className="hover:bg-muted/20">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-xl bg-muted/60">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{doc.title}</p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                              {doc.file_name}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge className={categoryColors[doc.category]}>
-                          {categoryLabels[doc.category]}
-                        </Badge>
-                      </TableCell>
-                      {canManageDocuments && (
-                        <TableCell className="hidden sm:table-cell">
-                          {doc.employee?.first_name} {doc.employee?.last_name}
-                        </TableCell>
-                      )}
-                      <TableCell className="hidden lg:table-cell">
-                        {formatFileSize(doc.file_size)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {format(new Date(doc.created_at), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full"
-                            onClick={() => handleDownload(doc)}
-                            disabled={getSignedUrl.isPending}
+                </div>
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => handleDownload(doc)}
+                    disabled={getSignedUrl.isPending}
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                  {canManageDocuments && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{doc.title}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(doc)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            <Download className="w-4 h-4 mr-1" />
-                            <span className="hidden lg:inline">Download</span>
-                          </Button>
-                          {canManageDocuments && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
-                                  <Trash2 className="w-4 h-4 mr-1" />
-                                  <span className="hidden lg:inline">Delete</span>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete "{doc.title}"? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(doc)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        }
+        table={
+          <div className="overflow-x-auto rounded-xl border border-border/60">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead className="hidden md:table-cell">Category</TableHead>
+                  {canManageDocuments && <TableHead className="hidden sm:table-cell">Employee</TableHead>}
+                  <TableHead className="hidden lg:table-cell">Size</TableHead>
+                  <TableHead className="hidden md:table-cell">Uploaded</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDocuments?.map((doc) => (
+                  <TableRow key={doc.id} className="hover:bg-muted/20">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-muted/60">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{doc.title}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {doc.file_name}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge className={categoryColors[doc.category]}>
+                        {categoryLabels[doc.category]}
+                      </Badge>
+                    </TableCell>
+                    {canManageDocuments && (
+                      <TableCell className="hidden sm:table-cell">
+                        {doc.employee?.first_name} {doc.employee?.last_name}
+                      </TableCell>
+                    )}
+                    <TableCell className="hidden lg:table-cell">
+                      {formatFileSize(doc.file_size)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {format(new Date(doc.created_at), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full"
+                          onClick={() => handleDownload(doc)}
+                          disabled={getSignedUrl.isPending}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          <span className="hidden lg:inline">Download</span>
+                        </Button>
+                        {canManageDocuments && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive">
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                <span className="hidden lg:inline">Delete</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{doc.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(doc)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        }
+      />
     </div>
   );
 }

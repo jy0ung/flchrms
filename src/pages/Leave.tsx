@@ -424,19 +424,19 @@ export default function Leave() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm sm:p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold flex items-center gap-3 sm:text-3xl">
-            <Calendar className="w-8 h-8 text-accent" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+            <Calendar className="h-6 w-6 text-accent" />
             Leave Management
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             {isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full rounded-full sm:w-auto">
+            <Button className="h-9 w-full rounded-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Request Leave
             </Button>

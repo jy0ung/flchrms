@@ -1,0 +1,121 @@
+import * as React from "react";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+export interface DataTableShellProps extends React.HTMLAttributes<HTMLDivElement> {
+  title?: string;
+  description?: string;
+  headerActions?: React.ReactNode;
+  toolbar?: React.ReactNode;
+  alertBanner?: React.ReactNode;
+  loading?: boolean;
+  hasData?: boolean;
+  loadingSkeleton?: React.ReactNode;
+  emptyState?: React.ReactNode;
+  table?: React.ReactNode;
+  mobileList?: React.ReactNode;
+  content?: React.ReactNode;
+  pagination?: React.ReactNode;
+  stickyToolbar?: boolean;
+  contentClassName?: string;
+}
+
+/**
+ * Standard shell for list/table screens.
+ * Provides a consistent container hierarchy: header -> toolbar -> alerts -> content -> pagination.
+ */
+export function DataTableShell({
+  title,
+  description,
+  headerActions,
+  toolbar,
+  alertBanner,
+  loading = false,
+  hasData,
+  loadingSkeleton,
+  emptyState,
+  table,
+  mobileList,
+  content,
+  pagination,
+  stickyToolbar = false,
+  className,
+  contentClassName,
+  ...props
+}: DataTableShellProps) {
+  const titleId = React.useId();
+  const hasHeader = Boolean(title || description || headerActions);
+  const hasRows = hasData ?? Boolean(content || table || mobileList);
+
+  return (
+    <Card
+      role="region"
+      aria-labelledby={title ? titleId : undefined}
+      aria-busy={loading || undefined}
+      className={cn("overflow-hidden", className)}
+      {...props}
+    >
+      {hasHeader ? (
+        <CardHeader className="p-4 pb-0 sm:p-5 sm:pb-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              {title ? (
+                <CardTitle id={titleId} className="text-xl sm:text-2xl">
+                  {title}
+                </CardTitle>
+              ) : null}
+              {description ? <CardDescription>{description}</CardDescription> : null}
+            </div>
+            {headerActions ? (
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">{headerActions}</div>
+            ) : null}
+          </div>
+        </CardHeader>
+      ) : null}
+
+      <CardContent className={cn("space-y-4 p-4 sm:p-5", hasHeader && "pt-4", contentClassName)}>
+        {toolbar ? (
+          <div className={cn(stickyToolbar && "sticky top-0 z-10")}>
+            {hasHeader ? <Separator className="mb-4" /> : null}
+            {toolbar}
+          </div>
+        ) : hasHeader ? (
+          <Separator />
+        ) : null}
+
+        {alertBanner ? <div>{alertBanner}</div> : null}
+
+        {loading ? (
+          loadingSkeleton ?? (
+            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+              Loading…
+            </div>
+          )
+        ) : hasRows ? (
+          content ?? (
+            <div className="space-y-4">
+              {mobileList ? <div className="md:hidden">{mobileList}</div> : null}
+              {table ? <div className={cn(mobileList && "hidden md:block")}>{table}</div> : null}
+              {!mobileList && !table ? null : null}
+            </div>
+          )
+        ) : (
+          emptyState ?? (
+            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+              No records found.
+            </div>
+          )
+        )}
+
+        {pagination ? (
+          <>
+            <Separator />
+            <div>{pagination}</div>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}

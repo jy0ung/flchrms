@@ -19,18 +19,14 @@ export default function Performance() {
   return (
     <div className="space-y-6">
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <BarChart3 className="w-4 h-4" />
-              Performance
-            </div>
+        <CardContent className="p-4 sm:p-5">
+          <div className="space-y-1">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                <BarChart3 className="w-7 h-7 text-accent" />
+              <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+                <BarChart3 className="h-5 w-5 text-accent" />
                 Performance Reviews
               </h1>
-              <p className="text-muted-foreground mt-1">Your performance evaluations</p>
+              <p className="mt-1 text-sm text-muted-foreground">Your performance evaluations</p>
             </div>
           </div>
         </CardContent>

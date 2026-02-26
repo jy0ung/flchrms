@@ -45,17 +45,22 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="relative flex min-h-screen w-full bg-transparent">
       <AppSidebar />
-      <main className="flex-1 overflow-auto relative">
+      <main className="relative flex-1 overflow-auto">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
+          <div className="absolute right-0 top-20 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-info/5 blur-3xl" />
+        </div>
         {showFloatingNotifications && (
-          <div className="fixed top-3 right-3 z-40 md:top-4 md:right-6 lg:right-8 overflow-visible">
-            <div className="rounded-xl border border-border/60 bg-background/95 p-1 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/80 overflow-visible">
+          <div className="fixed right-3 top-3 z-40 overflow-visible md:right-5 md:top-4 lg:right-7">
+            <div className="overflow-visible rounded-2xl border border-border/70 bg-background/90 p-1 shadow-[0_12px_28px_hsl(var(--foreground)/0.1)] backdrop-blur-xl">
               <NotificationsBell floating />
             </div>
           </div>
         )}
-        <div className="animate-fadeIn p-4 pt-16 sm:p-5 sm:pt-16 md:p-6 md:pt-6 lg:p-8">
+        <div className="animate-fadeIn relative p-3 pt-14 sm:p-5 sm:pt-16 md:p-6 md:pt-6 lg:p-8">
           <div className="mx-auto w-full max-w-[1680px]">
             <Outlet />
           </div>

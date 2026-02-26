@@ -19,20 +19,33 @@ const statusColors: Record<string, string> = {
 };
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
-export function MyPayslips() {
+interface MyPayslipsProps {
+  hideAmounts?: boolean;
+  onHideAmountsChange?: (value: boolean) => void;
+  showVisibilityToggle?: boolean;
+}
+
+export function MyPayslips({
+  hideAmounts: controlledHideAmounts,
+  onHideAmountsChange,
+  showVisibilityToggle = true,
+}: MyPayslipsProps = {}) {
   const { user } = useAuth();
   const { data: payslips, isLoading: payslipsLoading } = useMyPayslips();
   const { data: salary, isLoading: salaryLoading } = useEmployeeSalaryStructure(user?.id);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
-  const [hideAmounts, setHideAmounts] = useState<boolean>(() => {
+  const [internalHideAmounts, setInternalHideAmounts] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
   });
+  const hideAmounts = controlledHideAmounts ?? internalHideAmounts;
+  const setHideAmounts = onHideAmountsChange ?? setInternalHideAmounts;
 
   useEffect(() => {
+    if (controlledHideAmounts !== undefined) return;
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hideAmounts ? '1' : '0');
-  }, [hideAmounts]);
+  }, [controlledHideAmounts, hideAmounts]);
 
   if (payslipsLoading || salaryLoading) {
     return (
@@ -66,25 +79,27 @@ export function MyPayslips() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
-          <div className="flex items-center gap-3 min-w-0">
-          {hideAmounts ? (
-            <EyeOff className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <Eye className="w-4 h-4 text-muted-foreground" />
-          )}
-            <Label htmlFor="hide-payroll-amounts" className="text-sm">
-              Hide salary amounts
-            </Label>
+      {showVisibilityToggle ? (
+        <div className="flex justify-end">
+          <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
+            <div className="flex min-w-0 items-center gap-3">
+              {hideAmounts ? (
+                <EyeOff className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <Eye className="w-4 h-4 text-muted-foreground" />
+              )}
+              <Label htmlFor="hide-payroll-amounts" className="text-sm">
+                Hide salary amounts
+              </Label>
+            </div>
+            <Switch
+              id="hide-payroll-amounts"
+              checked={hideAmounts}
+              onCheckedChange={setHideAmounts}
+            />
           </div>
-          <Switch
-            id="hide-payroll-amounts"
-            checked={hideAmounts}
-            onCheckedChange={setHideAmounts}
-          />
         </div>
-      </div>
+      ) : null}
 
       {/* No salary structure warning */}
       {!salary && (

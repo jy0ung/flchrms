@@ -22,19 +22,15 @@ export default function Attendance() {
   return (
     <div className="space-y-6">
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                Time Tracking
-              </div>
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                  <Clock className="w-7 h-7 text-accent" />
+                <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+                  <Clock className="h-5 w-5 text-accent" />
                   Attendance
                 </h1>
-                <p className="text-muted-foreground mt-1">Track your work hours</p>
+                <p className="mt-1 text-sm text-muted-foreground">Track your work hours</p>
               </div>
             </div>
             <div className="w-full lg:w-auto">
@@ -42,7 +38,7 @@ export default function Attendance() {
                 <Button
                   onClick={() => clockIn.mutate()}
                   disabled={clockIn.isPending}
-                  className="bg-success hover:bg-success/90 rounded-full w-full lg:w-auto"
+                  className="h-9 w-full rounded-full bg-success hover:bg-success/90 lg:w-auto"
                 >
                   <Play className="w-4 h-4 mr-2" /> Clock In
                 </Button>
@@ -51,7 +47,7 @@ export default function Attendance() {
                   onClick={() => clockOut.mutate()}
                   disabled={clockOut.isPending}
                   variant="destructive"
-                  className="rounded-full w-full lg:w-auto"
+                  className="h-9 w-full rounded-full lg:w-auto"
                 >
                   <Square className="w-4 h-4 mr-2" /> Clock Out
                 </Button>

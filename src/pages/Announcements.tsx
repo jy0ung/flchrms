@@ -19,26 +19,21 @@ export default function Announcements() {
     <div className="space-y-6">
       <Card className="card-stat overflow-hidden border-border/60 shadow-sm">
         <CardContent className="p-0">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-5 sm:p-6">
-            <div className="absolute right-3 top-3 hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs font-medium text-muted-foreground backdrop-blur sm:inline-flex sm:items-center sm:gap-1.5">
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-4 sm:p-5">
+            <div className="absolute right-3 top-3 hidden rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur sm:inline-flex sm:items-center sm:gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
               {isLoading ? 'Loading' : `${announcements?.length ?? 0} items`}
             </div>
 
-            <div className="space-y-3">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-                <Megaphone className="h-4 w-4" />
-                Company Updates
-              </div>
-
+            <div className="space-y-2">
               <div className="space-y-1">
-                <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight md:text-3xl">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                     <Megaphone className="h-5 w-5" />
                   </span>
                   Announcements
                 </h1>
-                <p className="text-sm text-muted-foreground sm:text-base">
+                <p className="text-sm text-muted-foreground">
                   Company-wide updates, reminders, and internal notices.
                 </p>
               </div>

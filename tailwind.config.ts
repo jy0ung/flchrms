@@ -113,7 +113,7 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "Manrope", "Inter", "system-ui", "sans-serif"],
       },
     },
   },

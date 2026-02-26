@@ -153,25 +153,21 @@ export default function TeamCalendar() {
     <div className="space-y-6">
       {/* Header */}
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                <CalendarDays className="w-4 h-4" />
-                Shared Calendar
-              </div>
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Team Calendar</h1>
-                <p className="text-muted-foreground text-sm mt-1">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Team Calendar</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
                   View leave schedules, holidays, and department events
                 </p>
               </div>
             </div>
-            <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto">
+            <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
           {canManageDepartmentEvents && (
             <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 rounded-full w-full lg:w-auto">
+                <Button variant="outline" className="h-9 w-full gap-2 rounded-full lg:w-auto">
                   <CalendarPlus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Event</span>
                 </Button>
@@ -272,7 +268,7 @@ export default function TeamCalendar() {
           {canManageHolidays && (
             <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2 rounded-full w-full lg:w-auto">
+                <Button className="h-9 w-full gap-2 rounded-full lg:w-auto">
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Holiday</span>
                 </Button>

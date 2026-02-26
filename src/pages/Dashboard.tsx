@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type DragEvent, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
+  ArrowDown,
+  ArrowUp,
   Bell,
   Briefcase,
   Building2,
@@ -13,8 +15,10 @@ import {
   Clock,
   Filter,
   GraduationCap,
+  GripVertical,
   Loader2,
   Megaphone,
+  Plus,
   Play,
   RefreshCcw,
   Settings2,
@@ -45,8 +49,11 @@ import {
 } from '@/lib/permissions';
 import {
   getDashboardEnabledWidgetIds,
+  getDashboardWidgetSpanMap,
   resetDashboardEnabledWidgetIds,
+  resetDashboardWidgetSpanMap,
   setDashboardEnabledWidgetIds,
+  setDashboardWidgetSpanMap,
   FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY,
   UI_PREFERENCES_CHANGED_EVENT,
 } from '@/lib/ui-preferences';
@@ -55,8 +62,6 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -72,11 +77,15 @@ type DashboardWidgetId =
   | 'criticalInsights'
   | 'executiveMetrics';
 
+type DashboardWidgetSpan = 1 | 2 | 3;
+
 interface DashboardWidgetMeta {
   id: DashboardWidgetId;
   label: string;
   description: string;
-  spanClass?: string;
+  defaultSpan: DashboardWidgetSpan;
+  minSpan?: DashboardWidgetSpan;
+  maxSpan?: DashboardWidgetSpan;
 }
 
 interface LeaveRosterItem {
@@ -103,50 +112,55 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
     id: 'attendanceToday',
     label: "Today's Attendance",
     description: 'Clock in/out and view your attendance status for today.',
-    spanClass: 'xl:col-span-2',
+    defaultSpan: 2,
   },
   leaveBalance: {
     id: 'leaveBalance',
     label: 'Leave Balance',
     description: 'Your remaining leave days, usage, and pending requests.',
+    defaultSpan: 1,
   },
   announcements: {
     id: 'announcements',
     label: 'Announcements',
     description: 'Latest company updates and notices.',
-    spanClass: 'xl:col-span-2',
+    defaultSpan: 2,
   },
   trainingSummary: {
     id: 'trainingSummary',
     label: 'Training',
     description: 'Track your training enrollments and completion progress.',
+    defaultSpan: 1,
   },
   performanceSummary: {
     id: 'performanceSummary',
     label: 'Performance Reviews',
     description: 'See your review status and recent review activity.',
+    defaultSpan: 1,
   },
   teamSnapshot: {
     id: 'teamSnapshot',
     label: 'Team Snapshot',
     description: 'Headcount, present/absent, and on-leave counts for your scope.',
+    defaultSpan: 1,
   },
   onLeaveToday: {
     id: 'onLeaveToday',
     label: 'Who Is On Leave Today',
     description: 'See who is currently on leave today in your visible scope.',
-    spanClass: 'xl:col-span-2',
+    defaultSpan: 2,
   },
   criticalInsights: {
     id: 'criticalInsights',
     label: 'Critical Insights',
     description: 'Risk and exception signals for operational leadership.',
-    spanClass: 'xl:col-span-2',
+    defaultSpan: 2,
   },
   executiveMetrics: {
     id: 'executiveMetrics',
     label: 'Executive Metrics',
     description: 'High-signal workforce, leave, training, and review KPIs.',
+    defaultSpan: 1,
   },
 };
 
@@ -198,10 +212,10 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
 
 const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   employee: ['attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary', 'announcements'],
-  manager: ['teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements', 'trainingSummary', 'performanceSummary'],
-  general_manager: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'leaveBalance'],
-  hr: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'leaveBalance'],
-  director: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'leaveBalance'],
+  manager: ['attendanceToday', 'leaveBalance', 'teamSnapshot', 'onLeaveToday', 'announcements', 'trainingSummary', 'performanceSummary'],
+  general_manager: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
+  hr: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
+  director: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
   admin: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday'],
 };
 
@@ -215,6 +229,22 @@ function formatRoleLabel(role: AppRole | null | undefined) {
 function clampPercent(value: number) {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function clampWidgetSpan(value: number, widgetId?: DashboardWidgetId): DashboardWidgetSpan {
+  const meta = widgetId ? WIDGET_META[widgetId] : undefined;
+  const min = meta?.minSpan ?? 1;
+  const max = meta?.maxSpan ?? 3;
+  const rounded = Math.round(value);
+  if (rounded <= min) return min;
+  if (rounded >= max) return max;
+  return rounded as DashboardWidgetSpan;
+}
+
+function getWidgetSpanClass(span: DashboardWidgetSpan) {
+  if (span === 3) return 'xl:col-span-3';
+  if (span === 2) return 'xl:col-span-2';
+  return 'xl:col-span-1';
 }
 
 function getScopeLabel(role: AppRole | null | undefined, stats?: ExecutiveStats | null) {
@@ -259,22 +289,22 @@ function DashboardWidgetCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('card-stat border-border/60 shadow-sm', className)}>
+    <Card className={cn('card-stat flex h-full flex-col border-border/60 shadow-sm', className)}>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="flex items-center gap-2 text-base md:text-lg">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Icon className="h-4 w-4" />
               </span>
-              <span className="truncate">{title}</span>
+              <span className="min-w-0 break-words leading-tight">{title}</span>
             </CardTitle>
             {description ? <CardDescription className="mt-2 text-xs md:text-sm">{description}</CardDescription> : null}
           </div>
-          {action ? <div className="shrink-0">{action}</div> : null}
+          {action ? <div className="shrink-0 self-start sm:self-auto">{action}</div> : null}
         </div>
       </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      <CardContent className="flex-1 pt-0">{children}</CardContent>
     </Card>
   );
 }
@@ -293,71 +323,6 @@ function MetricChip({ label, value, tone = 'default' }: { label: string; value: 
       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-base font-semibold leading-none">{value}</p>
     </div>
-  );
-}
-
-function DashboardCustomizeDialog({
-  open,
-  onOpenChange,
-  role,
-  availableWidgetIds,
-  enabledWidgetIds,
-  onToggle,
-  onReset,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  role: AppRole;
-  availableWidgetIds: DashboardWidgetId[];
-  enabledWidgetIds: DashboardWidgetId[];
-  onToggle: (widgetId: DashboardWidgetId, enabled: boolean) => void;
-  onReset: () => void;
-}) {
-  const enabledSet = new Set(enabledWidgetIds);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4 text-primary" />
-            Customize Dashboard
-          </DialogTitle>
-          <DialogDescription>
-            Show or hide dashboard widgets for your <span className="font-medium text-foreground">{formatRoleLabel(role)}</span> dashboard. Preferences are saved for this account and role.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          {availableWidgetIds.map((widgetId) => {
-            const widget = WIDGET_META[widgetId];
-            const checked = enabledSet.has(widgetId);
-            return (
-              <div key={widgetId} className="flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/10 p-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium leading-tight">{widget.label}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{widget.description}</p>
-                </div>
-                <Switch
-                  checked={checked}
-                  onCheckedChange={(value) => onToggle(widgetId, value)}
-                  aria-label={`Toggle ${widget.label}`}
-                  className="mt-0.5"
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">Hidden widgets can be restored anytime from this panel.</p>
-          <Button type="button" variant="outline" className="rounded-lg" onClick={onReset}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Reset Role Defaults
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -537,7 +502,7 @@ function LeaveBalanceWidget() {
       icon={Calendar}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>
-          Open Leave
+          Open
         </Button>
       }
     >
@@ -563,28 +528,29 @@ function LeaveBalanceWidget() {
             <p className="text-xs text-muted-foreground">{utilization}% of available leave allocation used</p>
           </div>
 
-          <div className="space-y-2">
-            {(balances ?? []).slice(0, 4).map((balance) => (
-              <div key={balance.leave_type_id} className="rounded-xl border border-border/60 bg-background/80 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{balance.leave_type_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {balance.days_used} used • {balance.days_pending} pending
-                    </p>
+          {(balances?.length ?? 0) === 0 ? (
+            <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
+              No leave balance records available yet.
+            </div>
+          ) : (
+            <div className="max-h-[170px] space-y-2 overflow-y-auto pr-1 xl:max-h-[112px] xl:pr-2">
+                {(balances ?? []).map((balance) => (
+                  <div key={balance.leave_type_id} className="rounded-xl border border-border/60 bg-background/80 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{balance.leave_type_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {balance.days_used} used • {balance.days_pending} pending
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                        {balance.days_remaining} left
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
-                    {balance.days_remaining} left
-                  </Badge>
-                </div>
-              </div>
-            ))}
-            {(balances?.length ?? 0) === 0 && (
-              <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
-                No leave balance records available yet.
-              </div>
-            )}
-          </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
     </DashboardWidgetCard>
@@ -776,7 +742,7 @@ function TeamSnapshotWidget({ role }: { role: AppRole }) {
   if (isLoading) {
     return (
       <DashboardWidgetCard
-        title={role === 'manager' ? 'Department Snapshot' : 'Operational Snapshot'}
+        title={role === 'manager' ? 'Dept Snapshot' : 'Operational Snapshot'}
         description={`Attendance and staffing visibility for ${scopeLabel}.`}
         icon={Users}
       >
@@ -794,12 +760,12 @@ function TeamSnapshotWidget({ role }: { role: AppRole }) {
 
   return (
     <DashboardWidgetCard
-      title={role === 'manager' ? 'Department Snapshot' : 'Operational Snapshot'}
+      title={role === 'manager' ? 'Dept Snapshot' : 'Operational Snapshot'}
       description={`Total staffing and daily attendance for ${scopeLabel}.`}
       icon={Users}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/attendance')}>
-          View Attendance
+          Attendance
         </Button>
       }
     >
@@ -1076,13 +1042,23 @@ function DashboardWidgetRenderer({ widgetId, role }: { widgetId: DashboardWidget
 
 export default function Dashboard() {
   const { user, profile, role } = useAuth();
-  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [isLayoutEditing, setIsLayoutEditing] = useState(false);
   const [enabledWidgetIds, setEnabledWidgetIdsState] = useState<DashboardWidgetId[]>([]);
+  const [widgetSpanMap, setWidgetSpanMapState] = useState<Record<DashboardWidgetId, DashboardWidgetSpan>>({} as Record<DashboardWidgetId, DashboardWidgetSpan>);
+  const [draggingWidgetId, setDraggingWidgetId] = useState<DashboardWidgetId | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<DashboardWidgetId | null>(null);
   const navigate = useNavigate();
 
   const normalizedRole: AppRole = role ?? 'employee';
   const availableWidgetIds = ROLE_WIDGETS[normalizedRole];
   const defaultWidgetIds = ROLE_DEFAULT_WIDGETS[normalizedRole];
+  const defaultWidgetSpanMap = useMemo(
+    () =>
+      Object.fromEntries(
+        availableWidgetIds.map((widgetId) => [widgetId, WIDGET_META[widgetId].defaultSpan]),
+      ) as Record<DashboardWidgetId, DashboardWidgetSpan>,
+    [availableWidgetIds],
+  );
   const canViewTeamWidgets = canViewManagerDashboardWidgets(normalizedRole);
   const canViewCriticalWidgets = canViewExecutiveCriticalDashboard(normalizedRole);
 
@@ -1092,7 +1068,10 @@ export default function Dashboard() {
     setEnabledWidgetIdsState(
       getDashboardEnabledWidgetIds(user.id, normalizedRole, availableWidgetIds, defaultWidgetIds) as DashboardWidgetId[],
     );
-  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds]);
+    setWidgetSpanMapState(
+      getDashboardWidgetSpanMap(user.id, normalizedRole, availableWidgetIds, defaultWidgetSpanMap) as Record<DashboardWidgetId, DashboardWidgetSpan>,
+    );
+  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds, defaultWidgetSpanMap]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !user?.id || !normalizedRole) return;
@@ -1101,10 +1080,18 @@ export default function Dashboard() {
       setEnabledWidgetIdsState(
         getDashboardEnabledWidgetIds(user.id, normalizedRole, availableWidgetIds, defaultWidgetIds) as DashboardWidgetId[],
       );
+      setWidgetSpanMapState(
+        getDashboardWidgetSpanMap(user.id, normalizedRole, availableWidgetIds, defaultWidgetSpanMap) as Record<DashboardWidgetId, DashboardWidgetSpan>,
+      );
     };
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === null || event.key === FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY || event.key.includes(`hrms.ui.dashboard.widgets.${user.id}.${normalizedRole}`)) {
+      if (
+        event.key === null ||
+        event.key === FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY ||
+        event.key.includes(`hrms.ui.dashboard.widgets.${user.id}.${normalizedRole}`) ||
+        event.key.includes(`hrms.ui.dashboard.widgetSpans.${user.id}.${normalizedRole}`)
+      ) {
         sync();
       }
     };
@@ -1116,84 +1103,250 @@ export default function Dashboard() {
       window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, sync as EventListener);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds]);
+  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds, defaultWidgetSpanMap]);
 
   const orderedEnabledWidgetIds = useMemo(() => {
-    const enabledSet = new Set(enabledWidgetIds);
-    return availableWidgetIds.filter((id) => enabledSet.has(id));
+    const allowedSet = new Set(availableWidgetIds);
+    const seen = new Set<DashboardWidgetId>();
+    return enabledWidgetIds.filter((id): id is DashboardWidgetId => {
+      if (!allowedSet.has(id as DashboardWidgetId)) return false;
+      const typedId = id as DashboardWidgetId;
+      if (seen.has(typedId)) return false;
+      seen.add(typedId);
+      return true;
+    });
   }, [availableWidgetIds, enabledWidgetIds]);
 
   const hiddenWidgetCount = availableWidgetIds.length - orderedEnabledWidgetIds.length;
+  const hiddenWidgetIds = useMemo(
+    () => availableWidgetIds.filter((widgetId) => !orderedEnabledWidgetIds.includes(widgetId)),
+    [availableWidgetIds, orderedEnabledWidgetIds],
+  );
   const scopeLabel = getScopeLabel(normalizedRole, null);
+  const resolvedWidgetSpanMap = useMemo(() => {
+    const next = { ...defaultWidgetSpanMap } as Record<DashboardWidgetId, DashboardWidgetSpan>;
+    for (const widgetId of availableWidgetIds) {
+      next[widgetId] = clampWidgetSpan(widgetSpanMap[widgetId] ?? defaultWidgetSpanMap[widgetId], widgetId);
+    }
+    return next;
+  }, [availableWidgetIds, defaultWidgetSpanMap, widgetSpanMap]);
 
   const handleToggleWidget = (widgetId: DashboardWidgetId, enabled: boolean) => {
     if (!user?.id) return;
 
+    const allowedSet = new Set(availableWidgetIds);
+    const currentOrdered = orderedEnabledWidgetIds.filter((id) => allowedSet.has(id));
     const nextEnabled = enabled
-      ? [...new Set([...enabledWidgetIds, widgetId])]
-      : enabledWidgetIds.filter((id) => id !== widgetId);
+      ? currentOrdered.includes(widgetId)
+        ? currentOrdered
+        : [...currentOrdered, widgetId]
+      : currentOrdered.filter((id) => id !== widgetId);
 
-    const normalizedEnabled = availableWidgetIds.filter((id) => nextEnabled.includes(id));
+    const normalizedEnabled = [...new Set(nextEnabled)].filter((id) => allowedSet.has(id));
     setEnabledWidgetIdsState(normalizedEnabled);
     setDashboardEnabledWidgetIds(user.id, normalizedRole, normalizedEnabled);
+  };
+
+  const handleMoveWidget = (widgetId: DashboardWidgetId, direction: 'up' | 'down') => {
+    if (!user?.id) return;
+
+    const current = [...orderedEnabledWidgetIds];
+    const index = current.indexOf(widgetId);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= current.length) return;
+
+    [current[index], current[targetIndex]] = [current[targetIndex], current[index]];
+    setEnabledWidgetIdsState(current);
+    setDashboardEnabledWidgetIds(user.id, normalizedRole, current);
+  };
+
+  const handleReorderVisibleWidgets = (sourceId: DashboardWidgetId, targetId: DashboardWidgetId) => {
+    if (!user?.id || sourceId === targetId) return;
+
+    const current = [...orderedEnabledWidgetIds];
+    const sourceIndex = current.indexOf(sourceId);
+    const targetIndex = current.indexOf(targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    current.splice(sourceIndex, 1);
+    current.splice(targetIndex, 0, sourceId);
+    setEnabledWidgetIdsState(current);
+    setDashboardEnabledWidgetIds(user.id, normalizedRole, current);
+  };
+
+  const handleSetWidgetSpan = (widgetId: DashboardWidgetId, span: DashboardWidgetSpan) => {
+    if (!user?.id) return;
+
+    const normalized = clampWidgetSpan(span, widgetId);
+    const next = {
+      ...resolvedWidgetSpanMap,
+      [widgetId]: normalized,
+    };
+    setWidgetSpanMapState(next);
+    setDashboardWidgetSpanMap(user.id, normalizedRole, next);
   };
 
   const handleResetWidgets = () => {
     if (!user?.id) return;
     setEnabledWidgetIdsState(defaultWidgetIds);
+    setWidgetSpanMapState(defaultWidgetSpanMap);
     resetDashboardEnabledWidgetIds(user.id, normalizedRole);
+    resetDashboardWidgetSpanMap(user.id, normalizedRole);
+    setDraggingWidgetId(null);
+    setDragOverWidgetId(null);
+  };
+
+  const handleWidgetDragStart = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLButtonElement>) => {
+    if (!isLayoutEditing) {
+      event.preventDefault();
+      return;
+    }
+    setDraggingWidgetId(widgetId);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', widgetId);
+  };
+
+  const handleWidgetDragOver = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLDivElement>) => {
+    if (!isLayoutEditing || !draggingWidgetId || draggingWidgetId === widgetId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setDragOverWidgetId(widgetId);
+  };
+
+  const handleWidgetDrop = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLDivElement>) => {
+    if (!isLayoutEditing) return;
+    event.preventDefault();
+    const source = draggingWidgetId || (event.dataTransfer.getData('text/plain') as DashboardWidgetId | '');
+    if (!source || source === widgetId) {
+      setDraggingWidgetId(null);
+      setDragOverWidgetId(null);
+      return;
+    }
+    handleReorderVisibleWidgets(source as DashboardWidgetId, widgetId);
+    setDraggingWidgetId(null);
+    setDragOverWidgetId(null);
+  };
+
+  const resetDragState = () => {
+    setDraggingWidgetId(null);
+    setDragOverWidgetId(null);
   };
 
   return (
     <div className="space-y-5 md:space-y-6">
       <Card className="card-stat overflow-hidden border-border/60 shadow-sm">
         <CardContent className="p-0">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-5 sm:p-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-                  <Building2 className="h-4 w-4" />
-                  Dashboard
-                </div>
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-3.5 sm:p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 space-y-1">
                 <div className="space-y-1">
-                  <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                     Welcome back, {profile?.first_name || 'there'}!
                   </h1>
-                  <p className="text-sm text-muted-foreground md:text-base">
+                  <p className="text-sm text-muted-foreground">
                     {format(new Date(), 'EEEE, MMMM d, yyyy')} • {formatRoleLabel(normalizedRole)} dashboard • {scopeLabel}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {canViewTeamWidgets && (
-                    <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
                       Team visibility enabled
                     </Badge>
                   )}
                   {canViewCriticalWidgets && (
-                    <Badge className="badge-info rounded-full px-2.5 py-1">Critical insights enabled</Badge>
+                    <Badge className="badge-info rounded-full px-2 py-0.5 text-[11px]">Critical insights enabled</Badge>
                   )}
                   {hiddenWidgetCount > 0 && (
-                    <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
                       {hiddenWidgetCount} hidden widget{hiddenWidgetCount > 1 ? 's' : ''}
                     </Badge>
                   )}
                 </div>
               </div>
 
-              <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:min-w-[340px]">
-                <Button variant="outline" className="h-10 rounded-lg" onClick={() => navigate('/notifications')}>
+              <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[320px] lg:self-center">
+                <Button variant="outline" className="h-9 rounded-xl sm:min-w-[150px]" onClick={() => navigate('/notifications')}>
                   <Bell className="mr-2 h-4 w-4" />
                   Notifications
                 </Button>
-                <Button className="h-10 rounded-lg" onClick={() => setCustomizeOpen(true)}>
+                <Button
+                  className="h-9 rounded-xl sm:min-w-[170px]"
+                  variant={isLayoutEditing ? 'outline' : 'default'}
+                  onClick={() => setIsLayoutEditing((value) => !value)}
+                >
                   <Settings2 className="mr-2 h-4 w-4" />
-                  Customize Dashboard
+                  {isLayoutEditing ? 'Done Editing' : 'Edit Dashboard'}
                 </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {isLayoutEditing ? (
+        <Card className="card-stat border-border/60 shadow-sm">
+          <CardContent className="space-y-4 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="rounded-full px-2.5 py-1">
+                    <GripVertical className="mr-1.5 h-3.5 w-3.5" />
+                    Edit mode
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                    Drag widgets to reorder
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                    Resize widgets inline
+                  </Badge>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                  Use the controls on each widget to drag, resize, or hide it. Hidden widgets can be restored below.
+                </p>
+              </div>
+              <Button variant="outline" className="h-9 rounded-lg md:shrink-0" onClick={handleResetWidgets}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Reset Role Defaults
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium">Hidden Widgets</p>
+                  <p className="text-xs text-muted-foreground">
+                    Restore widgets for your {formatRoleLabel(normalizedRole)} dashboard.
+                  </p>
+                </div>
+                <Badge variant="outline" className="w-fit rounded-full px-2.5 py-1">
+                  {hiddenWidgetCount} hidden
+                </Badge>
+              </div>
+              {hiddenWidgetIds.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">All available widgets are currently visible.</p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {hiddenWidgetIds.map((widgetId) => (
+                    <Button
+                      key={widgetId}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-full px-3 text-xs"
+                      onClick={() => handleToggleWidget(widgetId, true)}
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      {WIDGET_META[widgetId].label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {orderedEnabledWidgetIds.length === 0 ? (
         <Card className="card-stat border-border/60 shadow-sm">
@@ -1203,11 +1356,11 @@ export default function Dashboard() {
             </div>
             <h2 className="text-lg font-semibold">No dashboard widgets visible</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              You have hidden all widgets for this role. Restore the default layout or enable widgets from customization.
+              You have hidden all widgets for this role. Enable edit mode to restore widgets or reset the role defaults.
             </p>
             <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
-              <Button className="rounded-lg" onClick={() => setCustomizeOpen(true)}>
-                Customize Dashboard
+              <Button className="rounded-lg" onClick={() => setIsLayoutEditing(true)}>
+                Edit Dashboard
               </Button>
               <Button variant="outline" className="rounded-lg" onClick={handleResetWidgets}>
                 <RefreshCcw className="mr-2 h-4 w-4" />
@@ -1217,24 +1370,102 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:grid-flow-dense">
           {orderedEnabledWidgetIds.map((widgetId) => (
-            <div key={widgetId} className={cn('space-y-0', WIDGET_META[widgetId].spanClass)}>
+            <div
+              key={widgetId}
+              onDragOver={handleWidgetDragOver(widgetId)}
+              onDrop={handleWidgetDrop(widgetId)}
+              onDragEnd={resetDragState}
+              className={cn(
+                'space-y-0 h-full',
+                getWidgetSpanClass(resolvedWidgetSpanMap[widgetId] ?? WIDGET_META[widgetId].defaultSpan),
+                isLayoutEditing && 'rounded-2xl border border-transparent p-1.5 transition-colors',
+                isLayoutEditing && draggingWidgetId === widgetId && 'opacity-70',
+                isLayoutEditing && dragOverWidgetId === widgetId && draggingWidgetId !== widgetId && 'border-primary/40 bg-primary/5',
+              )}
+            >
+              {isLayoutEditing ? (
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/80 p-2 shadow-sm backdrop-blur">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      draggable
+                      onDragStart={handleWidgetDragStart(widgetId)}
+                      onDragEnd={resetDragState}
+                      className="h-8 w-8 cursor-grab rounded-lg text-muted-foreground active:cursor-grabbing"
+                      aria-label={`Drag ${WIDGET_META[widgetId].label}`}
+                      title={`Drag ${WIDGET_META[widgetId].label} to reorder`}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </Button>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-foreground">{WIDGET_META[widgetId].label}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {resolvedWidgetSpanMap[widgetId] === 1 ? 'Small' : resolvedWidgetSpanMap[widgetId] === 2 ? 'Wide' : 'Full'} width
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/20 p-1">
+                      {([1, 2, 3] as DashboardWidgetSpan[]).map((span) => (
+                        <Button
+                          key={span}
+                          type="button"
+                          variant={resolvedWidgetSpanMap[widgetId] === span ? 'default' : 'ghost'}
+                          size="sm"
+                          className="h-7 rounded-md px-2 text-[11px]"
+                          onClick={() => handleSetWidgetSpan(widgetId, span)}
+                          aria-label={`Set ${WIDGET_META[widgetId].label} width to ${span === 1 ? 'small' : span === 2 ? 'wide' : 'full'}`}
+                        >
+                          {span === 1 ? 'S' : span === 2 ? 'W' : 'F'}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => handleMoveWidget(widgetId, 'up')}
+                      disabled={orderedEnabledWidgetIds.indexOf(widgetId) <= 0}
+                      aria-label={`Move ${WIDGET_META[widgetId].label} up`}
+                      title="Move up"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => handleMoveWidget(widgetId, 'down')}
+                      disabled={orderedEnabledWidgetIds.indexOf(widgetId) === -1 || orderedEnabledWidgetIds.indexOf(widgetId) >= orderedEnabledWidgetIds.length - 1}
+                      aria-label={`Move ${WIDGET_META[widgetId].label} down`}
+                      title="Move down"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg px-2.5 text-xs"
+                      onClick={() => handleToggleWidget(widgetId, false)}
+                    >
+                      Hide
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
               <DashboardWidgetRenderer widgetId={widgetId} role={normalizedRole} />
             </div>
           ))}
         </div>
       )}
-
-      <DashboardCustomizeDialog
-        open={customizeOpen}
-        onOpenChange={setCustomizeOpen}
-        role={normalizedRole}
-        availableWidgetIds={availableWidgetIds}
-        enabledWidgetIds={enabledWidgetIds}
-        onToggle={handleToggleWidget}
-        onReset={handleResetWidgets}
-      />
     </div>
   );
 }

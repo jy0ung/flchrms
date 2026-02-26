@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,44 @@ interface DeductionWithTypeRow {
     deduction_type: 'fixed' | 'percentage';
   } | null;
 }
+
+export type PayrollGenerationProgressPhase =
+  | 'idle'
+  | 'loading_period'
+  | 'loading_salaries'
+  | 'loading_employees'
+  | 'loading_attendance'
+  | 'loading_leaves'
+  | 'loading_deductions'
+  | 'processing_employees'
+  | 'inserting_payslips'
+  | 'updating_period'
+  | 'completed'
+  | 'error';
+
+export interface PayrollGenerationProgressState {
+  periodId: string | null;
+  phase: PayrollGenerationProgressPhase;
+  percent: number;
+  message: string | null;
+  processedEmployees: number;
+  totalEmployees: number;
+  generatedPayslips: number | null;
+  error: string | null;
+}
+
+const INITIAL_PAYROLL_GENERATION_PROGRESS: PayrollGenerationProgressState = {
+  periodId: null,
+  phase: 'idle',
+  percent: 0,
+  message: null,
+  processedEmployees: 0,
+  totalEmployees: 0,
+  generatedPayslips: null,
+  error: null,
+};
+
+const yieldToUi = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 
 // Salary Structures
 export function useSalaryStructures() {
@@ -372,9 +411,54 @@ export function useMyPayslips() {
 
 export function useGeneratePayslips() {
   const queryClient = useQueryClient();
+  const [progress, setProgress] = useState<PayrollGenerationProgressState>(
+    INITIAL_PAYROLL_GENERATION_PROGRESS,
+  );
+  const clearTimerRef = useRef<number | null>(null);
 
-  return useMutation({
+  const clearProgress = () => {
+    if (clearTimerRef.current) {
+      window.clearTimeout(clearTimerRef.current);
+      clearTimerRef.current = null;
+    }
+    setProgress(INITIAL_PAYROLL_GENERATION_PROGRESS);
+  };
+
+  const scheduleProgressClear = (delayMs = 1200) => {
+    if (clearTimerRef.current) {
+      window.clearTimeout(clearTimerRef.current);
+    }
+    clearTimerRef.current = window.setTimeout(() => {
+      setProgress(INITIAL_PAYROLL_GENERATION_PROGRESS);
+      clearTimerRef.current = null;
+    }, delayMs);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (clearTimerRef.current) {
+        window.clearTimeout(clearTimerRef.current);
+      }
+    };
+  }, []);
+
+  const mutation = useMutation({
     mutationFn: async (periodId: string) => {
+      if (clearTimerRef.current) {
+        window.clearTimeout(clearTimerRef.current);
+        clearTimerRef.current = null;
+      }
+      setProgress({
+        periodId,
+        phase: 'loading_period',
+        percent: 5,
+        message: 'Loading payroll period...',
+        processedEmployees: 0,
+        totalEmployees: 0,
+        generatedPayslips: null,
+        error: null,
+      });
+
       // Get the payroll period
       const { data: period, error: periodError } = await supabase
         .from('payroll_periods')
@@ -384,6 +468,12 @@ export function useGeneratePayslips() {
       
       if (periodError) throw periodError;
 
+      setProgress((current) => ({
+        ...current,
+        phase: 'loading_salaries',
+        percent: 12,
+        message: 'Loading salary structures...',
+      }));
       // Get all active salary structures
       const { data: salaryStructures, error: salaryError } = await supabase
         .from('salary_structures')
@@ -396,6 +486,12 @@ export function useGeneratePayslips() {
         return 0;
       }
 
+      setProgress((current) => ({
+        ...current,
+        phase: 'loading_employees',
+        percent: 20,
+        message: 'Loading employee statuses...',
+      }));
       // Get employee statuses separately
       const employeeIds = salaryStructures.map(s => s.employee_id);
       const { data: employees, error: empError } = await supabase
@@ -418,6 +514,13 @@ export function useGeneratePayslips() {
           structure.employee?.status === 'active',
       );
 
+      setProgress((current) => ({
+        ...current,
+        phase: 'loading_attendance',
+        percent: 28,
+        message: 'Loading attendance records...',
+        totalEmployees: activeStructures.length,
+      }));
       // Get attendance data for the period
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
@@ -427,6 +530,12 @@ export function useGeneratePayslips() {
       
       if (attendanceError) throw attendanceError;
 
+      setProgress((current) => ({
+        ...current,
+        phase: 'loading_leaves',
+        percent: 34,
+        message: 'Loading approved leaves...',
+      }));
       // Get leave data for the period
       const { data: leaveData, error: leaveError } = await supabase
         .from('leave_requests')
@@ -437,6 +546,12 @@ export function useGeneratePayslips() {
       
       if (leaveError) throw leaveError;
 
+      setProgress((current) => ({
+        ...current,
+        phase: 'loading_deductions',
+        percent: 40,
+        message: 'Loading deductions...',
+      }));
       // Get all employee deductions
       const { data: allDeductions, error: deductionsError } = await supabase
         .from('employee_deductions')
@@ -453,8 +568,22 @@ export function useGeneratePayslips() {
       const leaveRows = (leaveData ?? []) as LeaveRangeRow[];
       const deductionRows = (allDeductions ?? []) as DeductionWithTypeRow[];
 
-      // Generate payslips for each employee
-      const payslips = activeStructures.map((structure) => {
+      setProgress((current) => ({
+        ...current,
+        phase: 'processing_employees',
+        percent: activeStructures.length > 0 ? 45 : 80,
+        message:
+          activeStructures.length > 0
+            ? 'Processing employees and calculating payslips...'
+            : 'No active employees found for this payroll period.',
+        processedEmployees: 0,
+        totalEmployees: activeStructures.length,
+      }));
+
+      // Generate payslips for each employee with true processed-count progress
+      const payslips = [];
+      for (let index = 0; index < activeStructures.length; index += 1) {
+        const structure = activeStructures[index];
         const employeeAttendance = attendanceRows.filter(
           (attendance) => attendance.employee_id === structure.employee_id,
         );
@@ -515,7 +644,7 @@ export function useGeneratePayslips() {
 
         const netSalary = grossSalary - totalDeductions;
 
-        return {
+        payslips.push({
           payroll_period_id: periodId,
           employee_id: structure.employee_id,
           basic_salary: basicSalary,
@@ -532,10 +661,33 @@ export function useGeneratePayslips() {
           deductions_breakdown: deductionsBreakdown,
           allowances_breakdown: allowancesBreakdown,
           status: 'pending' as const,
-        };
-      });
+        });
+
+        const processedEmployees = index + 1;
+        const percent = 45 + (processedEmployees / activeStructures.length) * 35;
+        setProgress((current) => ({
+          ...current,
+          phase: 'processing_employees',
+          percent,
+          message: `Calculating payslips (${processedEmployees}/${activeStructures.length})...`,
+          processedEmployees,
+          totalEmployees: activeStructures.length,
+        }));
+
+        // Yield periodically so the UI can repaint progress updates during longer runs.
+        if (processedEmployees < activeStructures.length && processedEmployees % 5 === 0) {
+          await yieldToUi();
+        }
+      }
 
       // Insert payslips
+      setProgress((current) => ({
+        ...current,
+        phase: 'inserting_payslips',
+        percent: 88,
+        message: payslips.length > 0 ? 'Saving generated payslips...' : 'No payslips to save.',
+        generatedPayslips: payslips.length,
+      }));
       if (payslips.length > 0) {
         const { error: insertError } = await supabase
           .from('payslips')
@@ -545,6 +697,13 @@ export function useGeneratePayslips() {
       }
 
       // Update period status
+      setProgress((current) => ({
+        ...current,
+        phase: 'updating_period',
+        percent: 96,
+        message: 'Updating payroll period status...',
+        generatedPayslips: payslips.length,
+      }));
       const { error: updateError } = await supabase
         .from('payroll_periods')
         .update({ status: 'processing', processed_at: new Date().toISOString() })
@@ -555,14 +714,36 @@ export function useGeneratePayslips() {
       return payslips.length;
     },
     onSuccess: (count) => {
+      setProgress((current) => ({
+        ...current,
+        phase: 'completed',
+        percent: 100,
+        message: `Generated ${count} payslips successfully.`,
+        generatedPayslips: count,
+        error: null,
+      }));
+      scheduleProgressClear(1200);
       queryClient.invalidateQueries({ queryKey: ['payroll-periods'] });
       queryClient.invalidateQueries({ queryKey: ['payslips'] });
       toast.success(`Generated ${count} payslips`);
     },
     onError: (error: Error) => {
+      setProgress((current) => ({
+        ...current,
+        phase: 'error',
+        message: 'Payroll generation failed.',
+        error: error.message,
+      }));
+      scheduleProgressClear(3000);
       toast.error('Failed to generate payslips: ' + error.message);
     },
   });
+
+  return {
+    ...mutation,
+    progress,
+    clearProgress,
+  };
 }
 
 export function useUpdatePayslipStatus() {

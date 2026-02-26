@@ -4,21 +4,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { 
   Table, 
   TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import { Users, Search, Mail, Building, LayoutGrid, List } from 'lucide-react';
+import { Users, Mail, Building, LayoutGrid, List } from 'lucide-react';
 import { useState } from 'react';
 import { Profile, Department, AppRole } from '@/types/hrms';
 import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
+import { DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 export default function Employees() {
   const { role: viewerRole } = useAuth();
@@ -38,13 +37,6 @@ export default function Employees() {
   const getUserRole = (userId: string): AppRole => {
     const userRole = userRoles?.find(ur => ur.user_id === userId);
     return userRole?.role || 'employee';
-  };
-
-  const statusColors: Record<string, string> = {
-    active: 'bg-green-500/20 text-green-600 border-green-500/30',
-    inactive: 'bg-muted text-muted-foreground',
-    on_leave: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-    terminated: 'bg-red-500/20 text-red-600 border-red-500/30',
   };
 
   const roleColors: Record<AppRole, string> = {
@@ -95,181 +87,176 @@ export default function Employees() {
 
   return (
     <div className="space-y-6">
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <Users className="w-4 h-4" />
-              Employee Directory
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                <Users className="w-7 h-7 text-accent" />
-                Employee Directory
-              </h1>
-              <p className="text-muted-foreground mt-1">{employees?.length || 0} employees</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-md md:flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search employees..." 
-            className="pl-10 rounded-full" 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      <PageHeader
+        title="Employee Directory"
+        description={`${employees?.length || 0} employees`}
+        toolbarSlot={
+          <SectionToolbar
+            density="compact"
+            search={{
+              value: search,
+              onChange: setSearch,
+              placeholder: 'Search employees...',
+              ariaLabel: 'Search employees',
+              inputProps: { className: 'h-9 rounded-full' },
+            }}
+            trailingSlot={
+              <ToggleGroup
+                type="single"
+                value={viewType}
+                onValueChange={(value) => value && setViewType(value as 'grid' | 'list')}
+                className="w-full justify-end md:w-auto"
+                aria-label="Employee directory view type"
+              >
+                <ToggleGroupItem value="grid" aria-label="Grid view" className="rounded-full">
+                  <LayoutGrid className="w-4 h-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="list" aria-label="List view" className="rounded-full">
+                  <List className="w-4 h-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            }
           />
-        </div>
-        <ToggleGroup 
-          type="single" 
-          value={viewType} 
-          onValueChange={(value) => value && setViewType(value as 'grid' | 'list')}
-          className="w-full justify-end md:w-auto"
-        >
-          <ToggleGroupItem value="grid" aria-label="Grid view" className="rounded-full">
-            <LayoutGrid className="w-4 h-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="list" aria-label="List view" className="rounded-full">
-            <List className="w-4 h-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-        </CardContent>
-      </Card>
+        }
+      />
 
       {isLoading ? (
         viewType === 'grid' ? <LoadingGridSkeleton /> : <LoadingListSkeleton />
-      ) : viewType === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees?.map((employee) => (
-            <Card 
-              key={employee.id} 
-              className="card-stat border-border/60 shadow-sm hover:border-accent/50 hover:shadow-md cursor-pointer transition-all"
-              onClick={() => handleEmployeeClick(employee)}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {employee.first_name[0]}{employee.last_name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold truncate">
-                        {employee.first_name} {employee.last_name}
-                      </h3>
-                      <Badge className={statusColors[employee.status]}>{employee.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">{employee.job_title || 'No title'}</p>
-                    <div className="mt-3 space-y-1">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Mail className="w-3 h-3" /> {employee.email}
-                      </p>
-                      {employee.department && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Building className="w-3 h-3" /> {employee.department.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       ) : (
-        <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="pt-6">
-            <div className="space-y-3 md:hidden">
-              {filteredEmployees?.map((employee) => (
-                <div
-                  key={employee.id}
-                  className="rounded-xl border border-border/60 p-4 shadow-sm cursor-pointer"
-                  onClick={() => handleEmployeeClick(employee)}
-                >
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {employee.first_name[0]}{employee.last_name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">
-                          {employee.first_name} {employee.last_name}
-                        </p>
-                        <Badge className={statusColors[employee.status]}>
-                          {employee.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge className={roleColors[getUserRole(employee.id)]}>
-                          {getUserRole(employee.id)}
-                        </Badge>
-                        <Badge variant="outline">
-                          {employee.department?.name || 'No Department'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <DataTableShell
+          title={viewType === 'grid' ? 'Employees' : 'Employee List'}
+          description={`${filteredEmployees?.length || 0} result${(filteredEmployees?.length || 0) === 1 ? '' : 's'}`}
+          hasData={(filteredEmployees?.length || 0) > 0}
+          emptyState={
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <p>No employees match your search.</p>
             </div>
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          }
+          content={
+            viewType === 'grid' ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredEmployees?.map((employee) => (
-                  <TableRow 
-                    key={employee.id} 
-                    className="cursor-pointer hover:bg-muted/50"
+                  <Card
+                    key={employee.id}
+                    className="card-stat cursor-pointer border-border/60 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
                     onClick={() => handleEmployeeClick(employee)}
                   >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {employee.first_name[0]}{employee.last_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold truncate">
+                              {employee.first_name} {employee.last_name}
+                            </h3>
+                            <StatusBadge status={employee.status} />
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{employee.job_title || 'No title'}</p>
+                          <div className="mt-3 space-y-1">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <Mail className="w-3 h-3" /> {employee.email}
+                            </p>
+                            {employee.department && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <Building className="w-3 h-3" /> {employee.department.name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 md:hidden">
+                  {filteredEmployees?.map((employee) => (
+                    <div
+                      key={employee.id}
+                      className="rounded-xl border border-border/60 p-4 shadow-sm cursor-pointer"
+                      onClick={() => handleEmployeeClick(employee)}
+                    >
+                      <div className="flex items-start gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {employee.first_name[0]}{employee.last_name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium">{employee.first_name} {employee.last_name}</p>
-                          <p className="text-sm text-muted-foreground">{employee.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium">
+                              {employee.first_name} {employee.last_name}
+                            </p>
+                            <StatusBadge status={employee.status} />
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge className={roleColors[getUserRole(employee.id)]}>
+                              {getUserRole(employee.id)}
+                            </Badge>
+                            <Badge variant="outline">
+                              {employee.department?.name || 'No Department'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>{employee.department?.name || '-'}</TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[getUserRole(employee.id)]}>
-                        {getUserRole(employee.id)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[employee.status]}>
-                        {employee.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEmployees?.map((employee) => (
+                        <TableRow
+                          key={employee.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleEmployeeClick(employee)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarFallback className="bg-primary text-primary-foreground">
+                                  {employee.first_name[0]}{employee.last_name[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{employee.first_name} {employee.last_name}</p>
+                                <p className="text-sm text-muted-foreground">{employee.email}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{employee.department?.name || '-'}</TableCell>
+                          <TableCell>
+                            <Badge className={roleColors[getUserRole(employee.id)]}>
+                              {getUserRole(employee.id)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={employee.status} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )
+          }
+        />
       )}
 
       <EmployeeDetailDialog
