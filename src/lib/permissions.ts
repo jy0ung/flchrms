@@ -30,6 +30,14 @@ export const TEAM_LEAVE_VIEWER_ROLES: AppRole[] = [
 
 export const EXECUTIVE_SUMMARY_VIEWER_ROLES: AppRole[] = [
   'manager',
+  'general_manager',
+  'director',
+  'hr',
+  'admin',
+];
+
+export const EXECUTIVE_CRITICAL_DASHBOARD_ROLES: AppRole[] = [
+  'general_manager',
   'director',
   'hr',
   'admin',
@@ -98,6 +106,10 @@ export function canViewExecutiveSummary(role: MaybeRole) {
 
 export function canQueryExecutiveStats(role: MaybeRole) {
   return canViewExecutiveSummary(role);
+}
+
+export function canViewExecutiveCriticalDashboard(role: MaybeRole) {
+  return hasRole(role, EXECUTIVE_CRITICAL_DASHBOARD_ROLES);
 }
 
 export function canManagePayroll(role: MaybeRole) {
