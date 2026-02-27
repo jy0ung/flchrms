@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWorkflowConfigEvents, type WorkflowConfigEventWithActor } from '@/hooks/useWorkflowConfigEvents';
 import type { Department } from '@/types/hrms';
+import { StatusBadge } from '@/components/system';
 
 type WorkflowAuditFilter = 'all' | 'leave_approval' | 'leave_cancellation';
 
@@ -38,11 +39,11 @@ function workflowTypeLabel(workflowType: string) {
   return workflowType === 'leave_cancellation' ? 'Cancellation' : 'Approval';
 }
 
-function actionBadgeClass(action: string) {
-  if (action === 'created') return 'bg-green-500/15 text-green-700 border-green-500/20';
-  if (action === 'updated') return 'bg-blue-500/15 text-blue-700 border-blue-500/20';
-  if (action === 'deleted') return 'bg-red-500/15 text-red-700 border-red-500/20';
-  return 'bg-muted text-muted-foreground';
+function actionStatus(action: string) {
+  if (action === 'created' || action === 'updated' || action === 'deleted') {
+    return action;
+  }
+  return 'info';
 }
 
 function summarizeChange(event: WorkflowConfigEventWithActor) {
@@ -97,9 +98,7 @@ function WorkflowAuditItem({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{workflowTypeLabel(event.workflow_type)}</Badge>
-          <Badge variant="outline" className={actionBadgeClass(event.action)}>
-            {event.action}
-          </Badge>
+          <StatusBadge status={actionStatus(event.action)} labelOverride={event.action.replace(/_/g, ' ')} />
           <Badge variant="secondary">{departmentName}</Badge>
         </div>
         <span className="text-xs text-muted-foreground">

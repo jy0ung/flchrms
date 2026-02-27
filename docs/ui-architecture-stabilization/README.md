@@ -20,6 +20,8 @@ These documents are intended to be used before and during Phase 1+ work (shared 
   - Visual verification strategy and required smoke-test coverage.
 - `ui-refactor-risk-matrix.md`
   - Structural refactor risk categories, triggers, and mitigations.
+- `phase4-5-interaction-mode-architecture.md`
+  - Route-scoped interaction-mode governance, APIs, lifecycle, and migration plan.
 - `.github/PULL_REQUEST_TEMPLATE/ui-architecture-stabilization.md`
   - PR checklist template for UI migration PRs.
 
@@ -37,4 +39,3 @@ Phase 0 does not change the application UI itself. It establishes:
 2. Follow the guardrails document exactly.
 3. Complete the definition-of-done checklist before requesting review.
 4. Attach visual smoke-test evidence for the required pages/modules.
-

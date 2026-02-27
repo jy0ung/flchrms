@@ -20,7 +20,7 @@ import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTabl
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
+import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
 import {
   canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
   isDirector,
@@ -422,8 +422,9 @@ export default function Leave() {
   const canViewTeamRequests = canViewTeamLeaveRequestsPermission(role);
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Leave Management"
         description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
         actions={[
@@ -712,6 +713,6 @@ export default function Leave() {
         onSubmitReview={submitCancellationReview}
         reviewSubmitPending={processCancellationRequest.isPending}
       />
-    </div>
+    </AppPageContainer>
   );
 }

@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { type KeyboardEvent } from 'react';
 import { 
   Users, 
   UserCheck, 
@@ -27,6 +28,14 @@ interface QuickStatProps {
   clickable?: boolean;
 }
 
+function handleKeyActivate(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
+  if (!onClick) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    onClick();
+  }
+}
+
 function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, variant = 'default', onClick, clickable }: QuickStatProps) {
   const variantStyles = {
     default: 'bg-muted/50 text-muted-foreground',
@@ -45,6 +54,10 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
         clickable && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20"
       )}
       onClick={onClick}
+      onKeyDown={(event) => handleKeyActivate(event, onClick)}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `Open ${title}` : undefined}
     >
       <CardContent className="p-4 md:p-6">
         <div className="flex items-start justify-between gap-2">

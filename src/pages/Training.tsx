@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GraduationCap, Clock, BookOpen } from 'lucide-react';
-import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Training() {
   const { data: programs } = useTrainingPrograms();
@@ -13,8 +13,9 @@ export default function Training() {
   const enrolledIds = enrollments?.map(e => e.program_id) || [];
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Training & Development"
         description="Enhance your skills with our training programs"
       />
@@ -91,6 +92,6 @@ export default function Training() {
           </div>
         }
       />
-    </div>
+    </AppPageContainer>
   );
 }

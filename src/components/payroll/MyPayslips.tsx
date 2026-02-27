@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -11,12 +10,8 @@ import { format } from 'date-fns';
 import { FileText, Eye, EyeOff, Wallet, TrendingUp } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
+import { StatusBadge } from '@/components/system';
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-warning/20 text-warning border-warning/30',
-  paid: 'bg-success/20 text-success border-success/30',
-  cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
-};
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
 interface MyPayslipsProps {
@@ -222,9 +217,7 @@ export function MyPayslips({
                         <p className="font-semibold">
                           {formatCurrency(payslip.net_salary)}
                         </p>
-                        <Badge className={statusColors[payslip.status]}>
-                          {payslip.status}
-                        </Badge>
+                        <StatusBadge status={payslip.status} />
                       </div>
                       <Button
                         variant="outline"

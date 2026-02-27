@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 const PROFILE_TABS = ['overview', 'edit', 'notifications'] as const;
 type ProfileTabValue = (typeof PROFILE_TABS)[number];
@@ -119,8 +119,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
+    <AppPageContainer maxWidth="6xl" spacing="comfortable">
       <PageHeader
+        shellDensity="compact"
         title="My Profile"
         description="Manage your account profile and notification settings."
         chips={[
@@ -318,6 +319,6 @@ export default function Profile() {
           <NotificationSettingsCard />
         </TabsContent>
       </Tabs>
-    </div>
+    </AppPageContainer>
   );
 }

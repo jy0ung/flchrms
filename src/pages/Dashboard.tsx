@@ -1,10 +1,8 @@
-import { type DragEvent, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  ArrowDown,
-  ArrowUp,
   Bell,
   Briefcase,
   Building2,
@@ -15,13 +13,11 @@ import {
   Clock,
   Filter,
   GraduationCap,
-  GripVertical,
   Loader2,
   Megaphone,
   Plus,
   Play,
   RefreshCcw,
-  Settings2,
   ShieldAlert,
   Square,
   Target,
@@ -47,13 +43,33 @@ import {
   canViewManagerDashboardWidgets,
   isManager,
 } from '@/lib/permissions';
+import { type LayoutState } from '@/lib/editable-layout';
+import {
+  SUPPORTED_DASHBOARD_LAYOUT_VERSION,
+  TIER_WIDTH_RULES,
+  assertDashboardLayoutInvariants,
+  buildDefaultDashboardLayoutV2,
+  clampWidgetWidthByTier,
+  compactLaneWidgets,
+  mergeLanesToLayout,
+  migrateLegacyDashboardLayoutToV2,
+  normalizeDashboardLayoutStateV2,
+  splitLayoutByLane,
+  type DashboardLayoutStateV2,
+  type DashboardTier,
+  type DashboardWidgetDefinition,
+  type DashboardWidgetId,
+  type ResizeRule,
+} from '@/lib/dashboard-layout';
 import {
   getDashboardEnabledWidgetIds,
+  getDashboardLayoutStateV2,
+  getDashboardLayoutPresetVersion,
+  getDashboardStoredLayoutVersion,
+  getDashboardWidgetLayoutState,
   getDashboardWidgetSpanMap,
-  resetDashboardEnabledWidgetIds,
-  resetDashboardWidgetSpanMap,
-  setDashboardEnabledWidgetIds,
-  setDashboardWidgetSpanMap,
+  setDashboardLayoutPresetVersion,
+  setDashboardLayoutStateV2,
   FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY,
   UI_PREFERENCES_CHANGED_EVENT,
 } from '@/lib/ui-preferences';
@@ -65,27 +81,24 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-
-type DashboardWidgetId =
-  | 'attendanceToday'
-  | 'leaveBalance'
-  | 'announcements'
-  | 'trainingSummary'
-  | 'performanceSummary'
-  | 'teamSnapshot'
-  | 'onLeaveToday'
-  | 'criticalInsights'
-  | 'executiveMetrics';
-
-type DashboardWidgetSpan = 1 | 2 | 3;
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  AppPageContainer,
+  InteractionModeToggle,
+  ModeRibbon,
+  PageHeader,
+  StatusBadge,
+  useInteractionMode,
+} from '@/components/system';
+import { DashboardLane } from '@/components/dashboard/DashboardLane';
 
 interface DashboardWidgetMeta {
   id: DashboardWidgetId;
   label: string;
   description: string;
-  defaultSpan: DashboardWidgetSpan;
-  minSpan?: DashboardWidgetSpan;
-  maxSpan?: DashboardWidgetSpan;
+  defaultWidth: number;
+  defaultHeight: number;
+  defaultTier: DashboardTier;
 }
 
 interface LeaveRosterItem {
@@ -112,56 +125,86 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
     id: 'attendanceToday',
     label: "Today's Attendance",
     description: 'Clock in/out and view your attendance status for today.',
-    defaultSpan: 2,
+    defaultWidth: 8,
+    defaultHeight: 4,
+    defaultTier: 'supporting',
   },
   leaveBalance: {
     id: 'leaveBalance',
     label: 'Leave Balance',
     description: 'Your remaining leave days, usage, and pending requests.',
-    defaultSpan: 1,
+    defaultWidth: 4,
+    defaultHeight: 4,
+    defaultTier: 'supporting',
   },
   announcements: {
     id: 'announcements',
     label: 'Announcements',
     description: 'Latest company updates and notices.',
-    defaultSpan: 2,
+    defaultWidth: 12,
+    defaultHeight: 4,
+    defaultTier: 'secondary',
   },
   trainingSummary: {
     id: 'trainingSummary',
     label: 'Training',
     description: 'Track your training enrollments and completion progress.',
-    defaultSpan: 1,
+    defaultWidth: 8,
+    defaultHeight: 4,
+    defaultTier: 'supporting',
   },
   performanceSummary: {
     id: 'performanceSummary',
     label: 'Performance Reviews',
     description: 'See your review status and recent review activity.',
-    defaultSpan: 1,
+    defaultWidth: 4,
+    defaultHeight: 4,
+    defaultTier: 'supporting',
   },
   teamSnapshot: {
     id: 'teamSnapshot',
     label: 'Team Snapshot',
     description: 'Headcount, present/absent, and on-leave counts for your scope.',
-    defaultSpan: 1,
+    defaultWidth: 8,
+    defaultHeight: 4,
+    defaultTier: 'secondary',
   },
   onLeaveToday: {
     id: 'onLeaveToday',
     label: 'Who Is On Leave Today',
     description: 'See who is currently on leave today in your visible scope.',
-    defaultSpan: 2,
+    defaultWidth: 4,
+    defaultHeight: 4,
+    defaultTier: 'secondary',
   },
   criticalInsights: {
     id: 'criticalInsights',
     label: 'Critical Insights',
     description: 'Risk and exception signals for operational leadership.',
-    defaultSpan: 2,
+    defaultWidth: 8,
+    defaultHeight: 4,
+    defaultTier: 'primary',
   },
   executiveMetrics: {
     id: 'executiveMetrics',
     label: 'Executive Metrics',
     description: 'High-signal workforce, leave, training, and review KPIs.',
-    defaultSpan: 1,
+    defaultWidth: 4,
+    defaultHeight: 4,
+    defaultTier: 'primary',
   },
+};
+
+const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?: string }>> = {
+  attendanceToday: Clock,
+  leaveBalance: Calendar,
+  announcements: Megaphone,
+  trainingSummary: GraduationCap,
+  performanceSummary: ClipboardList,
+  teamSnapshot: Users,
+  onLeaveToday: CalendarDays,
+  criticalInsights: ShieldAlert,
+  executiveMetrics: Target,
 };
 
 const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
@@ -211,12 +254,156 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
 };
 
 const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
-  employee: ['attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary', 'announcements'],
-  manager: ['attendanceToday', 'leaveBalance', 'teamSnapshot', 'onLeaveToday', 'announcements', 'trainingSummary', 'performanceSummary'],
-  general_manager: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
-  hr: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
-  director: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'announcements'],
-  admin: ['criticalInsights', 'executiveMetrics', 'teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday'],
+  employee: ['attendanceToday', 'leaveBalance', 'announcements', 'trainingSummary', 'performanceSummary'],
+  manager: ['teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
+  general_manager: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
+  hr: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
+  director: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
+  admin: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday'],
+};
+
+const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidgetId, number>>> = {
+  employee: {
+    attendanceToday: 8,
+    leaveBalance: 4,
+    announcements: 12,
+    trainingSummary: 8,
+    performanceSummary: 4,
+  },
+  manager: {
+    attendanceToday: 8,
+    leaveBalance: 4,
+    announcements: 12,
+    teamSnapshot: 8,
+    onLeaveToday: 4,
+    trainingSummary: 8,
+    performanceSummary: 4,
+  },
+  general_manager: {
+    criticalInsights: 8,
+    executiveMetrics: 4,
+    announcements: 12,
+    teamSnapshot: 8,
+    onLeaveToday: 4,
+    attendanceToday: 8,
+    leaveBalance: 4,
+    trainingSummary: 8,
+    performanceSummary: 4,
+  },
+  hr: {
+    criticalInsights: 8,
+    executiveMetrics: 4,
+    announcements: 12,
+    teamSnapshot: 8,
+    onLeaveToday: 4,
+    attendanceToday: 8,
+    leaveBalance: 4,
+    trainingSummary: 8,
+    performanceSummary: 4,
+  },
+  director: {
+    criticalInsights: 8,
+    executiveMetrics: 4,
+    announcements: 12,
+    teamSnapshot: 8,
+    onLeaveToday: 4,
+    attendanceToday: 8,
+    leaveBalance: 4,
+    trainingSummary: 8,
+    performanceSummary: 4,
+  },
+  admin: {
+    criticalInsights: 8,
+    executiveMetrics: 4,
+    announcements: 12,
+    teamSnapshot: 8,
+    onLeaveToday: 4,
+    attendanceToday: 12,
+  },
+};
+
+const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> = {
+  attendanceToday: {
+    id: 'attendanceToday',
+    defaultTier: 'supporting',
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.attendanceToday.defaultWidth,
+    defaultH: WIDGET_META.attendanceToday.defaultHeight,
+    minW: TIER_WIDTH_RULES.supporting.minW,
+    maxW: TIER_WIDTH_RULES.supporting.maxW,
+  },
+  leaveBalance: {
+    id: 'leaveBalance',
+    defaultTier: 'supporting',
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director'],
+    defaultW: WIDGET_META.leaveBalance.defaultWidth,
+    defaultH: WIDGET_META.leaveBalance.defaultHeight,
+    minW: TIER_WIDTH_RULES.supporting.minW,
+    maxW: TIER_WIDTH_RULES.supporting.maxW,
+  },
+  announcements: {
+    id: 'announcements',
+    defaultTier: 'secondary',
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.announcements.defaultWidth,
+    defaultH: WIDGET_META.announcements.defaultHeight,
+    minW: TIER_WIDTH_RULES.secondary.minW,
+    maxW: TIER_WIDTH_RULES.secondary.maxW,
+  },
+  trainingSummary: {
+    id: 'trainingSummary',
+    defaultTier: 'supporting',
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director'],
+    defaultW: WIDGET_META.trainingSummary.defaultWidth,
+    defaultH: WIDGET_META.trainingSummary.defaultHeight,
+    minW: TIER_WIDTH_RULES.supporting.minW,
+    maxW: TIER_WIDTH_RULES.supporting.maxW,
+  },
+  performanceSummary: {
+    id: 'performanceSummary',
+    defaultTier: 'supporting',
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director'],
+    defaultW: WIDGET_META.performanceSummary.defaultWidth,
+    defaultH: WIDGET_META.performanceSummary.defaultHeight,
+    minW: TIER_WIDTH_RULES.supporting.minW,
+    maxW: TIER_WIDTH_RULES.supporting.maxW,
+  },
+  teamSnapshot: {
+    id: 'teamSnapshot',
+    defaultTier: 'secondary',
+    allowedRoles: ['manager', 'general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.teamSnapshot.defaultWidth,
+    defaultH: WIDGET_META.teamSnapshot.defaultHeight,
+    minW: TIER_WIDTH_RULES.secondary.minW,
+    maxW: TIER_WIDTH_RULES.secondary.maxW,
+  },
+  onLeaveToday: {
+    id: 'onLeaveToday',
+    defaultTier: 'secondary',
+    allowedRoles: ['manager', 'general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.onLeaveToday.defaultWidth,
+    defaultH: WIDGET_META.onLeaveToday.defaultHeight,
+    minW: TIER_WIDTH_RULES.secondary.minW,
+    maxW: TIER_WIDTH_RULES.secondary.maxW,
+  },
+  criticalInsights: {
+    id: 'criticalInsights',
+    defaultTier: 'primary',
+    allowedRoles: ['general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.criticalInsights.defaultWidth,
+    defaultH: WIDGET_META.criticalInsights.defaultHeight,
+    minW: TIER_WIDTH_RULES.primary.minW,
+    maxW: TIER_WIDTH_RULES.primary.maxW,
+  },
+  executiveMetrics: {
+    id: 'executiveMetrics',
+    defaultTier: 'primary',
+    allowedRoles: ['general_manager', 'hr', 'director', 'admin'],
+    defaultW: WIDGET_META.executiveMetrics.defaultWidth,
+    defaultH: WIDGET_META.executiveMetrics.defaultHeight,
+    minW: TIER_WIDTH_RULES.primary.minW,
+    maxW: TIER_WIDTH_RULES.primary.maxW,
+  },
 };
 
 function formatRoleLabel(role: AppRole | null | undefined) {
@@ -231,21 +418,8 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function clampWidgetSpan(value: number, widgetId?: DashboardWidgetId): DashboardWidgetSpan {
-  const meta = widgetId ? WIDGET_META[widgetId] : undefined;
-  const min = meta?.minSpan ?? 1;
-  const max = meta?.maxSpan ?? 3;
-  const rounded = Math.round(value);
-  if (rounded <= min) return min;
-  if (rounded >= max) return max;
-  return rounded as DashboardWidgetSpan;
-}
-
-function getWidgetSpanClass(span: DashboardWidgetSpan) {
-  if (span === 3) return 'xl:col-span-3';
-  if (span === 2) return 'xl:col-span-2';
-  return 'xl:col-span-1';
-}
+const DASHBOARD_LAYOUT_PRESET_VERSION = 4;
+const DASHBOARD_TIERS: DashboardTier[] = ['primary', 'secondary', 'supporting'];
 
 function getScopeLabel(role: AppRole | null | undefined, stats?: ExecutiveStats | null) {
   if (role === 'manager') {
@@ -283,9 +457,9 @@ function DashboardWidgetCard({
 }: {
   title: string;
   description?: string;
-  icon: React.ElementType;
-  action?: React.ReactNode;
-  children: React.ReactNode;
+  icon: ComponentType<{ className?: string }>;
+  action?: ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -396,11 +570,11 @@ function AttendanceTodayWidget() {
 
   const isClocking = clockIn.isPending || clockOut.isPending;
 
-  const statusTone = !todayAttendance
-    ? 'warning'
+  const statusMeta = !todayAttendance
+    ? { status: 'warning', label: 'Not Clocked In' }
     : todayAttendance.clock_out
-      ? 'success'
-      : 'info';
+      ? { status: 'completed', label: 'Completed' }
+      : { status: 'info', label: 'Clocked In' };
 
   return (
     <DashboardWidgetCard
@@ -408,13 +582,11 @@ function AttendanceTodayWidget() {
       description="Clock in/out and review your attendance status for today."
       icon={Clock}
       action={
-        <Badge className={cn('rounded-full px-2.5 py-1 text-xs', {
-          'badge-warning': statusTone === 'warning',
-          'badge-success': statusTone === 'success',
-          'badge-info': statusTone === 'info',
-        })}>
-          {!todayAttendance ? 'Not Clocked In' : todayAttendance.clock_out ? 'Completed' : 'Clocked In'}
-        </Badge>
+        <StatusBadge
+          status={statusMeta.status}
+          labelOverride={statusMeta.label}
+          size="md"
+        />
       }
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -501,8 +673,14 @@ function LeaveBalanceWidget() {
       description="Your approved and pending leave usage across available leave types."
       icon={Calendar}
       action={
-        <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>
-          Open
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+          onClick={() => navigate('/leave')}
+          aria-label="Open leave management"
+        >
+          Open Leave
         </Button>
       }
     >
@@ -561,13 +739,6 @@ function AnnouncementsWidget() {
   const navigate = useNavigate();
   const { data: announcements, isLoading } = useAnnouncements();
 
-  const priorityColor: Record<string, string> = {
-    low: 'bg-muted text-muted-foreground',
-    normal: 'badge-info',
-    high: 'badge-warning',
-    urgent: 'badge-destructive',
-  };
-
   return (
     <DashboardWidgetCard
       title="Announcements"
@@ -598,9 +769,7 @@ function AnnouncementsWidget() {
                   <p className="truncate text-sm font-semibold sm:text-base">{announcement.title}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{announcement.content}</p>
                 </div>
-                <Badge className={cn('shrink-0 rounded-full px-2.5 py-1 text-xs capitalize', priorityColor[announcement.priority] || priorityColor.normal)}>
-                  {announcement.priority}
-                </Badge>
+                <StatusBadge status={announcement.priority} className="shrink-0" />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 {announcement.published_at ? format(new Date(announcement.published_at), 'MMM d, yyyy') : 'Draft'}
@@ -716,11 +885,11 @@ function PerformanceSummaryWidget() {
               <>
                 <p className="mt-2 text-sm font-medium">{summary.latest.review_period || 'Review Period'}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1 capitalize">
-                    {summary.latest.status}
-                  </Badge>
+                  <StatusBadge status={summary.latest.status} />
                   {summary.latest.overall_rating ? (
-                    <Badge className="badge-info rounded-full px-2.5 py-1">Rating {summary.latest.overall_rating}/5</Badge>
+                    <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                      Rating {summary.latest.overall_rating}/5
+                    </Badge>
                   ) : null}
                 </div>
               </>
@@ -777,19 +946,23 @@ function TeamSnapshotWidget({ role }: { role: AppRole }) {
       </div>
 
       <div className="mt-4 rounded-xl border border-border/60 bg-muted/10 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">Attendance Rate Today</p>
-            <p className="text-xs text-muted-foreground">Monthly average: {stats.avgAttendanceThisMonth}%</p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Attendance Rate Today</p>
+              <p className="text-xs text-muted-foreground">Monthly average: {stats.avgAttendanceThisMonth}%</p>
+            </div>
+            <StatusBadge
+              status={
+                stats.attendanceRate >= 85
+                  ? 'success'
+                  : stats.attendanceRate >= 70
+                    ? 'warning'
+                    : 'error'
+              }
+              labelOverride={`${stats.attendanceRate}%`}
+              size="md"
+            />
           </div>
-          <Badge className={cn('rounded-full px-2.5 py-1', {
-            'badge-success': stats.attendanceRate >= 85,
-            'badge-warning': stats.attendanceRate >= 70 && stats.attendanceRate < 85,
-            'badge-destructive': stats.attendanceRate < 70,
-          })}>
-            {stats.attendanceRate}%
-          </Badge>
-        </div>
         <Progress value={clampPercent(stats.attendanceRate)} className="mt-3 h-2.5" />
       </div>
     </DashboardWidgetCard>
@@ -837,9 +1010,10 @@ function OnLeaveTodayWidget({ role }: { role: AppRole }) {
                   {person.leaveTypeName} • {format(new Date(person.startDate), 'MMM d')} – {format(new Date(person.endDate), 'MMM d')}
                 </p>
               </div>
-              <Badge variant="outline" className="w-fit rounded-full px-2.5 py-1 capitalize">
-                {person.status.replaceAll('_', ' ')}
-              </Badge>
+              <StatusBadge
+                status={person.status}
+                labelOverride={person.status.replaceAll('_', ' ')}
+              />
             </div>
           ))}
         </div>
@@ -1003,7 +1177,13 @@ function CriticalInsightsWidget({ role }: { role: AppRole }) {
                 <p className="mt-1 text-sm text-muted-foreground">{alert.detail}</p>
               </div>
               {alert.route ? (
-                <Button variant="outline" size="sm" className="h-8 w-full rounded-full sm:w-auto" onClick={() => navigate(alert.route!)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-full rounded-full sm:w-auto"
+                  onClick={() => navigate(alert.route!)}
+                  aria-label={`Open action for ${alert.title}`}
+                >
                   Open
                 </Button>
               ) : null}
@@ -1042,313 +1222,544 @@ function DashboardWidgetRenderer({ widgetId, role }: { widgetId: DashboardWidget
 
 export default function Dashboard() {
   const { user, profile, role } = useAuth();
-  const [isLayoutEditing, setIsLayoutEditing] = useState(false);
-  const [enabledWidgetIds, setEnabledWidgetIdsState] = useState<DashboardWidgetId[]>([]);
-  const [widgetSpanMap, setWidgetSpanMapState] = useState<Record<DashboardWidgetId, DashboardWidgetSpan>>({} as Record<DashboardWidgetId, DashboardWidgetSpan>);
-  const [draggingWidgetId, setDraggingWidgetId] = useState<DashboardWidgetId | null>(null);
-  const [dragOverWidgetId, setDragOverWidgetId] = useState<DashboardWidgetId | null>(null);
+  const { is, setMode } = useInteractionMode();
+  const isLayoutEditing = is('customize');
+  const [layoutState, setLayoutState] = useState<DashboardLayoutStateV2 | null>(null);
+  const layoutStateRef = useRef<DashboardLayoutStateV2 | null>(null);
   const navigate = useNavigate();
 
   const normalizedRole: AppRole = role ?? 'employee';
   const availableWidgetIds = ROLE_WIDGETS[normalizedRole];
   const defaultWidgetIds = ROLE_DEFAULT_WIDGETS[normalizedRole];
-  const defaultWidgetSpanMap = useMemo(
-    () =>
-      Object.fromEntries(
-        availableWidgetIds.map((widgetId) => [widgetId, WIDGET_META[widgetId].defaultSpan]),
-      ) as Record<DashboardWidgetId, DashboardWidgetSpan>,
-    [availableWidgetIds],
-  );
+  const defaultDimensionsById = useMemo(() => {
+    const roleDefaultWidths = ROLE_DEFAULT_WIDGET_WIDTHS[normalizedRole];
+    return Object.fromEntries(
+      availableWidgetIds.map((widgetId) => [
+        widgetId,
+        {
+          w: roleDefaultWidths?.[widgetId] ?? WIDGET_META[widgetId].defaultWidth,
+          h: WIDGET_META[widgetId].defaultHeight,
+        },
+      ]),
+    );
+  }, [availableWidgetIds, normalizedRole]);
   const canViewTeamWidgets = canViewManagerDashboardWidgets(normalizedRole);
   const canViewCriticalWidgets = canViewExecutiveCriticalDashboard(normalizedRole);
 
-  useEffect(() => {
+  const persistLayoutState = useCallback((nextState: DashboardLayoutStateV2) => {
+    if (!user?.id) return;
+    setDashboardLayoutStateV2(user.id, normalizedRole, nextState);
+    setDashboardLayoutPresetVersion(user.id, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION);
+  }, [user?.id, normalizedRole]);
+
+  const buildDefaultLayout = useCallback(() => {
+    return buildDefaultDashboardLayoutV2({
+      definitions: WIDGET_DEFINITIONS,
+      role: normalizedRole,
+      presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+      orderedWidgetIds: defaultWidgetIds,
+      defaultDimensionsById,
+      rulesByTier: TIER_WIDTH_RULES,
+    });
+  }, [defaultDimensionsById, defaultWidgetIds, normalizedRole]);
+
+  const applyPresetOrderToLayout = useCallback((current: DashboardLayoutStateV2): DashboardLayoutStateV2 => {
+    const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
+    const orderIndex = new Map(defaultWidgetIds.map((id, index) => [id, index]));
+
+    const reordered: Partial<Record<DashboardTier, typeof lanes.primary>> = {};
+    for (const tier of DASHBOARD_TIERS) {
+      const laneWidgets = lanes[tier];
+      const visibleWidgets = laneWidgets
+        .filter((widget) => widget.visible)
+        .sort((a, b) => {
+          const aOrder = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+          const bOrder = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          if (a.y !== b.y) return a.y - b.y;
+          return a.x - b.x;
+        })
+        .map((widget, index) => ({ ...widget, x: 0, y: index }));
+      const compactedVisible = compactLaneWidgets(visibleWidgets, tier, TIER_WIDTH_RULES);
+      const compactedById = new Map(compactedVisible.map((widget) => [widget.id, widget]));
+
+      reordered[tier] = laneWidgets.map((widget) => {
+        if (!widget.visible) return widget;
+        const compacted = compactedById.get(widget.id);
+        return compacted ? { ...widget, ...compacted } : widget;
+      });
+    }
+
+    return normalizeDashboardLayoutStateV2({
+      state: mergeLanesToLayout(reordered, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION),
+      definitions: WIDGET_DEFINITIONS,
+      role: normalizedRole,
+      presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+      rulesByTier: TIER_WIDTH_RULES,
+    });
+  }, [defaultWidgetIds, normalizedRole]);
+
+  const setAndPersistLayout = useCallback((nextState: DashboardLayoutStateV2, shouldPersist = true) => {
+    layoutStateRef.current = nextState;
+    setLayoutState(nextState);
+    if (shouldPersist) {
+      persistLayoutState(nextState);
+    }
+  }, [persistLayoutState]);
+
+  const syncFromStorage = useCallback(() => {
     if (!user?.id || !normalizedRole) return;
 
-    setEnabledWidgetIdsState(
-      getDashboardEnabledWidgetIds(user.id, normalizedRole, availableWidgetIds, defaultWidgetIds) as DashboardWidgetId[],
-    );
-    setWidgetSpanMapState(
-      getDashboardWidgetSpanMap(user.id, normalizedRole, availableWidgetIds, defaultWidgetSpanMap) as Record<DashboardWidgetId, DashboardWidgetSpan>,
-    );
-  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds, defaultWidgetSpanMap]);
+    const storedVersion = getDashboardStoredLayoutVersion(user.id, normalizedRole);
+    if (storedVersion !== null && storedVersion > SUPPORTED_DASHBOARD_LAYOUT_VERSION) {
+      console.warn(
+        `[dashboard-layout] Unsupported layout version ${storedVersion}; resetting to defaults for role ${normalizedRole}.`,
+      );
+      const defaults = buildDefaultLayout();
+      setAndPersistLayout(defaults, true);
+      return;
+    }
+
+    const storedPreset = getDashboardLayoutPresetVersion(user.id, normalizedRole);
+    const storedV2 = getDashboardLayoutStateV2(user.id, normalizedRole);
+    const hasPresetDrift =
+      storedPreset !== DASHBOARD_LAYOUT_PRESET_VERSION ||
+      storedV2?.presetVersion !== DASHBOARD_LAYOUT_PRESET_VERSION;
+
+    if (storedV2) {
+      const normalizedStored = normalizeDashboardLayoutStateV2({
+        state: storedV2,
+        definitions: WIDGET_DEFINITIONS,
+        role: normalizedRole,
+        presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+        rulesByTier: TIER_WIDTH_RULES,
+      });
+      const next = hasPresetDrift ? applyPresetOrderToLayout(normalizedStored) : normalizedStored;
+      const shouldPersist = hasPresetDrift || JSON.stringify(storedV2) !== JSON.stringify(next);
+      setAndPersistLayout(next, shouldPersist);
+      return;
+    }
+
+    const legacyEnabled = getDashboardEnabledWidgetIds(
+      user.id,
+      normalizedRole,
+      availableWidgetIds,
+      defaultWidgetIds,
+    ) as DashboardWidgetId[];
+    const legacySpanMap = getDashboardWidgetSpanMap(
+      user.id,
+      normalizedRole,
+      availableWidgetIds,
+      Object.fromEntries(availableWidgetIds.map((widgetId) => [widgetId, 1])),
+    ) as Record<DashboardWidgetId, number>;
+    const legacyLayoutState = getDashboardWidgetLayoutState(user.id, normalizedRole);
+    const legacyWidthById = Object.fromEntries(
+      availableWidgetIds.map((widgetId) => {
+        const legacyValue = legacySpanMap[widgetId];
+        if (legacyValue >= 4) {
+          return [widgetId, legacyValue];
+        }
+        if (legacyValue === 2) {
+          return [widgetId, 8];
+        }
+        if (legacyValue === 3) {
+          return [widgetId, 12];
+        }
+        return [widgetId, 4];
+      }),
+    ) as Partial<Record<DashboardWidgetId, number>>;
+
+    const migrated = migrateLegacyDashboardLayoutToV2({
+      role: normalizedRole,
+      presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+      definitions: WIDGET_DEFINITIONS,
+      legacyLayoutItems: legacyLayoutState?.items ?? null,
+      legacyEnabledWidgetIds: legacyEnabled,
+      legacyWidthById,
+      defaultOrderedWidgetIds: defaultWidgetIds,
+      rulesByTier: TIER_WIDTH_RULES,
+    });
+    setAndPersistLayout(migrated, true);
+  }, [
+    applyPresetOrderToLayout,
+    buildDefaultLayout,
+    defaultDimensionsById,
+    defaultWidgetIds,
+    availableWidgetIds,
+    normalizedRole,
+    setAndPersistLayout,
+    user?.id,
+  ]);
+
+  useEffect(() => {
+    syncFromStorage();
+  }, [syncFromStorage]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !user?.id || !normalizedRole) return;
-
-    const sync = () => {
-      setEnabledWidgetIdsState(
-        getDashboardEnabledWidgetIds(user.id, normalizedRole, availableWidgetIds, defaultWidgetIds) as DashboardWidgetId[],
-      );
-      setWidgetSpanMapState(
-        getDashboardWidgetSpanMap(user.id, normalizedRole, availableWidgetIds, defaultWidgetSpanMap) as Record<DashboardWidgetId, DashboardWidgetSpan>,
-      );
-    };
 
     const handleStorage = (event: StorageEvent) => {
       if (
         event.key === null ||
         event.key === FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY ||
+        event.key.includes(`hrms.ui.dashboard.layoutPresetVersion.${user.id}.${normalizedRole}`) ||
         event.key.includes(`hrms.ui.dashboard.widgets.${user.id}.${normalizedRole}`) ||
-        event.key.includes(`hrms.ui.dashboard.widgetSpans.${user.id}.${normalizedRole}`)
+        event.key.includes(`hrms.ui.dashboard.widgetSpans.${user.id}.${normalizedRole}`) ||
+        event.key.includes(`hrms.ui.dashboard.layout.${user.id}.${normalizedRole}`)
       ) {
-        sync();
+        syncFromStorage();
       }
     };
 
-    window.addEventListener(UI_PREFERENCES_CHANGED_EVENT, sync as EventListener);
+    window.addEventListener(UI_PREFERENCES_CHANGED_EVENT, syncFromStorage as EventListener);
     window.addEventListener('storage', handleStorage);
 
     return () => {
-      window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, sync as EventListener);
+      window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, syncFromStorage as EventListener);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [user?.id, normalizedRole, availableWidgetIds, defaultWidgetIds, defaultWidgetSpanMap]);
+  }, [user?.id, normalizedRole, syncFromStorage]);
 
-  const orderedEnabledWidgetIds = useMemo(() => {
-    const allowedSet = new Set(availableWidgetIds);
-    const seen = new Set<DashboardWidgetId>();
-    return enabledWidgetIds.filter((id): id is DashboardWidgetId => {
-      if (!allowedSet.has(id as DashboardWidgetId)) return false;
-      const typedId = id as DashboardWidgetId;
-      if (seen.has(typedId)) return false;
-      seen.add(typedId);
-      return true;
-    });
-  }, [availableWidgetIds, enabledWidgetIds]);
+  const effectiveLayoutState = useMemo(() => {
+    if (layoutState) return layoutState;
+    return buildDefaultLayout();
+  }, [buildDefaultLayout, layoutState]);
 
-  const hiddenWidgetCount = availableWidgetIds.length - orderedEnabledWidgetIds.length;
-  const hiddenWidgetIds = useMemo(
-    () => availableWidgetIds.filter((widgetId) => !orderedEnabledWidgetIds.includes(widgetId)),
-    [availableWidgetIds, orderedEnabledWidgetIds],
+  const widgetById = useMemo(
+    () => new Map(effectiveLayoutState.widgets.map((widget) => [widget.id, widget])),
+    [effectiveLayoutState.widgets],
   );
+  const hiddenWidgetIds = useMemo(() => {
+    return availableWidgetIds.filter((widgetId) => !widgetById.get(widgetId)?.visible);
+  }, [availableWidgetIds, widgetById]);
+  const hiddenWidgetCount = hiddenWidgetIds.length;
   const scopeLabel = getScopeLabel(normalizedRole, null);
-  const resolvedWidgetSpanMap = useMemo(() => {
-    const next = { ...defaultWidgetSpanMap } as Record<DashboardWidgetId, DashboardWidgetSpan>;
-    for (const widgetId of availableWidgetIds) {
-      next[widgetId] = clampWidgetSpan(widgetSpanMap[widgetId] ?? defaultWidgetSpanMap[widgetId], widgetId);
+  const headerChips = useMemo(() => {
+    const chips: { id: string; label: string; tone?: 'neutral' | 'info' }[] = [];
+    if (canViewTeamWidgets) {
+      chips.push({ id: 'chip-team-visibility', label: 'Team visibility enabled' });
     }
-    return next;
-  }, [availableWidgetIds, defaultWidgetSpanMap, widgetSpanMap]);
+    if (canViewCriticalWidgets) {
+      chips.push({ id: 'chip-critical-insights', label: 'Critical insights enabled', tone: 'info' });
+    }
+    if (hiddenWidgetCount > 0) {
+      chips.push({
+        id: 'chip-hidden-widgets',
+        label: `${hiddenWidgetCount} hidden widget${hiddenWidgetCount > 1 ? 's' : ''}`,
+      });
+    }
+    return chips;
+  }, [canViewCriticalWidgets, canViewTeamWidgets, hiddenWidgetCount]);
 
-  const handleToggleWidget = (widgetId: DashboardWidgetId, enabled: boolean) => {
-    if (!user?.id) return;
+  const commitMutation = useCallback((mutator: (current: DashboardLayoutStateV2) => DashboardLayoutStateV2) => {
+    const current = layoutStateRef.current ?? effectiveLayoutState;
+    const nextRaw = mutator(current);
+    const normalized = normalizeDashboardLayoutStateV2({
+      state: nextRaw,
+      definitions: WIDGET_DEFINITIONS,
+      role: normalizedRole,
+      presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+      rulesByTier: TIER_WIDTH_RULES,
+    });
+    assertDashboardLayoutInvariants(normalized, WIDGET_DEFINITIONS, TIER_WIDTH_RULES);
+    setAndPersistLayout(normalized, true);
+  }, [effectiveLayoutState, normalizedRole, setAndPersistLayout]);
 
-    const allowedSet = new Set(availableWidgetIds);
-    const currentOrdered = orderedEnabledWidgetIds.filter((id) => allowedSet.has(id));
-    const nextEnabled = enabled
-      ? currentOrdered.includes(widgetId)
-        ? currentOrdered
-        : [...currentOrdered, widgetId]
-      : currentOrdered.filter((id) => id !== widgetId);
+  const compactLaneAfterMutation = useCallback(
+    (laneWidgets: DashboardLayoutStateV2['widgets'], tier: DashboardTier) => {
+      const visible = laneWidgets.filter((widget) => widget.visible);
+      const compactedVisible = compactLaneWidgets(visible, tier, TIER_WIDTH_RULES);
+      const compactedById = new Map(compactedVisible.map((widget) => [widget.id, widget]));
+      return laneWidgets.map((widget) => {
+        if (!widget.visible) return { ...widget, x: 0, y: 0 };
+        const compacted = compactedById.get(widget.id);
+        return compacted ? { ...widget, ...compacted } : widget;
+      });
+    },
+    [],
+  );
 
-    const normalizedEnabled = [...new Set(nextEnabled)].filter((id) => allowedSet.has(id));
-    setEnabledWidgetIdsState(normalizedEnabled);
-    setDashboardEnabledWidgetIds(user.id, normalizedRole, normalizedEnabled);
-  };
+  const handleHideWidget = useCallback((widgetId: DashboardWidgetId) => {
+    commitMutation((current) => {
+      const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
+      const tier = WIDGET_DEFINITIONS[widgetId].defaultTier;
+      lanes[tier] = compactLaneAfterMutation(
+        lanes[tier].map((widget) =>
+          widget.id === widgetId ? { ...widget, visible: false, x: 0, y: 0 } : widget,
+        ),
+        tier,
+      );
+      return mergeLanesToLayout(lanes, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION);
+    });
+  }, [commitMutation, compactLaneAfterMutation, normalizedRole]);
 
-  const handleMoveWidget = (widgetId: DashboardWidgetId, direction: 'up' | 'down') => {
-    if (!user?.id) return;
+  const handleRestoreWidget = useCallback((widgetId: DashboardWidgetId) => {
+    commitMutation((current) => {
+      const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
+      const definition = WIDGET_DEFINITIONS[widgetId];
+      const tier = definition.defaultTier;
+      const lane = [...lanes[tier]];
+      const existing = lane.find((widget) => widget.id === widgetId);
+      const maxY = lane.reduce((acc, widget) => (widget.visible ? Math.max(acc, widget.y) : acc), -1);
+      const width = clampWidgetWidthByTier(existing?.w ?? definition.defaultW, tier, TIER_WIDTH_RULES);
 
-    const current = [...orderedEnabledWidgetIds];
-    const index = current.indexOf(widgetId);
-    if (index === -1) return;
+      if (existing) {
+        lanes[tier] = compactLaneAfterMutation(
+          lane.map((widget) =>
+            widget.id === widgetId
+              ? { ...widget, visible: true, x: 0, y: maxY + 1, w: width, h: definition.defaultH }
+              : widget,
+          ),
+          tier,
+        );
+      } else {
+        lanes[tier] = compactLaneAfterMutation(
+          [
+            ...lane,
+            {
+              id: widgetId,
+              x: 0,
+              y: maxY + 1,
+              w: width,
+              h: definition.defaultH,
+              visible: true,
+            },
+          ],
+          tier,
+        );
+      }
 
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= current.length) return;
+      return mergeLanesToLayout(lanes, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION);
+    });
+  }, [commitMutation, compactLaneAfterMutation, normalizedRole]);
 
-    [current[index], current[targetIndex]] = [current[targetIndex], current[index]];
-    setEnabledWidgetIdsState(current);
-    setDashboardEnabledWidgetIds(user.id, normalizedRole, current);
-  };
+  const handleRestoreAllHidden = useCallback(() => {
+    if (hiddenWidgetIds.length === 0) return;
+    commitMutation((current) => {
+      const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
+      const hiddenByTier = DASHBOARD_TIERS.flatMap((tier) =>
+        defaultWidgetIds.filter((widgetId) => hiddenWidgetIds.includes(widgetId) && WIDGET_DEFINITIONS[widgetId].defaultTier === tier),
+      );
 
-  const handleReorderVisibleWidgets = (sourceId: DashboardWidgetId, targetId: DashboardWidgetId) => {
-    if (!user?.id || sourceId === targetId) return;
+      for (const widgetId of hiddenByTier) {
+        const definition = WIDGET_DEFINITIONS[widgetId];
+        const tier = definition.defaultTier;
+        const lane = [...lanes[tier]];
+        const maxY = lane.reduce((acc, widget) => (widget.visible ? Math.max(acc, widget.y) : acc), -1);
+        const existing = lane.find((widget) => widget.id === widgetId);
+        const width = clampWidgetWidthByTier(existing?.w ?? definition.defaultW, tier, TIER_WIDTH_RULES);
+        if (existing) {
+          lanes[tier] = lane.map((widget) =>
+            widget.id === widgetId
+              ? { ...widget, visible: true, x: 0, y: maxY + 1, w: width, h: definition.defaultH }
+              : widget,
+          );
+        } else {
+          lanes[tier] = [
+            ...lane,
+            {
+              id: widgetId,
+              x: 0,
+              y: maxY + 1,
+              w: width,
+              h: definition.defaultH,
+              visible: true,
+            },
+          ];
+        }
+      }
 
-    const current = [...orderedEnabledWidgetIds];
-    const sourceIndex = current.indexOf(sourceId);
-    const targetIndex = current.indexOf(targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
+      for (const tier of DASHBOARD_TIERS) {
+        lanes[tier] = compactLaneAfterMutation(lanes[tier], tier);
+      }
 
-    current.splice(sourceIndex, 1);
-    current.splice(targetIndex, 0, sourceId);
-    setEnabledWidgetIdsState(current);
-    setDashboardEnabledWidgetIds(user.id, normalizedRole, current);
-  };
-
-  const handleSetWidgetSpan = (widgetId: DashboardWidgetId, span: DashboardWidgetSpan) => {
-    if (!user?.id) return;
-
-    const normalized = clampWidgetSpan(span, widgetId);
-    const next = {
-      ...resolvedWidgetSpanMap,
-      [widgetId]: normalized,
-    };
-    setWidgetSpanMapState(next);
-    setDashboardWidgetSpanMap(user.id, normalizedRole, next);
-  };
+      return mergeLanesToLayout(lanes, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION);
+    });
+  }, [commitMutation, compactLaneAfterMutation, defaultWidgetIds, hiddenWidgetIds, normalizedRole]);
 
   const handleResetWidgets = () => {
     if (!user?.id) return;
-    setEnabledWidgetIdsState(defaultWidgetIds);
-    setWidgetSpanMapState(defaultWidgetSpanMap);
-    resetDashboardEnabledWidgetIds(user.id, normalizedRole);
-    resetDashboardWidgetSpanMap(user.id, normalizedRole);
-    setDraggingWidgetId(null);
-    setDragOverWidgetId(null);
+    const defaults = buildDefaultLayout();
+    setAndPersistLayout(defaults, true);
   };
 
-  const handleWidgetDragStart = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLButtonElement>) => {
-    if (!isLayoutEditing) {
-      event.preventDefault();
-      return;
+  const laneLayouts = useMemo(() => {
+    const split = splitLayoutByLane(effectiveLayoutState, WIDGET_DEFINITIONS);
+    const result: Record<DashboardTier, LayoutState> = {
+      primary: { version: 1, items: [] },
+      secondary: { version: 1, items: [] },
+      supporting: { version: 1, items: [] },
+    };
+
+    for (const tier of DASHBOARD_TIERS) {
+      result[tier] = {
+        version: 1,
+        items: split[tier]
+          .filter((widget) => widget.visible)
+          .map((widget) => ({
+            id: widget.id,
+            x: widget.x,
+            y: widget.y,
+            w: widget.w,
+            h: widget.h,
+          })),
+      };
     }
-    setDraggingWidgetId(widgetId);
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', widgetId);
-  };
 
-  const handleWidgetDragOver = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLDivElement>) => {
-    if (!isLayoutEditing || !draggingWidgetId || draggingWidgetId === widgetId) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    setDragOverWidgetId(widgetId);
-  };
+    return result;
+  }, [effectiveLayoutState]);
 
-  const handleWidgetDrop = (widgetId: DashboardWidgetId) => (event: DragEvent<HTMLDivElement>) => {
-    if (!isLayoutEditing) return;
-    event.preventDefault();
-    const source = draggingWidgetId || (event.dataTransfer.getData('text/plain') as DashboardWidgetId | '');
-    if (!source || source === widgetId) {
-      setDraggingWidgetId(null);
-      setDragOverWidgetId(null);
-      return;
+  const laneItems = useMemo(() => {
+    const split = splitLayoutByLane(effectiveLayoutState, WIDGET_DEFINITIONS);
+    const result: Record<DashboardTier, Array<{
+      id: DashboardWidgetId;
+      title: string;
+      description: string;
+      icon: ComponentType<{ className?: string }>;
+      view: ReactNode;
+    }>> = {
+      primary: [],
+      secondary: [],
+      supporting: [],
+    };
+
+    for (const tier of DASHBOARD_TIERS) {
+      result[tier] = split[tier]
+        .filter((widget) => widget.visible)
+        .map((widget) => ({
+          id: widget.id,
+          title: WIDGET_META[widget.id].label,
+          description: WIDGET_META[widget.id].description,
+          icon: WIDGET_ICONS[widget.id] as ComponentType<{ className?: string }>,
+          view: <DashboardWidgetRenderer widgetId={widget.id} role={normalizedRole} />,
+        }));
     }
-    handleReorderVisibleWidgets(source as DashboardWidgetId, widgetId);
-    setDraggingWidgetId(null);
-    setDragOverWidgetId(null);
-  };
+    return result;
+  }, [effectiveLayoutState, normalizedRole]);
 
-  const resetDragState = () => {
-    setDraggingWidgetId(null);
-    setDragOverWidgetId(null);
-  };
+  const resizeRulesById = useMemo(() => {
+    return Object.fromEntries(
+      availableWidgetIds.map((widgetId) => {
+        const tier = WIDGET_DEFINITIONS[widgetId].defaultTier;
+        return [widgetId, TIER_WIDTH_RULES[tier] as ResizeRule];
+      }),
+    ) as Record<DashboardWidgetId, ResizeRule>;
+  }, [availableWidgetIds]);
+
+  const handleLaneLayoutChange = useCallback((tier: DashboardTier, nextLaneLayout: LayoutState) => {
+    commitMutation((current) => {
+      const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
+      const nextById = new Map(nextLaneLayout.items.map((item) => [item.id, item]));
+      lanes[tier] = compactLaneAfterMutation(
+        lanes[tier].map((widget) => {
+          if (!widget.visible) return widget;
+          const next = nextById.get(widget.id);
+          if (!next) return widget;
+          return {
+            ...widget,
+            x: next.x,
+            y: next.y,
+            w: clampWidgetWidthByTier(next.w, tier, TIER_WIDTH_RULES),
+            h: widget.h,
+          };
+        }),
+        tier,
+      );
+      return mergeLanesToLayout(lanes, normalizedRole, DASHBOARD_LAYOUT_PRESET_VERSION);
+    });
+  }, [commitMutation, compactLaneAfterMutation, normalizedRole]);
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <Card className="card-stat overflow-hidden border-border/60 shadow-sm">
-        <CardContent className="p-0">
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/8 via-background to-accent/10 p-3.5 sm:p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex-1 space-y-1">
-                <div className="space-y-1">
-                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                    Welcome back, {profile?.first_name || 'there'}!
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(), 'EEEE, MMMM d, yyyy')} • {formatRoleLabel(normalizedRole)} dashboard • {scopeLabel}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {canViewTeamWidgets && (
-                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
-                      Team visibility enabled
-                    </Badge>
-                  )}
-                  {canViewCriticalWidgets && (
-                    <Badge className="badge-info rounded-full px-2 py-0.5 text-[11px]">Critical insights enabled</Badge>
-                  )}
-                  {hiddenWidgetCount > 0 && (
-                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
-                      {hiddenWidgetCount} hidden widget{hiddenWidgetCount > 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[320px] lg:self-center">
-                <Button variant="outline" className="h-9 rounded-xl sm:min-w-[150px]" onClick={() => navigate('/notifications')}>
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notifications
-                </Button>
-                <Button
-                  className="h-9 rounded-xl sm:min-w-[170px]"
-                  variant={isLayoutEditing ? 'outline' : 'default'}
-                  onClick={() => setIsLayoutEditing((value) => !value)}
-                >
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  {isLayoutEditing ? 'Done Editing' : 'Edit Dashboard'}
-                </Button>
-              </div>
-            </div>
+    <AppPageContainer spacing="comfortable">
+      <PageHeader
+        shellDensity="compact"
+        title={`Welcome back, ${profile?.first_name || 'there'}!`}
+        description={`${format(new Date(), 'EEEE, MMMM d, yyyy')} • ${formatRoleLabel(normalizedRole)} dashboard • ${scopeLabel}`}
+        chips={headerChips}
+        actionsSlot={(
+          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[360px]">
+            <Button variant="outline" className="h-9 rounded-xl sm:min-w-[150px]" onClick={() => navigate('/notifications')}>
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+            </Button>
+            <InteractionModeToggle
+              modes={['customize']}
+              includeView={false}
+              ariaLabel="Dashboard interaction mode"
+              labels={{ customize: 'Customize Dashboard' }}
+              singleModeLabels={{ activate: 'Customize Dashboard', deactivate: 'Done Editing' }}
+            />
           </div>
-        </CardContent>
-      </Card>
+        )}
+      />
 
-      {isLayoutEditing ? (
-        <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="space-y-4 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="rounded-full px-2.5 py-1">
-                    <GripVertical className="mr-1.5 h-3.5 w-3.5" />
-                    Edit mode
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
-                    Drag widgets to reorder
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1">
-                    Resize widgets inline
-                  </Badge>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-                  Use the controls on each widget to drag, resize, or hide it. Hidden widgets can be restored below.
-                </p>
-              </div>
-              <Button variant="outline" className="h-9 rounded-lg md:shrink-0" onClick={handleResetWidgets}>
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Reset Role Defaults
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium">Hidden Widgets</p>
-                  <p className="text-xs text-muted-foreground">
-                    Restore widgets for your {formatRoleLabel(normalizedRole)} dashboard.
+      <ModeRibbon
+        variant="compact"
+        sticky
+        hideDescription
+        dismissLabel="Exit"
+        labelOverride={{ customize: 'Customize' }}
+        actions={(
+          <>
+            <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
+              {hiddenWidgetCount} hidden
+            </Badge>
+            <Button variant="outline" className="h-8 rounded-lg px-2.5 text-xs" onClick={handleResetWidgets}>
+              <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
+              Reset Role Defaults
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-2.5 text-xs"
+                  disabled={hiddenWidgetIds.length === 0}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Restore Hidden
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[min(92vw,22rem)] p-3">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Hidden Widgets
                   </p>
+                  {hiddenWidgetIds.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No hidden widgets.</p>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 w-full justify-start rounded-lg text-xs"
+                        onClick={handleRestoreAllHidden}
+                      >
+                        Restore all hidden
+                      </Button>
+                      <div className="max-h-56 space-y-1 overflow-auto pr-1">
+                        {hiddenWidgetIds.map((widgetId) => (
+                          <Button
+                            key={widgetId}
+                            type="button"
+                            variant="ghost"
+                            className="h-8 w-full justify-start rounded-lg text-xs"
+                            onClick={() => handleRestoreWidget(widgetId)}
+                          >
+                            {WIDGET_META[widgetId].label}
+                          </Button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-                <Badge variant="outline" className="w-fit rounded-full px-2.5 py-1">
-                  {hiddenWidgetCount} hidden
-                </Badge>
-              </div>
-              {hiddenWidgetIds.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">All available widgets are currently visible.</p>
-              ) : (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {hiddenWidgetIds.map((widgetId) => (
-                    <Button
-                      key={widgetId}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-full px-3 text-xs"
-                      onClick={() => handleToggleWidget(widgetId, true)}
-                    >
-                      <Plus className="mr-1.5 h-3.5 w-3.5" />
-                      {WIDGET_META[widgetId].label}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+              </PopoverContent>
+            </Popover>
+          </>
+        )}
+      />
 
-      {orderedEnabledWidgetIds.length === 0 ? (
+      {availableWidgetIds.length === 0 ? (
         <Card className="card-stat border-border/60 shadow-sm">
           <CardContent className="py-12 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20">
@@ -1356,11 +1767,11 @@ export default function Dashboard() {
             </div>
             <h2 className="text-lg font-semibold">No dashboard widgets visible</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              You have hidden all widgets for this role. Enable edit mode to restore widgets or reset the role defaults.
+              You have hidden all widgets for this role. Enable customize mode to restore widgets or reset the role defaults.
             </p>
             <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
-              <Button className="rounded-lg" onClick={() => setIsLayoutEditing(true)}>
-                Edit Dashboard
+              <Button className="rounded-lg" onClick={() => setMode('customize')}>
+                Customize Dashboard
               </Button>
               <Button variant="outline" className="rounded-lg" onClick={handleResetWidgets}>
                 <RefreshCcw className="mr-2 h-4 w-4" />
@@ -1370,102 +1781,21 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:grid-flow-dense">
-          {orderedEnabledWidgetIds.map((widgetId) => (
-            <div
-              key={widgetId}
-              onDragOver={handleWidgetDragOver(widgetId)}
-              onDrop={handleWidgetDrop(widgetId)}
-              onDragEnd={resetDragState}
-              className={cn(
-                'space-y-0 h-full',
-                getWidgetSpanClass(resolvedWidgetSpanMap[widgetId] ?? WIDGET_META[widgetId].defaultSpan),
-                isLayoutEditing && 'rounded-2xl border border-transparent p-1.5 transition-colors',
-                isLayoutEditing && draggingWidgetId === widgetId && 'opacity-70',
-                isLayoutEditing && dragOverWidgetId === widgetId && draggingWidgetId !== widgetId && 'border-primary/40 bg-primary/5',
-              )}
-            >
-              {isLayoutEditing ? (
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/80 p-2 shadow-sm backdrop-blur">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      draggable
-                      onDragStart={handleWidgetDragStart(widgetId)}
-                      onDragEnd={resetDragState}
-                      className="h-8 w-8 cursor-grab rounded-lg text-muted-foreground active:cursor-grabbing"
-                      aria-label={`Drag ${WIDGET_META[widgetId].label}`}
-                      title={`Drag ${WIDGET_META[widgetId].label} to reorder`}
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </Button>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-foreground">{WIDGET_META[widgetId].label}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {resolvedWidgetSpanMap[widgetId] === 1 ? 'Small' : resolvedWidgetSpanMap[widgetId] === 2 ? 'Wide' : 'Full'} width
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/20 p-1">
-                      {([1, 2, 3] as DashboardWidgetSpan[]).map((span) => (
-                        <Button
-                          key={span}
-                          type="button"
-                          variant={resolvedWidgetSpanMap[widgetId] === span ? 'default' : 'ghost'}
-                          size="sm"
-                          className="h-7 rounded-md px-2 text-[11px]"
-                          onClick={() => handleSetWidgetSpan(widgetId, span)}
-                          aria-label={`Set ${WIDGET_META[widgetId].label} width to ${span === 1 ? 'small' : span === 2 ? 'wide' : 'full'}`}
-                        >
-                          {span === 1 ? 'S' : span === 2 ? 'W' : 'F'}
-                        </Button>
-                      ))}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-lg"
-                      onClick={() => handleMoveWidget(widgetId, 'up')}
-                      disabled={orderedEnabledWidgetIds.indexOf(widgetId) <= 0}
-                      aria-label={`Move ${WIDGET_META[widgetId].label} up`}
-                      title="Move up"
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-lg"
-                      onClick={() => handleMoveWidget(widgetId, 'down')}
-                      disabled={orderedEnabledWidgetIds.indexOf(widgetId) === -1 || orderedEnabledWidgetIds.indexOf(widgetId) >= orderedEnabledWidgetIds.length - 1}
-                      aria-label={`Move ${WIDGET_META[widgetId].label} down`}
-                      title="Move down"
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-lg px-2.5 text-xs"
-                      onClick={() => handleToggleWidget(widgetId, false)}
-                    >
-                      Hide
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-              <DashboardWidgetRenderer widgetId={widgetId} role={normalizedRole} />
-            </div>
+        <div className="space-y-5">
+          {DASHBOARD_TIERS.map((tier) => (
+            <DashboardLane
+              key={tier}
+              tier={tier}
+              mode={isLayoutEditing ? 'customize' : 'view'}
+              items={laneItems[tier]}
+              layoutState={laneLayouts[tier]}
+              onLayoutStateChange={(nextLaneState) => handleLaneLayoutChange(tier, nextLaneState)}
+              onHideItem={(itemId) => handleHideWidget(itemId as DashboardWidgetId)}
+              resizeRulesById={resizeRulesById}
+            />
           ))}
         </div>
       )}
-    </div>
+    </AppPageContainer>
   );
 }

@@ -65,5 +65,15 @@ describe('TeamCalendar SectionToolbar and dialog keyboard behavior', () => {
       expect(trigger).toHaveFocus();
     });
   });
-});
 
+  it('supports keyboard selection for calendar day cells', () => {
+    render(<TeamCalendar />);
+
+    expect(screen.getByText('Select a date')).toBeInTheDocument();
+
+    const dayCells = screen.getAllByRole('button', { name: /View events for/i });
+    fireEvent.keyDown(dayCells[0], { key: 'Enter' });
+
+    expect(screen.queryByText('Select a date')).not.toBeInTheDocument();
+  });
+});

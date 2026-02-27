@@ -9,14 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FileText, Upload, Trash2, Download, Search, Filter, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
-import { DataTableShell, PageHeader, SectionToolbar } from '@/components/system';
+import { AppPageContainer, DataTableShell, ModalScaffold, PageHeader, SectionToolbar } from '@/components/system';
 
 const categoryColors: Record<DocumentCategory, string> = {
   contract: 'bg-primary/10 text-primary',
@@ -97,8 +96,9 @@ export default function Documents() {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Document Management"
         description={
           canManageDocuments
@@ -107,98 +107,10 @@ export default function Documents() {
         }
         actionsSlot={
           canManageDocuments ? (
-            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-              <DialogTrigger asChild>
-                <Button className="h-9 w-full gap-2 rounded-full lg:w-auto">
-                  <Upload className="w-4 h-4" />
-                  Upload Document
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Upload Document</DialogTitle>
-                  <DialogDescription>
-                    Upload a new document for an employee.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Employee</Label>
-                    <Select
-                      value={uploadForm.employeeId}
-                      onValueChange={(value) => setUploadForm({ ...uploadForm, employeeId: value })}
-                    >
-                      <SelectTrigger className="rounded-full">
-                        <SelectValue placeholder="Select employee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees?.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id}>
-                            {emp.first_name} {emp.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Document Title</Label>
-                    <Input
-                      value={uploadForm.title}
-                      onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                      placeholder="e.g., Employment Contract 2024"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select
-                      value={uploadForm.category}
-                      onValueChange={(value) => setUploadForm({ ...uploadForm, category: value as DocumentCategory })}
-                    >
-                      <SelectTrigger className="rounded-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="certificate">Certificate</SelectItem>
-                        <SelectItem value="official">Official</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description (Optional)</Label>
-                    <Textarea
-                      value={uploadForm.description}
-                      onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-                      placeholder="Brief description of the document"
-                      rows={3}
-                      className="resize-y min-h-[96px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>File</Label>
-                    <Input
-                      type="file"
-                      onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Accepted: PDF, DOC, DOCX, JPG, PNG (max 10MB)
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                  <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-                  <Button
-                    className="w-full sm:w-auto rounded-full"
-                    onClick={handleUpload}
-                    disabled={!uploadForm.file || !uploadForm.title || !uploadForm.employeeId || uploadDocument.isPending}
-                  >
-                    {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button className="h-9 w-full gap-2 rounded-full lg:w-auto" onClick={() => setIsUploadOpen(true)}>
+              <Upload className="w-4 h-4" />
+              Upload Document
+            </Button>
           ) : null
         }
         toolbarSlot={
@@ -258,6 +170,100 @@ export default function Documents() {
           />
         }
       />
+
+      {canManageDocuments ? (
+        <ModalScaffold
+          open={isUploadOpen}
+          onOpenChange={setIsUploadOpen}
+          title="Upload Document"
+          description="Upload a new document for an employee."
+          maxWidth="xl"
+          contentClassName="max-h-[90vh] overflow-y-auto"
+          body={(
+            <div className="space-y-4 py-1">
+              <div className="space-y-2">
+                <Label>Employee</Label>
+                <Select
+                  value={uploadForm.employeeId}
+                  onValueChange={(value) => setUploadForm({ ...uploadForm, employeeId: value })}
+                >
+                  <SelectTrigger className="rounded-full">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees?.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Document Title</Label>
+                <Input
+                  value={uploadForm.title}
+                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                  placeholder="e.g., Employment Contract 2024"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={uploadForm.category}
+                  onValueChange={(value) => setUploadForm({ ...uploadForm, category: value as DocumentCategory })}
+                >
+                  <SelectTrigger className="rounded-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="certificate">Certificate</SelectItem>
+                    <SelectItem value="official">Official</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Description (Optional)</Label>
+                <Textarea
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                  placeholder="Brief description of the document"
+                  rows={3}
+                  className="resize-y min-h-[96px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>File</Label>
+                <Input
+                  type="file"
+                  onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files?.[0] || null })}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Accepted: PDF, DOC, DOCX, JPG, PNG (max 10MB)
+                </p>
+              </div>
+            </div>
+          )}
+          footer={(
+            <>
+              <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setIsUploadOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="w-full rounded-full sm:w-auto"
+                onClick={handleUpload}
+                disabled={!uploadForm.file || !uploadForm.title || !uploadForm.employeeId || uploadDocument.isPending}
+              >
+                {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
+              </Button>
+            </>
+          )}
+          footerClassName="flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+        />
+      ) : null}
 
       <DataTableShell
         title="Documents"
@@ -443,6 +449,6 @@ export default function Documents() {
           </div>
         }
       />
-    </div>
+    </AppPageContainer>
   );
 }

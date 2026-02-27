@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Users, Plane, CalendarPlus } from 'lucide-react';
 import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { DataTableShell, ModalScaffold, ModalSection, PageHeader, SectionToolbar } from '@/components/system';
+import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader, SectionToolbar } from '@/components/system';
 import {
   canManageDepartmentEvents as canManageDepartmentEventsPermission,
   canManageHolidays as canManageHolidaysPermission,
@@ -147,8 +147,9 @@ export default function TeamCalendar() {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Team Calendar"
         description="View leave schedules, holidays, and department events"
         actionsSlot={
@@ -413,6 +414,15 @@ export default function TeamCalendar() {
                           isSelected && 'ring-2 ring-primary ring-inset'
                         )}
                         onClick={() => setSelectedDate(date)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedDate(date);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View events for ${format(date, 'MMMM d, yyyy')}`}
                       >
                         <div className={cn(
                           'text-xs font-medium mb-1',
@@ -573,6 +583,6 @@ export default function TeamCalendar() {
           />
         </div>
       </div>
-    </div>
+    </AppPageContainer>
   );
 }

@@ -14,10 +14,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Users, Mail, Building, LayoutGrid, List } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { Profile, Department, AppRole } from '@/types/hrms';
 import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
-import { DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 export default function Employees() {
   const { role: viewerRole } = useAuth();
@@ -39,18 +39,30 @@ export default function Employees() {
     return userRole?.role || 'employee';
   };
 
+  const formatRoleLabel = (value: AppRole) => value.replace(/_/g, ' ');
+
   const roleColors: Record<AppRole, string> = {
-    admin: 'bg-red-500/20 text-red-400 border-red-500/30',
-    hr: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    director: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    general_manager: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-    manager: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    employee: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+    admin: 'bg-rose-50 text-rose-800 border-rose-200',
+    hr: 'bg-violet-50 text-violet-800 border-violet-200',
+    director: 'bg-amber-50 text-amber-800 border-amber-200',
+    general_manager: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+    manager: 'bg-blue-50 text-blue-800 border-blue-200',
+    employee: 'bg-slate-100 text-slate-700 border-slate-300',
   };
 
   const handleEmployeeClick = (employee: Profile & { department: Department | null }) => {
     setSelectedEmployee(employee);
     setDetailDialogOpen(true);
+  };
+
+  const handleEmployeeKeyDown = (
+    event: KeyboardEvent<HTMLElement>,
+    employee: Profile & { department: Department | null },
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleEmployeeClick(employee);
+    }
   };
 
   const LoadingGridSkeleton = () => (
@@ -86,8 +98,9 @@ export default function Employees() {
   );
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Employee Directory"
         description={`${employees?.length || 0} employees`}
         toolbarSlot={
@@ -141,6 +154,10 @@ export default function Employees() {
                     key={employee.id}
                     className="card-stat cursor-pointer border-border/60 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
                     onClick={() => handleEmployeeClick(employee)}
+                    onKeyDown={(event) => handleEmployeeKeyDown(event, employee)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View employee details for ${employee.first_name} ${employee.last_name}`}
                   >
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
@@ -181,6 +198,10 @@ export default function Employees() {
                       key={employee.id}
                       className="rounded-xl border border-border/60 p-4 shadow-sm cursor-pointer"
                       onClick={() => handleEmployeeClick(employee)}
+                      onKeyDown={(event) => handleEmployeeKeyDown(event, employee)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View employee details for ${employee.first_name} ${employee.last_name}`}
                     >
                       <div className="flex items-start gap-3">
                         <Avatar className="w-10 h-10">
@@ -198,7 +219,7 @@ export default function Employees() {
                           <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Badge className={roleColors[getUserRole(employee.id)]}>
-                              {getUserRole(employee.id)}
+                              {formatRoleLabel(getUserRole(employee.id))}
                             </Badge>
                             <Badge variant="outline">
                               {employee.department?.name || 'No Department'}
@@ -225,6 +246,10 @@ export default function Employees() {
                           key={employee.id}
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => handleEmployeeClick(employee)}
+                          onKeyDown={(event) => handleEmployeeKeyDown(event, employee)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`View employee details for ${employee.first_name} ${employee.last_name}`}
                         >
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -242,7 +267,7 @@ export default function Employees() {
                           <TableCell>{employee.department?.name || '-'}</TableCell>
                           <TableCell>
                             <Badge className={roleColors[getUserRole(employee.id)]}>
-                              {getUserRole(employee.id)}
+                              {formatRoleLabel(getUserRole(employee.id))}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -266,6 +291,6 @@ export default function Employees() {
         userRole={selectedEmployee ? getUserRole(selectedEmployee.id) : 'employee'}
         viewerRole={viewerRole}
       />
-    </div>
+    </AppPageContainer>
   );
 }

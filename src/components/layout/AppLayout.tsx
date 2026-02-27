@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { Loader2 } from 'lucide-react';
 import { NotificationsBell } from './NotificationsBell';
+import { InteractionModeProvider } from '@/components/system';
 import {
   getFloatingNotificationsVisible,
   FLOATING_NOTIFICATIONS_VISIBLE_STORAGE_KEY,
@@ -54,15 +55,21 @@ export function AppLayout() {
           <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-info/5 blur-3xl" />
         </div>
         {showFloatingNotifications && (
-          <div className="fixed right-3 top-3 z-40 overflow-visible md:right-5 md:top-4 lg:right-7">
-            <div className="overflow-visible rounded-2xl border border-border/70 bg-background/90 p-1 shadow-[0_12px_28px_hsl(var(--foreground)/0.1)] backdrop-blur-xl">
-              <NotificationsBell floating />
+          <div className="pointer-events-none fixed inset-x-0 top-3 z-40 md:top-4">
+            <div className="mx-auto w-full max-w-[1680px] px-3 sm:px-5 md:px-6 lg:px-8">
+              <div className="flex justify-end">
+                <div className="pointer-events-auto overflow-visible rounded-2xl border border-border/70 bg-background/90 p-1 shadow-[0_12px_28px_hsl(var(--foreground)/0.1)] backdrop-blur-xl">
+                  <NotificationsBell floating />
+                </div>
+              </div>
             </div>
           </div>
         )}
-        <div className="animate-fadeIn relative p-3 pt-14 sm:p-5 sm:pt-16 md:p-6 md:pt-6 lg:p-8">
+        <div className="animate-fadeIn relative p-3 pt-14 sm:p-5 sm:pt-16 md:p-6 md:pt-6 lg:p-7 xl:p-8">
           <div className="mx-auto w-full max-w-[1680px]">
-            <Outlet />
+            <InteractionModeProvider resetKeys={[user?.id ?? null]}>
+              <Outlet />
+            </InteractionModeProvider>
           </div>
         </div>
       </main>

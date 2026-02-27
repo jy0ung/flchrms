@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Attendance() {
   const { data: history, isLoading } = useAttendanceHistory();
@@ -12,8 +12,9 @@ export default function Attendance() {
   const clockOut = useClockOut();
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Attendance"
         description="Track your work hours"
         actions={
@@ -115,6 +116,6 @@ export default function Attendance() {
           </div>
         }
       />
-    </div>
+    </AppPageContainer>
   );
 }

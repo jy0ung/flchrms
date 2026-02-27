@@ -1,7 +1,15 @@
 export * from "./StatusBadge";
 export * from "./PageHeader";
+export * from "./AppPageContainer";
 export * from "./SectionToolbar";
 export * from "./DataTableShell";
+export * from "./SurfaceSection";
 export * from "./ModalScaffold";
 export * from "./ModalSection";
-
+export * from "./interaction-mode";
+export * from "./InteractionModeProvider";
+export * from "./InteractionModeToggle";
+export * from "./ModeRibbon";
+export * from "./InteractionModeSidePanel";
+export * from "./EditableCanvas";
+export * from "./LayoutTile";

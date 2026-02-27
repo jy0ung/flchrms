@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePayslips, useUpdatePayslipStatus } from '@/hooks/usePayroll';
@@ -15,18 +7,13 @@ import { PayrollPeriod, Payslip } from '@/types/payroll';
 import { format } from 'date-fns';
 import { Users, Search, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
+import { ModalScaffold, StatusBadge } from '@/components/system';
 
 interface PayslipsListDialogProps {
   period: PayrollPeriod | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const statusColors: Record<string, string> = {
-  pending: 'bg-warning/20 text-warning border-warning/30',
-  paid: 'bg-success/20 text-success border-success/30',
-  cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
-};
 
 export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListDialogProps) {
   const { data: payslips, isLoading } = usePayslips(period?.id);
@@ -47,20 +34,17 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              {period.name} - Payslips
-            </DialogTitle>
-            <DialogDescription>
-              {format(new Date(period.start_date), 'MMM d')} - {' '}
-              {format(new Date(period.end_date), 'MMM d, yyyy')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+      <ModalScaffold
+        open={open}
+        onOpenChange={onOpenChange}
+        title={`${period.name} - Payslips`}
+        description={`${format(new Date(period.start_date), 'MMM d')} - ${format(new Date(period.end_date), 'MMM d, yyyy')}`}
+        maxWidth="4xl"
+        contentClassName="max-h-[90vh] overflow-hidden"
+        headerMeta={<Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+        bodyClassName="space-y-4 flex-1 overflow-hidden flex flex-col"
+        body={(
+          <>
             {/* Summary */}
             <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 sm:grid-cols-3">
               <div className="text-center">
@@ -115,9 +99,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <div className="mr-1 sm:text-right">
                           <p className="font-semibold">RM {payslip.net_salary.toLocaleString()}</p>
-                          <Badge className={statusColors[payslip.status]}>
-                            {payslip.status}
-                          </Badge>
+                          <StatusBadge status={payslip.status} />
                         </div>
                         <div className="flex flex-wrap items-center gap-1">
                           {payslip.status === 'pending' && (
@@ -158,9 +140,9 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
                 ))
               )}
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
       <PayslipDetailDialog
         payslip={selectedPayslip}

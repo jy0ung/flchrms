@@ -23,7 +23,7 @@ import {
 } from '@/hooks/useNotifications';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -232,8 +232,9 @@ export default function Notifications() {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Notifications"
         description="Review leave workflow and workflow configuration activity."
         actionsSlot={
@@ -393,6 +394,6 @@ export default function Notifications() {
           </ScrollArea>
         }
       />
-    </div>
+    </AppPageContainer>
   );
 }

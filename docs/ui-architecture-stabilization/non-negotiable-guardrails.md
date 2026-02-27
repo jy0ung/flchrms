@@ -30,10 +30,18 @@ Not allowed in UI refactor PRs:
 ## 2. Structural Refactor Rules
 
 1. Reuse shared components before creating local patterns.
-2. New page-level layouts must use approved system components (when available).
+2. New page-level layouts must use approved system components (when available):
+   - route wrapper: `AppPageContainer`
+   - header: `PageHeader` (`shellDensity="compact"` by default; use `metaSlot` for secondary controls)
+   - section wrapper: `SurfaceSection` or `DataTableShell`
+   - toolbar: `SectionToolbar`
+   - semantic states: `StatusBadge`
+   - dialogs: `ModalScaffold` + `ModalSection`
 3. No page-local status color maps for standardized statuses after status-system migration starts.
 4. No duplicate header/toolbar implementations when `PageHeader` / `SectionToolbar` exist.
 5. No inline ad hoc dialog composition when modal scaffold standards exist.
+6. No new route-level local mode state (`isEditing`, `isBulkMode`, `isManageMode`, `isCustomizeMode`) after interaction-mode migration. Use `useInteractionMode`.
+7. Route-level mode toggles must live in `PageHeader` actions region.
 
 ## 3. PR Sizing and Change Isolation
 
@@ -96,4 +104,3 @@ Exceptions must be documented in the PR under:
 - `Follow-up cleanup issue`
 
 No undocumented exceptions.
-

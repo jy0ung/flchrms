@@ -18,6 +18,10 @@ export interface StatusMeta {
 }
 
 const STATUS_REGISTRY: Record<string, Omit<StatusMeta, "key">> = {
+  low: { label: "Low", tone: "neutral", iconKey: "dot" },
+  normal: { label: "Normal", tone: "info", iconKey: "info" },
+  high: { label: "High", tone: "warning", iconKey: "alert" },
+  urgent: { label: "Urgent", tone: "danger", iconKey: "alert" },
   draft: { label: "Draft", tone: "neutral", iconKey: "dot" },
   pending: { label: "Pending", tone: "warning", iconKey: "clock" },
   processing: { label: "Processing", tone: "info", iconKey: "clock" },
@@ -54,6 +58,9 @@ const STATUS_REGISTRY: Record<string, Omit<StatusMeta, "key">> = {
   info: { label: "Info", tone: "info", iconKey: "info" },
   success: { label: "Success", tone: "success", iconKey: "check" },
   error: { label: "Error", tone: "danger", iconKey: "x" },
+  created: { label: "Created", tone: "success", iconKey: "check" },
+  updated: { label: "Updated", tone: "info", iconKey: "info" },
+  deleted: { label: "Deleted", tone: "danger", iconKey: "x" },
 };
 
 const STATUS_ALIASES: Record<string, string> = {

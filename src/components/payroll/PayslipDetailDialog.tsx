@@ -1,16 +1,8 @@
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Payslip } from '@/types/payroll';
 import { format } from 'date-fns';
-import { Calendar, FileText, Shield, Wallet, X } from 'lucide-react';
+import { Calendar, FileText, Shield, Wallet } from 'lucide-react';
+import { ModalScaffold, StatusBadge } from '@/components/system';
 
 interface PayslipDetailDialogProps {
   payslip: Payslip | null;
@@ -18,12 +10,6 @@ interface PayslipDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const statusColors: Record<string, string> = {
-  pending: 'bg-warning/20 text-warning border-warning/30',
-  paid: 'bg-success/20 text-success border-success/30',
-  cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
-};
 
 export function PayslipDetailDialog({
   payslip,
@@ -54,54 +40,31 @@ export function PayslipDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-3xl"
-      >
-        <DialogHeader className="space-y-4 pr-0">
-          <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/20 p-4 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-xl border border-border/60 bg-primary/10 p-2 text-primary">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                  <DialogTitle className="pr-0 text-xl sm:text-2xl">Payslip Details</DialogTitle>
-                </div>
-                <DialogDescription className="mt-2">
-                  {payslip.payroll_period?.name || 'Payslip'}
-                </DialogDescription>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 py-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {periodLabel}
-                  </span>
-                  {hideAmounts ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 py-1">
-                      <Shield className="h-3.5 w-3.5" />
-                      Amounts hidden
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 self-start">
-                <Badge className={statusColors[payslip.status]}>{payslip.status}</Badge>
-                <DialogClose asChild>
-                  <button
-                    type="button"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    aria-label="Close payslip details"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </DialogClose>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-5">
+    <ModalScaffold
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Payslip Details"
+      description={payslip.payroll_period?.name || 'Payslip'}
+      statusBadge={<StatusBadge status={payslip.status} />}
+      maxWidth="3xl"
+      contentClassName="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-3xl"
+      headerMeta={(
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 py-1">
+            <Calendar className="h-3.5 w-3.5" />
+            {periodLabel}
+          </span>
+          {hideAmounts ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 py-1">
+              <Shield className="h-3.5 w-3.5" />
+              Amounts hidden
+            </span>
+          ) : null}
+        </div>
+      )}
+      bodyClassName="space-y-5"
+      body={(
+        <>
           {/* Attendance Summary */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-border/60 bg-card/80 p-3 text-center shadow-sm">
@@ -218,8 +181,8 @@ export function PayslipDetailDialog({
               Paid on <span className="font-medium text-foreground">{format(new Date(payslip.paid_at), 'MMMM d, yyyy')}</span>
             </div>
           ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    />
   );
 }

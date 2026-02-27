@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, Star } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Performance() {
   const { data: reviews, isLoading } = useMyReviews();
   const acknowledge = useAcknowledgeReview();
 
   return (
-    <div className="space-y-6">
+    <AppPageContainer>
       <PageHeader
+        shellDensity="compact"
         title="Performance Reviews"
         description="Your performance evaluations"
       />
@@ -98,6 +99,6 @@ export default function Performance() {
           </div>
         }
       />
-    </div>
+    </AppPageContainer>
   );
 }

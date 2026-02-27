@@ -31,11 +31,13 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLElement> {
   description?: string;
   chips?: PageHeaderChip[];
   chipsSlot?: React.ReactNode;
+  metaSlot?: React.ReactNode;
   actions?: PageHeaderAction[];
   actionsSlot?: React.ReactNode;
   tabsSlot?: React.ReactNode;
   toolbarSlot?: React.ReactNode;
   compact?: boolean;
+  shellDensity?: "compact" | "standard";
   sticky?: boolean;
   headingLevel?: 1 | 2 | 3;
   titleId?: string;
@@ -51,8 +53,10 @@ const chipToneClasses: Record<NonNullable<PageHeaderChip["tone"]>, string> = {
   danger: "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200",
 };
 
-function renderAction(action: PageHeaderAction) {
+function renderAction(action: PageHeaderAction, density: NonNullable<PageHeaderProps["shellDensity"]>) {
   const Icon = action.icon;
+  const minWidthClassName = density === "compact" ? "min-w-[8rem]" : "min-w-[9rem]";
+
   if (action.href) {
     return (
       <Button
@@ -62,7 +66,7 @@ function renderAction(action: PageHeaderAction) {
         size={action.size ?? "default"}
         disabled={action.disabled}
         aria-label={action.ariaLabel}
-        className="min-w-[9rem] justify-center"
+        className={cn(minWidthClassName, "justify-center")}
       >
         <a href={action.href} target={action.target} rel={action.rel}>
           {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}
@@ -81,7 +85,7 @@ function renderAction(action: PageHeaderAction) {
       onClick={action.onClick}
       disabled={action.disabled}
       aria-label={action.ariaLabel}
-      className="min-w-[9rem] justify-center"
+      className={cn(minWidthClassName, "justify-center")}
     >
       {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}
       <span>{action.label}</span>
@@ -98,17 +102,21 @@ export function PageHeader({
   description,
   chips,
   chipsSlot,
+  metaSlot,
   actions,
   actionsSlot,
   tabsSlot,
   toolbarSlot,
   compact = true,
+  shellDensity,
   sticky = false,
   headingLevel = 1,
   titleId,
   className,
   ...props
 }: PageHeaderProps) {
+  const resolvedDensity = shellDensity ?? (compact ? "compact" : "standard");
+  const isCompactDensity = resolvedDensity === "compact";
   const autoTitleId = React.useId();
   const hasMeta = Boolean((chips && chips.length) || chipsSlot || tabsSlot || toolbarSlot);
   const HeadingTag: React.ElementType = `h${headingLevel}`;
@@ -121,14 +129,16 @@ export function PageHeader({
       aria-labelledby={headerTitleId}
       {...props}
     >
-      <CardHeader className={cn(compact ? "p-4 sm:p-5" : "p-5 sm:p-6", "space-y-0")}>
+      <CardHeader className={cn(isCompactDensity ? "p-4 sm:p-5" : "p-5 sm:p-6", "space-y-0")}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 space-y-1.5">
             <HeadingTag
               id={headerTitleId}
               className={cn(
                 "tracking-tight text-foreground",
-                compact ? "text-2xl font-semibold leading-tight sm:text-3xl" : "text-3xl font-semibold sm:text-4xl",
+                isCompactDensity
+                  ? "text-2xl font-semibold leading-tight sm:text-3xl"
+                  : "text-3xl font-semibold sm:text-4xl",
               )}
             >
               {title}
@@ -150,17 +160,26 @@ export function PageHeader({
             ) : null}
           </div>
 
-          {(actionsSlot || (actions && actions.length > 0)) ? (
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-              {actionsSlot}
-              {actions?.map(renderAction)}
+          {(metaSlot || actionsSlot || (actions && actions.length > 0)) ? (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[240px] sm:items-end">
+              {metaSlot ? <div className="w-full sm:w-auto">{metaSlot}</div> : null}
+              {(actionsSlot || (actions && actions.length > 0)) ? (
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+                  {actionsSlot}
+                  {actions?.map((action) => renderAction(action, resolvedDensity))}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
       </CardHeader>
 
       {hasMeta ? (
-        <CardContent className={cn(compact ? "space-y-3 p-4 pt-0 sm:p-5 sm:pt-0" : "space-y-4 p-5 pt-0 sm:p-6 sm:pt-0")}>
+        <CardContent
+          className={cn(
+            isCompactDensity ? "space-y-3 p-4 pt-0 sm:p-5 sm:pt-0" : "space-y-4 p-5 pt-0 sm:p-6 sm:pt-0",
+          )}
+        >
           <Separator />
           {tabsSlot ? <div>{tabsSlot}</div> : null}
           {toolbarSlot ? (
