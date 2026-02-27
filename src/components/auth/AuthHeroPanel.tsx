@@ -1,6 +1,7 @@
-import { Building2, KeyRound, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { CardHeaderStandard } from '@/components/system';
 
 interface AuthHeroPanelProps {
   environmentLabel: string;
@@ -16,39 +17,29 @@ export function AuthHeroPanel({ environmentLabel, securityContextLabel }: AuthHe
           Internal system access · {environmentLabel} · {securityContextLabel}
         </div>
 
-        <div className="mt-7 space-y-4">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">FLC-HRMS</h1>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground">
-              Centralized HR management for leave workflows, payroll operations, employee records, and internal updates.
-            </p>
-          </div>
-        </div>
+        <CardHeaderStandard
+          title="FLC-HRMS"
+          description="Centralized HR management for leave workflows, payroll operations, employee records, and internal updates."
+          className="mt-7 p-0 pb-2"
+          titleClassName="text-4xl font-bold tracking-tight"
+          descriptionClassName="max-w-md text-base leading-relaxed"
+        />
 
         <div className="mt-8 grid gap-3">
           <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
-              <div>
-                <p className="text-base font-semibold">Role-based access controls</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Access is restricted by role, department, and workflow stage.
-                </p>
-              </div>
+            <div>
+              <p className="text-base font-semibold">Role-Based Access Controls</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Access is restricted by role, department, and workflow stage.
+              </p>
             </div>
           </div>
           <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-            <div className="flex items-start gap-3">
-              <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
-              <div>
-                <p className="text-base font-semibold">Flexible sign-in</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Sign in using email, username, or employee ID.
-                </p>
-              </div>
+            <div>
+              <p className="text-base font-semibold">Flexible Sign-In</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Sign in using email, username, or employee ID.
+              </p>
             </div>
           </div>
         </div>

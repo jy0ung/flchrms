@@ -18,6 +18,7 @@ import {
   Plus,
   Play,
   RefreshCcw,
+  Search,
   ShieldAlert,
   Square,
   Target,
@@ -75,15 +76,17 @@ import {
 } from '@/lib/ui-preferences';
 import { cn } from '@/lib/utils';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AppPageContainer,
+  CardHeaderStandard,
   InteractionModeToggle,
   ModeRibbon,
   PageHeader,
@@ -120,11 +123,35 @@ interface LeaveRosterQueryRow {
   leave_type: { name: string | null } | null;
 }
 
+interface PendingLeaveApprovalItem {
+  id: string;
+  employeeName: string;
+  leaveTypeName: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+interface PendingLeaveApprovalQueryRow {
+  id: string;
+  employee_id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  employee: { first_name: string | null; last_name: string | null } | null;
+  leave_type: { name: string | null } | null;
+}
+
+interface TrainingProgramOverviewItem {
+  title: string;
+  completionRate: number;
+}
+
 const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   attendanceToday: {
     id: 'attendanceToday',
-    label: "Today's Attendance",
-    description: 'Clock in/out and view your attendance status for today.',
+    label: 'Today Attendance',
+    description: 'Attendance status and clock activity for today.',
     defaultWidth: 8,
     defaultHeight: 4,
     defaultTier: 'supporting',
@@ -132,7 +159,7 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   leaveBalance: {
     id: 'leaveBalance',
     label: 'Leave Balance',
-    description: 'Your remaining leave days, usage, and pending requests.',
+    description: 'Leave balances and approval workload visibility.',
     defaultWidth: 4,
     defaultHeight: 4,
     defaultTier: 'supporting',
@@ -148,7 +175,7 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   trainingSummary: {
     id: 'trainingSummary',
     label: 'Training',
-    description: 'Track your training enrollments and completion progress.',
+    description: 'Training progress and completion insights.',
     defaultWidth: 8,
     defaultHeight: 4,
     defaultTier: 'supporting',
@@ -156,7 +183,7 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   performanceSummary: {
     id: 'performanceSummary',
     label: 'Performance Reviews',
-    description: 'See your review status and recent review activity.',
+    description: 'Performance review status and recent activity.',
     defaultWidth: 4,
     defaultHeight: 4,
     defaultTier: 'supporting',
@@ -172,7 +199,7 @@ const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   onLeaveToday: {
     id: 'onLeaveToday',
     label: 'Who Is On Leave Today',
-    description: 'See who is currently on leave today in your visible scope.',
+    description: 'Current leave roster for the visible scope.',
     defaultWidth: 4,
     defaultHeight: 4,
     defaultTier: 'secondary',
@@ -244,12 +271,12 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
     'announcements',
   ],
   admin: [
-    'attendanceToday',
+    'criticalInsights',
     'announcements',
     'teamSnapshot',
     'onLeaveToday',
-    'criticalInsights',
-    'executiveMetrics',
+    'leaveBalance',
+    'trainingSummary',
   ],
 };
 
@@ -259,7 +286,7 @@ const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   general_manager: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
   hr: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
   director: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  admin: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday'],
+  admin: ['criticalInsights', 'announcements', 'teamSnapshot', 'onLeaveToday', 'leaveBalance', 'trainingSummary'],
 };
 
 const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidgetId, number>>> = {
@@ -313,12 +340,12 @@ const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidget
     performanceSummary: 4,
   },
   admin: {
-    criticalInsights: 8,
-    executiveMetrics: 4,
+    criticalInsights: 12,
     announcements: 12,
     teamSnapshot: 8,
     onLeaveToday: 4,
-    attendanceToday: 12,
+    leaveBalance: 8,
+    trainingSummary: 4,
   },
 };
 
@@ -335,7 +362,7 @@ const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> =
   leaveBalance: {
     id: 'leaveBalance',
     defaultTier: 'supporting',
-    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director'],
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'],
     defaultW: WIDGET_META.leaveBalance.defaultWidth,
     defaultH: WIDGET_META.leaveBalance.defaultHeight,
     minW: TIER_WIDTH_RULES.supporting.minW,
@@ -353,7 +380,7 @@ const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> =
   trainingSummary: {
     id: 'trainingSummary',
     defaultTier: 'supporting',
-    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director'],
+    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'],
     defaultW: WIDGET_META.trainingSummary.defaultWidth,
     defaultH: WIDGET_META.trainingSummary.defaultHeight,
     minW: TIER_WIDTH_RULES.supporting.minW,
@@ -418,7 +445,13 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-const DASHBOARD_LAYOUT_PRESET_VERSION = 4;
+function formatStatusLabel(status: string) {
+  return status
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+const DASHBOARD_LAYOUT_PRESET_VERSION = 5;
 const DASHBOARD_TIERS: DashboardTier[] = ['primary', 'secondary', 'supporting'];
 
 function getScopeLabel(role: AppRole | null | undefined, stats?: ExecutiveStats | null) {
@@ -450,34 +483,28 @@ function getCriticalWidgetTitle(role: AppRole | null | undefined) {
 function DashboardWidgetCard({
   title,
   description,
-  icon: Icon,
+  icon: _icon,
   action,
   children,
   className,
 }: {
   title: string;
   description?: string;
-  icon: ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <Card className={cn('card-stat flex h-full flex-col border-border/60 shadow-sm', className)}>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 break-words leading-tight">{title}</span>
-            </CardTitle>
-            {description ? <CardDescription className="mt-2 text-xs md:text-sm">{description}</CardDescription> : null}
-          </div>
-          {action ? <div className="shrink-0 self-start sm:self-auto">{action}</div> : null}
-        </div>
-      </CardHeader>
+      <CardHeaderStandard
+        title={title}
+        description={description}
+        actions={action}
+        className="p-6 pb-3"
+        titleClassName="text-base md:text-lg"
+        descriptionClassName="text-xs md:text-sm"
+      />
       <CardContent className="flex-1 pt-0">{children}</CardContent>
     </Card>
   );
@@ -578,8 +605,8 @@ function AttendanceTodayWidget() {
 
   return (
     <DashboardWidgetCard
-      title="Today's Attendance"
-      description="Clock in/out and review your attendance status for today."
+      title="Today Attendance"
+      description="Attendance status and clock activity for today."
       icon={Clock}
       action={
         <StatusBadge
@@ -646,8 +673,10 @@ function AttendanceTodayWidget() {
 
 function LeaveBalanceWidget() {
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const normalizedRole: AppRole = role ?? 'employee';
+  const isAdminViewer = normalizedRole === 'admin';
   const { data: balances, isLoading } = useLeaveBalance();
-
   const summary = useMemo(() => {
     if (!balances?.length) {
       return { allowed: 0, used: 0, pending: 0, remaining: 0 };
@@ -664,8 +693,92 @@ function LeaveBalanceWidget() {
       { allowed: 0, used: 0, pending: 0, remaining: 0 },
     );
   }, [balances]);
-
   const utilization = summary.allowed > 0 ? clampPercent((summary.used / summary.allowed) * 100) : 0;
+
+  const { data: pendingApprovals, isLoading: isPendingApprovalsLoading } = useQuery({
+    queryKey: ['dashboard', 'pending-leave-approvals', normalizedRole],
+    queryFn: async (): Promise<PendingLeaveApprovalItem[]> => {
+      const { data, error } = await supabase
+        .from('leave_requests')
+        .select(`
+          id,
+          employee_id,
+          start_date,
+          end_date,
+          status,
+          employee:profiles!leave_requests_employee_id_fkey(first_name,last_name),
+          leave_type:leave_types(name)
+        `)
+        .is('final_approved_at', null)
+        .in('status', [
+          'pending_manager',
+          'pending_gm',
+          'pending_director',
+          'cancellation_pending_manager',
+          'cancellation_pending_gm',
+          'cancellation_pending_director',
+        ])
+        .order('created_at', { ascending: true })
+        .limit(4);
+
+      if (error) throw error;
+
+      return ((data ?? []) as unknown as PendingLeaveApprovalQueryRow[]).map((row) => ({
+        id: row.id,
+        employeeName: `${row.employee?.first_name ?? ''} ${row.employee?.last_name ?? ''}`.trim() || 'Employee',
+        leaveTypeName: row.leave_type?.name ?? 'Leave',
+        startDate: row.start_date,
+        endDate: row.end_date,
+        status: row.status,
+      }));
+    },
+    enabled: isAdminViewer,
+    staleTime: 60_000,
+  });
+
+  if (isAdminViewer) {
+    return (
+      <DashboardWidgetCard
+        title="Pending Leave Approvals"
+        description="Awaiting management action."
+        icon={Briefcase}
+        action={
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>
+            View All
+          </Button>
+        }
+      >
+        {isPendingApprovalsLoading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, index) => (
+              <Skeleton key={index} className="h-16 rounded-xl" />
+            ))}
+          </div>
+        ) : (pendingApprovals?.length ?? 0) === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
+            No pending leave approvals right now.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {(pendingApprovals ?? []).map((approval) => (
+              <div
+                key={approval.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{approval.employeeName}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {approval.leaveTypeName} • {format(new Date(approval.startDate), 'MMM d')} – {format(new Date(approval.endDate), 'MMM d')}
+                  </p>
+                </div>
+                <StatusBadge status={approval.status} labelOverride={formatStatusLabel(approval.status)} size="sm" />
+              </div>
+            ))}
+          </div>
+        )}
+      </DashboardWidgetCard>
+    );
+  }
 
   return (
     <DashboardWidgetCard
@@ -784,8 +897,10 @@ function AnnouncementsWidget() {
 
 function TrainingSummaryWidget() {
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const normalizedRole: AppRole = role ?? 'employee';
+  const isAdminViewer = normalizedRole === 'admin';
   const { data: enrollments, isLoading } = useMyEnrollments();
-
   const summary = useMemo(() => {
     const items = enrollments ?? [];
     const active = items.filter((item) => ['enrolled', 'in_progress'].includes(item.status)).length;
@@ -795,10 +910,87 @@ function TrainingSummaryWidget() {
     return { active, completed, inProgress, nextQueued, total: items.length };
   }, [enrollments]);
 
+  const { data: trainingOverview, isLoading: isTrainingOverviewLoading } = useQuery({
+    queryKey: ['dashboard', 'training-overview', normalizedRole],
+    queryFn: async (): Promise<TrainingProgramOverviewItem[]> => {
+      const { data, error } = await supabase
+        .from('training_enrollments')
+        .select(`
+          status,
+          program:training_programs(title)
+        `);
+
+      if (error) throw error;
+
+      const accumulator = new Map<string, { total: number; completed: number }>();
+
+      (data ?? []).forEach((row) => {
+        const title = row.program?.title?.trim() || 'Untitled Program';
+        const existing = accumulator.get(title) ?? { total: 0, completed: 0 };
+        existing.total += 1;
+        if ((row.status as TrainingStatus) === 'completed') {
+          existing.completed += 1;
+        }
+        accumulator.set(title, existing);
+      });
+
+      return Array.from(accumulator.entries())
+        .map(([title, counts]) => ({
+          title,
+          completionRate: counts.total > 0 ? clampPercent((counts.completed / counts.total) * 100) : 0,
+        }))
+        .sort((a, b) => b.completionRate - a.completionRate)
+        .slice(0, 3);
+    },
+    enabled: isAdminViewer,
+    staleTime: 60_000,
+  });
+
+  if (isAdminViewer) {
+    return (
+      <DashboardWidgetCard
+        title="Training Overview"
+        description="Organization learning completion by program."
+        icon={GraduationCap}
+      >
+        {isTrainingOverviewLoading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, index) => (
+              <Skeleton key={index} className="h-12 rounded-xl" />
+            ))}
+          </div>
+        ) : (trainingOverview?.length ?? 0) === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
+            No training enrollment data available yet.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {(trainingOverview ?? []).map((program) => (
+              <div key={program.title} className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="truncate font-medium">{program.title}</span>
+                  <span className="text-muted-foreground">{program.completionRate}%</span>
+                </div>
+                <Progress value={program.completionRate} className="h-2.5" />
+              </div>
+            ))}
+
+            <div className="rounded-xl border border-info/20 bg-info/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-info">Training Insight</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Focus on programs below 60% completion to improve organization readiness.
+              </p>
+            </div>
+          </div>
+        )}
+      </DashboardWidgetCard>
+    );
+  }
+
   return (
     <DashboardWidgetCard
       title="Training"
-      description="Track your active training assignments and completion progress."
+      description="Active training assignments and completion progress."
       icon={GraduationCap}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/training')}>
@@ -907,12 +1099,16 @@ function TeamSnapshotWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
   const { data: stats, isLoading } = useExecutiveStats();
   const scopeLabel = getScopeLabel(role, stats ?? null);
+  const title = role === 'manager' ? 'Dept Snapshot' : role === 'admin' ? 'Live Attendance Status' : 'Operational Snapshot';
+  const description = role === 'admin'
+    ? 'Real-time tracking for today.'
+    : `Attendance and staffing visibility for ${scopeLabel}.`;
 
   if (isLoading) {
     return (
       <DashboardWidgetCard
-        title={role === 'manager' ? 'Dept Snapshot' : 'Operational Snapshot'}
-        description={`Attendance and staffing visibility for ${scopeLabel}.`}
+        title={title}
+        description={description}
         icon={Users}
       >
         <div className="space-y-3">
@@ -929,13 +1125,17 @@ function TeamSnapshotWidget({ role }: { role: AppRole }) {
 
   return (
     <DashboardWidgetCard
-      title={role === 'manager' ? 'Dept Snapshot' : 'Operational Snapshot'}
-      description={`Total staffing and daily attendance for ${scopeLabel}.`}
+      title={title}
+      description={role === 'admin' ? 'Real-time tracking for Today' : `Total staffing and daily attendance for ${scopeLabel}.`}
       icon={Users}
       action={
-        <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/attendance')}>
-          Attendance
-        </Button>
+        role === 'admin' ? (
+          <StatusBadge status="success" labelOverride="Active Shift" size="md" />
+        ) : (
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/attendance')}>
+            Attendance
+          </Button>
+        )
       }
     >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -974,15 +1174,16 @@ function OnLeaveTodayWidget({ role }: { role: AppRole }) {
   const { data: roster, isLoading } = useDashboardOnLeaveTodayRoster();
   const { data: stats } = useExecutiveStats();
   const scopeLabel = getScopeLabel(role, stats ?? null);
+  const isAdminViewer = role === 'admin';
 
   return (
     <DashboardWidgetCard
-      title="Who Is On Leave Today"
-      description={`Live leave roster for ${scopeLabel}.`}
+      title={isAdminViewer ? 'Team Calendar' : 'Who Is On Leave Today'}
+      description={isAdminViewer ? 'Today leave schedule overview.' : `Live leave roster for ${scopeLabel}.`}
       icon={CalendarDays}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/calendar')}>
-          Team Calendar
+          {isAdminViewer ? 'Full Calendar View' : 'Team Calendar'}
         </Button>
       }
     >
@@ -999,8 +1200,17 @@ function OnLeaveTodayWidget({ role }: { role: AppRole }) {
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Showing up to 12 records</span>
-            <span>{stats?.onLeaveToday ?? roster?.length ?? 0} total on leave today</span>
+            {isAdminViewer ? (
+              <>
+                <span className="font-medium uppercase tracking-wide">Today</span>
+                <span>{format(new Date(), 'MMM d')}</span>
+              </>
+            ) : (
+              <>
+                <span>Showing up to 12 records</span>
+                <span>{stats?.onLeaveToday ?? roster?.length ?? 0} total on leave today</span>
+              </>
+            )}
           </div>
           {(roster ?? []).map((person) => (
             <div key={person.id} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/80 p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1010,10 +1220,7 @@ function OnLeaveTodayWidget({ role }: { role: AppRole }) {
                   {person.leaveTypeName} • {format(new Date(person.startDate), 'MMM d')} – {format(new Date(person.endDate), 'MMM d')}
                 </p>
               </div>
-              <StatusBadge
-                status={person.status}
-                labelOverride={person.status.replaceAll('_', ' ')}
-              />
+              <StatusBadge status={person.status} labelOverride={formatStatusLabel(person.status)} />
             </div>
           ))}
         </div>
@@ -1161,6 +1368,57 @@ function CriticalInsightsWidget({ role }: { role: AppRole }) {
   }
 
   if (!stats) return null;
+
+  if (role === 'admin') {
+    return (
+      <DashboardWidgetCard
+        title="Executive Snapshot"
+        description={`Operational dashboard for ${scopeLabel}.`}
+        icon={ShieldAlert}
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-warning/25 bg-warning/5 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pending Approvals</p>
+            <p className="mt-2 text-3xl font-bold">{stats.pendingLeaveRequests}</p>
+            <p className="mt-2 text-xs text-muted-foreground">Leave approvals awaiting action</p>
+            <p className="mt-1 text-xs font-medium text-warning">
+              {stats.pendingLeaveRequests > 0 ? `${stats.pendingLeaveRequests} in queue` : 'No pending approvals'}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-info/25 bg-info/5 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Training Progress</p>
+            <p className="mt-2 text-3xl font-bold">{stats.trainingCompletionRate}%</p>
+            <p className="mt-2 text-xs text-muted-foreground">Compliance and program completion</p>
+            <p className="mt-1 text-xs font-medium text-info">+{stats.completedTrainingsThisMonth} completed this month</p>
+          </div>
+
+          <div className="rounded-xl border border-success/25 bg-success/5 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Attendance Rate</p>
+            <p className="mt-2 text-3xl font-bold">{stats.attendanceRate}%</p>
+            <p className="mt-2 text-xs text-muted-foreground">Company average today</p>
+            <p className="mt-1 text-xs font-medium text-success">Monthly avg {stats.avgAttendanceThisMonth}%</p>
+          </div>
+
+          <div className="rounded-xl border border-primary/30 bg-primary p-3 text-primary-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-foreground/80">Total Workforce</p>
+            <p className="mt-2 text-3xl font-bold">{stats.totalEmployees.toLocaleString()}</p>
+            <p className="mt-2 text-xs text-primary-foreground/80">Organization headcount</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-primary-foreground/10 px-2 py-1.5 text-center">
+                <p className="text-[10px] uppercase tracking-wide text-primary-foreground/80">On Leave</p>
+                <p className="text-sm font-semibold">{stats.onLeaveToday}</p>
+              </div>
+              <div className="rounded-lg bg-primary-foreground/10 px-2 py-1.5 text-center">
+                <p className="text-[10px] uppercase tracking-wide text-primary-foreground/80">Open Reviews</p>
+                <p className="text-sm font-semibold">{stats.pendingReviews}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DashboardWidgetCard>
+    );
+  }
 
   return (
     <DashboardWidgetCard
@@ -1677,18 +1935,35 @@ export default function Dashboard() {
         description={`${format(new Date(), 'EEEE, MMMM d, yyyy')} • ${formatRoleLabel(normalizedRole)} dashboard • ${scopeLabel}`}
         chips={headerChips}
         actionsSlot={(
-          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[360px]">
-            <Button variant="outline" className="h-9 rounded-xl sm:min-w-[150px]" onClick={() => navigate('/notifications')}>
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search anything..."
+                className="h-9 w-full rounded-xl pl-9 sm:w-[210px]"
+                aria-label="Dashboard quick search"
+              />
+            </div>
+            <Button variant="outline" className="h-9 rounded-xl" onClick={() => navigate('/leave')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Quick Action
             </Button>
             <InteractionModeToggle
               modes={['customize']}
               includeView={false}
               ariaLabel="Dashboard interaction mode"
-              labels={{ customize: 'Customize Dashboard' }}
-              singleModeLabels={{ activate: 'Customize Dashboard', deactivate: 'Done Editing' }}
+              labels={{ customize: 'Customize' }}
+              singleModeLabels={{ activate: 'Customize', deactivate: 'Done Editing' }}
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl"
+              aria-label="Open notifications"
+              onClick={() => navigate('/notifications')}
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
           </div>
         )}
       />

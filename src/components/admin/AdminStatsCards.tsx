@@ -1,6 +1,6 @@
-import { Briefcase, Shield, UserCog, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  CardHeaderStandard,
   EditableCanvas,
   type InteractionMode,
 } from '@/components/system';
@@ -68,26 +68,20 @@ type AdminStatsCardMeta = {
   label: string;
   description: string;
   value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  iconClass: string;
 };
 
 function AdminStatsCardView({ item }: { item: AdminStatsCardMeta }) {
-  const Icon = item.icon;
   return (
     <Card className="card-stat border-border/60 shadow-sm">
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {item.label}
-            </p>
-            <p className="mt-1 text-2xl font-bold sm:text-3xl">{item.value}</p>
-          </div>
-          <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconClass}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
+      <CardHeaderStandard
+        title={item.label}
+        description={item.description}
+        className="p-4 pb-2 sm:p-5 sm:pb-2"
+        titleClassName="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+        descriptionClassName="text-xs line-clamp-2"
+      />
+      <CardContent className="px-4 pb-4 pt-0 sm:px-5 sm:pb-5">
+        <p className="text-2xl font-bold sm:text-3xl">{item.value}</p>
       </CardContent>
     </Card>
   );
@@ -107,32 +101,24 @@ export function AdminStatsCards({
       label: ADMIN_STATS_CARD_LABELS.totalEmployees,
       description: 'Total active employee records visible to this admin scope.',
       value: stats.totalEmployees,
-      icon: Users,
-      iconClass: 'text-accent bg-accent/10',
     },
     {
       id: 'admins',
       label: ADMIN_STATS_CARD_LABELS.admins,
       description: 'Users currently assigned system admin role.',
       value: stats.admins,
-      icon: Shield,
-      iconClass: 'text-red-500 bg-red-500/10',
     },
     {
       id: 'hrUsers',
       label: ADMIN_STATS_CARD_LABELS.hrUsers,
       description: 'Users assigned HR operations role.',
       value: stats.hrUsers,
-      icon: UserCog,
-      iconClass: 'text-violet-500 bg-violet-500/10',
     },
     {
       id: 'managers',
       label: ADMIN_STATS_CARD_LABELS.managers,
       description: 'Users assigned manager-level approval responsibilities.',
       value: stats.managers,
-      icon: Briefcase,
-      iconClass: 'text-blue-500 bg-blue-500/10',
     },
   ];
 
@@ -156,17 +142,26 @@ export function AdminStatsCards({
       id: card.id,
       title: card.label,
       description: card.description,
-      icon: card.icon,
       view: <AdminStatsCardView item={card} />,
     }));
+
+  const resizeRulesById = Object.fromEntries(
+    visibleCards.map((card) => [
+      card.id,
+      { minW: 3, maxW: 12, step: 1 },
+    ]),
+  );
 
   return (
     <EditableCanvas
       mode={mode === 'customize' ? 'customize' : 'view'}
+      variant="enterprise"
       items={editableItems}
       layoutState={layoutState}
       onLayoutStateChange={onLayoutStateChange}
       onHideItem={onHideCard as ((itemId: string) => void) | undefined}
+      resizeRulesById={resizeRulesById}
+      enableKeyboardResize
       columns={EDITABLE_LAYOUT_COLUMNS}
       widthSteps={[3, 6, 12]}
       rowHeightClassName="xl:auto-rows-[126px]"

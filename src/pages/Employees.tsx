@@ -17,7 +17,7 @@ import { Users, Mail, Building, LayoutGrid, List } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
 import { Profile, Department, AppRole } from '@/types/hrms';
 import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
-import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 export default function Employees() {
   const { role: viewerRole } = useAuth();
@@ -159,7 +159,15 @@ export default function Employees() {
                     tabIndex={0}
                     aria-label={`View employee details for ${employee.first_name} ${employee.last_name}`}
                   >
-                    <CardContent className="pt-6">
+                    <CardHeaderStandard
+                      title={`${employee.first_name} ${employee.last_name}`}
+                      description={employee.job_title || 'No title'}
+                      className="p-6 pb-3"
+                      titleClassName="text-lg font-semibold"
+                      descriptionClassName="truncate text-sm"
+                      actions={<StatusBadge status={employee.status} />}
+                    />
+                    <CardContent className="pt-0">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-12 h-12">
                           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -167,14 +175,7 @@ export default function Employees() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-semibold truncate">
-                              {employee.first_name} {employee.last_name}
-                            </h3>
-                            <StatusBadge status={employee.status} />
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">{employee.job_title || 'No title'}</p>
-                          <div className="mt-3 space-y-1">
+                          <div className="space-y-1">
                             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <Mail className="w-3 h-3" /> {employee.email}
                             </p>

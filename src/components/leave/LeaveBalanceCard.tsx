@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
+import { CardHeaderStandard } from '@/components/system';
 
 interface LeaveBalanceCardProps {
   employeeId?: string;
@@ -40,10 +41,14 @@ export function LeaveBalanceCard({ employeeId }: LeaveBalanceCardProps) {
                   : 'hover:border-primary/30'
             }`}
           >
-            <CardContent className="p-4">
-              <p className="text-xs font-medium text-muted-foreground truncate mb-2">
-                {balance.leave_type_name}
-              </p>
+            <CardHeaderStandard
+              title={balance.leave_type_name}
+              description={balance.days_pending > 0 ? `${balance.days_pending} pending` : undefined}
+              className="p-4 pb-1"
+              titleClassName="truncate text-sm font-semibold"
+              descriptionClassName="text-xs"
+            />
+            <CardContent className="px-4 pb-4 pt-1">
               <div className="flex items-baseline gap-1">
                 <span className={`text-2xl font-bold ${
                   isExhausted 
@@ -58,11 +63,6 @@ export function LeaveBalanceCard({ employeeId }: LeaveBalanceCardProps) {
                   / {balance.days_allowed}
                 </span>
               </div>
-              {balance.days_pending > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {balance.days_pending} pending
-                </p>
-              )}
             </CardContent>
           </Card>
         );

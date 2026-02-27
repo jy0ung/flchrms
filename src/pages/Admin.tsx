@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   AppPageContainer,
+  CardHeaderStandard,
   InteractionModeToggle,
   ModeRibbon,
   PageHeader,
@@ -392,14 +393,15 @@ export default function Admin() {
       />
       {orderedVisibleStatsCardIds.length === 0 ? (
         <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="py-10 text-center">
+          <CardHeaderStandard
+            title="No Admin KPI Cards Visible"
+            description="Enable customize mode to restore hidden cards or reset admin defaults."
+            className="p-6 pb-3"
+          />
+          <CardContent className="pt-0 pb-10 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20">
               <Filter className="h-5 w-5 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-semibold">No admin KPI cards visible</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Enable customize mode to restore hidden cards or reset admin defaults.
-            </p>
             <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
               <Button type="button" className="rounded-lg" onClick={() => setMode('customize')}>
                 Customize Cards

@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { CardHeaderStandard } from "@/components/system/CardHeaderStandard";
 import { cn } from "@/lib/utils";
 
 export interface SurfaceSectionProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -34,15 +35,14 @@ export function SurfaceSection({
       {...props}
     >
       {hasHeader ? (
-        <CardHeader className="p-4 pb-0 sm:p-5 sm:pb-0">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-1">
-              {title ? <CardTitle id={titleId}>{title}</CardTitle> : null}
-              {description ? <CardDescription>{description}</CardDescription> : null}
-            </div>
-            {actions ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">{actions}</div> : null}
-          </div>
-        </CardHeader>
+        <CardHeaderStandard
+          title={title ?? ""}
+          titleId={title ? titleId : undefined}
+          description={description}
+          actions={actions}
+          className="p-6 pb-4"
+          actionsClassName="w-full flex-col gap-2 sm:w-auto sm:flex-row"
+        />
       ) : null}
       <CardContent className={cn("p-4 sm:p-5", hasHeader && "pt-4", contentClassName)}>{children}</CardContent>
     </Card>

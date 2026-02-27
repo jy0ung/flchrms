@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -7,10 +7,10 @@ import { Switch } from '@/components/ui/switch';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { FileText, Eye, EyeOff, Wallet, TrendingUp } from 'lucide-react';
+import { FileText, Eye, EyeOff } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
-import { StatusBadge } from '@/components/system';
+import { CardHeaderStandard, StatusBadge } from '@/components/system';
 
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
@@ -110,78 +110,64 @@ export function MyPayslips({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Basic Salary</p>
-                <p className="text-2xl font-bold">
-                  {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
-                </p>
-                {totalAllowances > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {hideAmounts ? '+RM ••••• allowances' : `+RM ${totalAllowances.toLocaleString()} allowances`}
-                  </p>
-                )}
-              </div>
-              <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                <Wallet className="w-5 h-5" />
-              </div>
-            </div>
+          <CardHeaderStandard
+            title="Basic Salary"
+            description={totalAllowances > 0
+              ? hideAmounts
+                ? '+RM ••••• allowances'
+                : `+RM ${totalAllowances.toLocaleString()} allowances`
+              : undefined}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
+            </p>
           </CardContent>
         </Card>
 
         <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Last Net Pay</p>
-                <p className="text-2xl font-bold">
-                  {latestPayslip 
-                    ? formatCurrency(Number(latestPayslip.net_salary))
-                    : '—'}
-                </p>
-                {latestPayslip && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(latestPayslip.created_at), 'MMM yyyy')}
-                  </p>
-                )}
-              </div>
-              <div className="p-3 rounded-lg bg-success/10 text-success">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-            </div>
+          <CardHeaderStandard
+            title="Last Net Pay"
+            description={latestPayslip ? format(new Date(latestPayslip.created_at), 'MMM yyyy') : undefined}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {latestPayslip
+                ? formatCurrency(Number(latestPayslip.net_salary))
+                : '—'}
+            </p>
           </CardContent>
         </Card>
 
         <Card className="card-stat border-border/60 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">YTD Earnings</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(totalEarningsThisYear)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date().getFullYear()} total
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-info/10 text-info">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-            </div>
+          <CardHeaderStandard
+            title="YTD Earnings"
+            description={`${new Date().getFullYear()} total`}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {formatCurrency(totalEarningsThisYear)}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Payslips List */}
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Payslip History
-          </CardTitle>
-          <CardDescription>View and download your payslips</CardDescription>
-        </CardHeader>
+        <CardHeaderStandard
+          title="Payslip History"
+          description="Payslip records and download access."
+          className="p-6 pb-4"
+        />
         <CardContent>
           {!payslips?.length ? (
             <div className="text-center py-12 text-muted-foreground">

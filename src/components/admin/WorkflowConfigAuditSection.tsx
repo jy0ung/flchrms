@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Activity, Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWorkflowConfigEvents, type WorkflowConfigEventWithActor } from '@/hooks/useWorkflowConfigEvents';
 import type { Department } from '@/types/hrms';
-import { StatusBadge } from '@/components/system';
+import { CardHeaderStandard, StatusBadge } from '@/components/system';
 
 type WorkflowAuditFilter = 'all' | 'leave_approval' | 'leave_cancellation';
 
@@ -142,17 +142,11 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
 
   return (
     <Card className="border-border/60 shadow-sm">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Workflow Configuration Activity
-            </CardTitle>
-            <CardDescription>
-              Recent approval and cancellation workflow changes for audit and supervision.
-            </CardDescription>
-          </div>
+      <CardHeaderStandard
+        title="Workflow Configuration Activity"
+        description="Approval and cancellation workflow change records for supervision."
+        className="p-6 pb-4"
+        actions={(
           <Button
             variant="outline"
             size="sm"
@@ -163,8 +157,8 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
             <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-        </div>
-      </CardHeader>
+        )}
+      />
       <CardContent className="space-y-4">
         <Tabs value={filter} onValueChange={(value) => setFilter(value as WorkflowAuditFilter)}>
           <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1 rounded-xl p-1">

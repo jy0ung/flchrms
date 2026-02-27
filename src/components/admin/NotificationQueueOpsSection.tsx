@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { differenceInMinutes, formatDistanceToNow } from 'date-fns';
 import {
-  BellRing,
   Loader2,
   RefreshCw,
   RotateCcw,
@@ -10,14 +9,14 @@ import {
   Activity,
   CheckCircle2,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StatusBadge } from '@/components/system';
+import { CardHeaderStandard, StatusBadge } from '@/components/system';
 import {
   useNotificationQueueOps,
   type NotificationQueueItemWithUser,
@@ -476,23 +475,17 @@ export function NotificationQueueOpsSection() {
 
   return (
     <Card className="border-border/60 shadow-sm">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BellRing className="w-5 h-5" />
-              Notification Email Queue Ops
-            </CardTitle>
-            <CardDescription>
-              Monitor queued email notifications, retry failures, and discard invalid jobs.
-            </CardDescription>
-          </div>
+      <CardHeaderStandard
+        title="Notification Email Queue Operations"
+        description="Queued email notification monitoring, retries, and discard controls."
+        className="p-6 pb-4"
+        actions={(
           <Button variant="outline" size="sm" className="rounded-full" onClick={() => void refetch()} disabled={isFetching}>
             <RefreshCw className={cn('w-4 h-4 mr-2', isFetching && 'animate-spin')} />
             Refresh
           </Button>
-        </div>
-      </CardHeader>
+        )}
+      />
       <CardContent className="space-y-4">
         {summaryError || listError || workerRunSummaryError || workerRunListError || deadLetterAnalyticsError ? (
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">

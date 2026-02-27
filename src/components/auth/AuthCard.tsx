@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { Building2, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { CardHeaderStandard } from '@/components/system';
 import { cn } from '@/lib/utils';
 
 export type AuthFlowStage = 'credentials' | 'recovery' | 'two_factor';
@@ -35,16 +36,14 @@ export function AuthCard({
         className,
       )}
     >
-      <CardHeader className="space-y-4 pb-5 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm lg:hidden">
-          <Building2 className="h-7 w-7" />
-        </div>
-
-        <div className="space-y-2">
-          <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">FLC-HRMS</CardTitle>
-          <CardDescription className="text-sm">Fook Loi Group HR Management System</CardDescription>
-        </div>
-
+      <CardHeaderStandard
+        title="FLC-HRMS"
+        description="Fook Loi Group HR Management System"
+        className="space-y-0 pb-4 text-center [&>div]:items-center"
+        titleClassName="text-2xl font-bold tracking-tight sm:text-3xl"
+        descriptionClassName="text-sm"
+      />
+      <CardContent className="pt-0">
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Badge variant="outline" className="rounded-full px-3 text-[11px] font-medium">
             Internal System Access
@@ -60,8 +59,8 @@ export function AuthCard({
             Stage: {STAGE_LABELS[stage]}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      </CardContent>
+      <CardContent className="pt-1">{children}</CardContent>
     </Card>
   );
 }

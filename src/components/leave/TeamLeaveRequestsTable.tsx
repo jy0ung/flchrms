@@ -2,7 +2,6 @@ import { format } from 'date-fns';
 import { AlertCircle, Check, Eye, FileText, MessageSquare, Upload, X, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
@@ -47,8 +46,8 @@ export function TeamLeaveRequestsTable({
   onAction,
 }: TeamLeaveRequestsTableProps) {
   return (
-    <Card className="card-stat border-border/60 shadow-sm">
-      <CardContent className="p-0">
+    <div className="card-stat rounded-xl border border-border/60 shadow-sm">
+      <div className="p-0">
         {requests.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>
         ) : (
@@ -390,7 +389,7 @@ export function TeamLeaveRequestsTable({
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

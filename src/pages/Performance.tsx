@@ -1,10 +1,10 @@
 import { useMyReviews, useAcknowledgeReview } from '@/hooks/usePerformance';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { format } from 'date-fns';
-import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Performance() {
   const { data: reviews, isLoading } = useMyReviews();
@@ -15,7 +15,7 @@ export default function Performance() {
       <PageHeader
         shellDensity="compact"
         title="Performance Reviews"
-        description="Your performance evaluations"
+        description="Performance evaluation records and status."
       />
 
       <DataTableShell
@@ -39,21 +39,18 @@ export default function Performance() {
           <div className="grid gap-6">
             {reviews?.map((review) => (
               <Card key={review.id} className="card-stat border-border/60 shadow-sm">
-                <CardHeader>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <CardTitle>{review.review_period}</CardTitle>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Reviewed by {review.reviewer?.first_name} {review.reviewer?.last_name}
-                      </p>
-                    </div>
+                <CardHeaderStandard
+                  title={review.review_period}
+                  description={`Reviewer ${review.reviewer?.first_name ?? ''} ${review.reviewer?.last_name ?? ''}`.trim()}
+                  actions={(
                     <StatusBadge
                       status={review.status}
                       labelOverride={review.status.replace('_', ' ')}
                       className="self-start"
                     />
-                  </div>
-                </CardHeader>
+                  )}
+                  className="p-6 pb-4"
+                />
                 <CardContent className="space-y-4">
                   {review.overall_rating && (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

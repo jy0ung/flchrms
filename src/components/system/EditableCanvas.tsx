@@ -204,7 +204,7 @@ export function EditableCanvas({
   );
 
   const handleResizeStart = (itemId: string) => (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isEnterprise || mode !== 'customize') return;
+    if (mode !== 'customize') return;
     const currentItem = visibleLayoutItems.find((item) => item.id === itemId);
     if (!currentItem) return;
     const canvasRect = canvasRef.current?.getBoundingClientRect();
@@ -245,7 +245,7 @@ export function EditableCanvas({
   };
 
   const handleKeyboardResize = (itemId: string, direction: 'shrink' | 'expand') => {
-    if (!isEnterprise || !enableKeyboardResize || mode !== 'customize') return;
+    if (!enableKeyboardResize || mode !== 'customize') return;
     const currentItem = visibleLayoutItems.find((item) => item.id === itemId);
     if (!currentItem) return;
     const rule = resizeRulesById?.[itemId];

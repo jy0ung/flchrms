@@ -3,10 +3,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDeductionTypes, useCreateDeductionType } from '@/hooks/usePayroll';
-import { Plus, Settings, Percent, DollarSign } from 'lucide-react';
+import { useDeductionTypes } from '@/hooks/usePayroll';
+import { Plus, Settings } from 'lucide-react';
 import { CreateDeductionTypeDialog } from './CreateDeductionTypeDialog';
-import { DataTableShell } from '@/components/system';
+import { CardHeaderStandard, DataTableShell } from '@/components/system';
 
 interface DeductionManagementProps {
   showCreateButton?: boolean;
@@ -57,27 +57,26 @@ export function DeductionManagement({
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {deductions.map((deduction) => (
                 <Card key={deduction.id} className="relative overflow-hidden border-border/60 shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="mb-2 flex items-start justify-between">
+                  <CardHeaderStandard
+                    title={deduction.name}
+                    description={deduction.description || 'Deduction configuration.'}
+                    className="p-4 pb-3"
+                    titleClassName="text-base font-semibold"
+                    descriptionClassName="text-sm line-clamp-2"
+                    actions={(
                       <div className="flex items-center gap-2">
-                        {deduction.deduction_type === 'percentage' ? (
-                          <Percent className="w-4 h-4 text-primary" />
-                        ) : (
-                          <DollarSign className="w-4 h-4 text-primary" />
-                        )}
-                        <h4 className="font-medium">{deduction.name}</h4>
-                      </div>
-                      {deduction.is_mandatory && (
-                        <Badge variant="secondary" className="text-xs">
-                          Mandatory
+                        <Badge variant="outline" className="capitalize">
+                          {deduction.deduction_type}
                         </Badge>
-                      )}
-                    </div>
-                    {deduction.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {deduction.description}
-                      </p>
+                        {deduction.is_mandatory ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Mandatory
+                          </Badge>
+                        ) : null}
+                      </div>
                     )}
+                  />
+                  <CardContent className="px-4 pb-4 pt-0">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Default:</span>
                       <span className="font-medium">
@@ -85,12 +84,6 @@ export function DeductionManagement({
                           ? `${deduction.default_value}%`
                           : `RM ${deduction.default_value}`}
                       </span>
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Type:</span>
-                      <Badge variant="outline" className="capitalize">
-                        {deduction.deduction_type}
-                      </Badge>
                     </div>
                   </CardContent>
                 </Card>

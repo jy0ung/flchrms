@@ -16,14 +16,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateMyProfile } from '@/hooks/useProfileSettings';
 import { toast } from '@/hooks/use-toast';
 import { NotificationSettingsCard } from '@/components/notifications/NotificationSettingsCard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 const PROFILE_TABS = ['overview', 'edit', 'notifications'] as const;
 type ProfileTabValue = (typeof PROFILE_TABS)[number];
@@ -132,7 +132,14 @@ export default function Profile() {
       />
 
       <Card className="card-stat border-border/60 shadow-sm">
-        <CardContent className="p-4 sm:p-5">
+        <CardHeaderStandard
+          title={`${profile.first_name} ${profile.last_name}`}
+          description={profile.job_title || 'Employee'}
+          className="p-4 pb-2 sm:p-5 sm:pb-2"
+          titleClassName="text-xl font-bold tracking-tight sm:text-2xl"
+          descriptionClassName="text-sm sm:text-base"
+        />
+        <CardContent className="pt-0 p-4 sm:p-5">
           <div className="grid gap-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
             <Avatar className="mx-auto h-20 w-20 sm:h-24 sm:w-24 lg:mx-0">
               <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
@@ -141,10 +148,6 @@ export default function Profile() {
             </Avatar>
 
             <div className="text-center lg:text-left">
-              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                {profile.first_name} {profile.last_name}
-              </h2>
-              <p className="text-sm text-muted-foreground sm:text-base">{profile.job_title || 'Employee'}</p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                 <Badge variant="outline" className="rounded-full px-2.5 py-1">
                   <AtSign className="mr-1 h-3.5 w-3.5" />

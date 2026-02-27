@@ -2,7 +2,6 @@ import { format } from 'date-fns';
 import { AlertCircle, FileText, MessageSquare, Upload, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
 import { StatusBadge } from '@/components/system';
@@ -41,8 +40,8 @@ export function MyLeaveRequestsTable({
   onCancel,
 }: MyLeaveRequestsTableProps) {
   return (
-    <Card className="card-stat border-border/60 shadow-sm">
-      <CardContent className="p-0">
+    <div className="card-stat rounded-xl border border-border/60 shadow-sm">
+      <div className="p-0">
         {requests.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>
         ) : (
@@ -264,7 +263,7 @@ export function MyLeaveRequestsTable({
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

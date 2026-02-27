@@ -51,9 +51,10 @@ describe('AdminStatsCards', () => {
 
     expect(screen.getByText('Admins')).toBeInTheDocument();
     expect(screen.getByText('Managers')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Hide' })).toHaveLength(2);
+    const hideButtons = screen.getAllByRole('button', { name: /Hide .* widget/i });
+    expect(hideButtons).toHaveLength(2);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Hide' })[0]);
+    fireEvent.click(hideButtons[0]);
     expect(onHideCard).toHaveBeenCalledTimes(1);
   });
 });

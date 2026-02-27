@@ -1,6 +1,6 @@
-import { RotateCcw, Workflow } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,6 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { Department, LeaveApprovalStage } from '@/types/hrms';
 import { LEAVE_APPROVAL_STAGE_LABELS, LEAVE_APPROVAL_STAGE_OPTIONS } from '@/lib/leave-workflow';
+import { CardHeaderStandard } from '@/components/system';
 
 type WorkflowDraft = {
   approval_stages: LeaveApprovalStage[];
@@ -83,15 +84,11 @@ export function DepartmentWorkflowBuilderCard({
 }: DepartmentWorkflowBuilderCardProps) {
   return (
     <Card className="border-border/60 shadow-sm">
-      <CardHeader>
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Workflow className="w-5 h-5" />
-              {title}
-            </CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
+      <CardHeaderStandard
+        title={title}
+        description={description}
+        className="p-6 pb-4"
+        actions={(
           <Button
             variant="outline"
             className="w-full rounded-full md:w-auto"
@@ -101,8 +98,8 @@ export function DepartmentWorkflowBuilderCard({
             <RotateCcw className="w-4 h-4 mr-2" />
             {resetDefaultsPending ? resetDefaultsPendingLabel : resetDefaultsIdleLabel}
           </Button>
-        </div>
-      </CardHeader>
+        )}
+      />
       <CardContent className="space-y-4">
         {loading ? (
           <div className="space-y-3">

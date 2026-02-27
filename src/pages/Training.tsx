@@ -1,9 +1,8 @@
 import { useTrainingPrograms, useMyEnrollments, useEnrollInProgram } from '@/hooks/useTraining';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, Clock, BookOpen } from 'lucide-react';
-import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Training() {
   const { data: programs } = useTrainingPrograms();
@@ -17,7 +16,7 @@ export default function Training() {
       <PageHeader
         shellDensity="compact"
         title="Training & Development"
-        description="Enhance your skills with our training programs"
+        description="Training programs and enrollment status."
       />
 
       {enrollments && enrollments.length > 0 && (
@@ -57,22 +56,16 @@ export default function Training() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {programs?.map((program) => (
               <Card key={program.id} className="card-stat border-border/60 shadow-sm">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <BookOpen className="w-8 h-8 text-accent" />
-                    {program.is_mandatory && (
-                      <StatusBadge status="warning" labelOverride="Mandatory" />
-                    )}
-                  </div>
-                  <CardTitle className="text-lg">{program.title}</CardTitle>
-                  <CardDescription>{program.description}</CardDescription>
-                </CardHeader>
+                <CardHeaderStandard
+                  title={program.title}
+                  description={program.description}
+                  actions={program.is_mandatory ? <StatusBadge status="warning" labelOverride="Mandatory" /> : undefined}
+                  className="p-6 pb-4"
+                  titleClassName="text-lg"
+                />
                 <CardContent>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {program.duration_hours || 0} hours
-                    </div>
+                    <p className="text-sm text-muted-foreground">{program.duration_hours || 0} hours</p>
                     {enrolledIds.includes(program.id) ? (
                       <StatusBadge status="enrolled" />
                     ) : (

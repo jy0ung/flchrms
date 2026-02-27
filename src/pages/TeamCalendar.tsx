@@ -11,7 +11,7 @@ import {
   CalendarEvent
 } from '@/hooks/useCalendar';
 import { useDepartments } from '@/hooks/useEmployees';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Users, Plane, CalendarPlus } from 'lucide-react';
 import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader, SectionToolbar } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, ModalScaffold, ModalSection, PageHeader, SectionToolbar } from '@/components/system';
 import {
   canManageDepartmentEvents as canManageDepartmentEventsPermission,
   canManageHolidays as canManageHolidaysPermission,
@@ -345,12 +345,11 @@ export default function TeamCalendar() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
         <Card className="lg:col-span-2 card-stat border-border/60 shadow-sm">
-          <CardHeader className="pb-0">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              {format(currentMonth, 'MMMM yyyy')}
-            </CardTitle>
-          </CardHeader>
+          <CardHeaderStandard
+            title={format(currentMonth, 'MMMM yyyy')}
+            description="Calendar month schedule and leave events."
+            className="p-6 pb-0"
+          />
           <CardContent>
             <SectionToolbar
               density="compact"

@@ -1,9 +1,9 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Play, Square } from 'lucide-react';
+import { Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { AppPageContainer, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Attendance() {
   const { data: history, isLoading } = useAttendanceHistory();
@@ -46,12 +46,14 @@ export default function Attendance() {
 
       {today && (
         <Card className="card-stat bg-accent/5 border-accent/20 shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Today's Status</p>
-                <p className="text-2xl font-bold mt-1">{format(new Date(), 'EEEE, MMM d')}</p>
-              </div>
+          <CardHeaderStandard
+            title="Today Attendance Status"
+            description={format(new Date(), 'EEEE, MMM d')}
+            className="p-6 pb-3"
+            actions={<StatusBadge status={today.status} />}
+          />
+          <CardContent className="pt-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">
                   In: {today.clock_in ? format(new Date(today.clock_in), 'h:mm a') : '-'}
@@ -59,7 +61,6 @@ export default function Attendance() {
                 <p className="text-sm text-muted-foreground">
                   Out: {today.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '-'}
                 </p>
-                <StatusBadge status={today.status} className="mt-2" />
               </div>
             </div>
           </CardContent>

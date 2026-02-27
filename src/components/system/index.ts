@@ -1,6 +1,7 @@
 export * from "./StatusBadge";
 export * from "./PageHeader";
 export * from "./AppPageContainer";
+export * from "./CardHeaderStandard";
 export * from "./SectionToolbar";
 export * from "./DataTableShell";
 export * from "./SurfaceSection";

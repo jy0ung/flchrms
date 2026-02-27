@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Settings2 } from 'lucide-react';
 import {
   useNotificationPreferences,
   type NotificationPreferenceCategory,
 } from '@/hooks/useNotifications';
 import { toast } from '@/hooks/use-toast';
+import { CardHeaderStandard } from '@/components/system';
 import {
   getFloatingNotificationsVisible,
   setFloatingNotificationsVisible,
@@ -137,15 +137,12 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
   return (
     <Card className="card-stat border-border/60 shadow-sm">
       {showHeader && (
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Settings2 className="w-4 h-4" />
-            Notification Preferences
-          </CardTitle>
-          <CardDescription>
-            Control which categories create new notifications and queued email deliveries for your account.
-          </CardDescription>
-        </CardHeader>
+        <CardHeaderStandard
+          title="Notification Preferences"
+          description="Notification categories and queued email delivery settings."
+          className="p-6 pb-4"
+          titleClassName="text-base"
+        />
       )}
       <CardContent className="space-y-4">
         <div>
