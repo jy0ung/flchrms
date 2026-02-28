@@ -25,6 +25,7 @@ export interface SectionToolbarProps extends React.HTMLAttributes<HTMLDivElement
   actions?: React.ReactNode;
   leadingSlot?: React.ReactNode;
   trailingSlot?: React.ReactNode;
+  variant?: "surface" | "inline";
   density?: "comfortable" | "compact";
   stackOnMobile?: boolean;
   sticky?: boolean;
@@ -41,6 +42,7 @@ export function SectionToolbar({
   actions,
   leadingSlot,
   trailingSlot,
+  variant = "surface",
   density = "comfortable",
   stackOnMobile = true,
   sticky = false,
@@ -56,8 +58,13 @@ export function SectionToolbar({
       role="region"
       aria-label={ariaLabel}
       className={cn(
-        "w-full rounded-xl border border-border/70 bg-card/65 p-3",
-        sticky && "sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card/85",
+        "w-full",
+        variant === "surface" && "rounded-xl border border-border/70 bg-card/65 p-3",
+        variant === "inline" && "p-0",
+        sticky &&
+          (variant === "surface"
+            ? "sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card/85"
+            : "sticky top-0 z-10"),
         verticalGap,
         className,
       )}

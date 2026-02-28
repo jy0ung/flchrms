@@ -64,17 +64,11 @@ export function SalaryManagement({
         title="Salary Structures"
         description="Manage employee salaries and allowances"
         hasData={filteredSalaries.length > 0}
-        headerActions={
-          showCreateButton ? (
-            <Button className="h-9 w-full rounded-full lg:w-auto" onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Salary Structure
-            </Button>
-          ) : null
-        }
-        toolbar={
+        headerActions={(
           <SectionToolbar
+            variant="inline"
             density="compact"
+            ariaLabel="Salary structure search and actions"
             search={{
               value: search,
               onChange: setSearch,
@@ -82,8 +76,16 @@ export function SalaryManagement({
               ariaLabel: 'Search salary structures',
               inputProps: { className: 'h-9' },
             }}
+            actions={
+              showCreateButton ? (
+                <Button className="h-9 w-full rounded-full lg:w-auto" onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Salary Structure
+                </Button>
+              ) : null
+            }
           />
-        }
+        )}
         alertBanner={
           employeesWithoutSalary && employeesWithoutSalary.length > 0 ? (
             <div className="rounded-xl border border-warning/40 bg-warning/5 px-4 py-3">

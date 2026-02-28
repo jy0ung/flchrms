@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Users, Plane, CalendarPlus } from 'lucide-react';
 import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, ModalScaffold, ModalSection, PageHeader, SectionToolbar } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
 import {
   canManageDepartmentEvents as canManageDepartmentEventsPermission,
   canManageHolidays as canManageHolidaysPermission,
@@ -349,38 +349,33 @@ export default function TeamCalendar() {
             title={format(currentMonth, 'MMMM yyyy')}
             description="Calendar month schedule and leave events."
             className="p-6 pb-0"
+            actions={
+              <div role="region" aria-label="Calendar month controls" className="grid grid-cols-3 gap-2 sm:flex sm:gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Previous month"
+                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setCurrentMonth(new Date())}>
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Next month"
+                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            }
           />
-          <CardContent>
-            <SectionToolbar
-              density="compact"
-              actions={
-                <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label="Previous month"
-                    onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="rounded-full" onClick={() => setCurrentMonth(new Date())}>
-                    Today
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label="Next month"
-                    onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              }
-              className="mb-4"
-              ariaLabel="Calendar month controls"
-            />
+          <CardContent className="pt-4">
             {isLoading ? (
               <Skeleton className="h-96 w-full rounded-xl" />
             ) : (

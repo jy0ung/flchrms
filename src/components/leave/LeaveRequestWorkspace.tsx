@@ -201,9 +201,11 @@ export function LeaveRequestWorkspace({
           <DataTableShell
             title={viewConfig[option].title}
             description={`Status filter: ${STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter)?.label ?? 'All'}`}
-            toolbar={(
+            headerActions={(
               <SectionToolbar
+                variant="inline"
                 density="compact"
+                ariaLabel="Leave request filters"
                 filters={[
                   {
                     id: 'leave-status-filter',
@@ -266,4 +268,3 @@ export function LeaveRequestWorkspace({
     </Tabs>
   );
 }
-

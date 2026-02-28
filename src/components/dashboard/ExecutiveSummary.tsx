@@ -26,8 +26,8 @@ function StatCard({ title, value, subtitle, trend, trendValue, variant = 'defaul
   };
 
   return (
-    <Card className="relative overflow-hidden border-border/60 shadow-sm">
-      <CardContent className="p-4">
+    <Card className="relative overflow-hidden border-border/60 shadow-sm min-w-0">
+      <CardContent className="p-4 overflow-hidden">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold">{value}</p>
@@ -183,10 +183,12 @@ export function ExecutiveSummary() {
 
       {/* Training & Performance Section */}
       <div className="grid md:grid-cols-2 gap-6">
+        <div className="min-w-0">
         {/* Training */}
+        </div>
         <div>
           <SectionHeader title="Training" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 min-w-0">
             <StatCard
               title="Active"
               value={stats.activeTrainings}
@@ -205,8 +207,9 @@ export function ExecutiveSummary() {
             />
           </div>
         </div>
-
+          <div className="min-w-0">
         {/* Performance */}
+        </div>
         <div>
           <SectionHeader title="Performance Reviews" />
           <div className="grid grid-cols-2 gap-4">

@@ -45,7 +45,6 @@ describe('DepartmentsTabSection SectionToolbar and accessibility', () => {
         departments={[makeDepartment()]}
         filteredDepartments={[makeDepartment()]}
         employees={[makeEmployee()]}
-        departmentsLoading={false}
         departmentSearch=""
         onDepartmentSearchChange={onDepartmentSearchChange}
         canManageDepartments
@@ -70,7 +69,6 @@ describe('DepartmentsTabSection SectionToolbar and accessibility', () => {
         departments={[makeDepartment()]}
         filteredDepartments={[makeDepartment()]}
         employees={[makeEmployee()]}
-        departmentsLoading={false}
         departmentSearch=""
         onDepartmentSearchChange={vi.fn()}
         canManageDepartments

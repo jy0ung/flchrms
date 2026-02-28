@@ -235,11 +235,10 @@ const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?: string
 };
 
 const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
-  employee: ['attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary', 'announcements'],
-  manager: ['attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary', 'teamSnapshot', 'onLeaveToday', 'announcements'],
+  employee: ['attendanceToday', 'trainingSummary', 'performanceSummary', 'announcements'],
+  manager: ['attendanceToday', 'trainingSummary', 'performanceSummary', 'teamSnapshot', 'onLeaveToday', 'announcements'],
   general_manager: [
     'attendanceToday',
-    'leaveBalance',
     'trainingSummary',
     'performanceSummary',
     'teamSnapshot',
@@ -250,7 +249,6 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   ],
   hr: [
     'attendanceToday',
-    'leaveBalance',
     'trainingSummary',
     'performanceSummary',
     'teamSnapshot',
@@ -261,7 +259,6 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   ],
   director: [
     'attendanceToday',
-    'leaveBalance',
     'trainingSummary',
     'performanceSummary',
     'teamSnapshot',
@@ -275,31 +272,28 @@ const ROLE_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
     'announcements',
     'teamSnapshot',
     'onLeaveToday',
-    'leaveBalance',
     'trainingSummary',
   ],
 };
 
 const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
-  employee: ['attendanceToday', 'leaveBalance', 'announcements', 'trainingSummary', 'performanceSummary'],
-  manager: ['teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  general_manager: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  hr: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  director: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  admin: ['criticalInsights', 'announcements', 'teamSnapshot', 'onLeaveToday', 'leaveBalance', 'trainingSummary'],
+  employee: ['attendanceToday', 'announcements', 'trainingSummary', 'performanceSummary'],
+  manager: ['teamSnapshot', 'onLeaveToday', 'announcements', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
+  general_manager: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
+  hr: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
+  director: ['criticalInsights', 'executiveMetrics', 'announcements', 'teamSnapshot', 'onLeaveToday', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
+  admin: ['criticalInsights', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary'],
 };
 
 const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidgetId, number>>> = {
   employee: {
     attendanceToday: 8,
-    leaveBalance: 4,
     announcements: 12,
     trainingSummary: 8,
     performanceSummary: 4,
   },
   manager: {
     attendanceToday: 8,
-    leaveBalance: 4,
     announcements: 12,
     teamSnapshot: 8,
     onLeaveToday: 4,
@@ -313,7 +307,6 @@ const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidget
     teamSnapshot: 8,
     onLeaveToday: 4,
     attendanceToday: 8,
-    leaveBalance: 4,
     trainingSummary: 8,
     performanceSummary: 4,
   },
@@ -324,7 +317,6 @@ const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidget
     teamSnapshot: 8,
     onLeaveToday: 4,
     attendanceToday: 8,
-    leaveBalance: 4,
     trainingSummary: 8,
     performanceSummary: 4,
   },
@@ -335,7 +327,6 @@ const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidget
     teamSnapshot: 8,
     onLeaveToday: 4,
     attendanceToday: 8,
-    leaveBalance: 4,
     trainingSummary: 8,
     performanceSummary: 4,
   },
@@ -344,10 +335,12 @@ const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidget
     announcements: 12,
     teamSnapshot: 8,
     onLeaveToday: 4,
-    leaveBalance: 8,
     trainingSummary: 4,
   },
 };
+
+const ADMIN_TEMPLATE_APPLICABLE_ROLES: AppRole[] = ['manager', 'general_manager', 'hr'];
+const MAX_LEAVE_BALANCE_ROWS_IN_WIDGET = 4;
 
 const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> = {
   attendanceToday: {
@@ -362,7 +355,7 @@ const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> =
   leaveBalance: {
     id: 'leaveBalance',
     defaultTier: 'supporting',
-    allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'],
+    allowedRoles: [],
     defaultW: WIDGET_META.leaveBalance.defaultWidth,
     defaultH: WIDGET_META.leaveBalance.defaultHeight,
     minW: TIER_WIDTH_RULES.supporting.minW,
@@ -496,7 +489,7 @@ function DashboardWidgetCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('card-stat flex h-full flex-col border-border/60 shadow-sm', className)}>
+    <Card className={cn('card-stat flex h-full flex-col overflow-hidden border-border/60 shadow-sm', className)}>
       <CardHeaderStandard
         title={title}
         description={description}
@@ -505,7 +498,7 @@ function DashboardWidgetCard({
         titleClassName="text-base md:text-lg"
         descriptionClassName="text-xs md:text-sm"
       />
-      <CardContent className="flex-1 pt-0">{children}</CardContent>
+      <CardContent className="flex-1 min-h-0 overflow-hidden pt-0">{children}</CardContent>
     </Card>
   );
 }
@@ -694,6 +687,8 @@ function LeaveBalanceWidget() {
     );
   }, [balances]);
   const utilization = summary.allowed > 0 ? clampPercent((summary.used / summary.allowed) * 100) : 0;
+  const visibleBalances = (balances ?? []).slice(0, MAX_LEAVE_BALANCE_ROWS_IN_WIDGET);
+  const remainingBalanceCount = Math.max((balances?.length ?? 0) - visibleBalances.length, 0);
 
   const { data: pendingApprovals, isLoading: isPendingApprovalsLoading } = useQuery({
     queryKey: ['dashboard', 'pending-leave-approvals', normalizedRole],
@@ -824,22 +819,32 @@ function LeaveBalanceWidget() {
               No leave balance records available yet.
             </div>
           ) : (
-            <div className="max-h-[170px] space-y-2 overflow-y-auto pr-1 xl:max-h-[112px] xl:pr-2">
-                {(balances ?? []).map((balance) => (
-                  <div key={balance.leave_type_id} className="rounded-xl border border-border/60 bg-background/80 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{balance.leave_type_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {balance.days_used} used • {balance.days_pending} pending
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="rounded-full px-2.5 py-1">
-                        {balance.days_remaining} left
-                      </Badge>
+            <div className="space-y-2">
+              {visibleBalances.map((balance) => (
+                <div key={balance.leave_type_id} className="rounded-xl border border-border/60 bg-background/80 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{balance.leave_type_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {balance.days_used} used • {balance.days_pending} pending
+                      </p>
                     </div>
+                    <Badge variant="outline" className="rounded-full px-2.5 py-1">
+                      {balance.days_remaining} left
+                    </Badge>
                   </div>
-                ))}
+                </div>
+              ))}
+              {remainingBalanceCount > 0 ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-full justify-start rounded-lg px-2 text-xs text-muted-foreground"
+                  onClick={() => navigate('/leave')}
+                >
+                  +{remainingBalanceCount} more leave type{remainingBalanceCount > 1 ? 's' : ''} in Leave Management
+                </Button>
+              ) : null}
             </div>
           )}
         </div>
@@ -1503,6 +1508,7 @@ export default function Dashboard() {
   }, [availableWidgetIds, normalizedRole]);
   const canViewTeamWidgets = canViewManagerDashboardWidgets(normalizedRole);
   const canViewCriticalWidgets = canViewExecutiveCriticalDashboard(normalizedRole);
+  const canApplyAdminTemplate = ADMIN_TEMPLATE_APPLICABLE_ROLES.includes(normalizedRole);
 
   const persistLayoutState = useCallback((nextState: DashboardLayoutStateV2) => {
     if (!user?.id) return;
@@ -1520,6 +1526,35 @@ export default function Dashboard() {
       rulesByTier: TIER_WIDTH_RULES,
     });
   }, [defaultDimensionsById, defaultWidgetIds, normalizedRole]);
+
+  const buildAdminTemplateLayout = useCallback(() => {
+    const adminTemplateOrder = ROLE_DEFAULT_WIDGETS.admin.filter((widgetId) => availableWidgetIds.includes(widgetId));
+    const roleSpecificTail = defaultWidgetIds.filter((widgetId) => !adminTemplateOrder.includes(widgetId));
+    const orderedWidgetIds = [...adminTemplateOrder, ...roleSpecificTail];
+    const roleDefaultWidths = ROLE_DEFAULT_WIDGET_WIDTHS[normalizedRole];
+    const defaultDimensions = Object.fromEntries(
+      availableWidgetIds.map((widgetId) => {
+        const adminTemplateWidth = ROLE_DEFAULT_WIDGET_WIDTHS.admin[widgetId];
+        const roleWidth = roleDefaultWidths?.[widgetId] ?? WIDGET_META[widgetId].defaultWidth;
+        return [
+          widgetId,
+          {
+            w: adminTemplateWidth ?? roleWidth,
+            h: WIDGET_META[widgetId].defaultHeight,
+          },
+        ];
+      }),
+    );
+
+    return buildDefaultDashboardLayoutV2({
+      definitions: WIDGET_DEFINITIONS,
+      role: normalizedRole,
+      presetVersion: DASHBOARD_LAYOUT_PRESET_VERSION,
+      orderedWidgetIds,
+      defaultDimensionsById: defaultDimensions,
+      rulesByTier: TIER_WIDTH_RULES,
+    });
+  }, [availableWidgetIds, defaultWidgetIds, normalizedRole]);
 
   const applyPresetOrderToLayout = useCallback((current: DashboardLayoutStateV2): DashboardLayoutStateV2 => {
     const lanes = splitLayoutByLane(current, WIDGET_DEFINITIONS);
@@ -1841,6 +1876,12 @@ export default function Dashboard() {
     setAndPersistLayout(defaults, true);
   };
 
+  const handleApplyAdminTemplate = useCallback(() => {
+    if (!canApplyAdminTemplate) return;
+    const template = buildAdminTemplateLayout();
+    setAndPersistLayout(template, true);
+  }, [buildAdminTemplateLayout, canApplyAdminTemplate, setAndPersistLayout]);
+
   const laneLayouts = useMemo(() => {
     const split = splitLayoutByLane(effectiveLayoutState, WIDGET_DEFINITIONS);
     const result: Record<DashboardTier, LayoutState> = {
@@ -1979,6 +2020,12 @@ export default function Dashboard() {
             <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
               {hiddenWidgetCount} hidden
             </Badge>
+            {canApplyAdminTemplate ? (
+              <Button variant="outline" className="h-8 rounded-lg px-2.5 text-xs" onClick={handleApplyAdminTemplate}>
+                <Building2 className="mr-1.5 h-3.5 w-3.5" />
+                Apply Admin Template
+              </Button>
+            ) : null}
             <Button variant="outline" className="h-8 rounded-lg px-2.5 text-xs" onClick={handleResetWidgets}>
               <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
               Reset Role Defaults

@@ -42,16 +42,9 @@ export function DepartmentsTabSection({
       <DataTableShell
         title="Department Management"
         description="Create, update, and delete company departments"
-        headerActions={
-          canManageDepartments ? (
-            <Button className="w-full rounded-full sm:w-auto" onClick={onOpenCreateDepartment}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Department
-            </Button>
-          ) : null
-        }
-        toolbar={
+        headerActions={(
           <SectionToolbar
+            variant="inline"
             ariaLabel="Department management search"
             search={{
               value: departmentSearch,
@@ -60,8 +53,16 @@ export function DepartmentsTabSection({
               ariaLabel: 'Search departments',
             }}
             density="compact"
+            actions={
+              canManageDepartments ? (
+                <Button className="w-full rounded-full sm:w-auto" onClick={onOpenCreateDepartment}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Department
+                </Button>
+              ) : null
+            }
           />
-        }
+        )}
         content={
           <>
           <div className="space-y-3 md:hidden">

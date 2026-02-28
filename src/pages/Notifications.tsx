@@ -294,9 +294,11 @@ export default function Notifications() {
         title="Notification History"
         description={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
         hasData={notifications.length > 0}
-        toolbar={
+        headerActions={
           <SectionToolbar
+            variant="inline"
             density="compact"
+            ariaLabel="Notification history filters"
             filters={[
               {
                 id: 'notification-category',
