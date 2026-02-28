@@ -1,6 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -11,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ModalScaffold, ModalSection } from '@/components/system';
+import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
 import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
 
@@ -32,6 +35,7 @@ interface AdminAccountDialogsProps {
   resetPasswordPending: boolean;
   editRoleDialogOpen: boolean;
   onEditRoleDialogOpenChange: (open: boolean) => void;
+  currentAssignedRole: AppRole;
   selectedRole: AppRole;
   onSelectedRoleChange: (role: AppRole) => void;
   onSaveRole: () => void;
@@ -58,6 +62,7 @@ export function AdminAccountDialogs({
   resetPasswordPending,
   editRoleDialogOpen,
   onEditRoleDialogOpenChange,
+  currentAssignedRole,
   selectedRole,
   onSelectedRoleChange,
   onSaveRole,
@@ -65,6 +70,24 @@ export function AdminAccountDialogs({
   updateRolePending,
   deleteRolePending,
 }: AdminAccountDialogsProps) {
+  const [confirmRoleChange, setConfirmRoleChange] = useState(false);
+
+  useEffect(() => {
+    if (!editRoleDialogOpen) {
+      setConfirmRoleChange(false);
+    }
+  }, [editRoleDialogOpen]);
+
+  const roleChangePreview = useMemo(() => {
+    const previousTier = getRoleAuthorityTier(currentAssignedRole);
+    const nextTier = getRoleAuthorityTier(selectedRole);
+    return {
+      hasRoleChange: selectedRole !== currentAssignedRole,
+      previousTier,
+      nextTier,
+    };
+  }, [currentAssignedRole, selectedRole]);
+
   return (
     <>
       <ModalScaffold
@@ -301,7 +324,8 @@ export function AdminAccountDialogs({
         onOpenChange={onEditRoleDialogOpenChange}
         title="Change User Role"
         description={`Update the system role for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. This will affect their permissions immediately.`}
-        maxWidth="xl"
+        maxWidth="2xl"
+        contentClassName="sm:!left-auto sm:!right-0 sm:!top-0 sm:!h-screen sm:!max-h-screen sm:!w-[760px] sm:!max-w-[760px] sm:!translate-x-0 sm:!translate-y-0 sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l"
         body={(
           <div className="space-y-4">
             <ModalSection title="Selected User" tone="muted">
@@ -365,6 +389,38 @@ export function AdminAccountDialogs({
               </Select>
             </div>
             </ModalSection>
+            <ModalSection title="Change Preview" tone="muted">
+              <div aria-live="polite" className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Role</p>
+                    <p className="font-medium capitalize">{currentAssignedRole.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">{roleChangePreview.previousTier.label}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Proposed Role</p>
+                    <p className="font-medium capitalize">{selectedRole.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">{roleChangePreview.nextTier.label}</p>
+                  </div>
+                </div>
+                {!roleChangePreview.hasRoleChange ? (
+                  <p className="text-xs text-muted-foreground">
+                    No role change detected. Select a different role to proceed.
+                  </p>
+                ) : (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-300/40 bg-amber-50/40 p-3">
+                    <Checkbox
+                      id="confirm-role-change"
+                      checked={confirmRoleChange}
+                      onCheckedChange={(checked) => setConfirmRoleChange(Boolean(checked))}
+                    />
+                    <Label htmlFor="confirm-role-change" className="text-sm font-normal leading-relaxed">
+                      I confirm this role change is governance-impacting and takes effect immediately.
+                    </Label>
+                  </div>
+                )}
+              </div>
+            </ModalSection>
             <ModalSection tone="warning" compact>
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-sm text-amber-400 flex items-start gap-2">
@@ -387,12 +443,16 @@ export function AdminAccountDialogs({
               variant="destructive"
               className="w-full sm:w-auto"
               onClick={onDeleteRole}
-              disabled={deleteRolePending || !selectedEmployee}
+              disabled={deleteRolePending || !selectedEmployee || !confirmRoleChange}
             >
               {deleteRolePending ? 'Removing...' : 'Delete Role (Revert to Employee)'}
             </Button>
-            <Button className="w-full sm:w-auto" onClick={onSaveRole} disabled={updateRolePending}>
-              {updateRolePending ? 'Updating...' : 'Update Role'}
+            <Button
+              className="w-full sm:w-auto"
+              onClick={onSaveRole}
+              disabled={updateRolePending || !roleChangePreview.hasRoleChange || !confirmRoleChange}
+            >
+              {updateRolePending ? 'Publishing...' : 'Publish Role Change'}
             </Button>
           </>
         )}

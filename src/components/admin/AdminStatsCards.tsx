@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  CardHeaderStandard,
   EditableCanvas,
   type InteractionMode,
 } from '@/components/system';
@@ -61,27 +60,36 @@ interface AdminStatsCardsProps {
   layoutState?: LayoutState;
   onLayoutStateChange?: (nextState: LayoutState) => void;
   onHideCard?: (cardId: AdminStatsCardId) => void;
+  density?: 'default' | 'compact';
 }
 
 type AdminStatsCardMeta = {
   id: AdminStatsCardId;
   label: string;
   description: string;
+  meta: string;
   value: number;
 };
 
-function AdminStatsCardView({ item }: { item: AdminStatsCardMeta }) {
+function AdminStatsCardView({
+  item,
+  density = 'default',
+}: {
+  item: AdminStatsCardMeta;
+  density?: 'default' | 'compact';
+}) {
   return (
     <Card className="card-stat border-border/60 shadow-sm">
-      <CardHeaderStandard
-        title={item.label}
-        description={item.description}
-        className="p-4 pb-2 sm:p-5 sm:pb-2"
-        titleClassName="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
-        descriptionClassName="text-xs line-clamp-2"
-      />
-      <CardContent className="px-4 pb-4 pt-0 sm:px-5 sm:pb-5">
-        <p className="text-2xl font-bold sm:text-3xl">{item.value}</p>
+      <CardContent className={density === 'compact' ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {item.label}
+        </p>
+        <p className={density === 'compact' ? 'mt-1 text-xl font-bold sm:text-2xl' : 'mt-1 text-2xl font-bold'}>{item.value}</p>
+        {density === 'compact' ? (
+          <p className="mt-1 text-xs text-muted-foreground">{item.meta}</p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+        )}
       </CardContent>
     </Card>
   );
@@ -94,30 +102,35 @@ export function AdminStatsCards({
   layoutState,
   onLayoutStateChange,
   onHideCard,
+  density = 'default',
 }: AdminStatsCardsProps) {
   const cards: AdminStatsCardMeta[] = [
     {
       id: 'totalEmployees',
       label: ADMIN_STATS_CARD_LABELS.totalEmployees,
       description: 'Total active employee records visible to this admin scope.',
+      meta: 'Active records in scope',
       value: stats.totalEmployees,
     },
     {
       id: 'admins',
       label: ADMIN_STATS_CARD_LABELS.admins,
       description: 'Users currently assigned system admin role.',
+      meta: 'System administration accounts',
       value: stats.admins,
     },
     {
       id: 'hrUsers',
       label: ADMIN_STATS_CARD_LABELS.hrUsers,
       description: 'Users assigned HR operations role.',
+      meta: 'HR operations accounts',
       value: stats.hrUsers,
     },
     {
       id: 'managers',
       label: ADMIN_STATS_CARD_LABELS.managers,
       description: 'Users assigned manager-level approval responsibilities.',
+      meta: 'Approval managers in scope',
       value: stats.managers,
     },
   ];
@@ -131,7 +144,7 @@ export function AdminStatsCards({
     return (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {visibleCards.map((item) => (
-          <AdminStatsCardView key={item.id} item={item} />
+          <AdminStatsCardView key={item.id} item={item} density={density} />
         ))}
       </div>
     );
@@ -141,8 +154,8 @@ export function AdminStatsCards({
     .map((card) => ({
       id: card.id,
       title: card.label,
-      description: card.description,
-      view: <AdminStatsCardView item={card} />,
+      description: density === 'compact' ? card.meta : card.description,
+      view: <AdminStatsCardView item={card} density={density} />,
     }));
 
   const resizeRulesById = Object.fromEntries(

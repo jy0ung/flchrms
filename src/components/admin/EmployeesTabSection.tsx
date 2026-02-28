@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { DataTableShell, SectionToolbar, StatusBadge } from '@/components/system';
 import { BatchUpdateDialog } from '@/components/admin/BatchUpdateDialog';
+import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
 
 interface EmployeesTabSectionProps {
@@ -79,17 +80,20 @@ export function EmployeesTabSection({
   return (
     <div className="space-y-4">
       <DataTableShell
+        density="compact"
         title="Employee Management"
         description="View, filter, update, and archive employee profiles"
-        toolbar={
+        headerActions={
           <SectionToolbar
+            variant="inline"
             ariaLabel="Employee management filters"
+            density="compact"
             search={{
               value: search,
               onChange: onSearchChange,
               placeholder: 'Search employees...',
               ariaLabel: 'Search employees',
-              inputProps: { className: 'pl-10' },
+              inputProps: { className: 'h-9 pl-10' },
             }}
             filters={[
               {
@@ -98,7 +102,7 @@ export function EmployeesTabSection({
                 minWidthClassName: 'sm:min-w-[160px]',
                 control: (
                   <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as EmployeeStatus | 'all')}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full">
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -117,7 +121,7 @@ export function EmployeesTabSection({
                 minWidthClassName: 'sm:min-w-[180px]',
                 control: (
                   <Select value={departmentFilter} onValueChange={onDepartmentFilterChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full">
                       <SelectValue placeholder="All departments" />
                     </SelectTrigger>
                     <SelectContent>
@@ -136,7 +140,7 @@ export function EmployeesTabSection({
               canManageEmployeeProfiles ? (
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto rounded-full"
+                  className="h-9 w-full rounded-full sm:w-auto"
                   onClick={() => onBatchUpdateDialogOpenChange(true)}
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -159,6 +163,7 @@ export function EmployeesTabSection({
               <div className="space-y-3 md:hidden">
                 {filteredEmployees?.map((employee) => {
                   const currentRole = getUserRole(employee.id);
+                  const tier = getRoleAuthorityTier(currentRole);
                   return (
                     <div key={employee.id} className="rounded-xl border bg-card p-4 shadow-sm">
                       <div className="flex items-start gap-3">
@@ -184,7 +189,10 @@ export function EmployeesTabSection({
                         </div>
                         <div className="rounded-md bg-muted/40 px-3 py-2">
                           <p className="text-muted-foreground">Role</p>
-                          <Badge className={`${roleColors[currentRole]} mt-1`}>{currentRole}</Badge>
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            <Badge className={roleColors[currentRole]}>{currentRole}</Badge>
+                            <Badge variant="outline">{tier.shortLabel}</Badge>
+                          </div>
                         </div>
                         <div className="rounded-md bg-muted/40 px-3 py-2">
                           <p className="text-muted-foreground">Status</p>
@@ -271,7 +279,10 @@ export function EmployeesTabSection({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEmployees?.map((employee) => (
+                      {filteredEmployees?.map((employee) => {
+                        const employeeRole = getUserRole(employee.id);
+                        const tier = getRoleAuthorityTier(employeeRole);
+                        return (
                         <TableRow key={employee.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -292,9 +303,12 @@ export function EmployeesTabSection({
                           </TableCell>
                           <TableCell>{employee.department?.name || '-'}</TableCell>
                           <TableCell>
-                            <Badge className={roleColors[getUserRole(employee.id)]}>
-                              {getUserRole(employee.id)}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Badge className={roleColors[employeeRole]}>
+                                {employeeRole}
+                              </Badge>
+                              <Badge variant="outline">{tier.shortLabel}</Badge>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <StatusBadge
@@ -357,7 +371,7 @@ export function EmployeesTabSection({
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )})}
                       {(!filteredEmployees || filteredEmployees.length === 0) && (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-muted-foreground py-8">

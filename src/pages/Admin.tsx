@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Filter, Plus, RefreshCcw, Shield } from 'lucide-react';
+import { Filter, Plus, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useEmployees,
@@ -16,11 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  AppPageContainer,
   CardHeaderStandard,
   InteractionModeToggle,
   ModeRibbon,
-  PageHeader,
+  StatusBadge,
   getInteractionModeLabel,
   useInteractionMode,
 } from '@/components/system';
@@ -43,6 +42,8 @@ import { RolesTabSection } from '@/components/admin/RolesTabSection';
 import { AdminDepartmentDialogs } from '@/components/admin/AdminDepartmentDialogs';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
+import { AdminContextBar, AdminHeader, AdminSurfaceShell, AdminWorkspace } from '@/components/admin/AdminSurfaceShell';
+import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
 import {
   EDITABLE_LAYOUT_COLUMNS,
   EDITABLE_LAYOUT_VERSION,
@@ -268,6 +269,66 @@ export default function Admin() {
 
   const hiddenStatsCardCount = hiddenStatsCardIds.length;
 
+  const authorityTier = getRoleAuthorityTier(normalizedRole);
+  const latestAdminChangeTimestamp = useMemo(() => {
+    const timestamps = [
+      ...(employees ?? []).map((employee) => employee.updated_at),
+      ...(departments ?? []).map((department) => department.updated_at),
+      ...(leaveTypes ?? []).map((leaveType) => leaveType.updated_at ?? leaveType.created_at),
+    ]
+      .filter(Boolean)
+      .map((value) => new Date(value).getTime())
+      .filter((value) => !Number.isNaN(value));
+
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps)).toLocaleDateString();
+  }, [departments, employees, leaveTypes]);
+
+  const governanceSummary = useMemo(() => ({
+    manageableProfiles: employees?.filter((employee) => employee.status !== 'terminated').length ?? 0,
+    managedDepartments: departments?.length ?? 0,
+    activePolicies: leaveTypes?.length ?? 0,
+    roleAssignments: userRoles?.length ?? 0,
+  }), [departments, employees, leaveTypes, userRoles]);
+
+  const policyHealthSummary = useMemo(() => {
+    const allPolicies = leaveTypes ?? [];
+    const docRequired = allPolicies.filter((policy) => policy.requires_document).length;
+    const paidPolicies = allPolicies.filter((policy) => policy.is_paid).length;
+    return {
+      totalPolicies: allPolicies.length,
+      docRequired,
+      paidPolicies,
+    };
+  }, [leaveTypes]);
+
+  const systemAlerts = useMemo(() => {
+    const alerts: { id: string; message: string; tone: 'warning' | 'success' | 'error' }[] = [];
+    const terminatedEmployees = employees?.filter((employee) => employee.status === 'terminated').length ?? 0;
+    if (terminatedEmployees > 0) {
+      alerts.push({
+        id: 'terminated',
+        message: `${terminatedEmployees} archived employee account(s) require periodic review.`,
+        tone: 'warning',
+      });
+    }
+    if (hiddenStatsCardCount > 0) {
+      alerts.push({
+        id: 'hidden-cards',
+        message: `${hiddenStatsCardCount} admin KPI card(s) hidden in customize mode.`,
+        tone: 'success',
+      });
+    }
+    if (alerts.length === 0) {
+      alerts.push({
+        id: 'healthy',
+        message: 'No governance alerts detected in this scope.',
+        tone: 'success',
+      });
+    }
+    return alerts;
+  }, [employees, hiddenStatsCardCount]);
+
   const resolvedStatsLayoutState = useMemo(
     () => mergeLayoutStateWithIds(statsLayoutState, orderedVisibleStatsCardIds, ADMIN_STATS_CARD_DIMENSIONS, EDITABLE_LAYOUT_COLUMNS),
     [orderedVisibleStatsCardIds, statsLayoutState],
@@ -328,240 +389,339 @@ export default function Admin() {
   }
 
   return (
-    <AppPageContainer>
-      <PageHeader
-        shellDensity="compact"
-        title="HR Admin Dashboard"
-        description="Manage employee profiles, access roles, leave policies, and system operations."
-        chips={modeIsView ? undefined : [{ id: 'admin-mode-chip', label: `${getInteractionModeLabel(mode)} mode`, tone: 'info' }]}
-        chipsSlot={
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-2.5 py-1 text-[11px] font-medium text-foreground">
-            <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-            Admin Surface
-          </span>
-        }
-        actionsSlot={(
-          <InteractionModeToggle
-            modes={['manage', 'bulk', 'customize']}
-            includeView
-            ariaLabel="Admin interaction mode"
-            labels={{
-              view: 'View',
-              manage: 'Manage',
-              bulk: 'Bulk',
-              customize: 'Customize',
-            }}
-          />
-        )}
-      />
-      <ModeRibbon
-        descriptions={{
-          manage: 'Manage mode active. Use this mode while updating entities and policies to keep controls contextual.',
-          bulk: 'Bulk mode active. Batch operations remain constrained by current RBAC capabilities.',
-          customize: 'Customize mode active. Rearrange or hide KPI cards while preserving deterministic compact layout.',
-        }}
-        actions={modeIsCustomize ? (
-          <>
-            <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
-              {hiddenStatsCardCount} hidden
-            </Badge>
-            {hiddenStatsCardIds.map((cardId) => (
-              <Button
-                key={cardId}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-lg px-2.5 text-xs"
-                onClick={() => handleToggleStatsCard(cardId, true)}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                {ADMIN_STATS_CARD_LABELS[cardId]}
-              </Button>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-lg px-2.5 text-xs"
-              onClick={handleResetStatsCards}
-            >
-              <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
-              Reset Stats Cards
-            </Button>
-          </>
-        ) : undefined}
-      />
-      {orderedVisibleStatsCardIds.length === 0 ? (
-        <Card className="card-stat border-border/60 shadow-sm">
-          <CardHeaderStandard
-            title="No Admin KPI Cards Visible"
-            description="Enable customize mode to restore hidden cards or reset admin defaults."
-            className="p-6 pb-3"
-          />
-          <CardContent className="pt-0 pb-10 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20">
-              <Filter className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
-              <Button type="button" className="rounded-lg" onClick={() => setMode('customize')}>
-                Customize Cards
-              </Button>
-              <Button type="button" variant="outline" className="rounded-lg" onClick={handleResetStatsCards}>
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Reset Defaults
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <AdminStatsCards
-          stats={stats}
-          mode={mode}
-          visibleCardIds={orderedVisibleStatsCardIds}
-          layoutState={resolvedStatsLayoutState}
-          onLayoutStateChange={persistStatsLayoutState}
-          onHideCard={(cardId) => handleToggleStatsCard(cardId, false)}
+    <AdminSurfaceShell
+      header={
+        <AdminHeader
+          title="HR Admin Dashboard"
+          subtitle="Manage employee profiles, access roles, leave policies, and system operations."
+          modeControls={
+            <InteractionModeToggle
+              modes={['manage', 'bulk', 'customize']}
+              includeView
+              layout="inline"
+              ariaLabel="Admin interaction mode"
+              labels={{
+                view: 'View',
+                manage: 'Manage',
+                bulk: 'Bulk',
+                customize: 'Customize',
+              }}
+            />
+          }
+          actions={
+            modeIsView ? null : (
+              <StatusBadge
+                status="info"
+                labelOverride={`${getInteractionModeLabel(mode)} mode`}
+                className="h-9 rounded-full px-3 text-xs"
+              />
+            )
+          }
         />
-      )}
-
-      <AdminTabsShell defaultValue={defaultAdminTab}>
-
-        <TabsContent value="employees" className="space-y-4">
-          <EmployeesTabSection
-            employees={employees}
-            filteredEmployees={filteredEmployees}
-            departments={departments}
-            employeesLoading={employeesLoading}
-            search={search}
-            onSearchChange={setSearch}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            departmentFilter={departmentFilter}
-            onDepartmentFilterChange={setDepartmentFilter}
-            roleColors={roleColors}
-            getUserRole={getUserRole}
-            canManageEmployeeProfiles={canManageEmployeeProfiles}
-            canOpenAccountProfileEditor={canOpenAccountProfileEditor}
-            canResetEmployeePasswords={canResetEmployeePasswords}
-            isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
-            canViewSensitiveEmployeeIdentifiers={canViewSensitiveEmployeeIdentifiers}
-            updateProfilePending={updateProfilePending}
-            resetPasswordPending={adminResetUserPasswordPending}
-            onEditProfile={handleEditProfile}
-            onResetPassword={openResetPasswordDialog}
-            onArchiveEmployee={handleArchiveEmployee}
-            onRestoreEmployee={handleRestoreEmployee}
-            batchUpdateDialogOpen={batchUpdateDialogOpen}
-            onBatchUpdateDialogOpenChange={setBatchUpdateDialogOpen}
+      }
+      contextBar={
+        <AdminContextBar
+          items={[
+            {
+              id: 'authority-tier',
+              label: 'Authority Tier',
+              value: authorityTier.label,
+            },
+            {
+              id: 'scope',
+              label: 'Scope',
+              value: 'Organization governance surface',
+            },
+            {
+              id: 'policy-version',
+              label: 'Policy Baseline',
+              value: 'v1 · Published',
+            },
+            {
+              id: 'last-modified',
+              label: 'Last Modified',
+              value: latestAdminChangeTimestamp ? `${latestAdminChangeTimestamp} · System` : 'No updates yet',
+            },
+          ]}
+        />
+      }
+    >
+      <AdminWorkspace>
+        {modeIsCustomize ? (
+          <ModeRibbon
+            variant="compact"
+            hideDescription
+            actions={(
+              <>
+                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
+                  {hiddenStatsCardCount} hidden
+                </Badge>
+                {hiddenStatsCardIds.map((cardId) => (
+                  <Button
+                    key={cardId}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-lg px-2.5 text-xs"
+                    onClick={() => handleToggleStatsCard(cardId, true)}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    {ADMIN_STATS_CARD_LABELS[cardId]}
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-2.5 text-xs"
+                  onClick={handleResetStatsCards}
+                >
+                  <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Reset Stats Cards
+                </Button>
+              </>
+            )}
           />
-        </TabsContent>
+        ) : null}
 
-        {/* Departments Tab */}
-        <TabsContent value="departments" className="space-y-4">
-          <DepartmentsTabSection
-            departments={departments}
-            filteredDepartments={filteredDepartments}
-            employees={employees}
-            departmentSearch={departmentSearch}
-            onDepartmentSearchChange={setDepartmentSearch}
-            canManageDepartments={canManageDepartments}
-            onOpenCreateDepartment={() => setCreateDeptDialogOpen(true)}
-            onEditDepartment={handleEditDepartment}
-            onDeleteDepartment={openDeleteDepartmentDialog}
-            deleteDepartmentPending={deleteDepartmentPending}
-          />
-        </TabsContent>
+        <AdminTabsShell defaultValue={defaultAdminTab}>
+          <TabsContent value="employees" className="space-y-4">
+            <EmployeesTabSection
+              employees={employees}
+              filteredEmployees={filteredEmployees}
+              departments={departments}
+              employeesLoading={employeesLoading}
+              search={search}
+              onSearchChange={setSearch}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              departmentFilter={departmentFilter}
+              onDepartmentFilterChange={setDepartmentFilter}
+              roleColors={roleColors}
+              getUserRole={getUserRole}
+              canManageEmployeeProfiles={canManageEmployeeProfiles}
+              canOpenAccountProfileEditor={canOpenAccountProfileEditor}
+              canResetEmployeePasswords={canResetEmployeePasswords}
+              isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
+              canViewSensitiveEmployeeIdentifiers={canViewSensitiveEmployeeIdentifiers}
+              updateProfilePending={updateProfilePending}
+              resetPasswordPending={adminResetUserPasswordPending}
+              onEditProfile={handleEditProfile}
+              onResetPassword={openResetPasswordDialog}
+              onArchiveEmployee={handleArchiveEmployee}
+              onRestoreEmployee={handleRestoreEmployee}
+              batchUpdateDialogOpen={batchUpdateDialogOpen}
+              onBatchUpdateDialogOpenChange={setBatchUpdateDialogOpen}
+            />
+          </TabsContent>
 
-        <TabsContent value="roles" className="space-y-4">
-          <RolesTabSection
-            rolesLoading={rolesLoading}
-            employees={filteredEmployeesBySearch}
-            getUserRole={getUserRole}
-            roleColors={roleColors}
-            canManageRoles={canManageRoles}
-            onEditRole={handleEditRole}
-          />
-        </TabsContent>
+          {/* Departments Tab */}
+          <TabsContent value="departments" className="space-y-4">
+            <DepartmentsTabSection
+              departments={departments}
+              filteredDepartments={filteredDepartments}
+              employees={employees}
+              departmentSearch={departmentSearch}
+              onDepartmentSearchChange={setDepartmentSearch}
+              canManageDepartments={canManageDepartments}
+              onOpenCreateDepartment={() => setCreateDeptDialogOpen(true)}
+              onEditDepartment={handleEditDepartment}
+              onDeleteDepartment={openDeleteDepartmentDialog}
+              deleteDepartmentPending={deleteDepartmentPending}
+            />
+          </TabsContent>
 
-        {/* Leave Policies Tab */}
-        <TabsContent value="leave-policies" className="space-y-4">
-          <LeavePoliciesSection
-            leaveTypes={leaveTypes}
-            leaveTypesLoading={leaveTypesLoading}
-            canManageLeaveTypes={canManageLeaveTypes}
-            departments={departments}
-            onCreateLeaveType={handleCreateLeaveType}
-            onEditLeaveType={handleEditLeaveType}
-            onDeleteLeaveType={openDeleteLeaveTypeDialog}
-          />
-        </TabsContent>
-      </AdminTabsShell>
+          <TabsContent value="roles" className="space-y-4">
+            <RolesTabSection
+              rolesLoading={rolesLoading}
+              employees={filteredEmployeesBySearch}
+              getUserRole={getUserRole}
+              roleColors={roleColors}
+              viewerRole={normalizedRole}
+              userRoles={userRoles}
+              canManageRoles={canManageRoles}
+              onEditRole={handleEditRole}
+            />
+          </TabsContent>
 
-      <AdminAccountDialogs
-        selectedEmployee={selectedEmployee}
-        departments={departments}
-        isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
-        editProfileDialogOpen={editProfileDialogOpen}
-        onEditProfileDialogOpenChange={setEditProfileDialogOpen}
-        editForm={editForm}
-        onEditFormChange={setEditForm}
-        onSaveProfile={handleSaveProfile}
-        saveProfilePending={updateProfilePending}
-        resetPasswordDialogOpen={resetPasswordDialogOpen}
-        onResetPasswordDialogOpenChange={closeResetPasswordDialog}
-        resetPasswordForm={resetPasswordForm}
-        onResetPasswordFormChange={setResetPasswordForm}
-        onResetUserPassword={handleResetUserPassword}
-        resetPasswordPending={adminResetUserPasswordPending}
-        editRoleDialogOpen={editRoleDialogOpen}
-        onEditRoleDialogOpenChange={setEditRoleDialogOpen}
-        selectedRole={selectedRole}
-        onSelectedRoleChange={(nextRole) => setSelectedRole(nextRole)}
-        onSaveRole={handleSaveRole}
-        onDeleteRole={handleDeleteRole}
-        updateRolePending={updateUserRolePending}
-        deleteRolePending={deleteUserRolePending}
-      />
+          {/* Leave Policies Tab */}
+          <TabsContent value="leave-policies" className="space-y-4">
+            <LeavePoliciesSection
+              leaveTypes={leaveTypes}
+              leaveTypesLoading={leaveTypesLoading}
+              canManageLeaveTypes={canManageLeaveTypes}
+              departments={departments}
+              onCreateLeaveType={handleCreateLeaveType}
+              onEditLeaveType={handleEditLeaveType}
+              onDeleteLeaveType={openDeleteLeaveTypeDialog}
+            />
+          </TabsContent>
+        </AdminTabsShell>
 
-      <AdminDepartmentDialogs
-        createDepartmentDialogOpen={createDeptDialogOpen}
-        onCreateDepartmentDialogOpenChange={setCreateDeptDialogOpen}
-        newDepartmentName={newDeptName}
-        onNewDepartmentNameChange={setNewDeptName}
-        newDepartmentDescription={newDeptDescription}
-        onNewDepartmentDescriptionChange={setNewDeptDescription}
-        onCreateDepartment={handleCreateDepartment}
-        createDepartmentPending={createDepartmentPending}
-        editDepartmentDialogOpen={editDepartmentDialogOpen}
-        onEditDepartmentDialogOpenChange={setEditDepartmentDialogOpen}
-        selectedDepartment={selectedDepartment}
-        departmentForm={departmentForm}
-        onDepartmentFormChange={setDepartmentForm}
-        onSaveDepartment={handleSaveDepartment}
-        updateDepartmentPending={updateDepartmentPending}
-        deleteDepartmentDialogOpen={deleteDepartmentDialogOpen}
-        onDeleteDepartmentDialogOpenChange={setDeleteDepartmentDialogOpen}
-        onDeleteDepartment={handleDeleteDepartment}
-        deleteDepartmentPending={deleteDepartmentPending}
-      />
+        <section role="region" aria-label="Admin overview insights" className="space-y-3">
+          {orderedVisibleStatsCardIds.length === 0 ? (
+            <Card className="card-stat border-border/60 shadow-sm">
+              <CardHeaderStandard
+                title="No Admin KPI Cards Visible"
+                description="Enable customize mode to restore hidden cards or reset admin defaults."
+                className="p-4 pb-2 sm:p-5 sm:pb-2"
+                titleClassName="text-base"
+              />
+              <CardContent className="pt-0 pb-6 text-center">
+                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/20">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col justify-center gap-2 sm:flex-row">
+                  <Button type="button" className="rounded-lg" onClick={() => setMode('customize')}>
+                    Customize Cards
+                  </Button>
+                  <Button type="button" variant="outline" className="rounded-lg" onClick={handleResetStatsCards}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Reset Defaults
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <AdminStatsCards
+              density="compact"
+              stats={stats}
+              mode={mode}
+              visibleCardIds={orderedVisibleStatsCardIds}
+              layoutState={resolvedStatsLayoutState}
+              onLayoutStateChange={persistStatsLayoutState}
+              onHideCard={(cardId) => handleToggleStatsCard(cardId, false)}
+            />
+          )}
 
-      <AdminLeaveTypeDialogs
-        editLeaveTypeDialogOpen={editLeaveTypeDialogOpen}
-        onEditLeaveTypeDialogOpenChange={setEditLeaveTypeDialogOpen}
-        createLeaveTypeDialogOpen={createLeaveTypeDialogOpen}
-        onCreateLeaveTypeDialogOpenChange={setCreateLeaveTypeDialogOpen}
-        deleteLeaveTypeDialogOpen={deleteLeaveTypeDialogOpen}
-        onDeleteLeaveTypeDialogOpenChange={setDeleteLeaveTypeDialogOpen}
-        selectedLeaveType={selectedLeaveType}
-        leaveTypeForm={leaveTypeForm}
-        onLeaveTypeFormChange={setLeaveTypeForm}
-        onSaveLeaveType={handleSaveLeaveType}
-        onSaveNewLeaveType={handleSaveNewLeaveType}
-        onDeleteLeaveType={handleDeleteLeaveType}
-        updateLeaveTypePending={updateLeaveTypePending}
-        createLeaveTypePending={createLeaveTypePending}
-        deleteLeaveTypePending={deleteLeaveTypePending}
-      />
-    </AppPageContainer>
+          <Card className="border-border/60 shadow-sm">
+            <CardHeaderStandard
+              title="Admin Overview"
+              description="Secondary governance insights for operational monitoring."
+              className="p-4 pb-2 sm:p-5 sm:pb-2"
+              titleClassName="text-base"
+            />
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Governance Status</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Profiles in scope</span>
+                      <span className="font-medium">{governanceSummary.manageableProfiles}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Departments</span>
+                      <span className="font-medium">{governanceSummary.managedDepartments}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Role assignments</span>
+                      <span className="font-medium">{governanceSummary.roleAssignments}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Policy Health Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Published policies</span>
+                      <span className="font-medium">{policyHealthSummary.totalPolicies}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Document required</span>
+                      <span className="font-medium">{policyHealthSummary.docRequired}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <span className="text-muted-foreground">Paid policies</span>
+                      <span className="font-medium">{policyHealthSummary.paidPolicies}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">System Alerts</h3>
+                  <div className="space-y-2 text-sm">
+                    {systemAlerts.map((alert) => (
+                      <div key={alert.id} className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                        <StatusBadge status={alert.tone} labelOverride={alert.tone} className="mb-1 text-[11px]" />
+                        <p>{alert.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <AdminAccountDialogs
+          selectedEmployee={selectedEmployee}
+          departments={departments}
+          isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
+          editProfileDialogOpen={editProfileDialogOpen}
+          onEditProfileDialogOpenChange={setEditProfileDialogOpen}
+          editForm={editForm}
+          onEditFormChange={setEditForm}
+          onSaveProfile={handleSaveProfile}
+          saveProfilePending={updateProfilePending}
+          resetPasswordDialogOpen={resetPasswordDialogOpen}
+          onResetPasswordDialogOpenChange={closeResetPasswordDialog}
+          resetPasswordForm={resetPasswordForm}
+          onResetPasswordFormChange={setResetPasswordForm}
+          onResetUserPassword={handleResetUserPassword}
+          resetPasswordPending={adminResetUserPasswordPending}
+          editRoleDialogOpen={editRoleDialogOpen}
+          onEditRoleDialogOpenChange={setEditRoleDialogOpen}
+          currentAssignedRole={selectedEmployee ? getUserRole(selectedEmployee.id) : 'employee'}
+          selectedRole={selectedRole}
+          onSelectedRoleChange={(nextRole) => setSelectedRole(nextRole)}
+          onSaveRole={handleSaveRole}
+          onDeleteRole={handleDeleteRole}
+          updateRolePending={updateUserRolePending}
+          deleteRolePending={deleteUserRolePending}
+        />
+
+        <AdminDepartmentDialogs
+          createDepartmentDialogOpen={createDeptDialogOpen}
+          onCreateDepartmentDialogOpenChange={setCreateDeptDialogOpen}
+          newDepartmentName={newDeptName}
+          onNewDepartmentNameChange={setNewDeptName}
+          newDepartmentDescription={newDeptDescription}
+          onNewDepartmentDescriptionChange={setNewDeptDescription}
+          onCreateDepartment={handleCreateDepartment}
+          createDepartmentPending={createDepartmentPending}
+          editDepartmentDialogOpen={editDepartmentDialogOpen}
+          onEditDepartmentDialogOpenChange={setEditDepartmentDialogOpen}
+          selectedDepartment={selectedDepartment}
+          departmentForm={departmentForm}
+          onDepartmentFormChange={setDepartmentForm}
+          onSaveDepartment={handleSaveDepartment}
+          updateDepartmentPending={updateDepartmentPending}
+          deleteDepartmentDialogOpen={deleteDepartmentDialogOpen}
+          onDeleteDepartmentDialogOpenChange={setDeleteDepartmentDialogOpen}
+          onDeleteDepartment={handleDeleteDepartment}
+          deleteDepartmentPending={deleteDepartmentPending}
+        />
+
+        <AdminLeaveTypeDialogs
+          editLeaveTypeDialogOpen={editLeaveTypeDialogOpen}
+          onEditLeaveTypeDialogOpenChange={setEditLeaveTypeDialogOpen}
+          createLeaveTypeDialogOpen={createLeaveTypeDialogOpen}
+          onCreateLeaveTypeDialogOpenChange={setCreateLeaveTypeDialogOpen}
+          deleteLeaveTypeDialogOpen={deleteLeaveTypeDialogOpen}
+          onDeleteLeaveTypeDialogOpenChange={setDeleteLeaveTypeDialogOpen}
+          selectedLeaveType={selectedLeaveType}
+          leaveTypeForm={leaveTypeForm}
+          onLeaveTypeFormChange={setLeaveTypeForm}
+          onSaveLeaveType={handleSaveLeaveType}
+          onSaveNewLeaveType={handleSaveNewLeaveType}
+          onDeleteLeaveType={handleDeleteLeaveType}
+          updateLeaveTypePending={updateLeaveTypePending}
+          createLeaveTypePending={createLeaveTypePending}
+          deleteLeaveTypePending={deleteLeaveTypePending}
+        />
+      </AdminWorkspace>
+    </AdminSurfaceShell>
   );
 }

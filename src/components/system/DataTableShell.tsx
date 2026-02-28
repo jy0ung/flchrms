@@ -9,6 +9,7 @@ export interface DataTableShellProps extends React.HTMLAttributes<HTMLDivElement
   title?: string;
   description?: string;
   headerActions?: React.ReactNode;
+  density?: "default" | "compact";
   toolbar?: React.ReactNode;
   alertBanner?: React.ReactNode;
   loading?: boolean;
@@ -31,6 +32,7 @@ export function DataTableShell({
   title,
   description,
   headerActions,
+  density = "default",
   toolbar,
   alertBanner,
   loading = false,
@@ -49,6 +51,7 @@ export function DataTableShell({
   const titleId = React.useId();
   const hasHeader = Boolean(title || description || headerActions);
   const hasRows = hasData ?? Boolean(content || table || mobileList);
+  const compactDensity = density === "compact";
 
   return (
     <Card
@@ -64,13 +67,22 @@ export function DataTableShell({
           titleId={title ? titleId : undefined}
           description={description}
           actions={headerActions}
-          className="p-6 pb-4"
-          titleClassName="text-xl sm:text-2xl"
-          actionsClassName="w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end"
+          className={compactDensity ? "p-4 pb-3 sm:p-5 sm:pb-3" : "p-6 pb-4"}
+          titleClassName={compactDensity ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"}
+          actionsClassName={cn(
+            "w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end",
+            compactDensity ? "sm:flex-nowrap" : "sm:flex-wrap",
+          )}
         />
       ) : null}
 
-      <CardContent className={cn("space-y-4 p-4 sm:p-5", hasHeader && "pt-4", contentClassName)}>
+      <CardContent
+        className={cn(
+          compactDensity ? "space-y-3 p-3 sm:p-4" : "space-y-4 p-4 sm:p-5",
+          hasHeader && (compactDensity ? "pt-3" : "pt-4"),
+          contentClassName,
+        )}
+      >
         {toolbar ? (
           <div className={cn(stickyToolbar && "sticky top-0 z-10")}>
             {hasHeader ? <Separator className="mb-4" /> : null}

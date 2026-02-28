@@ -20,6 +20,7 @@ import { useInteractionMode } from "@/components/system/InteractionModeProvider"
 export interface InteractionModeToggleProps extends React.HTMLAttributes<HTMLDivElement> {
   modes?: readonly InteractionMode[];
   includeView?: boolean;
+  layout?: "grid" | "inline";
   ariaLabel?: string;
   labels?: Partial<Record<InteractionMode, string>>;
   singleModeLabels?: {
@@ -56,6 +57,7 @@ function buildAvailableModes(
 export function InteractionModeToggle({
   modes,
   includeView = true,
+  layout = "grid",
   ariaLabel,
   labels,
   singleModeLabels,
@@ -103,7 +105,12 @@ export function InteractionModeToggle({
           if (nextValue === mode) return;
           setMode(nextValue as InteractionMode);
         }}
-        className="grid w-full grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/25 p-1 sm:inline-grid sm:w-auto"
+        className={cn(
+          "rounded-xl border border-border/70 bg-muted/25 p-1",
+          layout === "inline"
+            ? "flex w-full flex-nowrap items-center gap-1 overflow-x-auto sm:w-auto"
+            : "grid w-full grid-cols-2 gap-1 sm:inline-grid sm:w-auto",
+        )}
         aria-label={ariaLabel ?? 'Interaction mode'}
       >
         {availableModes.map((nextMode) => {
@@ -114,7 +121,10 @@ export function InteractionModeToggle({
               key={nextMode}
               value={nextMode}
               aria-label={`Set mode to ${label}`}
-              className="h-9 rounded-lg border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:text-sm"
+              className={cn(
+                "h-9 rounded-lg border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm sm:text-sm",
+                layout === "inline" && "min-w-max flex-none",
+              )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
               <span>{label}</span>

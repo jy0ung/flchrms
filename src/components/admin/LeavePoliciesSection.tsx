@@ -1,4 +1,5 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,9 +35,19 @@ export function LeavePoliciesSection({
   onEditLeaveType,
   onDeleteLeaveType,
 }: LeavePoliciesSectionProps) {
+  const getPolicyVersion = (leaveType: LeaveType) => {
+    if (!leaveType.updated_at || leaveType.updated_at === leaveType.created_at) return 'v1';
+    return 'v2';
+  };
+
+  const getEffectiveDate = (leaveType: LeaveType) => format(new Date(leaveType.created_at), 'MMM d, yyyy');
+  const getLastModifiedDate = (leaveType: LeaveType) =>
+    format(new Date(leaveType.updated_at ?? leaveType.created_at), 'MMM d, yyyy');
+
   return (
     <div className="space-y-4">
       <DataTableShell
+        density="compact"
         title="Leave Policy Configuration"
         description="Configure leave types, advance notice, and document requirements"
         headerActions={
@@ -70,6 +81,8 @@ export function LeavePoliciesSection({
                       <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                      <StatusBadge status="success" labelOverride="Published" />
                       <Badge variant="secondary">
                         {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
                       </Badge>
@@ -78,6 +91,9 @@ export function LeavePoliciesSection({
                         status={leaveType.requires_document ? 'warning' : 'info'}
                         labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
                       />
+                    </div>
+                    <div className="mt-2 rounded-md border border-border/60 px-3 py-2 text-xs text-muted-foreground">
+                      Effective {getEffectiveDate(leaveType)} · Last modified {getLastModifiedDate(leaveType)} · by System
                     </div>
                     {canManageLeaveTypes && (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -112,14 +128,19 @@ export function LeavePoliciesSection({
 
               <div className="hidden rounded-xl border md:block">
                 <div className="overflow-x-auto">
-                  <Table className="min-w-[980px]">
+                  <Table className="min-w-[1320px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Leave Type</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead>State</TableHead>
+                        <TableHead>Effective Date</TableHead>
                         <TableHead>Days Allowed</TableHead>
                         <TableHead>Advance Notice</TableHead>
                         <TableHead>Paid Leave</TableHead>
                         <TableHead>Document Required</TableHead>
+                        <TableHead>Last Modified By</TableHead>
+                        <TableHead>Last Modified Date</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -133,6 +154,15 @@ export function LeavePoliciesSection({
                                 <p className="text-sm text-muted-foreground">{leaveType.description}</p>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status="success" labelOverride="Published" />
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {getEffectiveDate(leaveType)}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
@@ -151,6 +181,12 @@ export function LeavePoliciesSection({
                               labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
                             />
                           </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">System</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {getLastModifiedDate(leaveType)}
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               {canManageLeaveTypes && (
@@ -165,9 +201,9 @@ export function LeavePoliciesSection({
                                     Edit
                                   </Button>
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    className="rounded-full text-destructive hover:text-destructive"
+                                    className="rounded-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                     aria-label={`Delete leave type ${leaveType.name}`}
                                     onClick={() => onDeleteLeaveType(leaveType)}
                                   >
@@ -181,7 +217,7 @@ export function LeavePoliciesSection({
                       ))}
                       {(!leaveTypes || leaveTypes.length === 0) && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                             No leave types configured. Add your first leave type.
                           </TableCell>
                         </TableRow>

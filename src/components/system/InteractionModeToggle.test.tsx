@@ -58,4 +58,22 @@ describe('InteractionModeToggle', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Set mode to Bulk/i }));
     expect(screen.getByTestId('mode-value')).toHaveTextContent('bulk');
   });
+
+  it('renders inline segmented layout with horizontal affordance and remains operable', () => {
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <InteractionModeProvider>
+          <InteractionModeToggle modes={['view', 'manage', 'bulk', 'customize']} includeView layout="inline" />
+          <ModeValue />
+        </InteractionModeProvider>
+      </MemoryRouter>,
+    );
+
+    const group = screen.getByLabelText('Interaction mode');
+    expect(group).toHaveClass('overflow-x-auto');
+    expect(group).not.toHaveClass('grid');
+
+    fireEvent.click(screen.getByRole('radio', { name: /Set mode to Customize/i }));
+    expect(screen.getByTestId('mode-value')).toHaveTextContent('customize');
+  });
 });

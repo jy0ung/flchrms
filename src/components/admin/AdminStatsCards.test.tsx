@@ -29,6 +29,23 @@ describe('AdminStatsCards', () => {
     expect(screen.getByText('7')).toBeInTheDocument();
   });
 
+  it('renders compact density metric-first copy without verbose descriptions', () => {
+    render(
+      <AdminStatsCards
+        density="compact"
+        stats={{
+          totalEmployees: 42,
+          admins: 2,
+          hrUsers: 3,
+          managers: 7,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Active records in scope')).toBeInTheDocument();
+    expect(screen.queryByText('Total active employee records visible to this admin scope.')).not.toBeInTheDocument();
+  });
+
   it('renders layout tiles in customize mode and supports hide action', () => {
     const onLayoutStateChange = vi.fn();
     const onHideCard = vi.fn();

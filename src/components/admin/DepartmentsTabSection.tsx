@@ -40,6 +40,7 @@ export function DepartmentsTabSection({
   return (
     <div className="space-y-4">
       <DataTableShell
+        density="compact"
         title="Department Management"
         description="Create, update, and delete company departments"
         headerActions={(

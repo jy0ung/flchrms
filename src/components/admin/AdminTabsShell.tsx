@@ -9,8 +9,8 @@ interface AdminTabsShellProps {
 
 export function AdminTabsShell({ defaultValue, children }: AdminTabsShellProps) {
   return (
-    <Tabs defaultValue={defaultValue} className="space-y-4">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl p-1 md:grid-cols-4">
+    <Tabs defaultValue={defaultValue} className="space-y-3">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-4">
         <TabsTrigger value="employees" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <Users className="w-4 h-4" />
           <span className="truncate">Employee Profiles</span>
