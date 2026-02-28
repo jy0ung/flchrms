@@ -9,15 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
-import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
+import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
-import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
-import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
@@ -59,8 +57,6 @@ export default function Leave() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [amendmentNotes, setAmendmentNotes] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [myLeaveView, setMyLeaveView] = useState<'current' | 'history'>('current');
-  const [teamLeaveView, setTeamLeaveView] = useState<'current' | 'history'>('current');
   const {
     detailDialogOpen,
     detailRequest,
@@ -416,10 +412,67 @@ export default function Leave() {
     [teamRequests, isHistoricalRequest]
   );
 
-  const visibleMyRequests = myLeaveView === 'history' ? myHistoryRequests : myCurrentRequests;
-  const visibleTeamRequests = teamLeaveView === 'history' ? teamHistoryRequests : teamCurrentRequests;
-
   const canViewTeamRequests = canViewTeamLeaveRequestsPermission(role);
+  const defaultWorkspaceView: LeaveViewOption =
+    canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0
+      ? 'TEAM_CURRENT'
+      : 'MY_CURRENT';
+
+  const workflowInfoPopover = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="Approval workflow examples"
+        >
+          <Info className="w-4 h-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[min(90vw,26rem)]" align="end">
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
+          <p className="text-[11px] text-muted-foreground">
+            Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
+          </p>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">Employee:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">Manager:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">GM:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <AppPageContainer>
@@ -462,8 +515,7 @@ export default function Leave() {
         showCloseButton
       />
 
-      {/* Leave Balance Card - show for all users */}
-      <LeaveBalanceCard />
+      <LeaveBalanceSection balances={balances ?? []} />
 
       {/* Loading state */}
       {isLoading && (
@@ -478,166 +530,30 @@ export default function Leave() {
         />
       )}
 
-      {/* Empty state */}
-      {!isLoading && requests?.length === 0 && (
-        <DataTableShell
-          title="Leave Requests"
-          hasData={false}
-          emptyState={
-            <div className="p-8 text-center text-muted-foreground">
-              No leave requests yet. Click "Request Leave" to submit your first request.
-            </div>
-          }
+      {!isLoading && (
+        <LeaveRequestWorkspace
+          role={role}
+          canViewTeamRequests={canViewTeamRequests}
+          myCurrentRequests={myCurrentRequests}
+          myHistoryRequests={myHistoryRequests}
+          teamCurrentRequests={teamCurrentRequests}
+          teamHistoryRequests={teamHistoryRequests}
+          defaultView={defaultWorkspaceView}
+          getStatusDisplay={getStatusDisplay}
+          getCancellationBadge={getCancellationBadge}
+          canAmend={canAmend}
+          canCancelPendingRequest={canCancelPendingRequest}
+          canRequestCancellation={canRequestCancellation}
+          canApproveCancellation={canApproveCancellation}
+          canApprove={canApprove}
+          shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
+          onAmend={handleAmend}
+          onCancel={handleCancellation}
+          onOpenDetails={(request) => void handleOpenDetails(request)}
+          onCancellationReview={handleCancellationReview}
+          onAction={handleAction}
+          workflowInfoPopover={workflowInfoPopover}
         />
-      )}
-
-      {!isLoading && (requests?.length || 0) > 0 && (
-        <Tabs
-          defaultValue={canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0 ? 'team' : 'my'}
-          className="space-y-4"
-        >
-          <TabsList
-            className={
-              canViewTeamRequests
-                ? 'grid h-auto w-full max-w-xl grid-cols-2 gap-1 rounded-xl p-1'
-                : 'grid h-auto w-full max-w-sm grid-cols-1 gap-1 rounded-xl p-1'
-            }
-          >
-            <TabsTrigger value="my">
-              My Leave
-              <span className="ml-2 text-xs text-muted-foreground">({myRequests.length})</span>
-            </TabsTrigger>
-            {canViewTeamRequests && (
-              <TabsTrigger value="team">
-                Team Leave
-                <span className="ml-2 text-xs text-muted-foreground">({teamRequests.length})</span>
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="my" className="space-y-3">
-            <DataTableShell
-              title="My Requests"
-              headerActions={
-                <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-                    aria-label="Approval workflow examples"
-                  >
-                    <Info className="w-4 h-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[min(90vw,26rem)]" align="start">
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
-                    </p>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">Employee:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">Manager:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">GM:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              }
-              content={
-                <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
-              <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
-                <TabsTrigger value="current">
-                  Current
-                  <span className="ml-2 text-xs text-muted-foreground">({myCurrentRequests.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="history">
-                  History
-                  <span className="ml-2 text-xs text-muted-foreground">({myHistoryRequests.length})</span>
-                </TabsTrigger>
-              </TabsList>
-
-                <MyLeaveRequestsTable
-                  requests={visibleMyRequests}
-                  emptyMessage={myLeaveView === 'history' ? 'No leave history yet.' : 'No active leave requests right now.'}
-                getStatusDisplay={getStatusDisplay}
-                getCancellationBadge={getCancellationBadge}
-                canAmend={canAmend}
-                canCancelPendingRequest={canCancelPendingRequest}
-                canRequestCancellation={canRequestCancellation}
-                onAmend={handleAmend}
-                  onCancel={handleCancellation}
-                />
-                </Tabs>
-              }
-            />
-          </TabsContent>
-
-          {canViewTeamRequests && (
-            <TabsContent value="team" className="space-y-3">
-              <DataTableShell
-                title="Team Requests"
-                content={
-                  <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
-              <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl p-1">
-                  <TabsTrigger value="current">
-                    Current
-                    <span className="ml-2 text-xs text-muted-foreground">({teamCurrentRequests.length})</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="history">
-                    History
-                    <span className="ml-2 text-xs text-muted-foreground">({teamHistoryRequests.length})</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                <TeamLeaveRequestsTable
-                  requests={visibleTeamRequests}
-                  emptyMessage={teamLeaveView === 'history' ? 'No leave approval history yet.' : 'No active team leave requests available.'}
-                  role={role}
-                  getStatusDisplay={getStatusDisplay}
-                  getCancellationBadge={getCancellationBadge}
-                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
-                  canApproveCancellation={canApproveCancellation}
-                  canApprove={canApprove}
-                  onOpenDetails={(request) => void handleOpenDetails(request)}
-                  onCancellationReview={handleCancellationReview}
-                  onAction={handleAction}
-                />
-                  </Tabs>
-                }
-              />
-            </TabsContent>
-          )}
-        </Tabs>
       )}
 
       <LeaveDetailsDialog
