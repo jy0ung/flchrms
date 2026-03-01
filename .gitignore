@@ -26,3 +26,6 @@ playwright-report/
 test-results/
 .env.e2e.test-seed
 supabase/backups/
+
+# Deployment secrets (keep .example checked in)
+deploy/.env.deploy
