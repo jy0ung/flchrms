@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import {
   useAdminResetUserPassword,
+  useCreateEmployee,
   useUpdateProfile,
 } from '@/hooks/useEmployees';
 import { useDeleteUserRole, useUpdateUserRole } from '@/hooks/useUserRoles';
 import type { AppRole, EmployeeStatus, Profile } from '@/types/hrms';
-import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
+import type { AdminCreateEmployeeForm, AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
 
 const RESERVED_USERNAMES = new Set([
   'admin',
@@ -42,6 +43,7 @@ export function useAdminEmployeeManagement({
   isAdminLimitedProfileEditor,
 }: UseAdminEmployeeManagementParams) {
   const updateProfile = useUpdateProfile();
+  const createEmployee = useCreateEmployee();
   const adminResetUserPassword = useAdminResetUserPassword();
   const updateUserRole = useUpdateUserRole();
   const deleteUserRole = useDeleteUserRole();
@@ -51,6 +53,19 @@ export function useAdminEmployeeManagement({
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>('employee');
+  const [createEmployeeDialogOpen, setCreateEmployeeDialogOpen] = useState(false);
+  const [createEmployeeForm, setCreateEmployeeForm] = useState<AdminCreateEmployeeForm>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    job_title: '',
+    department_id: 'none',
+    hire_date: '',
+    manager_id: 'none',
+  });
   const [editForm, setEditForm] = useState<AdminEditProfileForm>({
     first_name: '',
     last_name: '',
@@ -61,6 +76,8 @@ export function useAdminEmployeeManagement({
     department_id: '',
     employee_id: '',
     status: 'active',
+    hire_date: '',
+    manager_id: 'none',
   });
   const [resetPasswordForm, setResetPasswordForm] = useState<AdminResetPasswordForm>({
     newPassword: '',
@@ -79,6 +96,8 @@ export function useAdminEmployeeManagement({
       department_id: employee.department_id || 'none',
       employee_id: employee.employee_id || '',
       status: employee.status || 'active',
+      hire_date: employee.hire_date || '',
+      manager_id: employee.manager_id || 'none',
     });
     setEditProfileDialogOpen(true);
   };
@@ -146,6 +165,8 @@ export function useAdminEmployeeManagement({
         department_id: editForm.department_id === 'none' ? null : editForm.department_id || null,
         employee_id: editForm.employee_id || null,
         status: editForm.status,
+        hire_date: editForm.hire_date || null,
+        manager_id: editForm.manager_id === 'none' ? null : editForm.manager_id || null,
       },
     });
     setEditProfileDialogOpen(false);
@@ -193,6 +214,60 @@ export function useAdminEmployeeManagement({
     setSelectedRole('employee');
   };
 
+  const openCreateEmployeeDialog = () => {
+    setCreateEmployeeForm({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      first_name: '',
+      last_name: '',
+      phone: '',
+      job_title: '',
+      department_id: 'none',
+      hire_date: '',
+      manager_id: 'none',
+    });
+    setCreateEmployeeDialogOpen(true);
+  };
+
+  const handleCreateEmployee = async () => {
+    const { email, password, confirmPassword, first_name, last_name } = createEmployeeForm;
+
+    if (!email.trim()) {
+      toast.error('Email is required.');
+      return;
+    }
+
+    if (!first_name.trim()) {
+      toast.error('First name is required.');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Temporary password must be at least 6 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    await createEmployee.mutateAsync({
+      email: email.trim(),
+      password,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      phone: createEmployeeForm.phone || null,
+      job_title: createEmployeeForm.job_title || null,
+      department_id: createEmployeeForm.department_id === 'none' ? null : createEmployeeForm.department_id || null,
+      hire_date: createEmployeeForm.hire_date || null,
+      manager_id: createEmployeeForm.manager_id === 'none' ? null : createEmployeeForm.manager_id || null,
+    });
+
+    setCreateEmployeeDialogOpen(false);
+  };
+
   const handleArchiveEmployee = async (employee: Profile) => {
     await updateProfile.mutateAsync({
       id: employee.id,
@@ -217,6 +292,10 @@ export function useAdminEmployeeManagement({
     setEditRoleDialogOpen,
     resetPasswordDialogOpen,
     closeResetPasswordDialog,
+    createEmployeeDialogOpen,
+    setCreateEmployeeDialogOpen,
+    createEmployeeForm,
+    setCreateEmployeeForm,
     editForm,
     setEditForm,
     resetPasswordForm,
@@ -224,6 +303,8 @@ export function useAdminEmployeeManagement({
     handleEditProfile,
     handleEditRole,
     openResetPasswordDialog,
+    openCreateEmployeeDialog,
+    handleCreateEmployee,
     handleSaveProfile,
     handleResetUserPassword,
     handleSaveRole,
@@ -231,6 +312,7 @@ export function useAdminEmployeeManagement({
     handleArchiveEmployee,
     handleRestoreEmployee,
     updateProfilePending: updateProfile.isPending,
+    createEmployeePending: createEmployee.isPending,
     adminResetUserPasswordPending: adminResetUserPassword.isPending,
     updateUserRolePending: updateUserRole.isPending,
     deleteUserRolePending: deleteUserRole.isPending,

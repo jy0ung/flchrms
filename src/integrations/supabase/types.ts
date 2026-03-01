@@ -1122,6 +1122,47 @@ export type Database = {
           },
         ]
       }
+      profile_change_log: {
+        Row: {
+          id: string
+          profile_id: string
+          changed_by: string | null
+          changed_at: string
+          change_type: string
+          field_name: string | null
+          old_value: string | null
+          new_value: string | null
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          changed_by?: string | null
+          changed_at?: string
+          change_type: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          changed_by?: string | null
+          changed_at?: string
+          change_type?: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_change_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1526,6 +1567,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_employee: {
+        Args: {
+          _email: string
+          _password: string
+          _first_name: string
+          _last_name?: string
+          _phone?: string | null
+          _job_title?: string | null
+          _department_id?: string | null
+          _hire_date?: string | null
+          _manager_id?: string | null
+        }
+        Returns: string
+      }
       admin_reset_user_password: {
         Args: { _new_password: string; _target_user_id: string }
         Returns: undefined

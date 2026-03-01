@@ -9,6 +9,7 @@ import {
 export type AdminCapabilities = {
   canAccessAdminPage: boolean;
   canManageEmployeeProfiles: boolean;
+  canCreateEmployee: boolean;
   canManageDepartments: boolean;
   canManageLeaveTypes: boolean;
   canManageRoles: boolean;
@@ -20,6 +21,7 @@ export type AdminCapabilities = {
 
 export function getAdminCapabilities(role: AppRole | null | undefined): AdminCapabilities {
   const canManageEmployeeProfiles = isHr(role) || isDirector(role);
+  const canCreateEmployee = isHr(role) || isDirector(role);
   const canManageDepartments = isAdmin(role) || isHr(role) || isDirector(role);
   const canManageLeaveTypes = isAdmin(role) || isHr(role) || isDirector(role);
   const canManageRoles = isAdmin(role) || isDirector(role);
@@ -29,6 +31,7 @@ export function getAdminCapabilities(role: AppRole | null | undefined): AdminCap
   return {
     canAccessAdminPage: canAccessAdminPage(role),
     canManageEmployeeProfiles,
+    canCreateEmployee,
     canManageDepartments,
     canManageLeaveTypes,
     canManageRoles,

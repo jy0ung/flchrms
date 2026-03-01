@@ -1752,6 +1752,7 @@ CREATE FUNCTION public.handle_new_user() RETURNS trigger
     AS $$
 DECLARE
   default_role app_role := 'employee';
+  user_count   int;
 BEGIN
   -- Create profile
   INSERT INTO public.profiles (id, email, first_name, last_name, employee_id)
@@ -1762,8 +1763,17 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
     'EMP-' || to_char(now(), 'YYYYMMDD') || '-' || substr(NEW.id::text, 1, 4)
   );
-  
-  -- Assign default role
+
+  -- First-user detection: promote to admin if this is the only user
+  SELECT count(*) INTO user_count
+  FROM auth.users
+  WHERE deleted_at IS NULL;
+
+  IF user_count = 1 THEN
+    default_role := 'admin';
+  END IF;
+
+  -- Assign role
   INSERT INTO public.user_roles (user_id, role)
   VALUES (NEW.id, default_role);
   

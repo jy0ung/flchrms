@@ -10,6 +10,8 @@ export type AdminEditProfileForm = {
   department_id: string;
   employee_id: string;
   status: EmployeeStatus;
+  hire_date: string;
+  manager_id: string;
 };
 
 export type AdminResetPasswordForm = {
@@ -20,6 +22,19 @@ export type AdminResetPasswordForm = {
 export type AdminDepartmentForm = {
   name: string;
   description: string;
+};
+
+export type AdminCreateEmployeeForm = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  job_title: string;
+  department_id: string;
+  hire_date: string;
+  manager_id: string;
 };
 
 export type AdminLeaveTypeForm = {

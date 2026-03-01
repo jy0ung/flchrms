@@ -223,6 +223,78 @@ export function useAdminResetUserPassword() {
   });
 }
 
+export interface CreateEmployeeInput {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  job_title?: string | null;
+  department_id?: string | null;
+  hire_date?: string | null;
+  manager_id?: string | null;
+}
+
+export function useCreateEmployee() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateEmployeeInput) => {
+      const { data, error } = await supabase.rpc('admin_create_employee', {
+        _email: input.email.trim(),
+        _password: input.password,
+        _first_name: input.first_name.trim(),
+        _last_name: input.last_name.trim(),
+        _phone: input.phone || null,
+        _job_title: input.job_title || null,
+        _department_id: input.department_id || null,
+        _hire_date: input.hire_date || null,
+        _manager_id: input.manager_id || null,
+      } as Record<string, unknown>);
+
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employee created successfully. They can sign in with the temporary password.');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to create employee', { description: sanitizeErrorMessage(error) });
+    },
+  });
+}
+
+export interface ProfileChangeLogEntry {
+  id: string;
+  profile_id: string;
+  changed_by: string | null;
+  changed_at: string;
+  change_type: 'create' | 'update' | 'archive' | 'restore';
+  field_name: string | null;
+  old_value: string | null;
+  new_value: string | null;
+}
+
+export function useProfileChangeLog(profileId: string | null) {
+  return useQuery({
+    queryKey: ['profile-change-log', profileId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profile_change_log')
+        .select('*')
+        .eq('profile_id', profileId!)
+        .order('changed_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return (data ?? []) as ProfileChangeLogEntry[];
+    },
+    enabled: !!profileId,
+    staleTime: 30000,
+  });
+}
+
 // Silent batch update - no toast notifications for individual updates
 export function useBatchUpdateProfiles() {
   const queryClient = useQueryClient();

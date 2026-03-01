@@ -1,4 +1,4 @@
-import { Edit, KeyRound, RotateCcw, Trash2, Upload } from 'lucide-react';
+import { Download, Edit, KeyRound, Plus, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ interface EmployeesTabSectionProps {
   roleColors: Record<AppRole, string>;
   getUserRole: (userId: string) => AppRole;
   canManageEmployeeProfiles: boolean;
+  canCreateEmployee: boolean;
   canOpenAccountProfileEditor: boolean;
   canResetEmployeePasswords: boolean;
   isAdminLimitedProfileEditor: boolean;
@@ -46,6 +47,8 @@ interface EmployeesTabSectionProps {
   onResetPassword: (employee: Profile) => void;
   onArchiveEmployee: (employee: Profile) => void;
   onRestoreEmployee: (employee: Profile) => void;
+  onCreateEmployee: () => void;
+  onExportEmployees: () => void;
   batchUpdateDialogOpen: boolean;
   onBatchUpdateDialogOpenChange: (open: boolean) => void;
 }
@@ -64,6 +67,7 @@ export function EmployeesTabSection({
   roleColors,
   getUserRole,
   canManageEmployeeProfiles,
+  canCreateEmployee,
   canOpenAccountProfileEditor,
   canResetEmployeePasswords,
   isAdminLimitedProfileEditor,
@@ -74,6 +78,8 @@ export function EmployeesTabSection({
   onResetPassword,
   onArchiveEmployee,
   onRestoreEmployee,
+  onCreateEmployee,
+  onExportEmployees,
   batchUpdateDialogOpen,
   onBatchUpdateDialogOpenChange,
 }: EmployeesTabSectionProps) {
@@ -137,16 +143,38 @@ export function EmployeesTabSection({
               },
             ]}
             actions={
-              canManageEmployeeProfiles ? (
-                <Button
-                  variant="outline"
-                  className="h-9 w-full rounded-full sm:w-auto"
-                  onClick={() => onBatchUpdateDialogOpenChange(true)}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Batch Update
-                </Button>
-              ) : null
+              <div className="flex flex-wrap gap-2">
+                {canCreateEmployee && (
+                  <Button
+                    variant="default"
+                    className="h-9 w-full rounded-full sm:w-auto"
+                    onClick={onCreateEmployee}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Employee
+                  </Button>
+                )}
+                {canManageEmployeeProfiles && (
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full rounded-full sm:w-auto"
+                    onClick={onExportEmployees}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                )}
+                {canManageEmployeeProfiles && (
+                  <Button
+                    variant="outline"
+                    className="h-9 w-full rounded-full sm:w-auto"
+                    onClick={() => onBatchUpdateDialogOpenChange(true)}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Batch Update
+                  </Button>
+                )}
+              </div>
             }
           />
         }

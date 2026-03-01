@@ -20,6 +20,7 @@ import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/
 interface AdminAccountDialogsProps {
   selectedEmployee: Profile | null;
   departments?: Department[];
+  employees?: (Profile & { department: Department | null })[];
   isAdminLimitedProfileEditor: boolean;
   editProfileDialogOpen: boolean;
   onEditProfileDialogOpenChange: (open: boolean) => void;
@@ -47,6 +48,7 @@ interface AdminAccountDialogsProps {
 export function AdminAccountDialogs({
   selectedEmployee,
   departments,
+  employees,
   isAdminLimitedProfileEditor,
   editProfileDialogOpen,
   onEditProfileDialogOpenChange,
@@ -228,6 +230,38 @@ export function AdminAccountDialogs({
                         <SelectItem value="inactive">Inactive</SelectItem>
                         <SelectItem value="on_leave">On Leave</SelectItem>
                         <SelectItem value="terminated">Terminated</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hire_date">Hire Date</Label>
+                    <Input
+                      id="hire_date"
+                      type="date"
+                      value={editForm.hire_date}
+                      onChange={(e) => onEditFormChange({ ...editForm, hire_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="manager">Manager</Label>
+                    <Select
+                      value={editForm.manager_id}
+                      onValueChange={(value) => onEditFormChange({ ...editForm, manager_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Manager</SelectItem>
+                        {employees
+                          ?.filter((emp) => emp.id !== selectedEmployee?.id)
+                          .map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.first_name} {emp.last_name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

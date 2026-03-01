@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
@@ -51,6 +51,12 @@ const PageLoadingFallback = () => (
   </div>
 );
 
+/** Passes location.pathname as resetKey so the error boundary clears on navigation. */
+function LocationAwareErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return <RouteErrorBoundary resetKey={location.pathname}>{children}</RouteErrorBoundary>;
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
     <QueryClientProvider client={queryClient}>
@@ -58,7 +64,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <RouteErrorBoundary>
+            <LocationAwareErrorBoundary>
               <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -94,7 +100,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-          </RouteErrorBoundary>
+          </LocationAwareErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

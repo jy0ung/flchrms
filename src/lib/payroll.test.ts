@@ -13,9 +13,10 @@ describe('payroll helpers', () => {
   });
 
   it('handles partial overlap when leave starts before payroll period', () => {
+    // Overlap: Feb 1 (Sun) – Feb 2 (Mon) → 1 working day
     expect(
       calculateOverlappingLeaveDays('2026-02-01', '2026-02-28', '2026-01-30', '2026-02-02'),
-    ).toBe(2);
+    ).toBe(1);
   });
 
   it('returns zero when leave is outside payroll period', () => {

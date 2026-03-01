@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 
 interface RouteErrorBoundaryProps {
   children: ReactNode;
+  /** When this key changes, the error state resets (e.g. pass location.pathname). */
+  resetKey?: string;
 }
 
 interface RouteErrorBoundaryState {
@@ -24,6 +26,12 @@ export class RouteErrorBoundary extends Component<
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Route rendering error:', error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps: RouteErrorBoundaryProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   private handleReset = () => {

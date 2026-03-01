@@ -9,6 +9,7 @@ describe('admin-permissions', () => {
     expect(caps.canManageRoles).toBe(true);
     expect(caps.canResetEmployeePasswords).toBe(true);
     expect(caps.canManageEmployeeProfiles).toBe(false);
+    expect(caps.canCreateEmployee).toBe(false);
     expect(caps.canManageDepartments).toBe(true);
     expect(caps.canManageLeaveTypes).toBe(true);
     expect(caps.canOpenAccountProfileEditor).toBe(true);
@@ -21,6 +22,7 @@ describe('admin-permissions', () => {
 
     expect(caps.canAccessAdminPage).toBe(true);
     expect(caps.canManageEmployeeProfiles).toBe(true);
+    expect(caps.canCreateEmployee).toBe(true);
     expect(caps.canManageDepartments).toBe(true);
     expect(caps.canManageLeaveTypes).toBe(true);
     expect(caps.canManageRoles).toBe(false);
@@ -34,6 +36,7 @@ describe('admin-permissions', () => {
 
     expect(caps.canAccessAdminPage).toBe(true);
     expect(caps.canManageEmployeeProfiles).toBe(true);
+    expect(caps.canCreateEmployee).toBe(true);
     expect(caps.canManageDepartments).toBe(true);
     expect(caps.canManageLeaveTypes).toBe(true);
     expect(caps.canManageRoles).toBe(true);
@@ -46,6 +49,9 @@ describe('admin-permissions', () => {
     expect(getAdminCapabilities('manager').canAccessAdminPage).toBe(false);
     expect(getAdminCapabilities('employee').canAccessAdminPage).toBe(false);
     expect(getAdminCapabilities(null).canAccessAdminPage).toBe(false);
+    // Employee and manager cannot create employees
+    expect(getAdminCapabilities('employee').canCreateEmployee).toBe(false);
+    expect(getAdminCapabilities('manager').canCreateEmployee).toBe(false);
   });
 
   it('returns expected role summaries', () => {

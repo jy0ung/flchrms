@@ -135,6 +135,29 @@ ssh root@server "cd /opt/flchrms && sudo bash scripts/deploy.sh --local /opt/flc
 
 ---
 
+## First-Time Setup — Admin Bootstrap
+
+On a **fresh deployment with zero users**, the first person to sign up is automatically promoted to the **admin** role. All subsequent signups receive the default `employee` role.
+
+### How it works
+
+The `handle_new_user()` database trigger checks whether the signing-up user is the only user in the system (`SELECT count(*) FROM auth.users WHERE deleted_at IS NULL`). If count = 1, the user is assigned the `admin` role instead of `employee`.
+
+### Recommended procedure
+
+1. Complete the deployment steps above (Supabase project + frontend deploy).
+2. Navigate to the app and **sign up** with the intended administrator's email and a strong password.
+3. Verify admin access: after signing in, the **Admin** page should be accessible in the sidebar.
+4. Use the Admin panel to create additional users or let employees self-register (they will receive the `employee` role).
+
+### Security notes
+
+- The promotion logic is **inherently one-shot** — once any user exists, all future signups get `employee`.
+- There is no hardcoded password, no bootstrap script to run, and no service role key exposed.
+- If you need to demote or reassign the first admin, update `user_roles` directly in the Supabase SQL editor.
+
+---
+
 ## Troubleshooting
 
 | Issue | Solution |

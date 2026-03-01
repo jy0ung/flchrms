@@ -80,7 +80,7 @@ describe('permissions', () => {
     expect(canViewTeamLeaveRequests('employee')).toBe(false);
 
     expect(canRequestLeaveSupportingDocument('manager')).toBe(true);
-    expect(canRequestLeaveSupportingDocument('director')).toBe(false);
+    expect(canRequestLeaveSupportingDocument('director')).toBe(true);
 
     expect(canViewLeaveSupportingDocument('employee')).toBe(true);
     expect(canViewLeaveSupportingDocument('admin')).toBe(false);

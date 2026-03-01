@@ -37,6 +37,7 @@ import {
 import { AdminTabsShell } from '@/components/admin/AdminTabsShell';
 import { EmployeesTabSection } from '@/components/admin/EmployeesTabSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
+import { CreateEmployeeDialog } from '@/components/admin/CreateEmployeeDialog';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { DepartmentsTabSection } from '@/components/admin/DepartmentsTabSection';
 import { RolesTabSection } from '@/components/admin/RolesTabSection';
@@ -100,6 +101,7 @@ export default function Admin() {
 
   const {
     canManageEmployeeProfiles,
+    canCreateEmployee,
     canManageDepartments,
     canManageLeaveTypes,
     canManageRoles,
@@ -124,6 +126,10 @@ export default function Admin() {
     setEditRoleDialogOpen,
     resetPasswordDialogOpen,
     closeResetPasswordDialog,
+    createEmployeeDialogOpen,
+    setCreateEmployeeDialogOpen,
+    createEmployeeForm,
+    setCreateEmployeeForm,
     editForm,
     setEditForm,
     resetPasswordForm,
@@ -131,6 +137,8 @@ export default function Admin() {
     handleEditProfile,
     handleEditRole,
     openResetPasswordDialog,
+    openCreateEmployeeDialog,
+    handleCreateEmployee,
     handleSaveProfile,
     handleResetUserPassword,
     handleSaveRole,
@@ -138,6 +146,7 @@ export default function Admin() {
     handleArchiveEmployee,
     handleRestoreEmployee,
     updateProfilePending,
+    createEmployeePending,
     adminResetUserPasswordPending,
     updateUserRolePending,
     deleteUserRolePending,
@@ -385,6 +394,43 @@ export default function Admin() {
     resetAdminStatsLayoutState(user.id, normalizedRole);
   }, [normalizedRole, user?.id]);
 
+  const handleExportEmployees = useCallback(() => {
+    const data = filteredEmployees ?? employees ?? [];
+    if (data.length === 0) return;
+
+    const headers = ['employee_id', 'first_name', 'last_name', 'email', 'username', 'phone', 'job_title', 'department', 'status', 'hire_date', 'manager'];
+    const managerLookup = new Map(
+      (employees ?? []).map((emp) => [emp.id, `${emp.first_name} ${emp.last_name}`]),
+    );
+
+    const csvRows = data.map((emp) => [
+      emp.employee_id ?? '',
+      emp.first_name,
+      emp.last_name,
+      emp.email,
+      emp.username,
+      emp.phone ?? '',
+      emp.job_title ?? '',
+      emp.department?.name ?? '',
+      emp.status,
+      emp.hire_date ?? '',
+      emp.manager_id ? (managerLookup.get(emp.manager_id) ?? emp.manager_id) : '',
+    ]);
+
+    const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
+    const csvContent = [
+      headers.join(','),
+      ...csvRows.map((row) => row.map(escape).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `employees_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, [employees, filteredEmployees]);
+
   // Restrict access to director/admin/hr
   if (!capabilities.canAccessAdminPage) {
     return <Navigate to="/dashboard" replace />;
@@ -502,6 +548,7 @@ export default function Admin() {
               roleColors={roleColors}
               getUserRole={getUserRole}
               canManageEmployeeProfiles={canManageEmployeeProfiles}
+              canCreateEmployee={canCreateEmployee}
               canOpenAccountProfileEditor={canOpenAccountProfileEditor}
               canResetEmployeePasswords={canResetEmployeePasswords}
               isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
@@ -512,6 +559,8 @@ export default function Admin() {
               onResetPassword={openResetPasswordDialog}
               onArchiveEmployee={handleArchiveEmployee}
               onRestoreEmployee={handleRestoreEmployee}
+              onCreateEmployee={openCreateEmployeeDialog}
+              onExportEmployees={handleExportEmployees}
               batchUpdateDialogOpen={batchUpdateDialogOpen}
               onBatchUpdateDialogOpenChange={setBatchUpdateDialogOpen}
             />
@@ -660,6 +709,7 @@ export default function Admin() {
         <AdminAccountDialogs
           selectedEmployee={selectedEmployee}
           departments={departments}
+          employees={employees}
           isAdminLimitedProfileEditor={isAdminLimitedProfileEditor}
           editProfileDialogOpen={editProfileDialogOpen}
           onEditProfileDialogOpenChange={setEditProfileDialogOpen}
@@ -682,6 +732,17 @@ export default function Admin() {
           onDeleteRole={handleDeleteRole}
           updateRolePending={updateUserRolePending}
           deleteRolePending={deleteUserRolePending}
+        />
+
+        <CreateEmployeeDialog
+          open={createEmployeeDialogOpen}
+          onOpenChange={setCreateEmployeeDialogOpen}
+          form={createEmployeeForm}
+          onFormChange={setCreateEmployeeForm}
+          onSubmit={handleCreateEmployee}
+          isPending={createEmployeePending}
+          departments={departments}
+          employees={employees}
         />
 
         <AdminDepartmentDialogs

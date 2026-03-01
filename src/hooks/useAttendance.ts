@@ -11,19 +11,21 @@ export function useTodayAttendance() {
   const today = format(new Date(), 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: ['attendance', 'today', user?.id],
+    queryKey: ['attendance', 'today', user?.id, today],
     queryFn: async () => {
+      const currentDate = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('attendance')
         .select('*')
         .eq('employee_id', user!.id)
-        .eq('date', today)
+        .eq('date', currentDate)
         .maybeSingle();
       
       if (error) throw error;
       return data as Attendance | null;
     },
     enabled: !!user,
+    refetchOnWindowFocus: true,
   });
 }
 

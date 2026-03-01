@@ -40,15 +40,17 @@ export interface ExecutiveStats {
 export function useExecutiveStats() {
   const { user, role, profile } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
-  const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
   
   const isManager = isManagerRole(role);
   const isExecutiveViewer = canQueryExecutiveStats(role) && !isManager;
 
   return useQuery({
-    queryKey: ['executive-stats', user?.id, role, profile?.department_id],
+    queryKey: ['executive-stats', user?.id, role, profile?.department_id, today],
     queryFn: async (): Promise<ExecutiveStats> => {
+      // Recompute date boundaries inside queryFn for freshness
+      const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
       // Determine department scope for managers
       const departmentId = isManager && profile?.department_id ? profile.department_id : null;
 
@@ -250,5 +252,6 @@ export function useExecutiveStats() {
     },
     enabled: !!user && (isManager || isExecutiveViewer),
     staleTime: 60000, // Cache for 1 minute
+    refetchOnWindowFocus: true,
   });
 }
