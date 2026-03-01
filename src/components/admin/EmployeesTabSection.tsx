@@ -249,7 +249,7 @@ export function EmployeesTabSection({
       <BatchUpdateDialog
         open={batchUpdateDialogOpen}
         onOpenChange={onBatchUpdateDialogOpenChange}
-        employees={employees}
+        employees={employees as (Profile & { department: Department | null })[]}
         departments={departments}
       />
     </div>

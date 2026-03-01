@@ -32,7 +32,7 @@ interface LeaveDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   request: LeaveRequest | null;
-  role: string | null;
+  role: import('@/lib/permissions').MaybeRole;
   actorsLoading: boolean;
   eventsLoading: boolean;
   approvalTimelineEvents: TimelineDisplayEvent[];
