@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database, Json } from '@/integrations/supabase/types';
 import { Profile, Department } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 type ProfileUpdateInput = Partial<Profile> & { username?: string | null };
 type EmployeeDirectoryProfileRow =
@@ -103,7 +104,7 @@ export function useCreateDepartment() {
       toast.success('Department created successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create department: ' + error.message);
+      toast.error('Failed to create department', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -138,7 +139,7 @@ export function useUpdateDepartment() {
       toast.success('Department updated successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update department: ' + error.message);
+      toast.error('Failed to update department', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -172,7 +173,7 @@ export function useDeleteDepartment() {
       toast.success('Department deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete department: ' + error.message);
+      toast.error('Failed to delete department', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -198,7 +199,7 @@ export function useUpdateProfile() {
       toast.success('Profile updated successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update profile: ' + error.message);
+      toast.error('Failed to update profile', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -217,7 +218,7 @@ export function useAdminResetUserPassword() {
       toast.success('Password reset successfully. Existing sessions were signed out.');
     },
     onError: (error: Error) => {
-      toast.error('Failed to reset password: ' + error.message);
+      toast.error('Failed to reset password', { description: sanitizeErrorMessage(error) });
     },
   });
 }

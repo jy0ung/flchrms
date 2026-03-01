@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
@@ -47,8 +47,14 @@ export function AppLayout() {
 
   return (
     <div className="relative flex min-h-screen w-full bg-transparent">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <AppSidebar />
-      <main className="relative flex-1 overflow-auto">
+      <main id="main-content" className="relative flex-1 overflow-auto">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
           <div className="absolute right-0 top-20 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />

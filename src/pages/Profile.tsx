@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateMyProfile } from '@/hooks/useProfileSettings';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { NotificationSettingsCard } from '@/components/notifications/NotificationSettingsCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -81,19 +81,15 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (isAdminRestrictedEditor) {
-      toast({
-        title: 'Profile updates restricted',
+      toast.error('Profile updates restricted', {
         description: 'System Admin profile edits are limited. Use HR Admin for username alias management.',
-        variant: 'destructive',
       });
       return;
     }
 
     if (!form.first_name.trim() || !form.last_name.trim()) {
-      toast({
-        title: 'Missing required fields',
+      toast.error('Missing required fields', {
         description: 'First name and last name are required.',
-        variant: 'destructive',
       });
       return;
     }
@@ -104,16 +100,13 @@ export default function Profile() {
         last_name: form.last_name,
         phone: form.phone.trim() || null,
       });
-      toast({
-        title: 'Profile updated',
+      toast.success('Profile updated', {
         description: 'Your profile information has been saved.',
       });
     } catch (error) {
       console.error('Failed to update profile:', error);
-      toast({
-        title: 'Unable to update profile',
+      toast.error('Unable to update profile', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TrainingProgram, TrainingEnrollment } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 export function useTrainingPrograms() {
   return useQuery({
@@ -64,7 +65,7 @@ export function useEnrollInProgram() {
       toast.success('Enrolled in training program');
     },
     onError: (error: Error) => {
-      toast.error('Failed to enroll: ' + error.message);
+      toast.error('Failed to enroll', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -92,7 +93,7 @@ export function useCreateTrainingProgram() {
       toast.success('Training program created');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create program: ' + error.message);
+      toast.error('Failed to create program', { description: sanitizeErrorMessage(error) });
     },
   });
 }

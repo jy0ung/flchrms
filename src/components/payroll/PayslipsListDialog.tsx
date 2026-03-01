@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +19,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
   const { data: payslips, isLoading } = usePayslips(period?.id);
   const updateStatus = useUpdatePayslipStatus();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
 
   if (!period) return null;
@@ -26,7 +27,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
   const filteredPayslips = payslips?.filter(p => {
     const name = `${p.employee?.first_name} ${p.employee?.last_name}`.toLowerCase();
     const empId = p.employee?.employee_id?.toLowerCase() || '';
-    return name.includes(search.toLowerCase()) || empId.includes(search.toLowerCase());
+    return name.includes(deferredSearch.toLowerCase()) || empId.includes(deferredSearch.toLowerCase());
   });
 
   const totalGross = payslips?.reduce((sum, p) => sum + p.gross_salary, 0) || 0;

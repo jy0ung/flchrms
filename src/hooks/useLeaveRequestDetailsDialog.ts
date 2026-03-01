@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { LeaveRequest } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 type LeaveRequestEventRow = Database['public']['Tables']['leave_request_events']['Row'];
 
@@ -232,7 +233,7 @@ export function useLeaveRequestDetailsDialog() {
     setEventsLoading(false);
 
     if (eventsError) {
-      toast.error(`Failed to load leave event history: ${eventsError.message}`);
+      toast.error('Failed to load leave event history', { description: sanitizeErrorMessage(eventsError) });
     } else {
       setEvents((eventRows || []) as LeaveRequestEventRow[]);
     }
@@ -251,7 +252,7 @@ export function useLeaveRequestDetailsDialog() {
     setActorsLoading(false);
 
     if (error) {
-      toast.error(`Failed to load leave details: ${error.message}`);
+      toast.error('Failed to load leave details', { description: sanitizeErrorMessage(error) });
       return;
     }
 

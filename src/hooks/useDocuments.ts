@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 export type DocumentCategory = 'contract' | 'certificate' | 'official' | 'other';
 
@@ -37,7 +38,8 @@ export function useDocuments(employeeId?: string) {
           *,
           employee:profiles!documents_employee_id_fkey(id, first_name, last_name, email)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
 
       if (employeeId) {
         query = query.eq('employee_id', employeeId);
@@ -106,7 +108,7 @@ export function useUploadDocument() {
       toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to upload document: ' + error.message);
+      toast.error('Failed to upload document', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -136,7 +138,7 @@ export function useDeleteDocument() {
       toast.success('Document deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete document: ' + error.message);
+      toast.error('Failed to delete document', { description: sanitizeErrorMessage(error) });
     },
   });
 }

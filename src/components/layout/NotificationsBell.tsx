@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Loader2, Settings2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   useNotificationPreferences,
@@ -185,10 +185,8 @@ export function NotificationsBell({
       await updateCategoryEnabled(category, enabled);
     } catch (error) {
       console.error('Failed to update notification preferences:', error);
-      toast({
-        title: 'Unable to update preferences',
+      toast.error('Unable to update preferences', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };

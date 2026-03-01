@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useDeferredValue, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocuments, useUploadDocument, useDeleteDocument, useGetDocumentSignedUrl, DocumentCategory, Document } from '@/hooks/useDocuments';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -35,6 +35,7 @@ export default function Documents() {
   const { role, user } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | 'all'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
@@ -55,8 +56,8 @@ export default function Documents() {
   });
 
   const filteredDocuments = documents?.filter((doc) => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.file_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = doc.title.toLowerCase().includes(deferredSearchTerm.toLowerCase()) ||
+      doc.file_name.toLowerCase().includes(deferredSearchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });

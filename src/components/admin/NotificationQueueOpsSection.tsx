@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { differenceInMinutes, formatDistanceToNow } from 'date-fns';
 import {
   Loader2,
@@ -25,7 +25,7 @@ import {
   type NotificationQueueSummary,
   type NotificationWorkerRunSummary,
 } from '@/hooks/useNotificationQueueOps';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { canAccessAdminPage } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -425,16 +425,13 @@ export function NotificationQueueOpsSection() {
   const handleRequeue = async (row: NotificationQueueItemWithUser) => {
     try {
       await requeueItem(row.id, 0);
-      toast({
-        title: 'Queue item requeued',
+      toast.success('Queue item requeued', {
         description: `Email notification for ${row.recipient_email} was requeued.`,
       });
     } catch (error) {
       console.error('Failed to requeue notification email:', error);
-      toast({
-        title: 'Unable to requeue item',
+      toast.error('Unable to requeue item', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };
@@ -442,16 +439,13 @@ export function NotificationQueueOpsSection() {
   const handleDiscard = async (row: NotificationQueueItemWithUser) => {
     try {
       await discardItem(row.id, 'discarded from HR Admin queue ops');
-      toast({
-        title: 'Queue item discarded',
+      toast.success('Queue item discarded', {
         description: `Email notification for ${row.recipient_email} was discarded.`,
       });
     } catch (error) {
       console.error('Failed to discard notification email:', error);
-      toast({
-        title: 'Unable to discard item',
+      toast.error('Unable to discard item', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };
@@ -467,8 +461,7 @@ export function NotificationQueueOpsSection() {
 
   const resetQueueAlertThresholds = () => {
     setQueueAlertThresholds(DEFAULT_QUEUE_ALERT_THRESHOLDS);
-    toast({
-      title: 'Queue alert thresholds reset',
+    toast.success('Queue alert thresholds reset', {
       description: 'Queue health alerts are using the default thresholds again.',
     });
   };

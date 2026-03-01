@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, LeaveApprovalStage, LeaveCancellationWorkflow } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import {
   DEFAULT_LEAVE_CANCELLATION_WORKFLOW_BY_REQUESTER_ROLE,
   normalizeLeaveCancellationApprovalStages,
@@ -90,7 +91,7 @@ export function useUpsertLeaveCancellationWorkflow() {
       toast.success('Leave cancellation workflow updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update leave cancellation workflow: ' + error.message);
+      toast.error('Failed to update leave cancellation workflow', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -134,7 +135,7 @@ export function useResetLeaveCancellationWorkflows() {
       toast.success('Leave cancellation workflows reset to defaults');
     },
     onError: (error: Error) => {
-      toast.error('Failed to reset leave cancellation workflows: ' + error.message);
+      toast.error('Failed to reset leave cancellation workflows', { description: sanitizeErrorMessage(error) });
     },
   });
 }

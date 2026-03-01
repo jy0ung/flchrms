@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Announcement } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 export function useAnnouncements() {
   return useQuery({
@@ -48,7 +49,7 @@ export function useCreateAnnouncement() {
       toast.success('Announcement published');
     },
     onError: (error: Error) => {
-      toast.error('Failed to publish announcement: ' + error.message);
+      toast.error('Failed to publish announcement', { description: sanitizeErrorMessage(error) });
     },
   });
 }

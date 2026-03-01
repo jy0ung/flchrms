@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -25,6 +25,12 @@ dist-ssr
 playwright-report/
 .playwright-cli/
 test-results/
+
+# Environment variables — only .env.example should be tracked
+.env
+.env.*
+!.env.example
 .env.e2e.test-seed
+
 supabase/backups/
 supabase/.temp/

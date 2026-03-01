@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, LeaveApprovalStage, LeaveApprovalWorkflow } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import {
   DEFAULT_LEAVE_APPROVAL_WORKFLOW_BY_REQUESTER_ROLE,
   normalizeLeaveApprovalStages,
@@ -90,7 +91,7 @@ export function useUpsertLeaveApprovalWorkflow() {
       toast.success('Leave approval workflow updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update leave approval workflow: ' + error.message);
+      toast.error('Failed to update leave approval workflow', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -134,7 +135,7 @@ export function useResetLeaveApprovalWorkflows() {
       toast.success('Leave approval workflows reset to defaults');
     },
     onError: (error: Error) => {
-      toast.error('Failed to reset leave approval workflows: ' + error.message);
+      toast.error('Failed to reset leave approval workflows', { description: sanitizeErrorMessage(error) });
     },
   });
 }

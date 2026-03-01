@@ -1,4 +1,4 @@
-import { useEmployees } from '@/hooks/useEmployees';
+﻿import { useEmployees } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Users, Mail, Building, LayoutGrid, List } from 'lucide-react';
-import { useState, type KeyboardEvent } from 'react';
+import { useDeferredValue, useState, type KeyboardEvent } from 'react';
 import { Profile, Department, AppRole } from '@/types/hrms';
 import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
@@ -24,14 +24,15 @@ export default function Employees() {
   const { data: employees, isLoading } = useEmployees();
   const { data: userRoles } = useUserRoles();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [selectedEmployee, setSelectedEmployee] = useState<(Profile & { department: Department | null }) | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   const filteredEmployees = employees?.filter(emp => 
-    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-    emp.email.toLowerCase().includes(search.toLowerCase()) ||
-    emp.job_title?.toLowerCase().includes(search.toLowerCase())
+    `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+    emp.email.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+    emp.job_title?.toLowerCase().includes(deferredSearch.toLowerCase())
   );
 
   const getUserRole = (userId: string): AppRole => {

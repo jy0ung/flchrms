@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,6 +30,7 @@ export function SalaryManagement({
   const { data: salaries, isLoading: salariesLoading } = useSalaryStructures();
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [internalShowCreateDialog, setInternalShowCreateDialog] = useState(false);
   const [editingSalary, setEditingSalary] = useState<SalaryStructureWithEmployee | null>(null);
   const salaryRows = (salaries || []) as SalaryStructureWithEmployee[];
@@ -41,7 +42,7 @@ export function SalaryManagement({
   const filteredSalaries = salaryRows.filter((salary) => {
     const name = `${salary.employee?.first_name || ''} ${salary.employee?.last_name || ''}`.toLowerCase();
     const empId = salary.employee?.employee_id?.toLowerCase() || '';
-    return name.includes(search.toLowerCase()) || empId.includes(search.toLowerCase());
+    return name.includes(deferredSearch.toLowerCase()) || empId.includes(deferredSearch.toLowerCase());
   });
 
   // Only show active employees without salary structures in the dropdown

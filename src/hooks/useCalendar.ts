@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { format, parseISO } from 'date-fns';
 
 export interface Holiday {
@@ -106,7 +107,7 @@ export function useCreateHoliday() {
       toast.success('Holiday added successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to add holiday: ' + error.message);
+      toast.error('Failed to add holiday', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -128,7 +129,7 @@ export function useDeleteHoliday() {
       toast.success('Holiday deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete holiday: ' + error.message);
+      toast.error('Failed to delete holiday', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -184,7 +185,7 @@ export function useCreateDepartmentEvent() {
       toast.success('Event created successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create event: ' + error.message);
+      toast.error('Failed to create event', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -206,7 +207,7 @@ export function useDeleteDepartmentEvent() {
       toast.success('Event deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete event: ' + error.message);
+      toast.error('Failed to delete event', { description: sanitizeErrorMessage(error) });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import {
   useNotificationPreferences,
   type NotificationPreferenceCategory,
 } from '@/hooks/useNotifications';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { CardHeaderStandard } from '@/components/system';
 import {
   getFloatingNotificationsVisible,
@@ -58,10 +58,8 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
       await updateCategoryEnabled(category, enabled);
     } catch (error) {
       console.error('Failed to update notification preferences:', error);
-      toast({
-        title: 'Unable to update preferences',
+      toast.error('Unable to update preferences', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };
@@ -74,10 +72,8 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
       await updateEmailCategoryEnabled(category, enabled);
     } catch (error) {
       console.error('Failed to update email notification preferences:', error);
-      toast({
-        title: 'Unable to update email preferences',
+      toast.error('Unable to update email preferences', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };

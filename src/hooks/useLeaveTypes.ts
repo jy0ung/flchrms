@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LeaveType } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 export function useLeaveTypes() {
   return useQuery({
@@ -51,7 +52,7 @@ export function useCreateLeaveType() {
       toast.success('Leave type created successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create leave type: ' + error.message);
+      toast.error('Failed to create leave type', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -82,7 +83,7 @@ export function useUpdateLeaveType() {
       toast.success('Leave policy updated successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update leave policy: ' + error.message);
+      toast.error('Failed to update leave policy', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -117,7 +118,7 @@ export function useDeleteLeaveType() {
       toast.success('Leave type deleted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete leave type: ' + error.message);
+      toast.error('Failed to delete leave type', { description: sanitizeErrorMessage(error) });
     },
   });
 }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppRole, LeaveApprovalStage, LeaveCancellationStatus, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import {
   buildLeaveApprovalUpdate,
   buildLeaveCancellationApprovalUpdate,
@@ -23,7 +24,8 @@ export function useLeaveRequests() {
           employee:profiles!leave_requests_employee_id_fkey(id, first_name, last_name, email, department_id),
           leave_type:leave_types(*)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
       
       if (error) throw error;
       return data as LeaveRequest[];
@@ -68,7 +70,7 @@ export function useCreateLeaveRequest() {
       toast.success('Leave request submitted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to submit leave request: ' + error.message);
+      toast.error('Failed to submit leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -190,7 +192,7 @@ export function useApproveLeaveRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process leave request: ' + error.message);
+      toast.error('Failed to process leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -228,7 +230,7 @@ export function useAmendLeaveRequest() {
       toast.success('Leave request amended and resubmitted');
     },
     onError: (error: Error) => {
-      toast.error('Failed to amend leave request: ' + error.message);
+      toast.error('Failed to amend leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -266,7 +268,7 @@ export function useCancelLeaveRequest() {
       toast.success('Leave cancellation request submitted');
     },
     onError: (error: Error) => {
-      toast.error('Failed to cancel leave request: ' + error.message);
+      toast.error('Failed to cancel leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -393,7 +395,7 @@ export function useProcessLeaveCancellationRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process cancellation request: ' + error.message);
+      toast.error('Failed to process cancellation request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -426,7 +428,7 @@ export function useUploadLeaveDocument() {
       return filePath;
     },
     onError: (error: Error) => {
-      toast.error('Failed to upload document: ' + error.message);
+      toast.error('Failed to upload document', { description: sanitizeErrorMessage(error) });
     },
   });
 }

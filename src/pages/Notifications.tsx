@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,7 +21,7 @@ import {
   type NotificationReadFilter,
   type UserNotification,
 } from '@/hooks/useNotifications';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
@@ -214,8 +214,7 @@ export default function Notifications() {
   const handleCleanupReadNotifications = async () => {
     try {
       const deletedCount = await deleteNotifications({ olderThanDays: cleanupDays, readOnly: true });
-      toast({
-        title: 'Cleanup complete',
+      toast.success('Cleanup complete', {
         description:
           deletedCount > 0
             ? `Deleted ${deletedCount} read notification(s) older than ${cleanupDays} days.`
@@ -223,10 +222,8 @@ export default function Notifications() {
       });
     } catch (error) {
       console.error('Failed to delete old notifications:', error);
-      toast({
-        title: 'Unable to clean up notifications',
+      toast.error('Unable to clean up notifications', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };

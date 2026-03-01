@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, Profile } from '@/types/hrms';
@@ -141,15 +141,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Track whether the initial getSession has resolved to avoid
+    // duplicate fetchProfile calls from the auth state listener.
+    let initialSessionResolved = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => {
+          // Only fetch profile from the listener once the initial
+          // getSession has completed — otherwise both paths race.
+          if (initialSessionResolved) {
             fetchProfile(session.user.id);
-          }, 0);
+          }
         } else {
           setProfile(null);
           setRole(null);
@@ -166,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
       }
       setIsLoading(false);
+      initialSessionResolved = true;
     });
 
     return () => subscription.unsubscribe();

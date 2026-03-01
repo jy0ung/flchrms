@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { 
   SalaryStructure, 
   DeductionTypeRecord, 
@@ -86,7 +87,8 @@ export function useSalaryStructures() {
         .from('salary_structures')
         .select('*')
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
       
       if (salaryError) throw salaryError;
       if (!salaries?.length) return [];
@@ -161,7 +163,7 @@ export function useCreateSalaryStructure() {
       toast.success('Salary structure created');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create salary structure: ' + error.message);
+      toast.error('Failed to create salary structure', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -187,11 +189,10 @@ export function useUpdateSalaryStructure() {
       toast.success('Salary structure updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update salary structure: ' + error.message);
+      toast.error('Failed to update salary structure', { description: sanitizeErrorMessage(error) });
     },
   });
 }
-
 // Deduction Types
 export function useDeductionTypes() {
   return useQuery({
@@ -228,7 +229,7 @@ export function useCreateDeductionType() {
       toast.success('Deduction type created');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create deduction type: ' + error.message);
+      toast.error('Failed to create deduction type', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -277,7 +278,7 @@ export function useUpsertEmployeeDeduction() {
       toast.success('Deduction updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update deduction: ' + error.message);
+      toast.error('Failed to update deduction', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -318,7 +319,7 @@ export function useCreatePayrollPeriod() {
       toast.success('Payroll period created');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create payroll period: ' + error.message);
+      toast.error('Failed to create payroll period', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -344,7 +345,7 @@ export function useUpdatePayrollPeriod() {
       toast.success('Payroll period updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update payroll period: ' + error.message);
+      toast.error('Failed to update payroll period', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -408,7 +409,6 @@ export function useMyPayslips() {
     enabled: !!user,
   });
 }
-
 export function useGeneratePayslips() {
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<PayrollGenerationProgressState>(
@@ -735,7 +735,7 @@ export function useGeneratePayslips() {
         error: error.message,
       }));
       scheduleProgressClear(3000);
-      toast.error('Failed to generate payslips: ' + error.message);
+      toast.error('Failed to generate payslips', { description: sanitizeErrorMessage(error) });
     },
   });
 
@@ -777,7 +777,7 @@ export function useUpdatePayslipStatus() {
       toast.success('Payslip status updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update payslip status: ' + error.message);
+      toast.error('Failed to update payslip status', { description: sanitizeErrorMessage(error) });
     },
   });
 }

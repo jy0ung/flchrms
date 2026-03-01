@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Attendance } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { format } from 'date-fns';
 
 export function useTodayAttendance() {
@@ -36,7 +37,8 @@ export function useAttendanceHistory(startDate?: string, endDate?: string) {
         .from('attendance')
         .select('*')
         .eq('employee_id', user!.id)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .limit(500);
 
       if (startDate) query = query.gte('date', startDate);
       if (endDate) query = query.lte('date', endDate);
@@ -82,7 +84,7 @@ export function useClockIn() {
       toast.success('Clocked in successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to clock in: ' + error.message);
+      toast.error('Failed to clock in', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -114,7 +116,7 @@ export function useClockOut() {
       toast.success('Clocked out successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to clock out: ' + error.message);
+      toast.error('Failed to clock out', { description: sanitizeErrorMessage(error) });
     },
   });
 }

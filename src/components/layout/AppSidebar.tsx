@@ -1,4 +1,4 @@
-import { type ComponentType, useState } from 'react';
+﻿import { type ComponentType, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   BarChart3,
@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ThemeToggle } from './ThemeToggle';
 
 type SidebarNavItem = {
   name: string;
@@ -128,15 +129,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sidebar-primary to-cyan-300 shadow-[0_10px_20px_rgba(0,0,0,0.18)]">
           <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-bold text-sidebar-primary-foreground">FLC-HRMS</h1>
           <p className="text-xs tracking-wide text-sidebar-foreground/55">Fook Loi Corp</p>
         </div>
+        <ThemeToggle />
       </div>
 
       <Separator className="mx-3 bg-sidebar-border/80" />
 
-      <nav className="flex-1 space-y-4 overflow-y-auto p-3 scrollbar-thin">
+      <nav aria-label="Main navigation" className="flex-1 space-y-4 overflow-y-auto p-3 scrollbar-thin">
         <SidebarNavSection label="Main Menu" items={mainNavigation} onNavigate={onNavigate} />
         <SidebarNavSection label="HR Operations" items={scopedOperations} onNavigate={onNavigate} />
         <SidebarNavSection label="Development" items={developmentNavigation} onNavigate={onNavigate} />
