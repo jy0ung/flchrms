@@ -23,7 +23,7 @@ type LeaveCancellationBadge = {
 interface TeamLeaveRequestsTableProps {
   requests: LeaveRequest[];
   emptyMessage: string;
-  role: string | null;
+  role: import('@/lib/permissions').MaybeRole;
   getStatusDisplay: (request: LeaveRequest) => LeaveStatusDisplay;
   getCancellationBadge: (request: LeaveRequest) => LeaveCancellationBadge;
   shouldShowLeaveDetailsButton: (request: LeaveRequest) => boolean;

@@ -171,7 +171,7 @@ export function useUserNotifications(limitCount = 15) {
       await markUnreadMutation.mutateAsync([notificationId]);
     },
     markAllNotificationsRead: async () => {
-      await markReadMutation.mutateAsync();
+      await markReadMutation.mutateAsync(undefined);
     },
   };
 }
@@ -243,7 +243,7 @@ export function useNotificationHistory({
       await markUnreadMutation.mutateAsync([notificationId]);
     },
     markAllNotificationsRead: async () => {
-      await markReadMutation.mutateAsync();
+      await markReadMutation.mutateAsync(undefined);
     },
   };
 }

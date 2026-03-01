@@ -236,7 +236,7 @@ function resolveEmailProviderId(body: { provider?: string; mode?: string }): Ema
 }
 
 async function processQueueItem(
-  supabaseAdmin: ReturnType<typeof createClient>,
+  supabaseAdmin: ReturnType<typeof createClient<any>>,
   queueItem: QueueItem,
   options: {
     provider: EmailProviderAdapter
