@@ -55,6 +55,7 @@ export const DEPARTMENT_EVENT_MANAGER_ROLES: AppRole[] = [
 ];
 export const PERFORMANCE_REVIEW_CONDUCTOR_ROLES: AppRole[] = [
   'manager',
+  'general_manager',
   'hr',
   'admin',
   'director',
@@ -145,7 +146,7 @@ export function canViewTeamLeaveRequests(role: MaybeRole) {
 }
 
 export function canRequestLeaveSupportingDocument(role: MaybeRole) {
-  return role === 'manager';
+  return hasRole(role, MANAGER_AND_ABOVE_ROLES);
 }
 
 export function canViewLeaveSupportingDocument(role: MaybeRole) {

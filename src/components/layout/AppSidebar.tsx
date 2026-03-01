@@ -18,7 +18,14 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { canAccessAdminPage, canViewEmployeeDirectory } from '@/lib/permissions';
+import {
+  canAccessAdminPage,
+  canViewEmployeeDirectory,
+  hasRole,
+  MANAGER_AND_ABOVE_ROLES,
+  DOCUMENT_MANAGER_ROLES,
+  PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
+} from '@/lib/permissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -157,6 +164,23 @@ function SidebarContent({
   const scopedResources = canViewEmployeeDirectory(role)
     ? [...resourcesNavigation, ...employeeNavigation]
     : resourcesNavigation;
+
+  // Filter nav items by role-based permissions
+  const scopedOperations = operationsNavigation.filter((item) => {
+    if (item.href === '/calendar') return hasRole(role, MANAGER_AND_ABOVE_ROLES);
+    return true;
+  });
+
+  const filteredResources = scopedResources.filter((item) => {
+    if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
+    return true;
+  });
+
+  const scopedDevelopment = developmentNavigation.filter((item) => {
+    if (item.href === '/performance') return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
+    return true;
+  });
+
   const scopedAdmin = canAccessAdminPage(role) ? adminNavigation : [];
 
   return (
@@ -186,11 +210,11 @@ function SidebarContent({
         <div className="space-y-4">
           <SidebarNavGroup items={mainWithBadge} collapsed={collapsed} onNavigate={onNavigate} />
           <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={operationsNavigation} collapsed={collapsed} onNavigate={onNavigate} />
+          <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} />
           <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={scopedResources} collapsed={collapsed} onNavigate={onNavigate} />
+          <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} />
           <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={developmentNavigation} collapsed={collapsed} onNavigate={onNavigate} />
+          <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} />
           {scopedAdmin.length > 0 && (
             <>
               <Separator className="bg-sidebar-border" />

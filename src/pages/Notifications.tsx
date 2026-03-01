@@ -215,6 +215,7 @@ export default function Notifications() {
   const handleCleanupReadNotifications = async () => {
     try {
       const deletedCount = await deleteNotifications({ olderThanDays: cleanupDays, readOnly: true });
+      setPage(1);
       toast.success('Cleanup complete', {
         description:
           deletedCount > 0

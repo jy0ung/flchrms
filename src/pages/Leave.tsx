@@ -148,10 +148,15 @@ export default function Leave() {
     let documentUrl: string | undefined;
     
     if (documentFile) {
-      documentUrl = await uploadDocument.mutateAsync({
-        file: documentFile,
-        requestId: selectedRequest.id,
-      });
+      try {
+        documentUrl = await uploadDocument.mutateAsync({
+          file: documentFile,
+          requestId: selectedRequest.id,
+        });
+      } catch {
+        // uploadDocument.mutateAsync already triggers error toast via mutation config
+        return;
+      }
     }
 
     amendRequest.mutate({
@@ -271,7 +276,7 @@ export default function Leave() {
     
     // Director can approve final-stage requests; allow pending here to cover routes
     // that start directly at Director (e.g. HR/Admin/Director requester profiles).
-    if (isDirector(role) && (request.status === 'gm_approved' || request.status === 'pending')) return true;
+    if (isDirector(role) && (request.status === 'gm_approved' || request.status === 'manager_approved' || request.status === 'pending')) return true;
     
     return false;
   };
@@ -303,6 +308,7 @@ export default function Leave() {
     if (isGeneralManager(role) && (request.cancellation_status === 'pending' || request.cancellation_status === 'manager_approved')) return true;
     if (isDirector(role) && (
       request.cancellation_status === 'pending' ||
+      request.cancellation_status === 'manager_approved' ||
       request.cancellation_status === 'gm_approved'
     )) return true;
 

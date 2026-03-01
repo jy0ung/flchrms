@@ -27,19 +27,12 @@ import NotFound from "./pages/NotFound";
 import {
   ADMIN_PAGE_ALLOWED_ROLES,
   EMPLOYEE_DIRECTORY_ALLOWED_ROLES,
-  PAYROLL_MANAGER_ROLES,
   DOCUMENT_MANAGER_ROLES,
   PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
   MANAGER_AND_ABOVE_ROLES,
 } from "@/lib/permissions";
-import type { AppRole } from "@/types/hrms";
 
-/** Roles that can access attendance management beyond self-service */
-const ATTENDANCE_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
-/** Roles that can access training pages */
-const TRAINING_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
-/** Roles that can access announcements */
-const ANNOUNCEMENTS_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,9 +81,7 @@ const App = () => (
                   <Route element={<ProtectedRoute allowedRoles={DOCUMENT_MANAGER_ROLES} />}>
                     <Route path="/documents" element={<Documents />} />
                   </Route>
-                  <Route element={<ProtectedRoute allowedRoles={PAYROLL_MANAGER_ROLES} />}>
-                    <Route path="/payroll" element={<Payroll />} />
-                  </Route>
+                  <Route path="/payroll" element={<Payroll />} />
                   {/* Protected routes - Admin/HR/Manager/GM/Director only */}
                   <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
                     <Route path="/employees" element={<Employees />} />

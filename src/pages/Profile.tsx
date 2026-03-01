@@ -8,7 +8,6 @@ import {
   Calendar,
   Briefcase,
   Save,
-  UserCog,
   Bell,
   ShieldCheck,
   AtSign,

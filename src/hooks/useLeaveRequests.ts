@@ -318,6 +318,7 @@ export function useProcessLeaveCancellationRequest() {
         .from('leave_requests')
         .update(updateData)
         .eq('id', requestId)
+        .eq('cancellation_status', existingRequest.cancellation_status)
         .select()
         .single();
 
