@@ -24,7 +24,22 @@ const Documents = lazy(() => import("./pages/Documents"));
 const TeamCalendar = lazy(() => import("./pages/TeamCalendar"));
 const Payroll = lazy(() => import("./pages/Payroll"));
 import NotFound from "./pages/NotFound";
-import { ADMIN_PAGE_ALLOWED_ROLES, EMPLOYEE_DIRECTORY_ALLOWED_ROLES } from "@/lib/permissions";
+import {
+  ADMIN_PAGE_ALLOWED_ROLES,
+  EMPLOYEE_DIRECTORY_ALLOWED_ROLES,
+  PAYROLL_MANAGER_ROLES,
+  DOCUMENT_MANAGER_ROLES,
+  PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
+  MANAGER_AND_ABOVE_ROLES,
+} from "@/lib/permissions";
+import type { AppRole } from "@/types/hrms";
+
+/** Roles that can access attendance management beyond self-service */
+const ATTENDANCE_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
+/** Roles that can access training pages */
+const TRAINING_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
+/** Roles that can access announcements */
+const ANNOUNCEMENTS_ALLOWED_ROLES: AppRole[] = ['employee', 'manager', 'hr', 'admin', 'general_manager', 'director'];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,12 +76,21 @@ const App = () => (
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/attendance" element={<Attendance />} />
                   <Route path="/training" element={<Training />} />
-                  <Route path="/performance" element={<Performance />} />
                   <Route path="/announcements" element={<Announcements />} />
-                  <Route path="/calendar" element={<TeamCalendar />} />
-                  <Route path="/documents" element={<Documents />} />
-                  <Route path="/payroll" element={<Payroll />} />
                   <Route path="/profile" element={<Profile />} />
+                  {/* Protected routes — role-gated sensitive pages */}
+                  <Route element={<ProtectedRoute allowedRoles={PERFORMANCE_REVIEW_CONDUCTOR_ROLES} />}>
+                    <Route path="/performance" element={<Performance />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={MANAGER_AND_ABOVE_ROLES} />}>
+                    <Route path="/calendar" element={<TeamCalendar />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={DOCUMENT_MANAGER_ROLES} />}>
+                    <Route path="/documents" element={<Documents />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={PAYROLL_MANAGER_ROLES} />}>
+                    <Route path="/payroll" element={<Payroll />} />
+                  </Route>
                   {/* Protected routes - Admin/HR/Manager/GM/Director only */}
                   <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
                     <Route path="/employees" element={<Employees />} />

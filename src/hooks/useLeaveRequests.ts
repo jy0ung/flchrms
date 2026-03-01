@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, LeaveApprovalStage, LeaveCancellationStatus, LeaveRequest, LeaveStatus } from '@/types/hrms';
+import { AppRole, LeaveCancellationStatus, LeaveRequest } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
+import { createLeaveRequestSchema } from '@/lib/validations';
 import {
-  buildLeaveApprovalUpdate,
   buildLeaveCancellationApprovalUpdate,
-  normalizeLeaveApprovalStages,
   normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
 
@@ -47,6 +46,12 @@ export function useCreateLeaveRequest() {
       reason?: string;
       document_url?: string;
     }) => {
+      // Validate input before sending to Supabase
+      const validation = createLeaveRequestSchema.safeParse(request);
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0]?.message ?? 'Invalid leave request data');
+      }
+
       const { data, error } = await supabase
         .from('leave_requests')
         .insert({
@@ -86,101 +91,35 @@ export function useApproveLeaveRequest() {
       rejectionReason,
       documentRequired,
       managerComments,
-      employeeRole,
+      currentStatus,
     }: { 
       requestId: string; 
       action: 'approve' | 'reject' | 'request_document'; 
       rejectionReason?: string;
       documentRequired?: boolean;
       managerComments?: string;
-      employeeRole?: string; // Role of the employee who submitted the request
+      currentStatus?: string; // Optimistic lock — pass current known status
     }) => {
       if (!user || !role) {
         throw new Error('Only authenticated approvers can process leave requests.');
       }
 
-      const { data: existingRequest, error: requestError } = await supabase
-        .from('leave_requests')
-        .select('status, employee_id, approval_route_snapshot')
-        .eq('id', requestId)
-        .single();
-
-      if (requestError) throw requestError;
-      if (!existingRequest.status) {
-        throw new Error('Leave request status is missing.');
-      }
-
-      let requesterRole: AppRole = 'employee';
-
-      if (employeeRole) {
-        requesterRole = employeeRole as AppRole;
-      } else {
-        const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
-          _user_id: existingRequest.employee_id,
-        });
-
-        if (roleError) throw roleError;
-        if (roleData) {
-          requesterRole = roleData as AppRole;
-        }
-      }
-
-      let workflowStages = normalizeLeaveApprovalStages(existingRequest.approval_route_snapshot || undefined);
-
-      if (workflowStages.length === 0) {
-        const { data: employeeProfile } = await supabase
-          .from('profiles')
-          .select('department_id')
-          .eq('id', existingRequest.employee_id)
-          .maybeSingle();
-
-        const employeeDepartmentId = employeeProfile?.department_id || null;
-
-        const { data: workflowRow, error: workflowError } = await supabase
-          .from('leave_approval_workflows')
-          .select('approval_stages, is_active')
-          .eq('requester_role', 'employee')
-          .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
-          .order('department_id', { ascending: true, nullsFirst: false })
-          .limit(1)
-          .maybeSingle();
-
-        // If the workflow table/migration is missing in an environment, fall back to defaults.
-        if (workflowError && workflowError.code !== 'PGRST116' && workflowError.code !== '42P01') {
-          throw workflowError;
-        }
-
-        if (workflowRow?.is_active !== false) {
-          workflowStages = normalizeLeaveApprovalStages(workflowRow?.approval_stages || undefined);
-        }
-      }
-
-      const updateData = buildLeaveApprovalUpdate({
-        action,
-        approverRole: role,
-        approverId: user.id,
-        currentStatus: existingRequest.status as LeaveStatus,
-        requesterRole,
-        rejectionReason,
-        managerComments,
-        workflowStages,
+      // Use server-side RPC for atomic approval (prevents TOCTOU race conditions).
+      // The RPC handles: row locking, status verification, workflow resolution,
+      // role-based stage matching, and the final update — all in one transaction.
+      const { data, error } = await supabase.rpc('approve_leave_request', {
+        _request_id: requestId,
+        _action: action,
+        _rejection_reason: rejectionReason ?? null,
+        _manager_comments: managerComments ?? null,
+        _document_required: action === 'reject' ? (documentRequired ?? false) : false,
+        _expected_status: currentStatus ?? null,
       });
 
-      if (action === 'reject') {
-        updateData.document_required = documentRequired || false;
-      }
-
-      const { data, error } = await supabase
-        .from('leave_requests')
-        .update(updateData)
-        .eq('id', requestId)
-        .select()
-        .single();
-      
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' | 'request_document' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (variables.action === 'approve') {
@@ -254,7 +193,7 @@ export function useCancelLeaveRequest() {
       if (error) throw error;
       return (data || 'requested') as string;
     },
-    onSuccess: (result) => {
+    onSuccess: (result: string) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (result === 'cancelled') {
@@ -385,7 +324,7 @@ export function useProcessLeaveCancellationRequest() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (variables.action === 'approve') {

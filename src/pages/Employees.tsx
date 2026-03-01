@@ -1,6 +1,7 @@
 ﻿import { useEmployees } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialo
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 export default function Employees() {
+  usePageTitle('Employees');
   const { role: viewerRole } = useAuth();
   const { data: employees, isLoading } = useEmployees();
   const { data: userRoles } = useUserRoles();

@@ -468,6 +468,17 @@ export function useGeneratePayslips() {
       
       if (periodError) throw periodError;
 
+      // ── Duplicate guard: check for existing payslips in this period ──
+      const { count: existingCount, error: dupCheckError } = await supabase
+        .from('payslips')
+        .select('id', { count: 'exact', head: true })
+        .eq('payroll_period_id', periodId);
+
+      if (dupCheckError) throw dupCheckError;
+      if (existingCount && existingCount > 0) {
+        throw new Error(`Payslips already exist for this period (${existingCount} found). Delete existing payslips before regenerating.`);
+      }
+
       setProgress((current) => ({
         ...current,
         phase: 'loading_salaries',

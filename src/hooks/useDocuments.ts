@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
+import { validateDocumentFile, uploadDocumentSchema } from '@/lib/validations';
 
 export type DocumentCategory = 'contract' | 'certificate' | 'official' | 'other';
 
@@ -73,6 +74,16 @@ export function useUploadDocument() {
       category: DocumentCategory;
     }) => {
       if (!user) throw new Error('User not authenticated');
+
+      // Validate file constraints (size and type)
+      const fileError = validateDocumentFile(file);
+      if (fileError) throw new Error(fileError);
+
+      // Validate metadata fields
+      const metaResult = uploadDocumentSchema.safeParse({ employeeId, title, description, category });
+      if (!metaResult.success) {
+        throw new Error(metaResult.error.errors[0]?.message ?? 'Invalid document metadata');
+      }
 
       const fileExt = file.name.split('.').pop();
       const filePath = `${employeeId}/${Date.now()}-${file.name}`;

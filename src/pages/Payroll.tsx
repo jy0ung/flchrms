@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { MyPayslips } from '@/components/payroll/MyPayslips';
 import { PayrollManagement } from '@/components/payroll/PayrollManagement';
 import { SalaryManagement } from '@/components/payroll/SalaryManagement';
@@ -13,6 +14,7 @@ import { AppPageContainer, PageHeader } from '@/components/system';
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
 export default function Payroll() {
+  usePageTitle('Payroll');
   const { role } = useAuth();
   const canManagePayroll = canManagePayrollPermission(role);
   const [activeTab, setActiveTab] = useState(canManagePayroll ? 'payroll' : 'payslips');

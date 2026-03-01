@@ -1,12 +1,14 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
 
 export default function Attendance() {
-  const { data: history, isLoading } = useAttendanceHistory();
+  usePageTitle('Attendance');
+  const { data: history, isLoading, isError, refetch } = useAttendanceHistory();
   const { data: today } = useTodayAttendance();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
@@ -43,6 +45,10 @@ export default function Attendance() {
               : []
         }
       />
+
+      {isError && (
+        <QueryErrorState label="attendance records" onRetry={() => refetch()} />
+      )}
 
       {today && (
         <Card className="card-stat bg-accent/5 border-accent/20 shadow-sm">

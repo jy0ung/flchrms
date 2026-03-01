@@ -79,12 +79,33 @@ export function useClockIn() {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['attendance', 'today', user?.id] });
+      const previous = queryClient.getQueryData<Attendance | null>(['attendance', 'today', user?.id]);
+      const now = new Date();
+      queryClient.setQueryData<Attendance | null>(['attendance', 'today', user?.id], {
+        id: 'optimistic',
+        employee_id: user!.id,
+        date: format(now, 'yyyy-MM-dd'),
+        clock_in: now.toISOString(),
+        clock_out: null,
+        status: now.getHours() >= 9 ? 'late' : 'present',
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      } as Attendance);
+      return { previous };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(['attendance', 'today', user?.id], context.previous);
+      }
+      toast.error('Failed to clock in', { description: sanitizeErrorMessage(error) });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Clocked in successfully');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to clock in', { description: sanitizeErrorMessage(error) });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 }
@@ -111,12 +132,28 @@ export function useClockOut() {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['attendance', 'today', user?.id] });
+      const previous = queryClient.getQueryData<Attendance | null>(['attendance', 'today', user?.id]);
+      if (previous) {
+        queryClient.setQueryData<Attendance | null>(['attendance', 'today', user?.id], {
+          ...previous,
+          clock_out: new Date().toISOString(),
+        });
+      }
+      return { previous };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(['attendance', 'today', user?.id], context.previous);
+      }
+      toast.error('Failed to clock out', { description: sanitizeErrorMessage(error) });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Clocked out successfully');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to clock out', { description: sanitizeErrorMessage(error) });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 }

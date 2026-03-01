@@ -272,100 +272,51 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
   const queryClient = useQueryClient();
 
   const invalidate = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['notification-queue-summary', user?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['notification-queue-list', user?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['notification-worker-run-summary', user?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['notification-worker-run-list', user?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['notification-dead-letter-analytics', user?.id] }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: ['notification-admin-dashboard', user?.id] });
   };
 
-  const summaryQuery = useQuery({
-    queryKey: ['notification-queue-summary', user?.id],
+  // Single combined query replaces 5 independent polling queries
+  const combinedQuery = useQuery({
+    queryKey: ['notification-admin-dashboard', user?.id, status, limitCount],
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_email_queue_summary');
-      if (error) throw error;
-      return parseQueueSummary(data ?? null);
-    },
-  });
-
-  const listQuery = useQuery({
-    queryKey: ['notification-queue-list', user?.id, status, limitCount],
-    enabled: !!user,
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_list_email_queue', {
-        _status: status,
-        _limit: limitCount,
-        _offset: 0,
+      const { data, error } = await supabase.rpc('notification_admin_combined_dashboard', {
+        _queue_status: status,
+        _queue_limit: limitCount,
+        _queue_offset: 0,
+        _run_status: 'all',
+        _run_limit: 8,
+        _run_offset: 0,
+        _dl_window_hours: 24,
+        _dl_limit: 8,
       });
-
       if (error) throw error;
 
-      const rows = (data ?? []) as NotificationDeliveryQueueRow[];
-      const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
+      const result = data as Record<string, unknown> | null;
+      const queueSummary = parseQueueSummary((result?.queue_summary ?? null) as Json | null);
+      const workerRunSummary = parseWorkerRunSummary((result?.worker_summary ?? null) as Json | null);
+      const deadLetterAnalytics = parseDeadLetterAnalytics((result?.dead_letter ?? null) as Json | null);
+      const workerRuns = ((result?.worker_runs ?? []) as NotificationEmailWorkerRunRow[]);
+      const rawQueueList = ((result?.queue_list ?? []) as NotificationDeliveryQueueRow[]);
 
+      // Enrich queue items with user profiles
+      const userIds = Array.from(new Set(rawQueueList.map((row: NotificationDeliveryQueueRow) => row.user_id).filter(Boolean)));
       let profileById = new Map<string, ProfileLite>();
-
       if (userIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, first_name, last_name, email')
           .in('id', userIds);
-
         if (profilesError) throw profilesError;
-
-        profileById = new Map(((profiles ?? []) as ProfileLite[]).map((row) => [row.id, row]));
+        profileById = new Map(((profiles ?? []) as ProfileLite[]).map((row: ProfileLite) => [row.id, row]));
       }
-
-      return rows.map((row) => ({
+      const queueItems = rawQueueList.map((row: NotificationDeliveryQueueRow) => ({
         ...row,
         user_profile: profileById.get(row.user_id) ?? null,
       })) as NotificationQueueItemWithUser[];
-    },
-  });
 
-  const workerRunSummaryQuery = useQuery({
-    queryKey: ['notification-worker-run-summary', user?.id],
-    enabled: !!user,
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_email_worker_run_summary');
-      if (error) throw error;
-      return parseWorkerRunSummary(data ?? null);
-    },
-  });
-
-  const workerRunListQuery = useQuery({
-    queryKey: ['notification-worker-run-list', user?.id],
-    enabled: !!user,
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_list_email_worker_runs', {
-        _status: 'all',
-        _limit: 8,
-        _offset: 0,
-      });
-
-      if (error) throw error;
-      return (data ?? []) as NotificationEmailWorkerRunRow[];
-    },
-  });
-
-  const deadLetterAnalyticsQuery = useQuery({
-    queryKey: ['notification-dead-letter-analytics', user?.id],
-    enabled: !!user,
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_email_dead_letter_analytics', {
-        _window_hours: 24,
-        _limit: 8,
-      });
-      if (error) throw error;
-      return parseDeadLetterAnalytics(data ?? null);
+      return { queueSummary, queueItems, workerRunSummary, workerRuns, deadLetterAnalytics };
     },
   });
 
@@ -394,39 +345,21 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
   });
 
   return {
-    summary: summaryQuery.data ?? null,
-    queueItems: listQuery.data ?? [],
-    workerRunSummary: workerRunSummaryQuery.data ?? null,
-    workerRuns: workerRunListQuery.data ?? [],
-    deadLetterAnalytics: deadLetterAnalyticsQuery.data ?? null,
-    isLoading:
-      summaryQuery.isLoading ||
-      listQuery.isLoading ||
-      workerRunSummaryQuery.isLoading ||
-      workerRunListQuery.isLoading ||
-      deadLetterAnalyticsQuery.isLoading,
-    isFetching:
-      summaryQuery.isFetching ||
-      listQuery.isFetching ||
-      workerRunSummaryQuery.isFetching ||
-      workerRunListQuery.isFetching ||
-      deadLetterAnalyticsQuery.isFetching,
-    summaryError: summaryQuery.error,
-    listError: listQuery.error,
-    workerRunSummaryError: workerRunSummaryQuery.error,
-    workerRunListError: workerRunListQuery.error,
-    deadLetterAnalyticsError: deadLetterAnalyticsQuery.error,
+    summary: combinedQuery.data?.queueSummary ?? null,
+    queueItems: combinedQuery.data?.queueItems ?? [],
+    workerRunSummary: combinedQuery.data?.workerRunSummary ?? null,
+    workerRuns: combinedQuery.data?.workerRuns ?? [],
+    deadLetterAnalytics: combinedQuery.data?.deadLetterAnalytics ?? null,
+    isLoading: combinedQuery.isLoading,
+    isFetching: combinedQuery.isFetching,
+    summaryError: combinedQuery.error,
+    listError: combinedQuery.error,
+    workerRunSummaryError: combinedQuery.error,
+    workerRunListError: combinedQuery.error,
+    deadLetterAnalyticsError: combinedQuery.error,
     isRequeueing: requeueMutation.isPending,
     isDiscarding: discardMutation.isPending,
-    refetch: async () => {
-      await Promise.all([
-        summaryQuery.refetch(),
-        listQuery.refetch(),
-        workerRunSummaryQuery.refetch(),
-        workerRunListQuery.refetch(),
-        deadLetterAnalyticsQuery.refetch(),
-      ]);
-    },
+    refetch: async () => { await combinedQuery.refetch(); },
     requeueItem: async (queueId: string, delaySeconds = 0) =>
       requeueMutation.mutateAsync({ queueId, delaySeconds }),
     discardItem: async (queueId: string, reason?: string) =>

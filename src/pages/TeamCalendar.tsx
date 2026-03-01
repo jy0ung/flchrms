@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { 
   useCalendarEvents, 
   useHolidays, 
@@ -45,6 +46,7 @@ const eventTypeIcons: Record<string, React.ReactNode> = {
 };
 
 export default function TeamCalendar() {
+  usePageTitle('Team Calendar');
   const { role } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

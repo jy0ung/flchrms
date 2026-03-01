@@ -1,11 +1,13 @@
 import { format } from 'date-fns';
 import { Megaphone } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppPageContainer, PageHeader, StatusBadge, SurfaceSection } from '@/components/system';
 
 export default function Announcements() {
+  usePageTitle('Announcements');
   const { data: announcements, isLoading } = useAnnouncements();
   const count = announcements?.length ?? 0;
 

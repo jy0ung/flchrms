@@ -160,8 +160,12 @@ export default function Auth() {
   const handleRecoveryPasswordUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters.');
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+      toast.error('Password must contain uppercase, lowercase, number, and special character.');
       return;
     }
 
@@ -218,7 +222,7 @@ export default function Auth() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="••••••••"
                           autoComplete="new-password"
-                          minLength={6}
+                          minLength={8}
                           required
                           className="h-11 rounded-xl pr-10"
                         />
@@ -249,7 +253,7 @@ export default function Auth() {
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
                         placeholder="••••••••"
                         autoComplete="new-password"
-                        minLength={6}
+                        minLength={8}
                         required
                         className="h-11 rounded-xl"
                       />
@@ -343,7 +347,7 @@ export default function Auth() {
                             name="password"
                             type={showSignUpPassword ? 'text' : 'password'}
                             placeholder="••••••••"
-                            minLength={6}
+                            minLength={8}
                             autoComplete="new-password"
                             required
                             className="h-11 rounded-xl pr-10"

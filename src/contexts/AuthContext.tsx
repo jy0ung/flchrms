@@ -1,7 +1,9 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, Profile } from '@/types/hrms';
+import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -254,6 +256,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     resetAuthState();
   };
+
+  const handleIdleTimeout = useCallback(async () => {
+    if (user) {
+      toast.info('You have been signed out due to inactivity.');
+      await signOut();
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto sign-out after 30 minutes of inactivity
+  useIdleTimeout(handleIdleTimeout, 30 * 60 * 1000, !!user);
 
   return (
     <AuthContext.Provider

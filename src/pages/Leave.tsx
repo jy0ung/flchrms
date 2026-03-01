@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCancelLeaveRequest, useAmendLeaveRequest, useProcessLeaveCancellationRequest, useUploadLeaveDocument } from '@/hooks/useLeaveRequests';
 import { useLeaveRequestDetailsDialog } from '@/hooks/useLeaveRequestDetailsDialog';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
@@ -18,7 +19,7 @@ import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
 import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
+import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader, QueryErrorState } from '@/components/system';
 import {
   canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
   isDirector,
@@ -28,8 +29,9 @@ import {
 } from '@/lib/permissions';
 
 export default function Leave() {
+  usePageTitle('Leave');
   const { role, user } = useAuth();
-  const { data: requests, isLoading } = useLeaveRequests();
+  const { data: requests, isLoading, isError, refetch } = useLeaveRequests();
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances, refetch: refetchBalances } = useLeaveBalance();
   const createRequest = useCreateLeaveRequest();
@@ -490,6 +492,10 @@ export default function Leave() {
           },
         ]}
       />
+
+      {isError && (
+        <QueryErrorState label="leave requests" onRetry={() => refetch()} />
+      )}
 
       <ModalScaffold
         open={open}

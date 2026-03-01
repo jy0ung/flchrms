@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Filter, Plus, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useEmployees,
   useDepartments,
@@ -64,6 +65,7 @@ import {
 } from '@/lib/ui-preferences';
 
 export default function Admin() {
+  usePageTitle('Administration');
   const { user, role } = useAuth();
   const { mode, setMode } = useInteractionMode();
   const capabilities = getAdminCapabilities(role);

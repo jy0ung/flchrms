@@ -1,12 +1,14 @@
 import { useTrainingPrograms, useMyEnrollments, useEnrollInProgram } from '@/hooks/useTraining';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
 
 export default function Training() {
-  const { data: programs } = useTrainingPrograms();
-  const { data: enrollments } = useMyEnrollments();
+  usePageTitle('Training');
+  const { data: programs, isLoading: programsLoading, isError: programsError, refetch: refetchPrograms } = useTrainingPrograms();
+  const { data: enrollments, isLoading: enrollmentsLoading } = useMyEnrollments();
   const enroll = useEnrollInProgram();
 
   const enrolledIds = enrollments?.map(e => e.program_id) || [];
@@ -18,6 +20,10 @@ export default function Training() {
         title="Training & Development"
         description="Training programs and enrollment status."
       />
+
+      {programsError && (
+        <QueryErrorState label="training programs" onRetry={() => refetchPrograms()} />
+      )}
 
       {enrollments && enrollments.length > 0 && (
         <DataTableShell

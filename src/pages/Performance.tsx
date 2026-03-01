@@ -1,4 +1,5 @@
 import { useMyReviews, useAcknowledgeReview } from '@/hooks/usePerformance';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,6 +8,7 @@ import { format } from 'date-fns';
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
 
 export default function Performance() {
+  usePageTitle('Performance');
   const { data: reviews, isLoading } = useMyReviews();
   const acknowledge = useAcknowledgeReview();
 

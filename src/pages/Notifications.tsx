@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -147,6 +148,7 @@ function NotificationRow({
 }
 
 export default function Notifications() {
+  usePageTitle('Notifications');
   const navigate = useNavigate();
   const [category, setCategory] = useState<NotificationCategoryFilter>('all');
   const [readFilter, setReadFilter] = useState<NotificationReadFilter>('all');

@@ -1,5 +1,6 @@
 ﻿import { useDeferredValue, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useDocuments, useUploadDocument, useDeleteDocument, useGetDocumentSignedUrl, DocumentCategory, Document } from '@/hooks/useDocuments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,7 @@ const categoryLabels: Record<DocumentCategory, string> = {
 };
 
 export default function Documents() {
+  usePageTitle('Documents');
   const { role, user } = useAuth();
   const [selectedEmployee, setSelectedEmployee] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');

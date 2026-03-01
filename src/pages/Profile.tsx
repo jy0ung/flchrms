@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   Mail,
   Phone,
@@ -35,6 +36,7 @@ function coerceProfileTab(value: string | null): ProfileTabValue {
 }
 
 export default function Profile() {
+  usePageTitle('Profile');
   const { profile, role } = useAuth();
   const { updateMyProfile, isUpdating } = useUpdateMyProfile();
   const [searchParams, setSearchParams] = useSearchParams();
