@@ -49,7 +49,7 @@ export function CardHeaderStandard({
   const showDrag = mode === "edit" && draggable;
 
   return (
-    <CardHeader className={cn("p-6 pb-4", className)}>
+    <CardHeader className={cn("p-4", className)}>
       <div className="flex items-start gap-3">
         {showDrag ? (
           <Button
@@ -69,7 +69,7 @@ export function CardHeaderStandard({
         ) : null}
 
         <div className="min-w-0 flex-1 space-y-2">
-          <CardTitle id={titleId} className={cn("text-lg sm:text-xl", titleClassName)}>
+          <CardTitle id={titleId} className={cn("text-base font-semibold", titleClassName)}>
             {title}
           </CardTitle>
           {description ? (

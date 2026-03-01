@@ -31,7 +31,7 @@ export function SurfaceSection({
     <Card
       role="region"
       aria-labelledby={title ? titleId : undefined}
-      className={cn("card-stat border-border/60 shadow-sm", className)}
+      className={cn("border border-border bg-card shadow-sm rounded-lg", className)}
       {...props}
     >
       {hasHeader ? (
@@ -40,11 +40,11 @@ export function SurfaceSection({
           titleId={title ? titleId : undefined}
           description={description}
           actions={actions}
-          className="p-6 pb-4"
+          className="p-4"
           actionsClassName="w-full flex-col gap-2 sm:w-auto sm:flex-row"
         />
       ) : null}
-      <CardContent className={cn("p-4 sm:p-5", hasHeader && "pt-4", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn("p-4", contentClassName)}>{children}</CardContent>
     </Card>
   );
 }

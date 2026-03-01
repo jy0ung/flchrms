@@ -16,7 +16,6 @@ export default function Attendance() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Attendance"
         description="Track your work hours"
         actions={
@@ -51,11 +50,11 @@ export default function Attendance() {
       )}
 
       {today && (
-        <Card className="card-stat bg-accent/5 border-accent/20 shadow-sm">
+        <Card className="bg-accent/5 border-accent/20 shadow-sm">
           <CardHeaderStandard
             title="Today Attendance Status"
             description={format(new Date(), 'EEEE, MMM d')}
-            className="p-6 pb-3"
+            className="p-4 pb-2"
             actions={<StatusBadge status={today.status} />}
           />
           <CardContent className="pt-0">
@@ -77,11 +76,11 @@ export default function Attendance() {
         title="Attendance History"
         loading={isLoading}
         hasData={Boolean(history?.length)}
-        emptyState={<div className="p-8 text-center text-muted-foreground">No attendance records</div>}
+        emptyState={<div className="p-4 text-center text-muted-foreground">No attendance records</div>}
         mobileList={
           <div className="space-y-3 p-4 md:hidden">
             {history?.map((record) => (
-              <div key={record.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+              <div key={record.id} className="rounded-lg border border-border p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</p>

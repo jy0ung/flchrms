@@ -1,4 +1,4 @@
-﻿import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useDocuments, useUploadDocument, useDeleteDocument, useGetDocumentSignedUrl, DocumentCategory, Document } from '@/hooks/useDocuments';
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { FileText, Upload, Trash2, Download, Search, Filter, FolderOpen } from 'lucide-react';
+import { FileText, Upload, Trash2, Download, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
 import { AppPageContainer, DataTableShell, ModalScaffold, PageHeader, SectionToolbar } from '@/components/system';
@@ -101,7 +101,6 @@ export default function Documents() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Document Management"
         description={
           canManageDocuments
@@ -276,13 +275,13 @@ export default function Documents() {
         loadingSkeleton={
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-xl" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         }
         emptyState={
           <div className="text-center py-12">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
             <h3 className="text-lg font-medium">No documents found</h3>
             <p className="text-muted-foreground text-sm mt-1">
               {canManageDocuments ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
@@ -292,9 +291,9 @@ export default function Documents() {
         mobileList={
           <div className="space-y-3">
             {filteredDocuments?.map((doc) => (
-              <div key={doc.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+              <div key={doc.id} className="rounded-lg border border-border p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-xl bg-muted/50 shrink-0">
+                  <div className="p-2.5 rounded-lg bg-muted/50 shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -360,7 +359,7 @@ export default function Documents() {
           </div>
         }
         table={
-          <div className="overflow-x-auto rounded-xl border border-border/60">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -374,10 +373,10 @@ export default function Documents() {
               </TableHeader>
               <TableBody>
                 {filteredDocuments?.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-muted/20">
+                  <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-muted/60">
+                        <div className="p-2 rounded-lg bg-muted/60">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>

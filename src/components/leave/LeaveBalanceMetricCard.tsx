@@ -12,7 +12,7 @@ export function LeaveBalanceMetricCard({ balance }: LeaveBalanceMetricCardProps)
 
   return (
     <Card
-      className={`h-[128px] overflow-hidden border-border/60 shadow-sm ${
+      className={`h-[128px] overflow-hidden border-border shadow-sm ${
         isExhausted
           ? 'border-destructive/30 bg-destructive/5'
           : isLow
@@ -30,7 +30,7 @@ export function LeaveBalanceMetricCard({ balance }: LeaveBalanceMetricCardProps)
       <CardContent className="px-4 pb-4 pt-1">
         <div className="flex items-baseline gap-1">
           <span
-            className={`text-3xl font-bold leading-none ${
+            className={`text-2xl font-bold leading-none ${
               isExhausted ? 'text-destructive' : isLow ? 'text-orange-600' : 'text-foreground'
             }`}
           >

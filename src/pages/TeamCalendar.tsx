@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   useCalendarEvents, 
   useHolidays, 
@@ -48,6 +49,7 @@ const eventTypeIcons: Record<string, React.ReactNode> = {
 export default function TeamCalendar() {
   usePageTitle('Team Calendar');
   const { role } = useAuth();
+  const isMobile = useIsMobile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
@@ -148,10 +150,18 @@ export default function TeamCalendar() {
     return event.title;
   };
 
+  // Mobile agenda: days with events for the current month
+  const agendaDays = useMemo(() => {
+    if (!isMobile) return [];
+    return calendarDays
+      .map((date) => ({ date, events: getEventsForDate(date) }))
+      .filter(({ events }) => events.length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, calendarDays, calendarEvents]);
+
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Team Calendar"
         description="View leave schedules, holidays, and department events"
         actionsSlot={
@@ -344,13 +354,13 @@ export default function TeamCalendar() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar Grid */}
-        <Card className="lg:col-span-2 card-stat border-border/60 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Calendar — grid on desktop, agenda on mobile */}
+        <Card className="lg:col-span-2 border-border shadow-sm">
           <CardHeaderStandard
             title={format(currentMonth, 'MMMM yyyy')}
             description="Calendar month schedule and leave events."
-            className="p-6 pb-0"
+            className="p-4 pb-0"
             actions={
               <div role="region" aria-label="Calendar month controls" className="grid grid-cols-3 gap-2 sm:flex sm:gap-1">
                 <Button
@@ -379,10 +389,53 @@ export default function TeamCalendar() {
           />
           <CardContent className="pt-4">
             {isLoading ? (
-              <Skeleton className="h-96 w-full rounded-xl" />
+              <Skeleton className="h-96 w-full rounded-lg" />
+            ) : isMobile ? (
+              /* ── Mobile agenda list ── */
+              agendaDays.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/50 p-5 text-center text-sm text-muted-foreground">
+                  No events this month
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {agendaDays.map(({ date, events }) => {
+                    const isToday = isSameDay(date, new Date());
+                    return (
+                      <div key={format(date, 'yyyy-MM-dd')}>
+                        <div className={cn(
+                          'flex items-center gap-2 py-1.5 text-xs font-semibold uppercase tracking-wide',
+                          isToday ? 'text-primary' : 'text-muted-foreground'
+                        )}>
+                          <span>{format(date, 'EEE, MMM d')}</span>
+                          {isToday && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Today</Badge>}
+                        </div>
+                        <div className="space-y-1.5">
+                          {events.map((event) => (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                'flex items-center gap-2.5 rounded-lg border p-3',
+                                eventTypeColors[event.type]
+                              )}
+                            >
+                              <span className="shrink-0">{eventTypeIcons[event.type]}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{getEventPrimaryLabel(event)}</p>
+                                {event.description && <p className="truncate text-xs text-muted-foreground">{event.description}</p>}
+                              </div>
+                              <Badge variant="outline" className="shrink-0 text-[10px] capitalize">{event.type}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
+              /* ── Desktop grid calendar ── */
               <div className="overflow-x-auto">
-                <div className="min-w-[640px] border border-border/60 rounded-xl overflow-hidden">
+                <div className="min-w-[640px] border border-border rounded-lg overflow-hidden">
                 {/* Day headers */}
                 <div className="grid grid-cols-7 bg-muted/60">
                   {daysOfWeek.map((day) => (
@@ -395,7 +448,7 @@ export default function TeamCalendar() {
                 <div className="grid grid-cols-7">
                   {paddedDays.map((date, index) => {
                     if (!date) {
-                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/20" />;
+                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/50" />;
                     }
                     const dayEvents = getEventsForDate(date);
                     const isToday = isSameDay(date, new Date());
@@ -454,7 +507,7 @@ export default function TeamCalendar() {
             )}
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-4 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
+            <div className="flex flex-wrap gap-4 mt-4 rounded-lg border border-border bg-muted/50 p-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-info/20 border border-info/30" />
                 <span>Leave</span>
@@ -472,8 +525,9 @@ export default function TeamCalendar() {
         </Card>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Selected Date Details */}
+        <div className="space-y-4">
+          {/* Selected Date Details — desktop only (mobile uses inline agenda) */}
+          {!isMobile && (
           <DataTableShell
             title={selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : 'Select a date'}
             description={`${selectedDayEvents.length} event${selectedDayEvents.length !== 1 ? 's' : ''}`}
@@ -489,7 +543,7 @@ export default function TeamCalendar() {
                   <div
                     key={event.id}
                     className={cn(
-                      'rounded-xl border p-3 shadow-sm',
+                      'rounded-lg border p-3 shadow-sm',
                       eventTypeColors[event.type]
                     )}
                   >
@@ -503,15 +557,15 @@ export default function TeamCalendar() {
                       </Badge>
                     </div>
                     {event.description && (
-                      <p className="mt-1 text-xs opacity-80">{event.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{event.description}</p>
                     )}
                     {event.type === 'leave' && canViewLeaveTypeLabel && event.employeeName && (
-                      <p className="mt-1 text-xs opacity-80">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         On leave: {event.employeeName}
                       </p>
                     )}
                     {event.endDate && !isSameDay(event.date, event.endDate) && (
-                      <p className="mt-1 text-xs opacity-60">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Until {format(event.endDate, 'MMM d')}
                       </p>
                     )}
@@ -520,6 +574,7 @@ export default function TeamCalendar() {
               </div>
             }
           />
+          )}
 
           {/* Upcoming Holidays */}
           <DataTableShell
@@ -534,7 +589,7 @@ export default function TeamCalendar() {
             content={
               <div className="space-y-2">
                 {upcomingHolidays.map((holiday) => (
-                  <div key={holiday.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/20 p-3">
+                  <div key={holiday.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 p-3">
                     <div>
                       <p className="text-sm font-medium">{holiday.name}</p>
                       <p className="text-xs text-muted-foreground">

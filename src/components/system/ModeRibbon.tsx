@@ -51,7 +51,7 @@ export function ModeRibbon({
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-border/70 bg-card/70 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-2 rounded-lg border border-border bg-card sm:flex-row sm:items-center sm:justify-between",
         variant === 'compact' ? 'px-3 py-2' : 'px-3 py-2.5',
         sticky && 'sticky z-20',
         sticky && stickyOffsetClassName,

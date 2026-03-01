@@ -15,7 +15,6 @@ export default function Performance() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Performance Reviews"
         description="Performance evaluation records and status."
       />
@@ -28,7 +27,7 @@ export default function Performance() {
         loadingSkeleton={
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
+              <Skeleton key={i} className="h-48 rounded-lg" />
             ))}
           </div>
         }
@@ -38,9 +37,9 @@ export default function Performance() {
           </div>
         }
         content={
-          <div className="grid gap-6">
+          <div className="grid gap-4">
             {reviews?.map((review) => (
-              <Card key={review.id} className="card-stat border-border/60 shadow-sm">
+              <Card key={review.id} className="border-border shadow-sm">
                 <CardHeaderStandard
                   title={review.review_period}
                   description={`Reviewer ${review.reviewer?.first_name ?? ''} ${review.reviewer?.last_name ?? ''}`.trim()}
@@ -51,7 +50,7 @@ export default function Performance() {
                       className="self-start"
                     />
                   )}
-                  className="p-6 pb-4"
+                  className="p-4 pb-2"
                 />
                 <CardContent className="space-y-4">
                   {review.overall_rating && (

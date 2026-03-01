@@ -209,7 +209,7 @@ export function SalaryStructureDialog({
           </div>
 
           {/* Total Preview */}
-          <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+          <div className="rounded-lg border border-primary/20 bg-primary/10 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">Total Monthly</span>
               <span className="text-xl font-bold text-primary">

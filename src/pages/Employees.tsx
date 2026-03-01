@@ -1,4 +1,4 @@
-﻿import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployees } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -69,10 +69,10 @@ export default function Employees() {
   };
 
   const LoadingGridSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {[...Array(6)].map((_, i) => (
-        <Card key={i} className="card-stat border-border/60 shadow-sm">
-          <CardContent className="pt-6">
+        <Card key={i} className="border-border shadow-sm">
+          <CardContent className="pt-4">
             <div className="animate-pulse space-y-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-muted rounded-full" />
@@ -89,11 +89,11 @@ export default function Employees() {
   );
 
   const LoadingListSkeleton = () => (
-    <Card className="card-stat border-border/60 shadow-sm">
-      <CardContent className="pt-6">
+    <Card className="border-border shadow-sm">
+      <CardContent className="pt-4">
         <div className="space-y-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
+            <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
       </CardContent>
@@ -103,7 +103,6 @@ export default function Employees() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Employee Directory"
         description={`${employees?.length || 0} employees`}
         toolbarSlot={
@@ -145,17 +144,17 @@ export default function Employees() {
           hasData={(filteredEmployees?.length || 0) > 0}
           emptyState={
             <div className="text-center py-12 text-muted-foreground">
-              <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <Users className="mx-auto mb-3 h-10 w-10 opacity-50" />
               <p>No employees match your search.</p>
             </div>
           }
           content={
             viewType === 'grid' ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredEmployees?.map((employee) => (
                   <Card
                     key={employee.id}
-                    className="card-stat cursor-pointer border-border/60 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
+                    className="cursor-pointer border-border shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
                     onClick={() => handleEmployeeClick(employee)}
                     onKeyDown={(event) => handleEmployeeKeyDown(event, employee)}
                     role="button"
@@ -165,14 +164,14 @@ export default function Employees() {
                     <CardHeaderStandard
                       title={`${employee.first_name} ${employee.last_name}`}
                       description={employee.job_title || 'No title'}
-                      className="p-6 pb-3"
-                      titleClassName="text-lg font-semibold"
+                      className="p-4 pb-2"
+                      titleClassName="text-base font-semibold"
                       descriptionClassName="truncate text-sm"
                       actions={<StatusBadge status={employee.status} />}
                     />
                     <CardContent className="pt-0">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-12 h-12">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {employee.first_name[0]}{employee.last_name[0]}
                           </AvatarFallback>
@@ -200,7 +199,7 @@ export default function Employees() {
                   {filteredEmployees?.map((employee) => (
                     <div
                       key={employee.id}
-                      className="rounded-xl border border-border/60 p-4 shadow-sm cursor-pointer"
+                      className="rounded-lg border border-border p-4 shadow-sm cursor-pointer"
                       onClick={() => handleEmployeeClick(employee)}
                       onKeyDown={(event) => handleEmployeeKeyDown(event, employee)}
                       role="button"
@@ -234,7 +233,7 @@ export default function Employees() {
                     </div>
                   ))}
                 </div>
-                <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
+                <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>

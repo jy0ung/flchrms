@@ -178,7 +178,7 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
           id={formErrorId}
           role="alert"
           aria-live="assertive"
-          className="rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive"
         >
           <div className="flex items-start gap-2">
             <ShieldAlert className="mt-0.5 h-4 w-4" aria-hidden="true" />
@@ -210,7 +210,7 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
             fieldErrorSet.has('identifier') && identifierErrorId,
             errorModel && !fieldErrorSet.size && formErrorId,
           )}
-          className={cn('h-11 rounded-xl', fieldErrorSet.has('identifier') && 'border-destructive/70 focus-visible:ring-destructive')}
+          className={cn('h-11 rounded-lg', fieldErrorSet.has('identifier') && 'border-destructive/70 focus-visible:ring-destructive')}
         />
         <p id={identifierHintId} className="text-xs text-muted-foreground">
           Use your account email, username alias, or employee ID.
@@ -255,7 +255,7 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
               fieldErrorSet.has('password') && passwordErrorId,
               errorModel && !fieldErrorSet.size && formErrorId,
             )}
-            className={cn('h-11 rounded-xl pr-11', fieldErrorSet.has('password') && 'border-destructive/70 focus-visible:ring-destructive')}
+            className={cn('h-11 rounded-lg pr-11', fieldErrorSet.has('password') && 'border-destructive/70 focus-visible:ring-destructive')}
           />
           <Button
             type="button"
@@ -283,7 +283,7 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
         ) : null}
       </div>
 
-      <Button type="submit" className="h-11 w-full rounded-xl" disabled={isDisabled}>
+      <Button type="submit" className="h-11 w-full rounded-lg" disabled={isDisabled}>
         <Loader2 className={cn('mr-2 h-4 w-4', isSubmitting ? 'animate-spin opacity-100' : 'opacity-0')} aria-hidden="true" />
         {isSubmitting ? 'Signing in…' : 'Sign In'}
       </Button>

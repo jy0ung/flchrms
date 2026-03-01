@@ -562,7 +562,7 @@ export default function Admin() {
 
         <section role="region" aria-label="Admin overview insights" className="space-y-3">
           {orderedVisibleStatsCardIds.length === 0 ? (
-            <Card className="card-stat border-border/60 shadow-sm">
+            <Card className="border-border shadow-sm">
               <CardHeaderStandard
                 title="No Admin KPI Cards Visible"
                 description="Enable customize mode to restore hidden cards or reset admin defaults."
@@ -570,7 +570,7 @@ export default function Admin() {
                 titleClassName="text-base"
               />
               <CardContent className="pt-0 pb-6 text-center">
-                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/20">
+                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
                   <Filter className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex flex-col justify-center gap-2 sm:flex-row">
@@ -596,7 +596,7 @@ export default function Admin() {
             />
           )}
 
-          <Card className="border-border/60 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeaderStandard
               title="Admin Overview"
               description="Secondary governance insights for operational monitoring."
@@ -608,15 +608,15 @@ export default function Admin() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold">Governance Status</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Profiles in scope</span>
                       <span className="font-medium">{governanceSummary.manageableProfiles}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Departments</span>
                       <span className="font-medium">{governanceSummary.managedDepartments}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Role assignments</span>
                       <span className="font-medium">{governanceSummary.roleAssignments}</span>
                     </div>
@@ -626,15 +626,15 @@ export default function Admin() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold">Policy Health Summary</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Published policies</span>
                       <span className="font-medium">{policyHealthSummary.totalPolicies}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Document required</span>
                       <span className="font-medium">{policyHealthSummary.docRequired}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
                       <span className="text-muted-foreground">Paid policies</span>
                       <span className="font-medium">{policyHealthSummary.paidPolicies}</span>
                     </div>
@@ -645,7 +645,7 @@ export default function Admin() {
                   <h3 className="text-sm font-semibold">System Alerts</h3>
                   <div className="space-y-2 text-sm">
                     {systemAlerts.map((alert) => (
-                      <div key={alert.id} className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+                      <div key={alert.id} className="rounded-lg border border-border bg-muted/50 px-3 py-2">
                         <StatusBadge status={alert.tone} labelOverride={alert.tone} className="mb-1 text-[11px]" />
                         <p>{alert.message}</p>
                       </div>

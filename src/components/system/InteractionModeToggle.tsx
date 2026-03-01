@@ -80,7 +80,7 @@ export function InteractionModeToggle({
       <Button
         type="button"
         variant={isActive ? "outline" : "default"}
-        className={cn("min-w-[170px] rounded-xl", className)}
+        className={cn("min-w-[170px] rounded-lg", className)}
         aria-label={ariaLabel}
         onClick={() => (isActive ? resetMode() : setMode(targetMode))}
         {...props}
@@ -106,7 +106,7 @@ export function InteractionModeToggle({
           setMode(nextValue as InteractionMode);
         }}
         className={cn(
-          "rounded-xl border border-border/70 bg-muted/25 p-1",
+          "rounded-lg border border-border bg-muted/50 p-1",
           layout === "inline"
             ? "flex w-full flex-nowrap items-center gap-1 overflow-x-auto sm:w-auto"
             : "grid w-full grid-cols-2 gap-1 sm:inline-grid sm:w-auto",

@@ -10,11 +10,11 @@ export interface ModalSectionProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 const toneClasses = {
-  default: "border-border/70 bg-card/70",
-  muted: "border-border/60 bg-muted/35",
-  success: "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/20",
-  warning: "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20",
-  danger: "border-rose-200/80 bg-rose-50/60 dark:border-rose-900/60 dark:bg-rose-950/20",
+  default: "border-border bg-card",
+  muted: "border-border bg-muted/50",
+  success: "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30",
+  warning: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30",
+  danger: "border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30",
 } as const;
 
 /**
@@ -33,7 +33,7 @@ export function ModalSection({
   return (
     <section
       className={cn(
-        "rounded-xl border",
+        "rounded-lg border",
         toneClasses[tone],
         compact ? "p-3" : "p-4",
         className,

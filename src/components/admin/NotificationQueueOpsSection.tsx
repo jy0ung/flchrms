@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { differenceInMinutes, formatDistanceToNow } from 'date-fns';
 import {
   Loader2,
@@ -281,7 +281,7 @@ function QueueOpsRow({
           </div>
           <p className="text-sm font-medium truncate">{row.subject}</p>
           <p className="text-xs text-muted-foreground break-all">
-            {userName ? `${userName} · ` : ''}{row.recipient_email}
+            {userName ? `${userName} � ` : ''}{row.recipient_email}
           </p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
@@ -467,11 +467,11 @@ export function NotificationQueueOpsSection() {
   };
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeaderStandard
         title="Notification Email Queue Operations"
         description="Queued email notification monitoring, retries, and discard controls."
-        className="p-6 pb-4"
+        className="p-4 pb-2"
         actions={(
           <Button variant="outline" size="sm" className="rounded-full" onClick={() => void refetch()} disabled={isFetching}>
             <RefreshCw className={cn('w-4 h-4 mr-2', isFetching && 'animate-spin')} />
@@ -505,7 +505,7 @@ export function NotificationQueueOpsSection() {
                   <AlertDescription>
                     <p>{alert.description}</p>
                     {alert.recommendation ? (
-                      <p className="mt-1 text-xs opacity-90">Recommended: {alert.recommendation}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Recommended: {alert.recommendation}</p>
                     ) : null}
                   </AlertDescription>
                 </Alert>
@@ -745,7 +745,7 @@ export function NotificationQueueOpsSection() {
                               <Badge variant="outline">{row.provider}</Badge>
                               <Badge variant="secondary">{row.event_type}</Badge>
                               <span className="text-muted-foreground">
-                                Count: {row.count} · Max attempts: {row.max_attempts}
+                                Count: {row.count} � Max attempts: {row.max_attempts}
                               </span>
                             </div>
                             {row.latest_seen_at ? (

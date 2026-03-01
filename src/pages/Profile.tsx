@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -116,28 +116,23 @@ export default function Profile() {
   return (
     <AppPageContainer maxWidth="6xl" spacing="comfortable">
       <PageHeader
-        shellDensity="compact"
         title="My Profile"
         description="Manage your account profile and notification settings."
-        chips={[
-          { id: 'role', label: role, tone: 'info' },
-          ...(profile.username ? [{ id: 'username', label: `@${profile.username}` }] : []),
-        ]}
-        chipsSlot={<StatusBadge status={profile.status} />}
+        actionsSlot={<StatusBadge status={profile.status} />}
       />
 
-      <Card className="card-stat border-border/60 shadow-sm">
+      <Card className="border-border shadow-sm">
         <CardHeaderStandard
           title={`${profile.first_name} ${profile.last_name}`}
           description={profile.job_title || 'Employee'}
           className="p-4 pb-2 sm:p-5 sm:pb-2"
-          titleClassName="text-xl font-bold tracking-tight sm:text-2xl"
+          titleClassName="text-lg font-semibold tracking-tight"
           descriptionClassName="text-sm sm:text-base"
         />
         <CardContent className="pt-0 p-4 sm:p-5">
           <div className="grid gap-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-            <Avatar className="mx-auto h-20 w-20 sm:h-24 sm:w-24 lg:mx-0">
-              <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
+            <Avatar className="mx-auto h-16 w-16 sm:h-20 sm:w-20 lg:mx-0">
+              <AvatarFallback className="bg-primary text-xl text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -157,14 +152,14 @@ export default function Profile() {
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
                 <ShieldCheck className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Access Role</p>
                   <p className="font-medium capitalize">{role}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
                 <Bell className="h-4 w-4 text-primary" />
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Notifications</p>
@@ -177,14 +172,14 @@ export default function Profile() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-5">
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-1 rounded-xl border border-border/60 bg-muted/30 p-1 sm:grid-cols-3 sm:max-w-2xl">
-          <TabsTrigger value="overview" className="rounded-lg">
+        <TabsList className="inline-flex h-auto w-full overflow-x-auto sm:w-auto">
+          <TabsTrigger value="overview">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="edit" className="rounded-lg">
+          <TabsTrigger value="edit">
             Update Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="rounded-lg">
+          <TabsTrigger value="notifications">
             Notification Settings
           </TabsTrigger>
         </TabsList>
@@ -195,7 +190,7 @@ export default function Profile() {
             description="Current account profile details used across the HRMS."
             content={
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex min-h-[84px] items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3.5 sm:p-4">
+                <div className="flex min-h-[84px] items-center gap-3 rounded-lg border border-border bg-background p-3.5 sm:p-4">
                   <div className="rounded-lg bg-muted/70 p-2">
                     <Briefcase className="h-5 w-5 text-muted-foreground" />
                   </div>
@@ -204,7 +199,7 @@ export default function Profile() {
                     <p className="font-medium leading-tight">{profile.employee_id || 'N/A'}</p>
                   </div>
                 </div>
-                <div className="flex min-h-[84px] items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3.5 sm:p-4">
+                <div className="flex min-h-[84px] items-center gap-3 rounded-lg border border-border bg-background p-3.5 sm:p-4">
                   <div className="rounded-lg bg-muted/70 p-2">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                   </div>
@@ -213,7 +208,7 @@ export default function Profile() {
                     <p className="break-all font-medium leading-tight">{profile.email}</p>
                   </div>
                 </div>
-                <div className="flex min-h-[84px] items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3.5 sm:p-4">
+                <div className="flex min-h-[84px] items-center gap-3 rounded-lg border border-border bg-background p-3.5 sm:p-4">
                   <div className="rounded-lg bg-muted/70 p-2">
                     <Phone className="h-5 w-5 text-muted-foreground" />
                   </div>
@@ -222,7 +217,7 @@ export default function Profile() {
                     <p className="font-medium leading-tight">{profile.phone || 'Not provided'}</p>
                   </div>
                 </div>
-                <div className="flex min-h-[84px] items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-3.5 sm:p-4">
+                <div className="flex min-h-[84px] items-center gap-3 rounded-lg border border-border bg-background p-3.5 sm:p-4">
                   <div className="rounded-lg bg-muted/70 p-2">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                   </div>
@@ -244,7 +239,7 @@ export default function Profile() {
             description="Update your personal contact details used in the HRMS. Email, employee ID, and username are managed separately."
             alertBanner={
               isAdminRestrictedEditor ? (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-700">
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-700">
                   System Admin profile edits are restricted in this form. Use HR Admin for username alias management.
                 </div>
               ) : null

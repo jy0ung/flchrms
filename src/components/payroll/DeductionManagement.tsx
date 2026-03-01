@@ -27,7 +27,7 @@ export function DeductionManagement({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function DeductionManagement({
           deductions?.length ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {deductions.map((deduction) => (
-                <Card key={deduction.id} className="relative overflow-hidden border-border/60 shadow-sm">
+                <Card key={deduction.id} className="relative overflow-hidden border-border shadow-sm">
                   <CardHeaderStandard
                     title={deduction.name}
                     description={deduction.description || 'Deduction configuration.'}

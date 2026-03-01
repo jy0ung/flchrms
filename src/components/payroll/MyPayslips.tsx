@@ -46,9 +46,9 @@ export function MyPayslips({
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-lg" />)}
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function MyPayslips({
     <div className="space-y-6">
       {showVisibilityToggle ? (
         <div className="flex justify-end">
-          <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
+          <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
             <div className="flex min-w-0 items-center gap-3">
               {hideAmounts ? (
                 <EyeOff className="w-4 h-4 text-muted-foreground" />
@@ -98,7 +98,7 @@ export function MyPayslips({
 
       {/* No salary structure warning */}
       {!salary && (
-        <Card className="card-stat border-warning/40 bg-warning/5 shadow-sm">
+        <Card className="border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-4">
             <p className="text-sm text-warning">
               Your salary structure has not been configured yet. Please contact HR for assistance.
@@ -109,7 +109,7 @@ export function MyPayslips({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="card-stat border-border/60 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeaderStandard
             title="Basic Salary"
             description={totalAllowances > 0
@@ -128,7 +128,7 @@ export function MyPayslips({
           </CardContent>
         </Card>
 
-        <Card className="card-stat border-border/60 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeaderStandard
             title="Last Net Pay"
             description={latestPayslip ? format(new Date(latestPayslip.created_at), 'MMM yyyy') : undefined}
@@ -145,7 +145,7 @@ export function MyPayslips({
           </CardContent>
         </Card>
 
-        <Card className="card-stat border-border/60 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeaderStandard
             title="YTD Earnings"
             description={`${new Date().getFullYear()} total`}
@@ -162,11 +162,11 @@ export function MyPayslips({
       </div>
 
       {/* Payslips List */}
-      <Card className="card-stat border-border/60 shadow-sm">
+      <Card className="border-border shadow-sm">
         <CardHeaderStandard
           title="Payslip History"
           description="Payslip records and download access."
-          className="p-6 pb-4"
+          className="p-4 pb-2"
         />
         <CardContent>
           {!payslips?.length ? (
@@ -179,11 +179,11 @@ export function MyPayslips({
               {payslips.map(payslip => (
                 <div
                   key={payslip.id}
-                  className="rounded-xl border border-border/60 p-4 shadow-sm transition-colors hover:bg-muted/40"
+                  className="rounded-lg border border-border p-4 shadow-sm transition-colors hover:bg-muted/40"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
+                      <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
                         <FileText className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0">

@@ -20,7 +20,7 @@ describe("SectionToolbar", () => {
     );
 
     const region = screen.getByRole("region", { name: /inline toolbar/i });
-    expect(region).not.toHaveClass("rounded-xl");
+    expect(region).not.toHaveClass("rounded-lg");
     expect(region).not.toHaveClass("border");
     expect(region).toHaveClass("w-full");
   });

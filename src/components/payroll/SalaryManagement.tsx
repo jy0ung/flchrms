@@ -53,8 +53,8 @@ export function SalaryManagement({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-64 rounded-xl" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        <Skeleton className="h-10 w-64 rounded-lg" />
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
       </div>
     );
   }
@@ -89,7 +89,7 @@ export function SalaryManagement({
         )}
         alertBanner={
           employeesWithoutSalary && employeesWithoutSalary.length > 0 ? (
-            <div className="rounded-xl border border-warning/40 bg-warning/5 px-4 py-3">
+            <div className="rounded-lg border border-warning/40 bg-warning/5 px-4 py-3">
               <p className="text-sm text-warning">
                 <strong>{employeesWithoutSalary.length}</strong> active employees without salary structure configured
               </p>
@@ -115,7 +115,7 @@ export function SalaryManagement({
                   const total = Number(salary.basic_salary) + totalAllowances;
 
                   return (
-                    <div key={salary.id} className="rounded-xl border border-border/60 p-4 shadow-sm">
+                    <div key={salary.id} className="rounded-lg border border-border p-4 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-medium">
@@ -135,19 +135,19 @@ export function SalaryManagement({
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                        <div className="rounded-lg bg-muted/30 p-3">
+                        <div className="rounded-lg bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Basic</p>
                           <p className="font-semibold">RM {Number(salary.basic_salary).toLocaleString()}</p>
                         </div>
-                        <div className="rounded-lg bg-muted/30 p-3">
+                        <div className="rounded-lg bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Allowances</p>
                           <p className="font-semibold">RM {totalAllowances.toLocaleString()}</p>
                         </div>
-                        <div className="rounded-lg bg-muted/30 p-3">
+                        <div className="rounded-lg bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Total</p>
                           <p className="font-semibold">RM {total.toLocaleString()}</p>
                         </div>
-                        <div className="rounded-lg bg-muted/30 p-3">
+                        <div className="rounded-lg bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Effective</p>
                           <p className="font-semibold">{format(new Date(salary.effective_date), 'MMM d, yyyy')}</p>
                         </div>
@@ -157,7 +157,7 @@ export function SalaryManagement({
                 })}
               </div>
 
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-border/60">
+              <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
                 <table className="w-full min-w-[760px]">
                   <thead>
                     <tr className="border-b text-left">
@@ -179,7 +179,7 @@ export function SalaryManagement({
                       const total = Number(salary.basic_salary) + totalAllowances;
 
                       return (
-                        <tr key={salary.id} className="border-b last:border-0 hover:bg-muted/20">
+                        <tr key={salary.id} className="border-b last:border-0 hover:bg-muted/50">
                           <td className="py-3">
                             <div>
                               <p className="font-medium">

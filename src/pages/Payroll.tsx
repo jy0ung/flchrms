@@ -54,9 +54,8 @@ export default function Payroll() {
 
   return (
     <AppPageContainer>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <PageHeader
-          shellDensity="compact"
           title="Payroll"
           description={
             canManagePayroll
@@ -91,7 +90,7 @@ export default function Payroll() {
           }
           tabsSlot={
             <TabsList
-              className={`grid h-auto w-full rounded-xl bg-muted/40 p-1 ${
+              className={`grid h-auto w-full rounded-lg bg-muted/40 p-1 ${
                 canManagePayroll ? 'grid-cols-2 lg:grid-cols-4 max-w-3xl' : 'grid-cols-1 max-w-sm'
               }`}
             >
@@ -121,7 +120,7 @@ export default function Payroll() {
 
           {canManagePayroll && (
             <>
-              <TabsContent value="payroll" className="space-y-6">
+              <TabsContent value="payroll" className="space-y-4">
                 <PayrollManagement
                   showCreateButton={false}
                   createDialogOpen={payrollCreateOpen}
@@ -129,7 +128,7 @@ export default function Payroll() {
                 />
               </TabsContent>
 
-              <TabsContent value="salaries" className="space-y-6">
+              <TabsContent value="salaries" className="space-y-4">
                 <SalaryManagement
                   showCreateButton={false}
                   createDialogOpen={salaryCreateOpen}
@@ -137,7 +136,7 @@ export default function Payroll() {
                 />
               </TabsContent>
 
-              <TabsContent value="deductions" className="space-y-6">
+              <TabsContent value="deductions" className="space-y-4">
                 <DeductionManagement
                   showCreateButton={false}
                   createDialogOpen={deductionCreateOpen}
@@ -147,7 +146,7 @@ export default function Payroll() {
             </>
           )}
 
-          <TabsContent value="payslips" className="space-y-6">
+          <TabsContent value="payslips" className="space-y-4">
             <MyPayslips
               hideAmounts={hidePayslipAmounts}
               onHideAmountsChange={setHidePayslipAmounts}

@@ -37,7 +37,7 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
   return (
     <Card 
       className={cn(
-        "relative overflow-hidden border-border/60 shadow-sm transition-shadow",
+        "relative overflow-hidden border-border shadow-sm transition-shadow",
         clickable && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20"
       )}
       onClick={onClick}
@@ -49,12 +49,12 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
       <CardHeaderStandard
         title={title}
         description={subtitle}
-        className="p-4 pb-2 md:p-6 md:pb-2"
-        titleClassName="text-sm md:text-base font-semibold"
+        className="p-4 pb-2"
+        titleClassName="text-sm font-semibold"
         descriptionClassName="truncate text-xs"
       />
-      <CardContent className="px-4 pb-4 pt-0 md:px-6 md:pb-6">
-        <p className="text-2xl font-bold tracking-tight md:text-3xl">{value}</p>
+      <CardContent className="px-4 pb-4 pt-0">
+        <p className="text-xl font-bold tracking-tight md:text-2xl">{value}</p>
         {trend && trendLabel && (
           <div className="mt-3 flex items-center gap-1.5 text-xs">
             <TrendIcon 
@@ -95,7 +95,7 @@ export function QuickStats() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-28 md:h-32 rounded-xl" />
+          <Skeleton key={i} className="h-28 md:h-32 rounded-lg" />
         ))}
       </div>
     );

@@ -141,13 +141,13 @@ export function LeaveBalanceWidget() {
       <DashboardWidgetCard title="Pending Leave Approvals" description="Awaiting management action." icon={Briefcase}
         action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>View All</Button>}>
         {isPendingApprovalsLoading ? (
-          <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
+          <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
         ) : (pendingApprovals?.length ?? 0) === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">No pending leave approvals right now.</div>
+          <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No pending leave approvals right now.</div>
         ) : (
           <div className="space-y-2">
             {(pendingApprovals ?? []).map((a: PendingLeaveApprovalItem) => (
-              <div key={a.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 p-3">
+              <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{a.employeeName}</p>
                   <p className="truncate text-xs text-muted-foreground">{a.leaveTypeName} • {format(new Date(a.startDate), 'MMM d')} – {format(new Date(a.endDate), 'MMM d')}</p>
@@ -165,24 +165,24 @@ export function LeaveBalanceWidget() {
     <DashboardWidgetCard title="Leave Balance" description="Your approved and pending leave usage across available leave types." icon={Calendar}
       action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')} aria-label="Open leave management">Open Leave</Button>}>
       {isLoading ? (
-        <div className="space-y-3"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-4 rounded-md" /><Skeleton className="h-20 rounded-xl" /></div>
+        <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-4 rounded-md" /><Skeleton className="h-20 rounded-lg" /></div>
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <MetricChip label="Remaining" value={summary.remaining} tone={summary.remaining > 0 ? 'success' : 'warning'} />
             <MetricChip label="Pending" value={summary.pending} tone={summary.pending > 0 ? 'warning' : 'default'} />
           </div>
-          <div className="space-y-2 rounded-xl border border-border/60 bg-muted/10 p-3">
+          <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
             <div className="flex items-center justify-between text-sm"><span className="font-medium">Annual utilization</span><span className="text-muted-foreground">{summary.used}/{summary.allowed || 0} days</span></div>
             <Progress value={utilization} className="h-2.5" />
             <p className="text-xs text-muted-foreground">{utilization}% of available leave allocation used</p>
           </div>
           {(balances?.length ?? 0) === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">No leave balance records available yet.</div>
+            <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No leave balance records available yet.</div>
           ) : (
             <div className="space-y-2">
               {visibleBalances.map((b) => (
-                <div key={b.leave_type_id} className="rounded-xl border border-border/60 bg-background/80 p-3">
+                <div key={b.leave_type_id} className="rounded-lg border border-border bg-background p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0"><p className="truncate text-sm font-medium">{b.leave_type_name}</p><p className="text-xs text-muted-foreground">{b.days_used} used • {b.days_pending} pending</p></div>
                     <Badge variant="outline" className="rounded-full px-2.5 py-1">{b.days_remaining} left</Badge>
@@ -211,13 +211,13 @@ export function AnnouncementsWidget() {
     <DashboardWidgetCard title="Announcements" description="Latest company updates and internal notices relevant to all staff." icon={Megaphone}
       action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/announcements')}>View All</Button>}>
       {isLoading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
       ) : (announcements?.length ?? 0) === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-5 text-sm text-muted-foreground">No announcements available right now.</div>
+        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-5 text-sm text-muted-foreground">No announcements available right now.</div>
       ) : (
         <div className="space-y-3">
           {(announcements ?? []).slice(0, 3).map((a: Announcement) => (
-            <div key={a.id} className="rounded-xl border border-border/60 bg-background/80 p-3 sm:p-4">
+            <div key={a.id} className="rounded-lg border border-border bg-background p-3 sm:p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0"><p className="truncate text-sm font-semibold sm:text-base">{a.title}</p><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{a.content}</p></div>
                 <StatusBadge status={a.priority} className="shrink-0" />
@@ -274,9 +274,9 @@ export function TrainingSummaryWidget() {
     return (
       <DashboardWidgetCard title="Training Overview" description="Organization learning completion by program." icon={GraduationCap}>
         {isTrainingOverviewLoading ? (
-          <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+          <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>
         ) : (trainingOverview?.length ?? 0) === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">No training enrollment data available yet.</div>
+          <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No training enrollment data available yet.</div>
         ) : (
           <div className="space-y-4">
             {(trainingOverview ?? []).map((p) => (
@@ -285,7 +285,7 @@ export function TrainingSummaryWidget() {
                 <Progress value={p.completionRate} className="h-2.5" />
               </div>
             ))}
-            <div className="rounded-xl border border-info/20 bg-info/5 p-3">
+            <div className="rounded-lg border border-info/20 bg-info/5 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-info">Training Insight</p>
               <p className="mt-1 text-sm text-muted-foreground">Focus on programs below 60% completion to improve organization readiness.</p>
             </div>
@@ -299,14 +299,14 @@ export function TrainingSummaryWidget() {
     <DashboardWidgetCard title="Training" description="Active training assignments and completion progress." icon={GraduationCap}
       action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/training')}>Open Training</Button>}>
       {isLoading ? (
-        <div className="space-y-3"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></div>
+        <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-14 rounded-lg" /></div>
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <MetricChip label="Active" value={summary.active} tone={summary.active > 0 ? 'info' : 'default'} />
             <MetricChip label="Completed" value={summary.completed} tone={summary.completed > 0 ? 'success' : 'default'} />
           </div>
-          <div className="rounded-xl border border-border/60 bg-muted/10 p-3">
+          <div className="rounded-lg border border-border bg-muted/50 p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Next Training Focus</p>
             <p className="mt-2 text-sm font-medium leading-tight">{summary.inProgress?.program?.title || summary.nextQueued?.program?.title || 'No active training assignments'}</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -336,15 +336,15 @@ export function PerformanceSummaryWidget() {
     <DashboardWidgetCard title="Performance Reviews" description="Your review progress and latest performance review status." icon={ClipboardList}
       action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/performance')}>Open Reviews</Button>}>
       {isLoading ? (
-        <div className="space-y-3"><Skeleton className="h-16 rounded-xl" /><Skeleton className="h-14 rounded-xl" /></div>
+        <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-14 rounded-lg" /></div>
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             <MetricChip label="Draft" value={summary.counts.draft} tone={summary.counts.draft > 0 ? 'warning' : 'default'} />
             <MetricChip label="Submitted" value={summary.counts.submitted} tone={summary.counts.submitted > 0 ? 'info' : 'default'} />
             <MetricChip label="Acknowledged" value={summary.counts.acknowledged} tone={summary.counts.acknowledged > 0 ? 'success' : 'default'} />
           </div>
-          <div className="rounded-xl border border-border/60 bg-muted/10 p-3">
+          <div className="rounded-lg border border-border bg-muted/50 p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Latest Review</p>
             {summary.latest ? (
               <>

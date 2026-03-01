@@ -61,7 +61,7 @@ export function DashboardLane({
 
       {items.length === 0 ? (
         <div
-          className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground"
+          className="rounded-lg border border-dashed border-border bg-muted/50 px-4 py-6 text-sm text-muted-foreground"
           aria-label={`${TIER_LABELS[tier]} lane is empty`}
         >
           No widgets available in this lane for your role.

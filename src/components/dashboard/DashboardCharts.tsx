@@ -28,9 +28,9 @@ export function DashboardCharts() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-64 md:h-72 rounded-xl" />
+          <Skeleton key={i} className="h-64 md:h-72 rounded-lg" />
         ))}
       </div>
     );
@@ -71,13 +71,13 @@ export function DashboardCharts() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Attendance Distribution */}
-      <Card className="col-span-1 border-border/60 shadow-sm">
+      <Card className="col-span-1 border-border shadow-sm">
         <CardHeaderStandard
           title="Today Attendance"
           description="Employee presence overview."
-          className="p-6 pb-2"
+          className="p-4 pb-2"
           titleClassName="text-base md:text-lg"
           descriptionClassName="text-xs md:text-sm"
         />
@@ -122,11 +122,11 @@ export function DashboardCharts() {
       </Card>
 
       {/* Leave Requests */}
-      <Card className="col-span-1 border-border/60 shadow-sm">
+      <Card className="col-span-1 border-border shadow-sm">
         <CardHeaderStandard
           title="Leave Requests"
           description="Monthly status breakdown."
-          className="p-6 pb-2"
+          className="p-4 pb-2"
           titleClassName="text-base md:text-lg"
           descriptionClassName="text-xs md:text-sm"
         />
@@ -159,11 +159,11 @@ export function DashboardCharts() {
       </Card>
 
       {/* Training Progress */}
-      <Card className="col-span-1 border-border/60 shadow-sm">
+      <Card className="col-span-1 border-border shadow-sm">
         <CardHeaderStandard
           title="Training Progress"
           description={`${stats.trainingCompletionRate}% completion rate.`}
-          className="p-6 pb-2"
+          className="p-4 pb-2"
           titleClassName="text-base md:text-lg"
           descriptionClassName="text-xs md:text-sm"
         />

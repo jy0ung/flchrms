@@ -106,7 +106,7 @@ export function AdminAccountDialogs({
           <div className="grid gap-4">
             {isAdminLimitedProfileEditor ? (
               <div className="space-y-4">
-                <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="rounded-lg border bg-muted/50 p-4">
                   <p className="font-medium">{selectedEmployee?.first_name} {selectedEmployee?.last_name}</p>
                   <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
                   {!isAdminLimitedProfileEditor && selectedEmployee?.employee_id ? (
@@ -263,7 +263,7 @@ export function AdminAccountDialogs({
         body={(
           <ModalSection title="Password Reset">
           <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="rounded-lg border bg-muted/50 p-4">
               <p className="font-medium">
                 {selectedEmployee?.first_name} {selectedEmployee?.last_name}
               </p>
@@ -392,12 +392,12 @@ export function AdminAccountDialogs({
             <ModalSection title="Change Preview" tone="muted">
               <div aria-live="polite" className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border bg-muted/50 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Role</p>
                     <p className="font-medium capitalize">{currentAssignedRole.replace(/_/g, ' ')}</p>
                     <p className="text-xs text-muted-foreground">{roleChangePreview.previousTier.label}</p>
                   </div>
-                  <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
+                  <div className="rounded-lg border border-border bg-muted/50 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Proposed Role</p>
                     <p className="font-medium capitalize">{selectedRole.replace(/_/g, ' ')}</p>
                     <p className="text-xs text-muted-foreground">{roleChangePreview.nextTier.label}</p>

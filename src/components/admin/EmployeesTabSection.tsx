@@ -165,7 +165,7 @@ export function EmployeesTabSection({
                   const currentRole = getUserRole(employee.id);
                   const tier = getRoleAuthorityTier(currentRole);
                   return (
-                    <div key={employee.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                    <div key={employee.id} className="rounded-lg border bg-card p-4 shadow-sm">
                       <div className="flex items-start gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -259,13 +259,13 @@ export function EmployeesTabSection({
                   );
                 })}
                 {(!filteredEmployees || filteredEmployees.length === 0) && (
-                  <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                     No employees match the current filters.
                   </div>
                 )}
               </div>
 
-              <div className="hidden rounded-xl border md:block">
+              <div className="hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[980px]">
                     <TableHeader>

@@ -94,7 +94,7 @@ function WorkflowAuditItem({
       : 'All Departments (Default)';
 
   return (
-    <div className="rounded-xl border bg-card/60 p-3 space-y-2 shadow-sm">
+    <div className="rounded-lg border bg-card p-3 space-y-2 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{workflowTypeLabel(event.workflow_type)}</Badge>
@@ -141,11 +141,11 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
   }, [events, filter]);
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeaderStandard
         title="Workflow Configuration Activity"
         description="Approval and cancellation workflow change records for supervision."
-        className="p-6 pb-4"
+        className="p-4 pb-2"
         actions={(
           <Button
             variant="outline"
@@ -161,7 +161,7 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
       />
       <CardContent className="space-y-4">
         <Tabs value={filter} onValueChange={(value) => setFilter(value as WorkflowAuditFilter)}>
-          <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1 rounded-xl p-1">
+          <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1 rounded-lg p-1">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="leave_approval">Approval</TabsTrigger>
             <TabsTrigger value="leave_cancellation">Cancellation</TabsTrigger>

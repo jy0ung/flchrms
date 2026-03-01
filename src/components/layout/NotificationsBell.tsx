@@ -107,7 +107,6 @@ function NotificationListItem({
 }
 
 export function NotificationsBell({
-  floating = false,
   triggerClassName,
 }: {
   floating?: boolean;
@@ -138,7 +137,6 @@ export function NotificationsBell({
     if (unreadCount <= 0) return null;
     return unreadCount > 99 ? '99+' : String(unreadCount);
   }, [unreadCount]);
-  const floatingIconClassName = floating ? 'h-3.5 w-3.5' : 'h-4 w-4';
 
   const handleOpenNotification = async (notification: UserNotification) => {
     if (!notification.read_at) {
@@ -205,29 +203,22 @@ export function NotificationsBell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant={floating ? 'ghost' : 'outline'}
+          variant="ghost"
           size="icon"
           className={cn(
-            'relative bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75',
-            floating &&
-              'h-8 w-8 rounded-lg border border-border/60 shadow-none hover:bg-accent/70',
+            'relative h-8 w-8',
             triggerClassName,
           )}
           aria-label="Open notifications"
         >
           {isRefreshing ? (
-            <Loader2 className={cn(floatingIconClassName, 'animate-spin')} />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Bell className={floatingIconClassName} />
+            <Bell className="h-4 w-4" />
           )}
           {unreadBadgeLabel && (
             <span
-              className={cn(
-                'absolute rounded-full bg-primary text-primary-foreground font-semibold flex items-center justify-center ring-2 ring-background',
-                floating
-                  ? '-right-1 -top-1 min-w-[18px] h-[18px] px-1 text-[9px]'
-                  : '-right-1 -top-1 min-w-5 h-5 px-1 text-[10px]',
-              )}
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground"
             >
               {unreadBadgeLabel}
             </span>

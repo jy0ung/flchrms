@@ -79,12 +79,12 @@ function AdminStatsCardView({
   density?: 'default' | 'compact';
 }) {
   return (
-    <Card className="card-stat border-border/60 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardContent className={density === 'compact' ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}>
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {item.label}
         </p>
-        <p className={density === 'compact' ? 'mt-1 text-xl font-bold sm:text-2xl' : 'mt-1 text-2xl font-bold'}>{item.value}</p>
+        <p className={density === 'compact' ? 'mt-1 text-lg font-bold' : 'mt-1 text-xl font-bold'}>{item.value}</p>
         {density === 'compact' ? (
           <p className="mt-1 text-xs text-muted-foreground">{item.meta}</p>
         ) : (

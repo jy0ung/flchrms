@@ -70,7 +70,7 @@ export function LeavePoliciesSection({
           <>
               <div className="space-y-3 md:hidden">
                 {leaveTypes?.map((leaveType) => (
-                  <div key={leaveType.id} className="rounded-xl border p-4 shadow-sm">
+                  <div key={leaveType.id} className="rounded-lg border p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium">{leaveType.name}</p>
@@ -92,7 +92,7 @@ export function LeavePoliciesSection({
                         labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
                       />
                     </div>
-                    <div className="mt-2 rounded-md border border-border/60 px-3 py-2 text-xs text-muted-foreground">
+                    <div className="mt-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
                       Effective {getEffectiveDate(leaveType)} · Last modified {getLastModifiedDate(leaveType)} · by System
                     </div>
                     {canManageLeaveTypes && (
@@ -120,13 +120,13 @@ export function LeavePoliciesSection({
                   </div>
                 ))}
                 {(!leaveTypes || leaveTypes.length === 0) && (
-                  <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                     No leave types configured. Add your first leave type.
                   </div>
                 )}
               </div>
 
-              <div className="hidden rounded-xl border md:block">
+              <div className="hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[1320px]">
                     <TableHeader>

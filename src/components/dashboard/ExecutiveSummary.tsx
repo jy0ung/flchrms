@@ -26,11 +26,11 @@ function StatCard({ title, value, subtitle, trend, trendValue, variant = 'defaul
   };
 
   return (
-    <Card className="relative overflow-hidden border-border/60 shadow-sm min-w-0">
+    <Card className="relative overflow-hidden border-border shadow-sm min-w-0">
       <CardContent className="p-4 overflow-hidden">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-xl font-bold">{value}</p>
           {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
         {trend && trendValue && (
@@ -68,10 +68,10 @@ export function ExecutiveSummary() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64 rounded-xl" />
+        <Skeleton className="h-8 w-64 rounded-lg" />
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+            <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
       </div>
@@ -87,7 +87,7 @@ export function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="border-border/60 shadow-sm">
+      <Card className="border-border shadow-sm">
         <CardHeaderStandard
           title="Executive Summary"
           description={scopeLabel}
@@ -182,7 +182,7 @@ export function ExecutiveSummary() {
       </div>
 
       {/* Training & Performance Section */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4">
         <div className="min-w-0">
         {/* Training */}
         </div>

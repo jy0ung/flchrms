@@ -47,7 +47,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
         body={(
           <>
             {/* Summary */}
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-muted/50 p-4 sm:grid-cols-3">
               <div className="text-center">
                 <p className="text-2xl font-bold">{payslips?.length || 0}</p>
                 <p className="text-xs text-muted-foreground">Employees</p>
@@ -86,7 +86,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
                 filteredPayslips.map(payslip => (
                   <div
                     key={payslip.id}
-                    className="rounded-xl border border-border/60 p-3 shadow-sm transition-colors hover:bg-muted/30"
+                    className="rounded-lg border border-border p-3 shadow-sm transition-colors hover:bg-muted/50"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">

@@ -75,12 +75,12 @@ export function DashboardWidgetCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('card-stat flex h-full flex-col overflow-hidden border-border/60 shadow-sm', className)}>
+    <Card className={cn('flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-lg', className)}>
       <CardHeaderStandard
         title={title}
         description={description}
         actions={action}
-        className="p-6 pb-3"
+        className="p-4 pb-2"
         titleClassName="text-base md:text-lg"
         descriptionClassName="text-xs md:text-sm"
       />
@@ -91,15 +91,15 @@ export function DashboardWidgetCard({
 
 export function MetricChip({ label, value, tone = 'default' }: { label: string; value: string | number; tone?: 'default' | 'success' | 'warning' | 'danger' | 'info' }) {
   const toneClass = {
-    default: 'border-border/60 bg-muted/20 text-foreground',
+    default: 'border-border bg-muted text-foreground',
     success: 'border-success/20 bg-success/10 text-success',
     warning: 'border-warning/20 bg-warning/10 text-warning',
     danger: 'border-destructive/20 bg-destructive/10 text-destructive',
-    info: 'border-info/20 bg-info/10 text-info',
+    info: 'border-primary/20 bg-primary/10 text-primary',
   }[tone];
 
   return (
-    <div className={cn('rounded-xl border px-3 py-2', toneClass)}>
+    <div className={cn('rounded-lg border px-3 py-2', toneClass)}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-base font-semibold leading-none">{value}</p>
     </div>

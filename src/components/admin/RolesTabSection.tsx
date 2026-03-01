@@ -91,7 +91,7 @@ export function RolesTabSection({
                   const roleAssignment = roleAssignmentsByUserId.get(employee.id);
                   const actionState = getRoleActionState(currentRole);
                   return (
-                    <div key={employee.id} className="rounded-xl border p-4 shadow-sm">
+                    <div key={employee.id} className="rounded-lg border p-4 shadow-sm">
                       <div className="flex items-start gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -110,7 +110,7 @@ export function RolesTabSection({
                       <div className="mt-3 rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
                         {getRolePermissionSummary(currentRole)}
                       </div>
-                      <div className="mt-2 rounded-md border border-border/60 px-3 py-2 text-xs text-muted-foreground">
+                      <div className="mt-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
                         Last modified: {format(new Date(roleAssignment?.created_at ?? employee.updated_at), 'MMM d, yyyy')} · by System
                       </div>
                       <div className="mt-3">
@@ -132,7 +132,7 @@ export function RolesTabSection({
                 })}
               </div>
 
-              <div className="hidden rounded-xl border md:block">
+              <div className="hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[1220px]">
                     <TableHeader>

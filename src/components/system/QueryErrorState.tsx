@@ -19,9 +19,9 @@ export function QueryErrorState({ label = 'data', onRetry, className }: QueryErr
   return (
     <div
       role="alert"
-      className={`flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center ${className ?? ''}`}
+      className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-5 text-center ${className ?? ''}`}
     >
-      <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden />
+      <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden />
       <div>
         <p className="font-medium text-destructive">Failed to load {label}</p>
         <p className="mt-1 text-sm text-muted-foreground">

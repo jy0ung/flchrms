@@ -7,6 +7,8 @@ export * from "./DataTableShell";
 export * from "./SurfaceSection";
 export * from "./ModalScaffold";
 export * from "./ModalSection";
+export * from "./ConfirmationDialog";
+export * from "./Skeletons";
 export * from "./QueryErrorState";
 export * from "./interaction-mode";
 export * from "./InteractionModeProvider";

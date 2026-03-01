@@ -70,7 +70,7 @@ export function DepartmentsTabSection({
             {filteredDepartments?.map((dept) => {
               const employeeCount = employees?.filter((e) => e.department_id === dept.id).length || 0;
               return (
-                <div key={dept.id} className="rounded-xl border p-4 shadow-sm">
+                <div key={dept.id} className="rounded-lg border p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium">{dept.name}</p>
@@ -101,18 +101,18 @@ export function DepartmentsTabSection({
               );
             })}
             {(!departments || departments.length === 0) && (
-              <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                 No departments yet. Create your first department.
               </div>
             )}
             {departments && departments.length > 0 && filteredDepartments?.length === 0 && (
-              <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                 No departments match the current search.
               </div>
             )}
           </div>
 
-          <div className="hidden rounded-xl border md:block">
+          <div className="hidden rounded-lg border md:block">
             <div className="overflow-x-auto">
               <Table className="min-w-[720px]">
                 <TableHeader>

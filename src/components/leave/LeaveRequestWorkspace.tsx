@@ -188,7 +188,7 @@ export function LeaveRequestWorkspace({
 
   return (
     <Tabs value={view} onValueChange={(value) => setView(value as LeaveViewOption)} className="space-y-4">
-      <TabsList className="grid h-auto w-full gap-1 rounded-xl p-1 md:w-auto md:min-w-[560px] md:grid-cols-4">
+      <TabsList className="grid h-auto w-full gap-1 rounded-lg p-1 md:w-auto md:min-w-[560px] md:grid-cols-4">
         {availableViews.map((option) => (
           <TabsTrigger key={option} value={option} className="text-xs sm:text-sm">
             {viewConfig[option].label}

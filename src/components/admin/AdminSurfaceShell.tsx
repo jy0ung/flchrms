@@ -63,17 +63,14 @@ export function AdminHeader({
 }: AdminHeaderProps) {
   return (
     <PageHeader
-      shellDensity="compact"
       title={title}
       description={subtitle}
-      chipsSlot={
-        <Badge variant="outline" className="inline-flex items-center gap-1.5 text-[11px]">
-          <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-          {classificationLabel}
-        </Badge>
-      }
       actionsSlot={(
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-nowrap sm:items-center sm:justify-end">
+          <Badge variant="outline" className="inline-flex items-center gap-1.5 text-[11px]">
+            <Shield className="h-3.5 w-3.5" aria-hidden="true" />
+            {classificationLabel}
+          </Badge>
           {modeControls}
           {primaryAction}
           {actions}
@@ -89,7 +86,7 @@ export function AdminContextBar({ items, actions, className }: AdminContextBarPr
       role="region"
       aria-label="Admin governance context"
       className={cn(
-        'flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-col gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between',
         className,
       )}
     >

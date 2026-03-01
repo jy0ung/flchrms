@@ -1,12 +1,11 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -80,8 +79,8 @@ function NotificationRow({
   return (
     <div
       className={cn(
-        'rounded-xl border p-4 transition-colors shadow-sm',
-        isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background border-border/60',
+        'rounded-lg border p-4 transition-colors shadow-sm',
+        isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background border-border',
       )}
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -233,7 +232,6 @@ export default function Notifications() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Notifications"
         description="Review leave workflow and workflow configuration activity."
         actionsSlot={

@@ -479,7 +479,6 @@ export default function Leave() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Leave Management"
         description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
         actions={[
@@ -529,7 +528,7 @@ export default function Leave() {
           title="Leave Requests"
           loading
           loadingSkeleton={
-            <div className="p-8 text-center text-muted-foreground">
+            <div className="p-4 text-center text-muted-foreground">
               Loading leave requests...
             </div>
           }

@@ -13,7 +13,7 @@ export function LeaveBalanceCard({ employeeId }: LeaveBalanceCardProps) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {[1, 2, 3, 4, 5].map(i => (
-          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
         ))}
       </div>
     );

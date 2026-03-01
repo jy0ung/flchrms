@@ -67,8 +67,8 @@ export function DataTableShell({
           titleId={title ? titleId : undefined}
           description={description}
           actions={headerActions}
-          className={compactDensity ? "p-4 pb-3 sm:p-5 sm:pb-3" : "p-6 pb-4"}
-          titleClassName={compactDensity ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"}
+          className={compactDensity ? "p-4 pb-3 sm:p-5 sm:pb-3" : "p-4"}
+          titleClassName={compactDensity ? "text-base font-semibold" : "text-lg font-semibold"}
           actionsClassName={cn(
             "w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end",
             compactDensity ? "sm:flex-nowrap" : "sm:flex-wrap",
@@ -96,7 +96,7 @@ export function DataTableShell({
 
         {loading ? (
           loadingSkeleton ?? (
-            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
               Loading…
             </div>
           )
@@ -110,7 +110,7 @@ export function DataTableShell({
           )
         ) : (
           emptyState ?? (
-            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
               No records found.
             </div>
           )

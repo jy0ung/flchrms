@@ -16,7 +16,6 @@ export default function Training() {
   return (
     <AppPageContainer>
       <PageHeader
-        shellDensity="compact"
         title="Training & Development"
         description="Training programs and enrollment status."
       />
@@ -33,8 +32,8 @@ export default function Training() {
           content={
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {enrollments.map((enrollment) => (
-                <Card key={enrollment.id} className="card-stat border-border/60 shadow-sm">
-                  <CardContent className="pt-6">
+                <Card key={enrollment.id} className="border-border shadow-sm">
+                  <CardContent className="pt-4">
                     <div className="flex justify-between items-start gap-3">
                       <div className="min-w-0">
                         <h3 className="font-semibold">{enrollment.program?.title}</h3>
@@ -57,16 +56,16 @@ export default function Training() {
         title="Available Programs"
         headerActions={<Badge variant="outline" className="rounded-full">{programs?.length || 0} programs</Badge>}
         hasData={Boolean(programs?.length)}
-        emptyState={<div className="p-8 text-center text-muted-foreground">No training programs available.</div>}
+        emptyState={<div className="p-4 text-center text-muted-foreground">No training programs available.</div>}
         content={
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {programs?.map((program) => (
-              <Card key={program.id} className="card-stat border-border/60 shadow-sm">
+              <Card key={program.id} className="border-border shadow-sm">
                 <CardHeaderStandard
                   title={program.title}
                   description={program.description}
                   actions={program.is_mandatory ? <StatusBadge status="warning" labelOverride="Mandatory" /> : undefined}
-                  className="p-6 pb-4"
+                  className="p-4 pb-2"
                   titleClassName="text-lg"
                 />
                 <CardContent>

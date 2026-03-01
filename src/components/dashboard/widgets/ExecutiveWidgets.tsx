@@ -29,8 +29,8 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
     return (
       <DashboardWidgetCard title="Executive Metrics" description={`High-signal KPIs for ${scopeLabel}.`} icon={Target}>
         <div className="space-y-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-lg" />
+          <Skeleton className="h-20 rounded-lg" />
         </div>
       </DashboardWidgetCard>
     );
@@ -153,7 +153,7 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
       <DashboardWidgetCard title={getCriticalWidgetTitle(role)} description={`Operational risk signals for ${scopeLabel}.`} icon={ShieldAlert}>
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
+            <Skeleton key={i} className="h-20 rounded-lg" />
           ))}
         </div>
       </DashboardWidgetCard>
@@ -170,32 +170,32 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
         icon={ShieldAlert}
       >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-warning/25 bg-warning/5 p-3">
+          <div className="rounded-lg border border-warning/25 bg-warning/5 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pending Approvals</p>
-            <p className="mt-2 text-3xl font-bold">{stats.pendingLeaveRequests}</p>
+            <p className="mt-2 text-2xl font-bold">{stats.pendingLeaveRequests}</p>
             <p className="mt-2 text-xs text-muted-foreground">Leave approvals awaiting action</p>
             <p className="mt-1 text-xs font-medium text-warning">
               {stats.pendingLeaveRequests > 0 ? `${stats.pendingLeaveRequests} in queue` : 'No pending approvals'}
             </p>
           </div>
 
-          <div className="rounded-xl border border-info/25 bg-info/5 p-3">
+          <div className="rounded-lg border border-info/25 bg-info/5 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Training Progress</p>
-            <p className="mt-2 text-3xl font-bold">{stats.trainingCompletionRate}%</p>
+            <p className="mt-2 text-2xl font-bold">{stats.trainingCompletionRate}%</p>
             <p className="mt-2 text-xs text-muted-foreground">Compliance and program completion</p>
             <p className="mt-1 text-xs font-medium text-info">+{stats.completedTrainingsThisMonth} completed this month</p>
           </div>
 
-          <div className="rounded-xl border border-success/25 bg-success/5 p-3">
+          <div className="rounded-lg border border-success/25 bg-success/5 p-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Attendance Rate</p>
-            <p className="mt-2 text-3xl font-bold">{stats.attendanceRate}%</p>
+            <p className="mt-2 text-2xl font-bold">{stats.attendanceRate}%</p>
             <p className="mt-2 text-xs text-muted-foreground">Company average today</p>
             <p className="mt-1 text-xs font-medium text-success">Monthly avg {stats.avgAttendanceThisMonth}%</p>
           </div>
 
-          <div className="rounded-xl border border-primary/30 bg-primary p-3 text-primary-foreground">
+          <div className="rounded-lg border border-primary/30 bg-primary p-3 text-primary-foreground">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-foreground/80">Total Workforce</p>
-            <p className="mt-2 text-3xl font-bold">{stats.totalEmployees.toLocaleString()}</p>
+            <p className="mt-2 text-2xl font-bold">{stats.totalEmployees.toLocaleString()}</p>
             <p className="mt-2 text-xs text-primary-foreground/80">Organization headcount</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-primary-foreground/10 px-2 py-1.5 text-center">
@@ -221,7 +221,7 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
     >
       <div className="space-y-3">
         {alerts.map((alert, index) => (
-          <div key={`${alert.title}-${index}`} className={cn('rounded-xl border p-3', toneClasses[alert.tone])}>
+          <div key={`${alert.title}-${index}`} className={cn('rounded-lg border p-3', toneClasses[alert.tone])}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">{alert.title}</p>

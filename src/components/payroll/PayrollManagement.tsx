@@ -46,7 +46,7 @@ export function PayrollManagement({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
       </div>
     );
   }
@@ -91,11 +91,11 @@ export function PayrollManagement({
               return (
                 <div
                   key={period.id}
-                  className="rounded-xl border border-border/60 p-4 shadow-sm transition-colors hover:bg-muted/30"
+                  className="rounded-lg border border-border p-4 shadow-sm transition-colors hover:bg-muted/50"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-start gap-4">
-                      <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
+                      <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
                         <Calendar className="w-5 h-5 text-primary" />
                       </div>
                       <div>
@@ -155,7 +155,7 @@ export function PayrollManagement({
                     </div>
                   </div>
                   {isGeneratingThisPeriod ? (
-                    <div className="mt-4 rounded-xl border border-border/60 bg-muted/20 p-3">
+                    <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
                       <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span className="truncate">
                           {generatePayslips.progress.error

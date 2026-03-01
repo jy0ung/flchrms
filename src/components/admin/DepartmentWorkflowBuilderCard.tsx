@@ -83,11 +83,11 @@ export function DepartmentWorkflowBuilderCard({
   savePendingLabel = 'Saving...',
 }: DepartmentWorkflowBuilderCardProps) {
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeaderStandard
         title={title}
         description={description}
-        className="p-6 pb-4"
+        className="p-4 pb-2"
         actions={(
           <Button
             variant="outline"
@@ -132,7 +132,7 @@ export function DepartmentWorkflowBuilderCard({
               </div>
             </div>
 
-            <div className="rounded-xl border bg-card/60 p-4 space-y-4 shadow-sm">
+            <div className="rounded-lg border bg-card p-4 space-y-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="font-medium">{routeTitle}</p>
@@ -155,7 +155,7 @@ export function DepartmentWorkflowBuilderCard({
                   const isFinalStage = draft.approval_stages[draft.approval_stages.length - 1] === stage;
 
                   return (
-                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
+                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-lg border bg-muted/50 px-3 py-2">
                       <div>
                         <p className="text-sm font-medium">{LEAVE_APPROVAL_STAGE_LABELS[stage]}</p>
                         <p className="text-[11px] text-muted-foreground">

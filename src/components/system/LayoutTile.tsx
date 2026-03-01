@@ -115,7 +115,7 @@ export function LayoutTile({
   return (
     <Card
       className={cn(
-        'relative h-full border-border/60 shadow-sm transition-colors',
+        'relative h-full border-border shadow-sm transition-colors',
         isDragging && 'opacity-70',
         isDragOver && 'border-primary/40 bg-primary/5',
       )}

@@ -15,25 +15,10 @@ import { LoginForm, type LoginFormPayload, type LoginFormSubmitResult } from '@/
 
 function hasRecoveryParams() {
   if (typeof window === 'undefined') return false;
-
   return (
     window.location.hash.includes('type=recovery') ||
     new URLSearchParams(window.location.search).get('type') === 'recovery'
   );
-}
-
-function getEnvironmentLabel() {
-  const mode = import.meta.env.MODE;
-  if (mode === 'production') return 'Production';
-  if (mode === 'staging') return 'Staging';
-  return 'Development';
-}
-
-function getSecurityContextLabel() {
-  if (typeof window !== 'undefined' && window.isSecureContext) {
-    return 'Secure Context';
-  }
-  return 'Internal Network Access';
 }
 
 export default function Auth() {
@@ -53,9 +38,8 @@ export default function Auth() {
   const [isUpdatingRecoveryPassword, setIsUpdatingRecoveryPassword] = useState(false);
 
   const [isSignUpLoading, setIsSignUpLoading] = useState(false);
-
-  const environmentLabel = getEnvironmentLabel();
-  const securityContextLabel = getSecurityContextLabel();
+  const [recoveryError, setRecoveryError] = useState('');
+  const [resetError, setResetError] = useState('');
 
   useEffect(() => {
     const {
@@ -128,9 +112,10 @@ export default function Auth() {
 
     const email = forgotEmail.trim();
     if (!email || !email.includes('@')) {
-      toast.error('Please enter the email address for the account.');
+      setResetError('Please enter a valid email address.');
       return;
     }
+    setResetError('');
 
     setIsResetRequestLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -161,19 +146,20 @@ export default function Auth() {
     e.preventDefault();
 
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
+      setRecoveryError('Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
       return;
     }
     if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
-      toast.error('Password must contain uppercase, lowercase, number, and special character.');
+      setRecoveryError('Password must contain uppercase, lowercase, number, and special character.');
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      toast.error('Passwords do not match.');
+      setRecoveryError('Passwords do not match.');
       return;
     }
 
+    setRecoveryError('');
     setIsUpdatingRecoveryPassword(true);
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -194,17 +180,14 @@ export default function Auth() {
 
   return (
     <>
-      <div className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-        <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-7xl items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
           <AuthCard
             stage={stage}
-            environmentLabel={environmentLabel}
-            securityContextLabel={securityContextLabel}
-            className="mx-auto w-full max-w-[34rem]"
+            className="w-full max-w-md"
           >
               {isRecoveryMode ? (
                 <div className="space-y-5">
-                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                  <div className="rounded-lg border border-border bg-muted/50 p-4">
                     <p className="font-medium">Reset your password</p>
                     <p className="text-sm text-muted-foreground">
                       Enter a new password for your account. After updating, you will be signed out and can log in again.
@@ -212,6 +195,9 @@ export default function Auth() {
                   </div>
 
                   <form onSubmit={handleRecoveryPasswordUpdate} className="space-y-4">
+                    {recoveryError ? (
+                      <p className="text-sm text-destructive">{recoveryError}</p>
+                    ) : null}
                     <div className="space-y-2">
                       <Label htmlFor="recovery-password">New Password</Label>
                       <div className="relative">
@@ -219,18 +205,18 @@ export default function Auth() {
                           id="recovery-password"
                           type={showRecoveryPassword ? 'text' : 'password'}
                           value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
+                          onChange={(e) => { setNewPassword(e.target.value); setRecoveryError(''); }}
                           placeholder="••••••••"
                           autoComplete="new-password"
                           minLength={8}
                           required
-                          className="h-11 rounded-xl pr-10"
+                          className="pr-10"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 rounded-lg"
+                          className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
                           onClick={() => setShowRecoveryPassword((value) => !value)}
                           aria-label={showRecoveryPassword ? 'Hide password' : 'Show password'}
                           aria-pressed={showRecoveryPassword}
@@ -255,14 +241,14 @@ export default function Auth() {
                         autoComplete="new-password"
                         minLength={8}
                         required
-                        className="h-11 rounded-xl"
+                        
                       />
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Button
                         type="submit"
-                        className="h-11 w-full rounded-xl"
+                        className="w-full"
                         disabled={isUpdatingRecoveryPassword}
                       >
                         {isUpdatingRecoveryPassword ? (
@@ -273,7 +259,7 @@ export default function Auth() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-11 w-full rounded-xl"
+                        className="w-full"
                         onClick={async () => {
                           await supabase.auth.signOut();
                           clearRecoveryState();
@@ -287,11 +273,11 @@ export default function Auth() {
                 </div>
               ) : (
                 <Tabs defaultValue="signin" className="w-full">
-                  <TabsList className="mb-5 grid h-11 w-full grid-cols-2 rounded-xl bg-muted/60 p-1">
-                    <TabsTrigger value="signin" className="rounded-lg text-sm font-medium">
+                  <TabsList className="mb-4 grid w-full grid-cols-2">
+                    <TabsTrigger value="signin" className="text-sm font-medium">
                       Sign In
                     </TabsTrigger>
-                    <TabsTrigger value="signup" className="rounded-lg text-sm font-medium">
+                    <TabsTrigger value="signup" className="text-sm font-medium">
                       Sign Up
                     </TabsTrigger>
                   </TabsList>
@@ -313,7 +299,7 @@ export default function Auth() {
                             name="firstName"
                             placeholder="John"
                             required
-                            className="h-11 rounded-xl"
+                            
                           />
                         </div>
                         <div className="space-y-2">
@@ -323,7 +309,7 @@ export default function Auth() {
                             name="lastName"
                             placeholder="Doe"
                             required
-                            className="h-11 rounded-xl"
+                            
                           />
                         </div>
                       </div>
@@ -336,7 +322,7 @@ export default function Auth() {
                           placeholder="you@company.com"
                           autoComplete="email"
                           required
-                          className="h-11 rounded-xl"
+                          
                         />
                       </div>
                       <div className="space-y-2">
@@ -350,13 +336,13 @@ export default function Auth() {
                             minLength={8}
                             autoComplete="new-password"
                             required
-                            className="h-11 rounded-xl pr-10"
+                            className="pr-10"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 rounded-lg"
+                            className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
                             onClick={() => setShowSignUpPassword((value) => !value)}
                             aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
                             aria-pressed={showSignUpPassword}
@@ -371,7 +357,7 @@ export default function Auth() {
                       </div>
                       <Button
                         type="submit"
-                        className="h-11 w-full rounded-xl"
+                        className="w-full"
                         disabled={isSignUpLoading}
                       >
                         {isSignUpLoading ? (
@@ -384,7 +370,6 @@ export default function Auth() {
                 </Tabs>
               )}
           </AuthCard>
-        </div>
       </div>
 
       <ModalScaffold
@@ -399,17 +384,19 @@ export default function Auth() {
             className="space-y-4"
             id="forgot-password-form"
           >
+            {resetError ? (
+              <p className="text-sm text-destructive">{resetError}</p>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="forgot-email">Email</Label>
               <Input
                 id="forgot-email"
                 type="email"
                 value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
+                onChange={(e) => { setForgotEmail(e.target.value); setResetError(''); }}
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
-                className="h-10 rounded-lg"
               />
             </div>
           </form>
@@ -419,7 +406,6 @@ export default function Auth() {
             <Button
               type="button"
               variant="outline"
-              className="rounded-lg"
               onClick={() => setForgotPasswordOpen(false)}
             >
               Cancel
@@ -427,7 +413,6 @@ export default function Auth() {
             <Button
               type="submit"
               form="forgot-password-form"
-              className="rounded-lg"
               disabled={isResetRequestLoading}
             >
               {isResetRequestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

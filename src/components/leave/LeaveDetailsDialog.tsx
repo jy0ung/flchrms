@@ -143,7 +143,7 @@ export function LeaveDetailsDialog({
               )}
               {!eventsLoading && approvalTimelineEvents.length > 0 ? (
                 approvalTimelineEvents.map((event) => (
-                  <div key={event.id} className="rounded-lg border bg-muted/20 px-3 py-2">
+                  <div key={event.id} className="rounded-lg border bg-muted/50 px-3 py-2">
                     <p className="font-medium">{event.label}</p>
                     <p className="text-muted-foreground">
                       {formatDateTime(event.at)}
@@ -207,7 +207,7 @@ export function LeaveDetailsDialog({
                   ]
                     .filter((item) => !!item.at)
                     .map((item) => (
-                      <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/20 px-3 py-2">
+                      <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/50 px-3 py-2">
                         <p className="font-medium">{item.label}</p>
                         <p className="text-muted-foreground">
                           {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}
@@ -233,7 +233,7 @@ export function LeaveDetailsDialog({
                 )}
                 {!eventsLoading && cancellationTimelineEvents.length > 0 ? (
                   cancellationTimelineEvents.map((event) => (
-                    <div key={event.id} className="rounded-lg border bg-muted/20 px-3 py-2">
+                    <div key={event.id} className="rounded-lg border bg-muted/50 px-3 py-2">
                       <p className="font-medium">{event.label}</p>
                       <p className="text-muted-foreground">
                         {formatDateTime(event.at)}
@@ -298,7 +298,7 @@ export function LeaveDetailsDialog({
                     ]
                       .filter((item) => !!item.at)
                       .map((item) => (
-                        <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/20 px-3 py-2">
+                        <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/50 px-3 py-2">
                           <p className="font-medium">{item.label}</p>
                           <p className="text-muted-foreground">
                             {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}

@@ -40,7 +40,7 @@ export function MyLeaveRequestsTable({
   onCancel,
 }: MyLeaveRequestsTableProps) {
   return (
-    <div className="card-stat rounded-xl border border-border/60 shadow-sm">
+    <div className="rounded-lg border border-border shadow-sm">
       <div className="p-0">
         {requests.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>

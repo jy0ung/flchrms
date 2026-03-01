@@ -59,11 +59,11 @@ export function SectionToolbar({
       aria-label={ariaLabel}
       className={cn(
         "w-full",
-        variant === "surface" && "rounded-xl border border-border/70 bg-card/65 p-3",
+        variant === "surface" && "rounded-lg border border-border bg-card p-3",
         variant === "inline" && "p-0",
         sticky &&
           (variant === "surface"
-            ? "sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card/85"
+            ? "sticky top-0 z-10 bg-card"
             : "sticky top-0 z-10"),
         verticalGap,
         className,

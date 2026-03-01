@@ -32,8 +32,8 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
     return (
       <DashboardWidgetCard title={title} description={description} icon={Users}>
         <div className="space-y-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-20 rounded-lg" />
+          <Skeleton className="h-24 rounded-lg" />
         </div>
       </DashboardWidgetCard>
     );
@@ -65,7 +65,7 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
         <MetricChip label="On Leave" value={stats.onLeaveToday} tone="info" />
       </div>
 
-      <div className="mt-4 rounded-xl border border-border/60 bg-muted/10 p-3">
+      <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium">Attendance Rate Today</p>
@@ -112,11 +112,11 @@ export function OnLeaveTodayWidget({ role }: { role: AppRole }) {
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-16 rounded-xl" />
+            <Skeleton key={i} className="h-16 rounded-lg" />
           ))}
         </div>
       ) : (roster?.length ?? 0) === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
           No one is on leave today in your current scope.
         </div>
       ) : (
@@ -135,7 +135,7 @@ export function OnLeaveTodayWidget({ role }: { role: AppRole }) {
             )}
           </div>
           {(roster ?? []).map((person) => (
-            <div key={person.id} className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/80 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div key={person.id} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{person.employeeName}</p>
                 <p className="text-xs text-muted-foreground">

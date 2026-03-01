@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
@@ -131,12 +131,12 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
   ];
 
   return (
-    <Card className="card-stat border-border/60 shadow-sm">
+    <Card className="border-border shadow-sm">
       {showHeader && (
         <CardHeaderStandard
           title="Notification Preferences"
           description="Notification categories and queued email delivery settings."
-          className="p-6 pb-4"
+          className="p-4 pb-2"
           titleClassName="text-base"
         />
       )}
@@ -145,7 +145,7 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
             Workspace UI
           </p>
-          <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <Label htmlFor="floating_notifications_widget" className="text-sm font-medium">
                 Floating Notification Button
@@ -177,7 +177,7 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
             {preferenceRows.map((row) => (
               <div
                 key={row.key}
-                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <Label htmlFor={`notification_pref_${row.key}`} className="text-sm font-medium">
@@ -211,7 +211,7 @@ export function NotificationSettingsCard({ showHeader = true }: NotificationSett
             {emailPreferenceRows.map((row) => (
               <div
                 key={`email_${row.key}`}
-                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <Label htmlFor={`email_notification_pref_${row.key}`} className="text-sm font-medium">
