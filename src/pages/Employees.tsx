@@ -2,6 +2,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Mail, Building, LayoutGrid, List } from 'lucide-react';
-import { useDeferredValue, useState, type KeyboardEvent } from 'react';
+import { Users, Mail, Building, LayoutGrid, List, UserCircle, GitBranch } from 'lucide-react';
+import { OrgChart } from '@/components/employees/OrgChart';
+import { useDeferredValue, useMemo, useState, type KeyboardEvent } from 'react';
 import { Profile, Department, AppRole } from '@/types/hrms';
-import { EmployeeDetailDialog } from '@/components/employees/EmployeeDetailDialog';
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 export default function Employees() {
@@ -25,17 +26,43 @@ export default function Employees() {
   const { role: viewerRole } = useAuth();
   const { data: employees, isLoading } = useEmployees();
   const { data: userRoles } = useUserRoles();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
-  const [selectedEmployee, setSelectedEmployee] = useState<(Profile & { department: Department | null }) | null>(null);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [viewType, setViewType] = useState<'grid' | 'list' | 'org'>('grid');
 
   const filteredEmployees = employees?.filter(emp => 
     `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(deferredSearch.toLowerCase()) ||
     emp.email.toLowerCase().includes(deferredSearch.toLowerCase()) ||
     emp.job_title?.toLowerCase().includes(deferredSearch.toLowerCase())
   );
+
+  const [deptFilter, setDeptFilter] = useState<string>('all');
+
+  const departments = useMemo(() => {
+    if (!employees) return [];
+    const deptSet = new Map<string, string>();
+    for (const e of employees) {
+      if (e.department) deptSet.set(e.department.id, e.department.name);
+    }
+    return Array.from(deptSet.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [employees]);
+
+  const displayedEmployees = useMemo(() => {
+    if (!filteredEmployees) return [];
+    if (deptFilter === 'all') return filteredEmployees;
+    return filteredEmployees.filter((e) => e.department_id === deptFilter);
+  }, [filteredEmployees, deptFilter]);
+
+  const stats = useMemo(() => {
+    if (!employees) return { total: 0, active: 0, onLeave: 0, departments: 0 };
+    return {
+      total: employees.length,
+      active: employees.filter((e) => e.status === 'active').length,
+      onLeave: employees.filter((e) => e.status === 'on_leave').length,
+      departments: new Set(employees.map((e) => e.department_id).filter(Boolean)).size,
+    };
+  }, [employees]);
 
   const getUserRole = (userId: string): AppRole => {
     const userRole = userRoles?.find(ur => ur.user_id === userId);
@@ -54,8 +81,7 @@ export default function Employees() {
   };
 
   const handleEmployeeClick = (employee: Profile & { department: Department | null }) => {
-    setSelectedEmployee(employee);
-    setDetailDialogOpen(true);
+    navigate(`/employees/${employee.id}`);
   };
 
   const handleEmployeeKeyDown = (
@@ -115,11 +141,29 @@ export default function Employees() {
               ariaLabel: 'Search employees',
               inputProps: { className: 'h-9 rounded-full' },
             }}
+            filters={departments.length > 1 ? [
+              {
+                id: 'dept-filter',
+                label: 'Department',
+                control: (
+                  <select
+                    value={deptFilter}
+                    onChange={(e) => setDeptFilter(e.target.value)}
+                    className="h-9 rounded-full border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="all">All Departments</option>
+                    {departments.map(([id, name]) => (
+                      <option key={id} value={id}>{name}</option>
+                    ))}
+                  </select>
+                ),
+              },
+            ] : undefined}
             trailingSlot={
               <ToggleGroup
                 type="single"
                 value={viewType}
-                onValueChange={(value) => value && setViewType(value as 'grid' | 'list')}
+                onValueChange={(value) => value && setViewType(value as 'grid' | 'list' | 'org')}
                 className="w-full justify-end md:w-auto"
                 aria-label="Employee directory view type"
               >
@@ -129,19 +173,46 @@ export default function Employees() {
                 <ToggleGroupItem value="list" aria-label="List view" className="rounded-full">
                   <List className="w-4 h-4" />
                 </ToggleGroupItem>
+                <ToggleGroupItem value="org" aria-label="Org chart view" className="rounded-full">
+                  <GitBranch className="w-4 h-4" />
+                </ToggleGroupItem>
               </ToggleGroup>
             }
           />
         }
       />
 
-      {isLoading ? (
+      {/* Stats bar */}
+      {!isLoading && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Total Employees', value: stats.total, icon: Users },
+            { label: 'Active', value: stats.active, icon: UserCircle },
+            { label: 'On Leave', value: stats.onLeave, icon: Users },
+            { label: 'Departments', value: stats.departments, icon: Building },
+          ].map((s) => (
+            <Card key={s.label} className="border-border shadow-sm">
+              <CardContent className="flex items-center gap-3 p-3">
+                <s.icon className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-lg font-bold leading-none">{s.value}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {viewType === 'org' ? (
+        <OrgChart />
+      ) : isLoading ? (
         viewType === 'grid' ? <LoadingGridSkeleton /> : <LoadingListSkeleton />
       ) : (
         <DataTableShell
           title={viewType === 'grid' ? 'Employees' : 'Employee List'}
-          description={`${filteredEmployees?.length || 0} result${(filteredEmployees?.length || 0) === 1 ? '' : 's'}`}
-          hasData={(filteredEmployees?.length || 0) > 0}
+          description={`${displayedEmployees.length} result${displayedEmployees.length === 1 ? '' : 's'}`}
+          hasData={displayedEmployees.length > 0}
           emptyState={
             <div className="text-center py-12 text-muted-foreground">
               <Users className="mx-auto mb-3 h-10 w-10 opacity-50" />
@@ -151,7 +222,7 @@ export default function Employees() {
           content={
             viewType === 'grid' ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredEmployees?.map((employee) => (
+                {displayedEmployees.map((employee) => (
                   <Card
                     key={employee.id}
                     className="cursor-pointer border-border shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
@@ -196,7 +267,7 @@ export default function Employees() {
             ) : (
               <>
                 <div className="space-y-3 md:hidden">
-                  {filteredEmployees?.map((employee) => (
+                  {displayedEmployees.map((employee) => (
                     <div
                       key={employee.id}
                       className="rounded-lg border border-border p-4 shadow-sm cursor-pointer"
@@ -244,7 +315,7 @@ export default function Employees() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEmployees?.map((employee) => (
+                      {displayedEmployees.map((employee) => (
                         <TableRow
                           key={employee.id}
                           className="cursor-pointer hover:bg-muted/50"
@@ -287,13 +358,6 @@ export default function Employees() {
         />
       )}
 
-      <EmployeeDetailDialog
-        employee={selectedEmployee}
-        open={detailDialogOpen}
-        onOpenChange={setDetailDialogOpen}
-        userRole={selectedEmployee ? getUserRole(selectedEmployee.id) : 'employee'}
-        viewerRole={viewerRole}
-      />
     </AppPageContainer>
   );
 }

@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
   public: {
     Tables: {
       announcements: {
@@ -324,6 +329,50 @@ export type Database = {
           },
         ]
       }
+      employee_lifecycle_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string
+          event_date: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id: string
+          event_date?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_lifecycle_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -539,7 +588,7 @@ export type Database = {
           days_count: number
           director_approved_at: string | null
           director_approved_by: string | null
-          document_required: boolean | null
+          document_required: boolean
           document_url: string | null
           employee_id: string
           end_date: string
@@ -561,7 +610,7 @@ export type Database = {
           rejected_by: string | null
           rejection_reason: string | null
           start_date: string
-          status: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -595,7 +644,7 @@ export type Database = {
           days_count: number
           director_approved_at?: string | null
           director_approved_by?: string | null
-          document_required?: boolean | null
+          document_required?: boolean
           document_url?: string | null
           employee_id: string
           end_date: string
@@ -619,7 +668,7 @@ export type Database = {
           rejected_by?: string | null
           rejection_reason?: string | null
           start_date: string
-          status?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -653,7 +702,7 @@ export type Database = {
           days_count?: number
           director_approved_at?: string | null
           director_approved_by?: string | null
-          document_required?: boolean | null
+          document_required?: boolean
           document_url?: string | null
           employee_id?: string
           end_date?: string
@@ -677,7 +726,7 @@ export type Database = {
           rejected_by?: string | null
           rejection_reason?: string | null
           start_date?: string
-          status?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -739,36 +788,74 @@ export type Database = {
           },
         ]
       }
+      leave_type_display_config: {
+        Row: {
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          leave_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          leave_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          leave_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_type_display_config_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: true
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_types: {
         Row: {
           created_at: string
           days_allowed: number
           description: string | null
           id: string
-          is_paid: boolean | null
-          min_days: number | null
+          is_paid: boolean
+          min_days: number
           name: string
-          requires_document: boolean | null
+          requires_document: boolean
         }
         Insert: {
           created_at?: string
           days_allowed?: number
           description?: string | null
           id?: string
-          is_paid?: boolean | null
-          min_days?: number | null
+          is_paid?: boolean
+          min_days?: number
           name: string
-          requires_document?: boolean | null
+          requires_document?: boolean
         }
         Update: {
           created_at?: string
           days_allowed?: number
           description?: string | null
           id?: string
-          is_paid?: boolean | null
-          min_days?: number | null
+          is_paid?: boolean
+          min_days?: number
           name?: string
-          requires_document?: boolean | null
+          requires_document?: boolean
         }
         Relationships: []
       }
@@ -924,6 +1011,53 @@ export type Database = {
           worker_id?: string
         }
         Relationships: []
+      }
+      onboarding_checklists: {
+        Row: {
+          category: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          is_completed: boolean
+          item_name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          is_completed?: boolean
+          item_name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          is_completed?: boolean
+          item_name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_checklists_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payroll_periods: {
         Row: {
@@ -1124,34 +1258,34 @@ export type Database = {
       }
       profile_change_log: {
         Row: {
-          id: string
-          profile_id: string
-          changed_by: string | null
-          changed_at: string
           change_type: string
+          changed_at: string
+          changed_by: string | null
           field_name: string | null
-          old_value: string | null
+          id: string
           new_value: string | null
+          old_value: string | null
+          profile_id: string
         }
         Insert: {
-          id?: string
-          profile_id: string
-          changed_by?: string | null
-          changed_at?: string
           change_type: string
+          changed_at?: string
+          changed_by?: string | null
           field_name?: string | null
-          old_value?: string | null
+          id?: string
           new_value?: string | null
+          old_value?: string | null
+          profile_id: string
         }
         Update: {
-          id?: string
-          profile_id?: string
-          changed_by?: string | null
-          changed_at?: string
           change_type?: string
+          changed_at?: string
+          changed_by?: string | null
           field_name?: string | null
-          old_value?: string | null
+          id?: string
           new_value?: string | null
+          old_value?: string | null
+          profile_id?: string
         }
         Relationships: [
           {
@@ -1166,54 +1300,81 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bank_account: string | null
+          bank_name: string | null
           created_at: string
+          date_of_birth: string | null
           department_id: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           employee_id: string | null
+          employment_type: string | null
           first_name: string
           hire_date: string | null
           id: string
           job_title: string | null
           last_name: string
           manager_id: string | null
+          national_id: string | null
           phone: string | null
+          probation_end_date: string | null
           status: string | null
           updated_at: string
           username: string
+          work_location: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           employee_id?: string | null
+          employment_type?: string | null
           first_name: string
           hire_date?: string | null
           id: string
           job_title?: string | null
           last_name: string
           manager_id?: string | null
+          national_id?: string | null
           phone?: string | null
+          probation_end_date?: string | null
           status?: string | null
           updated_at?: string
           username: string
+          work_location?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           employee_id?: string | null
+          employment_type?: string | null
           first_name?: string
           hire_date?: string | null
           id?: string
           job_title?: string | null
           last_name?: string
           manager_id?: string | null
+          national_id?: string | null
           phone?: string | null
+          probation_end_date?: string | null
           status?: string | null
           updated_at?: string
           username?: string
+          work_location?: string | null
         }
         Relationships: [
           {
@@ -1281,6 +1442,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenant_branding: {
+        Row: {
+          accent_color: string | null
+          company_name: string
+          company_tagline: string | null
+          favicon_url: string | null
+          id: string
+          login_background_url: string | null
+          logo_url: string | null
+          primary_color: string | null
+          sidebar_color: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          company_name?: string
+          company_tagline?: string | null
+          favicon_url?: string | null
+          id?: string
+          login_background_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          sidebar_color?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          company_name?: string
+          company_tagline?: string | null
+          favicon_url?: string | null
+          id?: string
+          login_background_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          sidebar_color?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       training_enrollments: {
         Row: {
@@ -1569,15 +1772,15 @@ export type Database = {
     Functions: {
       admin_create_employee: {
         Args: {
+          _department_id?: string
           _email: string
-          _password: string
           _first_name: string
+          _hire_date?: string
+          _job_title?: string
           _last_name?: string
-          _phone?: string | null
-          _job_title?: string | null
-          _department_id?: string | null
-          _hire_date?: string | null
-          _manager_id?: string | null
+          _manager_id?: string
+          _password: string
+          _phone?: string
         }
         Returns: string
       }
@@ -1623,7 +1826,7 @@ export type Database = {
           days_count: number
           director_approved_at: string | null
           director_approved_by: string | null
-          document_required: boolean | null
+          document_required: boolean
           document_url: string | null
           employee_id: string
           end_date: string
@@ -1645,7 +1848,7 @@ export type Database = {
           rejected_by: string | null
           rejection_reason: string | null
           start_date: string
-          status: string | null
+          status: string
           updated_at: string
         }
         SetofOptions: {
@@ -1654,6 +1857,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      approve_leave_request: {
+        Args: {
+          _action: string
+          _document_required?: boolean
+          _expected_status?: string
+          _manager_comments?: string
+          _rejection_reason?: string
+          _request_id: string
+        }
+        Returns: Json
       }
       delete_user_notifications: {
         Args: { _older_than_days?: number; _read_only?: boolean }
@@ -1676,6 +1890,17 @@ export type Database = {
           status: string
         }[]
       }
+      get_dashboard_leave_types: {
+        Args: never
+        Returns: {
+          category: string
+          days_allowed: number
+          display_order: number
+          leave_type_id: string
+          leave_type_name: string
+        }[]
+      }
+      get_dashboard_stats: { Args: never; Returns: Json }
       get_employee_directory_profiles: {
         Args: { _profile_id?: string }
         Returns: {
@@ -1697,6 +1922,7 @@ export type Database = {
           username: string
         }[]
       }
+      get_executive_stats: { Args: { _department_id?: string }; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1735,6 +1961,19 @@ export type Database = {
         Returns: string
       }
       normalize_username: { Args: { _value: string }; Returns: string }
+      notification_admin_combined_dashboard: {
+        Args: {
+          _dl_limit?: number
+          _dl_window_hours?: number
+          _queue_limit?: number
+          _queue_offset?: number
+          _queue_status?: string
+          _run_limit?: number
+          _run_offset?: number
+          _run_status?: string
+        }
+        Returns: Json
+      }
       notification_admin_discard_email_queue_item: {
         Args: { _queue_id: string; _reason?: string }
         Returns: {
@@ -2061,6 +2300,10 @@ export type Database = {
         }
         Returns: Json
       }
+      seed_onboarding_checklist: {
+        Args: { p_employee_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
@@ -2216,4 +2459,3 @@ export const Constants = {
     },
   },
 } as const
-

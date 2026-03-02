@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrandingContext } from '@/contexts/BrandingContext';
 import { cn } from '@/lib/utils';
 import {
   canAccessAdminPage,
@@ -155,6 +156,7 @@ function SidebarContent({
   onToggle?: () => void;
 }) {
   const { role } = useAuth();
+  const { branding } = useBrandingContext();
   const { unreadCount } = useUserNotifications(10);
 
   const mainWithBadge = mainNavigation.map((item) =>
@@ -187,11 +189,19 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className={cn('flex items-center h-14 shrink-0 border-b border-sidebar-border', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-          <span className="text-xs font-bold text-primary-foreground">FL</span>
-        </div>
+        {branding.logo_url ? (
+          <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-7 rounded-md object-cover" />
+        ) : (
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">
+              {branding.company_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </span>
+          </div>
+        )}
         {!collapsed && (
-          <span className="text-sm font-semibold text-sidebar-accent-foreground">HRMS</span>
+          <span className="text-sm font-semibold text-sidebar-accent-foreground truncate">
+            {branding.company_tagline || 'HRMS'}
+          </span>
         )}
         {!collapsed && onToggle && (
           <Button

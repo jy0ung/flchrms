@@ -1,7 +1,18 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 
 import Employees from '@/pages/Employees';
+
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ role: 'hr' }),
@@ -47,14 +58,19 @@ vi.mock('@/hooks/useUserRoles', () => ({
 }));
 
 describe('Employees page accessibility interactions', () => {
-  it('opens employee details from keyboard activation on card row', () => {
-    render(<Employees />);
+  it('navigates to employee profile from keyboard activation on card row', () => {
+    mockNavigate.mockClear();
+    render(
+      <MemoryRouter>
+        <Employees />
+      </MemoryRouter>
+    );
 
     const cardButton = screen.getByRole('button', { name: /View employee details for Evelyn Employee/i });
     cardButton.focus();
     fireEvent.keyDown(cardButton, { key: 'Enter' });
 
-    expect(screen.getByText('Employee Details')).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith('/employees/user-1');
   });
 });
 

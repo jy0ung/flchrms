@@ -13,7 +13,7 @@ import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
 import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
-import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
+import { LeaveRequestWizard } from '@/components/leave/LeaveRequestWizard';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
@@ -536,21 +536,16 @@ export default function Leave() {
         onOpenChange={setOpen}
         title="New Leave Request"
         description="Submit a new leave request for approval"
-        maxWidth="xl"
+        maxWidth="3xl"
         body={
-          <ModalSection
-            title="Request Details"
-            description="Provide the leave type, dates, reason, and supporting document when required."
-          >
-            <LeaveRequestForm
-              leaveTypes={leaveTypes}
-              balances={balances}
-              onSubmit={handleSubmit}
-              onUploadDocument={handleUploadDocument}
-              isPending={createRequest.isPending}
-              isUploading={false}
-            />
-          </ModalSection>
+          <LeaveRequestWizard
+            leaveTypes={leaveTypes}
+            balances={balances}
+            onSubmit={handleSubmit}
+            onUploadDocument={handleUploadDocument}
+            onCancel={() => setOpen(false)}
+            isPending={createRequest.isPending}
+          />
         }
         showCloseButton
       />

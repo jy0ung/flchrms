@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/layout/RouteErrorBoundary";
@@ -32,6 +33,7 @@ const AdminAnnouncementsPage = lazy(() => import("./pages/admin/AdminAnnouncemen
 const AdminAuditLogPage = lazy(() => import("./pages/admin/AdminAuditLogPage"));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage"));
 const AdminQuickActionsPage = lazy(() => import("./pages/admin/AdminQuickActionsPage"));
+const EmployeeProfile = lazy(() => import("./pages/EmployeeProfile"));
 import NotFound from "./pages/NotFound";
 import {
   ADMIN_PAGE_ALLOWED_ROLES,
@@ -67,12 +69,13 @@ function LocationAwareErrorBoundary({ children }: { children: React.ReactNode })
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+  <QueryClientProvider client={queryClient}>
+    <BrandingProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <TooltipProvider>
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
             <LocationAwareErrorBoundary>
               <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
@@ -100,6 +103,7 @@ const App = () => (
                   {/* Protected routes - Admin/HR/Manager/GM/Director only */}
                   <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
                     <Route path="/employees" element={<Employees />} />
+                    <Route path="/employees/:employeeId" element={<EmployeeProfile />} />
                   </Route>
                 </Route>
                 {/* Admin panel — dedicated layout with its own sidebar */}
@@ -121,11 +125,12 @@ const App = () => (
               </Routes>
             </Suspense>
           </LocationAwareErrorBoundary>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </BrandingProvider>
   </QueryClientProvider>
-  </ThemeProvider>
 );
 
 export default App;
