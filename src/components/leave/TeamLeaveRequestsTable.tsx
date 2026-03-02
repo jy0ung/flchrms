@@ -45,6 +45,12 @@ export function TeamLeaveRequestsTable({
   onCancellationReview,
   onAction,
 }: TeamLeaveRequestsTableProps) {
+  const canRequestDocumentAtCurrentStage = (request: LeaveRequest) =>
+    canApprove(request) &&
+    request.status === 'pending' &&
+    role === 'manager' &&
+    canRequestLeaveSupportingDocument(role);
+
   return (
     <div className="rounded-lg border border-border shadow-sm">
       <div className="p-0">
@@ -195,7 +201,7 @@ export function TeamLeaveRequestsTable({
                             <X className="w-4 h-4 mr-1" />
                             Reject
                           </Button>
-                          {canRequestLeaveSupportingDocument(role) && (
+                          {canRequestDocumentAtCurrentStage(request) && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -363,12 +369,12 @@ export function TeamLeaveRequestsTable({
                                 <X className="w-4 h-4 mr-1" />
                                 <span className="hidden lg:inline">Reject</span>
                               </Button>
-                              {canRequestLeaveSupportingDocument(role) && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
-                                  onClick={() => onAction(request, 'request_document')}
+                          {canRequestDocumentAtCurrentStage(request) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
+                              onClick={() => onAction(request, 'request_document')}
                                 >
                                   <FileText className="w-4 h-4 mr-1" />
                                   <span className="hidden xl:inline">Request Doc</span>

@@ -29,6 +29,11 @@ import {
   isGeneralManager,
   isManager,
 } from '@/lib/permissions';
+import {
+  canRoleHandleLeaveApprovalStage,
+  getNextLeaveApprovalStageFromRouteSnapshot,
+  LEAVE_APPROVAL_STAGE_LABELS,
+} from '@/lib/leave-workflow';
 
 export default function Leave() {
   usePageTitle('Leave');
@@ -173,9 +178,9 @@ export default function Leave() {
   };
 
   const statusConfig: Record<LeaveStatus, { status: string; label: string }> = {
-    pending: { status: 'pending', label: 'Pending Manager' },
-    manager_approved: { status: 'manager_approved', label: 'Awaiting GM' },
-    gm_approved: { status: 'gm_approved', label: 'Awaiting Director' },
+    pending: { status: 'pending', label: 'Pending' },
+    manager_approved: { status: 'manager_approved', label: 'Awaiting Approval' },
+    gm_approved: { status: 'gm_approved', label: 'Awaiting Approval' },
     director_approved: { status: 'approved', label: 'Approved' },
     hr_approved: { status: 'approved', label: 'Approved (Legacy)' },
     rejected: { status: 'rejected', label: 'Rejected' },
@@ -189,6 +194,20 @@ export default function Leave() {
 
     if (request.final_approved_at) {
       return statusConfig.director_approved;
+    }
+
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
+
+    if (nextApprovalStage) {
+      const nextApprovalLabel = LEAVE_APPROVAL_STAGE_LABELS[nextApprovalStage];
+      if (request.status === 'pending') {
+        return { status: 'pending', label: `Pending ${nextApprovalLabel}` };
+      }
+
+      return { status: request.status, label: `Awaiting ${nextApprovalLabel}` };
     }
 
     return statusConfig[request.status];
@@ -269,20 +288,12 @@ export default function Leave() {
     if (isCancellationPending(request)) return false;
     if (request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled') return false;
 
-    // Multi-level approval workflow (route-specific and validated server-side using
-    // the request's workflow snapshot). These UI checks stay intentionally broad.
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
 
-    // Manager can approve pending requests
-    if (isManager(role) && request.status === 'pending') return true;
-    
-    // GM can approve manager_approved requests (or pending if the employee is a manager)
-    if (isGeneralManager(role) && (request.status === 'manager_approved' || request.status === 'pending')) return true;
-    
-    // Director can approve final-stage requests; allow pending here to cover routes
-    // that start directly at Director (e.g. HR/Admin/Director requester profiles).
-    if (isDirector(role) && (request.status === 'gm_approved' || request.status === 'manager_approved' || request.status === 'pending')) return true;
-    
-    return false;
+    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
   };
 
   const canAmend = (request: LeaveRequest) => {
@@ -399,9 +410,29 @@ export default function Leave() {
     [requests, user?.id]
   );
 
-  const teamRequests = useMemo(() => 
-    requests?.filter(r => r.employee_id !== user?.id) || [],
-    [requests, user?.id]
+  const canViewRequestAtCurrentApprovalStage = useCallback((request: LeaveRequest) => {
+    if (!role) return false;
+
+    if (role === 'hr' || role === 'admin') return true;
+
+    // Keep cancellation visibility behavior unchanged.
+    if (isCancellationPending(request)) return true;
+
+    if (isHistoricalRequest(request)) return true;
+
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
+
+    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
+  }, [isCancellationPending, isHistoricalRequest, role]);
+
+  const teamRequests = useMemo(() =>
+    requests?.filter((request) =>
+      request.employee_id !== user?.id && canViewRequestAtCurrentApprovalStage(request),
+    ) || [],
+    [canViewRequestAtCurrentApprovalStage, requests, user?.id]
   );
 
   const myCurrentRequests = useMemo(

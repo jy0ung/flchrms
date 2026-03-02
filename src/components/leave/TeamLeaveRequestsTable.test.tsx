@@ -175,4 +175,62 @@ describe('TeamLeaveRequestsTable', () => {
     expect(screen.getAllByRole('button', { name: /Reject Cancel/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Cancellation Pending/i).length).toBeGreaterThan(0);
   });
+
+  it('shows request document action only for manager on pending stage', () => {
+    const onAction = vi.fn();
+
+    const { rerender } = render(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyMessage="No requests"
+        role="manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /Request Doc/i }).length).toBeGreaterThan(0);
+
+    rerender(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'manager_approved' })]}
+        emptyMessage="No requests"
+        role="manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Request Doc/i })).not.toBeInTheDocument();
+
+    rerender(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyMessage="No requests"
+        role="general_manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Request Doc/i })).not.toBeInTheDocument();
+  });
 });
