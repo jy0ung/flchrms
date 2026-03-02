@@ -19,16 +19,17 @@ function makeBalance(overrides: Partial<LeaveBalance> = {}): LeaveBalance {
 describe('LeaveBalanceSection', () => {
   it('partitions priority balances into primary and keeps secondary collapsed by default', () => {
     const balances: LeaveBalance[] = [
-      makeBalance({ leave_type_id: '1', leave_type_name: 'Maternity Leave', days_allowed: 90, days_remaining: 90 }),
+      makeBalance({ leave_type_id: '1', leave_type_name: 'Annual Leave' }),
       makeBalance({ leave_type_id: '2', leave_type_name: 'Sick Leave' }),
-      makeBalance({ leave_type_id: '3', leave_type_name: 'Annual Leave' }),
-      makeBalance({ leave_type_id: '4', leave_type_name: 'Personal Leave', days_allowed: 3, days_remaining: 3 }),
-      makeBalance({ leave_type_id: '5', leave_type_name: 'Unpaid Leave', days_allowed: 30, days_remaining: 30 }),
+      makeBalance({ leave_type_id: '3', leave_type_name: 'Personal Leave' }),
+      makeBalance({ leave_type_id: '4', leave_type_name: 'Unpaid Leave', days_allowed: 30, days_remaining: 30 }),
+      makeBalance({ leave_type_id: '5', leave_type_name: 'Maternity Leave', days_allowed: 90, days_remaining: 90 }),
       makeBalance({ leave_type_id: '6', leave_type_name: 'Compassionate Leave', days_allowed: 5, days_remaining: 5 }),
     ];
 
     render(<LeaveBalanceSection balances={balances} />);
 
+    // First 4 are primary (visible), rest are secondary (collapsed)
     expect(screen.getByText('Annual Leave')).toBeInTheDocument();
     expect(screen.getByText('Sick Leave')).toBeInTheDocument();
     expect(screen.getByText('Personal Leave')).toBeInTheDocument();

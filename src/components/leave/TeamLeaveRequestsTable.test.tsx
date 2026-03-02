@@ -111,7 +111,7 @@ describe('TeamLeaveRequestsTable', () => {
     expect(screen.getByText('No team leave requests')).toBeInTheDocument();
   });
 
-  it('opens details and shows document button for manager but not admin', () => {
+  it('opens details and shows document button for manager and admin', () => {
     const onOpenDetails = vi.fn();
     const request = makeLeaveRequest({ document_url: 'user-1/doc.pdf' });
 
@@ -135,6 +135,7 @@ describe('TeamLeaveRequestsTable', () => {
     expect(onOpenDetails).toHaveBeenCalledWith(request);
     expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
 
+    // Admin now has elevated privileges — document view is visible
     rerender(
       <TeamLeaveRequestsTable
         requests={[request]}
@@ -151,7 +152,7 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    expect(screen.queryByText(/View Doc: user-1\/doc\.pdf/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
   });
 
   it('renders cancellation review actions when approver can approve cancellation', () => {

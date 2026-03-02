@@ -19,21 +19,20 @@ import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDi
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
 import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
-import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader, QueryErrorState } from '@/components/system';
 import {
   canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
-  isDirector,
   isEmployee,
-  isGeneralManager,
-  isManager,
 } from '@/lib/permissions';
 import {
   canRoleHandleLeaveApprovalStage,
+  canRoleApproveLeaveCancellationAtCurrentStage,
   getNextLeaveApprovalStageFromRouteSnapshot,
   LEAVE_APPROVAL_STAGE_LABELS,
+  normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
+import { isCancellationPending } from '@/lib/leave-utils';
 
 export default function Leave() {
   usePageTitle('Leave');
@@ -85,22 +84,9 @@ export default function Leave() {
     return format(new Date(value), 'PPp');
   };
 
-  // Upload document helper for new requests - uses user ID folder for RLS compliance
+  // Upload document helper for new requests - delegates to the shared hook
   const handleUploadDocument = async (file: File): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const fileExt = file.name.split('.').pop();
-    // Use user ID as folder for RLS policy compliance
-    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('leave-documents')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    // Store the file path instead of URL - signed URLs will be generated on demand
-    return filePath;
+    return uploadDocument.mutateAsync({ file });
   };
 
   const handleSubmit = async (data: {
@@ -214,12 +200,6 @@ export default function Leave() {
     return statusConfig[request.status];
   };
 
-  const isCancellationPending = useCallback((request: LeaveRequest) =>
-    request.cancellation_status === 'pending' ||
-    request.cancellation_status === 'manager_approved' ||
-    request.cancellation_status === 'gm_approved' ||
-    request.cancellation_status === 'director_approved', []);
-
   const getCancellationNextStageLabel = (request: LeaveRequest) => {
     const route = (request.cancellation_route_snapshot || []).filter(
       (stage): stage is 'manager' | 'general_manager' | 'director' =>
@@ -303,7 +283,7 @@ export default function Leave() {
 
   const isHistoricalRequest = useCallback((request: LeaveRequest) =>
     !isCancellationPending(request) && (!!request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled'),
-  [isCancellationPending]);
+  []);
 
   const canCancelPendingRequest = (request: LeaveRequest) =>
     request.employee_id === user?.id &&
@@ -317,18 +297,24 @@ export default function Leave() {
     !isCancellationPending(request);
 
   const canApproveCancellation = (request: LeaveRequest) => {
+    if (!role) return false;
     if (!isCancellationPending(request)) return false;
     if (request.status === 'cancelled' || !request.final_approved_at) return false;
 
-    if (isManager(role) && request.cancellation_status === 'pending') return true;
-    if (isGeneralManager(role) && (request.cancellation_status === 'pending' || request.cancellation_status === 'manager_approved')) return true;
-    if (isDirector(role) && (
-      request.cancellation_status === 'pending' ||
-      request.cancellation_status === 'manager_approved' ||
-      request.cancellation_status === 'gm_approved'
-    )) return true;
+    // Resolve workflow stages from the route snapshot (persisted at cancellation-request time)
+    const workflowStages = normalizeLeaveCancellationApprovalStages(
+      request.cancellation_route_snapshot ?? undefined,
+    );
 
-    return false;
+    // Determine the requester role (approximate from employee_id or default to 'employee')
+    const requesterRole = 'employee' as const;
+
+    return canRoleApproveLeaveCancellationAtCurrentStage({
+      approverRole: role,
+      currentCancellationStatus: request.cancellation_status!,
+      requesterRole,
+      workflowStages: workflowStages.length > 0 ? workflowStages : undefined,
+    });
   };
 
   const handleCancellation = (request: LeaveRequest) => {

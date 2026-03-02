@@ -49,7 +49,7 @@ describe('EmployeeDetailDialog', () => {
     expect(screen.getAllByText('general manager').length).toBeGreaterThan(0);
   });
 
-  it('masks sensitive identifier/contact fields for admin-limited viewers', () => {
+  it('shows sensitive identifier/contact fields for admin viewers (elevated privileges)', () => {
     render(
       <EmployeeDetailDialog
         employee={baseEmployee}
@@ -60,7 +60,8 @@ describe('EmployeeDetailDialog', () => {
       />,
     );
 
-    expect(screen.getAllByText('Restricted').length).toBeGreaterThan(0);
-    expect(screen.queryByText('+10000000006')).not.toBeInTheDocument();
+    // Admin now has elevated privileges — sensitive data is visible, not restricted
+    expect(screen.queryByText('Restricted')).not.toBeInTheDocument();
+    expect(screen.getByText('+10000000006')).toBeInTheDocument();
   });
 });

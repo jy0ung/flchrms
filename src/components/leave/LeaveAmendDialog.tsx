@@ -1,4 +1,5 @@
 import { AlertCircle, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LeaveRequest } from '@/types/hrms';
 import { ModalScaffold, ModalSection } from '@/components/system';
+import { validateDocumentFile } from '@/lib/validations';
 
 interface LeaveAmendDialogProps {
   open: boolean;
@@ -30,6 +32,21 @@ export function LeaveAmendDialog({
   isPending,
   isUploading,
 }: LeaveAmendDialogProps) {
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const handleFileChange = (file: File | null) => {
+    if (file) {
+      const error = validateDocumentFile(file);
+      if (error) {
+        setFileError(error);
+        onDocumentFileChange(null);
+        return;
+      }
+    }
+    setFileError(null);
+    onDocumentFileChange(file);
+  };
+
   return (
     <ModalScaffold
       open={open}
@@ -75,10 +92,13 @@ export function LeaveAmendDialog({
             <Label>Supporting Document</Label>
             <Input
               type="file"
-              onChange={(e) => onDocumentFileChange(e.target.files?.[0] || null)}
+              onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
             />
-            <p className="text-xs text-muted-foreground">Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
+            {fileError && (
+              <p className="text-xs text-destructive">{fileError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">Accepted formats: PDF, JPG, PNG, DOC, DOCX (max 10MB)</p>
           </ModalSection>
         </div>
       }

@@ -14,6 +14,7 @@ import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDial
 import { DataTableShell, SectionToolbar } from '@/components/system';
 import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
 import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
+import { isCancellationPending } from '@/lib/leave-utils';
 
 export type LeaveViewOption =
   | 'MY_CURRENT'
@@ -57,13 +58,6 @@ interface LeaveRequestWorkspaceProps {
   workflowInfoPopover: React.ReactNode;
 }
 
-const PENDING_CANCELLATION_STATUSES = new Set([
-  'pending',
-  'manager_approved',
-  'gm_approved',
-  'director_approved',
-]);
-
 const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilterOption; label: string }> = [
   { value: 'ALL', label: 'All' },
   { value: 'PENDING', label: 'Pending' },
@@ -71,12 +65,6 @@ const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilterOption; label: string }>
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
-
-function isCancellationPending(request: LeaveRequest) {
-  return Boolean(
-    request.cancellation_status && PENDING_CANCELLATION_STATUSES.has(request.cancellation_status),
-  );
-}
 
 function matchesStatusFilter(request: LeaveRequest, filter: StatusFilterOption) {
   switch (filter) {
