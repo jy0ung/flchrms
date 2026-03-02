@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom, untypedRpc } from '@/integrations/supabase/untyped-client';
 import { AppRole, LeaveApprovalStage, LeaveCancellationStatus, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -26,7 +27,7 @@ export function useLeaveRequests() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as LeaveRequest[];
+      return data as unknown as LeaveRequest[];
     },
     enabled: !!user,
   });
@@ -91,14 +92,14 @@ export function useApproveLeaveRequest() {
       rejectionReason?: string;
       documentRequired?: boolean;
       managerComments?: string;
-      employeeRole?: string; // Role of the employee who submitted the request
+      employeeRole?: string;
     }) => {
       if (!user || !role) {
         throw new Error('Only authenticated approvers can process leave requests.');
       }
 
-      const { data: existingRequest, error: requestError } = await supabase
-        .from('leave_requests')
+      // Use untypedFrom to select columns not in generated types
+      const { data: existingRequest, error: requestError } = await untypedFrom('leave_requests')
         .select('status, employee_id, approval_route_snapshot')
         .eq('id', requestId)
         .single();
@@ -134,8 +135,7 @@ export function useApproveLeaveRequest() {
 
         const employeeDepartmentId = employeeProfile?.department_id || null;
 
-        const { data: workflowRow, error: workflowError } = await supabase
-          .from('leave_approval_workflows')
+        const { data: workflowRow, error: workflowError } = await untypedFrom('leave_approval_workflows')
           .select('approval_stages, is_active')
           .eq('requester_role', 'employee')
           .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
@@ -143,7 +143,6 @@ export function useApproveLeaveRequest() {
           .limit(1)
           .maybeSingle();
 
-        // If the workflow table/migration is missing in an environment, fall back to defaults.
         if (workflowError && workflowError.code !== 'PGRST116' && workflowError.code !== '42P01') {
           throw workflowError;
         }
@@ -210,7 +209,7 @@ export function useAmendLeaveRequest() {
       documentUrl?: string;
       reason?: string;
     }) => {
-      const { data, error } = await supabase.rpc('amend_leave_request', {
+      const { data, error } = await untypedRpc('amend_leave_request', {
         _request_id: requestId,
         _amendment_notes: amendmentNotes,
         _document_url: documentUrl ?? null,
@@ -244,7 +243,7 @@ export function useCancelLeaveRequest() {
       requestId: string;
       reason?: string;
     }) => {
-      const { data, error } = await supabase.rpc('request_leave_cancellation', {
+      const { data, error } = await untypedRpc('request_leave_cancellation', {
         _request_id: requestId,
         _reason: reason || null,
       });
@@ -293,15 +292,8 @@ export function useProcessLeaveCancellationRequest() {
         throw new Error('Only authenticated approvers can process cancellation requests.');
       }
 
-      const { data: existingRequest, error: requestError } = await supabase
-        .from('leave_requests')
-        .select(`
-          status,
-          final_approved_at,
-          employee_id,
-          cancellation_status,
-          cancellation_route_snapshot
-        `)
+      const { data: existingRequest, error: requestError } = await untypedFrom('leave_requests')
+        .select('status, final_approved_at, employee_id, cancellation_status, cancellation_route_snapshot')
         .eq('id', requestId)
         .single();
 
@@ -344,8 +336,7 @@ export function useProcessLeaveCancellationRequest() {
 
         const employeeDepartmentId = employeeProfile?.department_id || null;
 
-        const { data: workflowRow, error: workflowError } = await supabase
-          .from('leave_cancellation_workflows')
+        const { data: workflowRow, error: workflowError } = await untypedFrom('leave_cancellation_workflows')
           .select('approval_stages, is_active')
           .eq('requester_role', 'employee')
           .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
@@ -406,7 +397,6 @@ export function useUploadLeaveDocument() {
       if (!user) throw new Error('User not authenticated');
       
       const fileExt = file.name.split('.').pop();
-      // Use user ID as folder for RLS policy compliance
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
@@ -415,14 +405,12 @@ export function useUploadLeaveDocument() {
 
       if (uploadError) throw uploadError;
 
-      // Use signed URL instead of public URL for security
       const { data, error: signedUrlError } = await supabase.storage
         .from('leave-documents')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600);
 
       if (signedUrlError) throw signedUrlError;
       
-      // Store the file path, not the signed URL (signed URLs expire)
       return filePath;
     },
     onError: (error: Error) => {
@@ -431,13 +419,12 @@ export function useUploadLeaveDocument() {
   });
 }
 
-// Hook to get a signed URL for viewing a document
 export function useGetDocumentUrl() {
   return useMutation({
     mutationFn: async (filePath: string) => {
       const { data, error } = await supabase.storage
         .from('leave-documents')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600);
 
       if (error) throw error;
       return data.signedUrl;

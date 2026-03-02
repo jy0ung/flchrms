@@ -1,14 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database, Json } from '@/integrations/supabase/types';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { Profile, Department } from '@/types/hrms';
 import { toast } from 'sonner';
 
 type ProfileUpdateInput = Partial<Profile> & { username?: string | null };
-type EmployeeDirectoryProfileRow =
-  Database['public']['Functions']['get_employee_directory_profiles']['Returns'][number];
 
-function parseDepartment(value: Json | null): Department | null {
+// Shape returned by the get_employee_directory_profiles RPC (not in generated types)
+interface EmployeeDirectoryProfileRow {
+  id: string;
+  employee_id: string | null;
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  avatar_url: string | null;
+  department_id: string | null;
+  job_title: string | null;
+  hire_date: string | null;
+  manager_id: string | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string;
+  department: unknown;
+}
+
+function parseDepartment(value: unknown): Department | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as unknown as Department;
 }
@@ -40,12 +58,12 @@ export function useEmployees() {
   return useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_employee_directory_profiles');
+      const { data, error } = await untypedRpc('get_employee_directory_profiles');
 
       if (error) throw error;
-      return (data ?? []).map(mapEmployeeDirectoryProfileRow);
+      return ((data as EmployeeDirectoryProfileRow[]) ?? []).map(mapEmployeeDirectoryProfileRow);
     },
-    staleTime: 60000, // Cache for 1 minute to reduce refetches
+    staleTime: 60000,
   });
 }
 
@@ -53,12 +71,13 @@ export function useEmployee(id: string) {
   return useQuery({
     queryKey: ['employee', id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_employee_directory_profiles', {
+      const { data, error } = await untypedRpc('get_employee_directory_profiles', {
         _profile_id: id,
       });
 
       if (error) throw error;
-      const row = data?.[0];
+      const rows = data as EmployeeDirectoryProfileRow[] | null;
+      const row = rows?.[0];
       if (!row) {
         throw new Error('Employee profile not found.');
       }
@@ -206,7 +225,7 @@ export function useUpdateProfile() {
 export function useAdminResetUserPassword() {
   return useMutation({
     mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
-      const { error } = await supabase.rpc('admin_reset_user_password', {
+      const { error } = await untypedRpc('admin_reset_user_password', {
         _target_user_id: userId,
         _new_password: newPassword,
       });

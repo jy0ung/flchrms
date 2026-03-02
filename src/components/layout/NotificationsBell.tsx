@@ -68,7 +68,7 @@ function NotificationListItem({
               </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {notification.message}
+              {notification.body}
             </p>
             {notification.category === 'leave' && (
               <Badge variant="outline" className="text-[10px]">

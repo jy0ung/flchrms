@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import { AppRole, LeaveApprovalStage, LeaveCancellationWorkflow } from '@/types/hrms';
 import { toast } from 'sonner';
 import {
@@ -10,8 +10,7 @@ import {
 const DEPARTMENT_WORKFLOW_REQUESTER_ROLE: AppRole = 'employee';
 
 async function findExistingLeaveCancellationWorkflowId(departmentId?: string | null) {
-  let query = supabase
-    .from('leave_cancellation_workflows')
+  let query = untypedFrom('leave_cancellation_workflows')
     .select('id')
     .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
 
@@ -26,8 +25,7 @@ export function useLeaveCancellationWorkflows() {
   return useQuery({
     queryKey: ['leave-cancellation-workflows'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leave_cancellation_workflows')
+      const { data, error } = await untypedFrom('leave_cancellation_workflows')
         .select('*')
         .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE)
         .order('department_id', { ascending: true, nullsFirst: true })
@@ -35,7 +33,8 @@ export function useLeaveCancellationWorkflows() {
 
       if (error) throw error;
 
-      return (data || []).map((row) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return ((data as any[]) || []).map((row: any) => ({
         ...row,
         approval_stages: normalizeLeaveCancellationApprovalStages(row.approval_stages),
       })) as LeaveCancellationWorkflow[];
@@ -70,14 +69,12 @@ export function useUpsertLeaveCancellationWorkflow() {
       };
 
       const { data, error } = existingId
-        ? await supabase
-            .from('leave_cancellation_workflows')
+        ? await untypedFrom('leave_cancellation_workflows')
             .update(payload)
             .eq('id', existingId)
             .select()
             .single()
-        : await supabase
-            .from('leave_cancellation_workflows')
+        : await untypedFrom('leave_cancellation_workflows')
             .insert(payload)
             .select()
             .single();
@@ -109,8 +106,7 @@ export function useResetLeaveCancellationWorkflows() {
         notes: null,
       };
 
-      const scopeDelete = supabase
-        .from('leave_cancellation_workflows')
+      const scopeDelete = untypedFrom('leave_cancellation_workflows')
         .delete()
         .neq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
       const { error: cleanupError } = departmentId
@@ -119,12 +115,10 @@ export function useResetLeaveCancellationWorkflows() {
       if (cleanupError) throw cleanupError;
 
       const { error } = existingId
-        ? await supabase
-            .from('leave_cancellation_workflows')
+        ? await untypedFrom('leave_cancellation_workflows')
             .update(payload)
             .eq('id', existingId)
-        : await supabase
-            .from('leave_cancellation_workflows')
+        : await untypedFrom('leave_cancellation_workflows')
             .insert(payload);
 
       if (error) throw error;

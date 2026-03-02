@@ -1,9 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import { useAuth } from '@/contexts/AuthContext';
 
-type WorkflowConfigEventRow = Database['public']['Tables']['workflow_config_events']['Row'];
+// Local type for workflow_config_events (not in generated types)
+interface WorkflowConfigEventRow {
+  id: string;
+  workflow_type: string;
+  event_type: string;
+  changed_by_user_id: string | null;
+  department_id: string | null;
+  old_value: unknown;
+  new_value: unknown;
+  metadata: unknown;
+  created_at: string;
+}
 
 type ActorProfileLite = {
   id: string;
@@ -24,8 +35,7 @@ export function useWorkflowConfigEvents(limitCount = 25) {
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workflow_config_events')
+      const { data, error } = await untypedFrom('workflow_config_events')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limitCount);

@@ -1,10 +1,24 @@
 import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import type { LeaveRequest } from '@/types/hrms';
 import { toast } from 'sonner';
 
-type LeaveRequestEventRow = Database['public']['Tables']['leave_request_events']['Row'];
+// Local type for leave_request_events (not in generated types)
+interface LeaveRequestEventRow {
+  id: string;
+  leave_request_id: string;
+  event_type: string;
+  occurred_at: string;
+  actor_user_id: string | null;
+  actor_role: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  from_cancellation_status: string | null;
+  to_cancellation_status: string | null;
+  metadata: unknown;
+  created_at: string;
+}
 
 type LeaveActorRecord = {
   id: string;
@@ -27,7 +41,6 @@ export type TimelineDisplayEvent = {
 
 const roleLabelFromValue = (value: string | null | undefined) => {
   if (!value) return null;
-
   if (value === 'general_manager') return 'General Manager';
   if (value === 'manager') return 'Manager';
   if (value === 'director') return 'Director';
@@ -39,7 +52,6 @@ const roleLabelFromValue = (value: string | null | undefined) => {
 
 const leaveStatusLabelFromValue = (value: string | null | undefined) => {
   if (!value) return null;
-
   const statusLabelMap: Record<string, string> = {
     pending: 'Pending',
     manager_approved: 'Manager Approved',
@@ -49,13 +61,11 @@ const leaveStatusLabelFromValue = (value: string | null | undefined) => {
     rejected: 'Rejected',
     cancelled: 'Cancelled',
   };
-
   return statusLabelMap[value] || value;
 };
 
 const cancellationStatusLabelFromValue = (value: string | null | undefined) => {
   if (!value) return null;
-
   const statusLabelMap: Record<string, string> = {
     pending: 'Cancellation Pending',
     manager_approved: 'Cancellation Manager Approved',
@@ -64,7 +74,6 @@ const cancellationStatusLabelFromValue = (value: string | null | undefined) => {
     approved: 'Cancellation Approved',
     rejected: 'Cancellation Rejected',
   };
-
   return statusLabelMap[value] || value;
 };
 
@@ -72,7 +81,6 @@ const getEventMetadataRecord = (event: LeaveRequestEventRow) => {
   if (!event.metadata || Array.isArray(event.metadata) || typeof event.metadata !== 'object') {
     return {} as Record<string, unknown>;
   }
-
   return event.metadata as Record<string, unknown>;
 };
 
@@ -96,83 +104,32 @@ const buildDetailTimelineEvent = (event: LeaveRequestEventRow): TimelineDisplayE
     case 'leave_created':
       return { ...base, label: 'Submitted', roleLabel: base.roleLabel || 'Requester' };
     case 'leave_resubmitted':
-      return {
-        ...base,
-        label: 'Resubmitted',
-        roleLabel: base.roleLabel || 'Requester',
-        reason: getEventMetadataString(event, 'amendment_notes'),
-      };
+      return { ...base, label: 'Resubmitted', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
     case 'leave_amended':
-      return {
-        ...base,
-        label: 'Amended',
-        roleLabel: base.roleLabel || 'Requester',
-        reason: getEventMetadataString(event, 'amendment_notes'),
-      };
+      return { ...base, label: 'Amended', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
     case 'leave_document_requested':
-      return {
-        ...base,
-        label: 'Document Requested',
-        reason: getEventMetadataString(event, 'manager_comments'),
-      };
+      return { ...base, label: 'Document Requested', reason: getEventMetadataString(event, 'manager_comments') };
     case 'leave_document_attached':
       return { ...base, label: 'Document Attached', roleLabel: base.roleLabel || 'Requester' };
     case 'leave_rejected':
-      return {
-        ...base,
-        label: 'Rejected',
-        roleLabel: base.roleLabel || 'Approver',
-        reason: getEventMetadataString(event, 'rejection_reason'),
-      };
+      return { ...base, label: 'Rejected', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'rejection_reason') };
     case 'leave_final_approved':
-      return {
-        ...base,
-        label: 'Final Approval',
-        roleLabel: base.roleLabel || roleLabelFromValue(getEventMetadataString(event, 'final_approved_by_role')) || 'Final Approver',
-      };
+      return { ...base, label: 'Final Approval', roleLabel: base.roleLabel || roleLabelFromValue(getEventMetadataString(event, 'final_approved_by_role')) || 'Final Approver' };
     case 'leave_status_changed': {
       const toStatusLabel = leaveStatusLabelFromValue(event.to_status);
       const fromStatusLabel = leaveStatusLabelFromValue(event.from_status);
-      return {
-        ...base,
-        label: toStatusLabel ? `Status: ${toStatusLabel}` : 'Status Changed',
-        subtext: fromStatusLabel && toStatusLabel ? `${fromStatusLabel} -> ${toStatusLabel}` : null,
-      };
+      return { ...base, label: toStatusLabel ? `Status: ${toStatusLabel}` : 'Status Changed', subtext: fromStatusLabel && toStatusLabel ? `${fromStatusLabel} -> ${toStatusLabel}` : null };
     }
     case 'leave_cancellation_requested':
-      return {
-        ...base,
-        label: 'Cancellation Requested',
-        roleLabel: base.roleLabel || 'Requester',
-        reason: getEventMetadataString(event, 'cancellation_reason'),
-      };
+      return { ...base, label: 'Cancellation Requested', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_re_requested':
-      return {
-        ...base,
-        label: 'Cancellation Re-requested',
-        roleLabel: base.roleLabel || 'Requester',
-        reason: getEventMetadataString(event, 'cancellation_reason'),
-      };
+      return { ...base, label: 'Cancellation Re-requested', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_stage_approved':
-      return {
-        ...base,
-        label: cancellationStatusLabelFromValue(event.to_cancellation_status) || 'Cancellation Stage Approved',
-        roleLabel: base.roleLabel || 'Approver',
-      };
+      return { ...base, label: cancellationStatusLabelFromValue(event.to_cancellation_status) || 'Cancellation Stage Approved', roleLabel: base.roleLabel || 'Approver' };
     case 'leave_cancellation_approved':
-      return {
-        ...base,
-        label: 'Cancellation Approved',
-        roleLabel: base.roleLabel || 'Approver',
-        reason: getEventMetadataString(event, 'cancellation_reason'),
-      };
+      return { ...base, label: 'Cancellation Approved', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_rejected':
-      return {
-        ...base,
-        label: 'Cancellation Rejected',
-        roleLabel: base.roleLabel || 'Approver',
-        reason: getEventMetadataString(event, 'cancellation_rejection_reason'),
-      };
+      return { ...base, label: 'Cancellation Rejected', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_rejection_reason') };
     default:
       return base;
   }
@@ -207,10 +164,8 @@ export function useLeaveRequestDetailsDialog() {
 
   const getActorLabel = (userId: string | null | undefined, fallbackLabel?: string | null) => {
     if (!userId) return fallbackLabel || '—';
-
     const actor = actorsById[userId];
     if (!actor) return fallbackLabel ? `${userId} (${fallbackLabel})` : userId;
-
     const name = `${actor.first_name || ''} ${actor.last_name || ''}`.trim();
     if (name) return fallbackLabel ? `${name} (${fallbackLabel})` : name;
     return fallbackLabel ? `${actor.email} (${fallbackLabel})` : actor.email;
@@ -223,8 +178,7 @@ export function useLeaveRequestDetailsDialog() {
     setOpen(true);
 
     setEventsLoading(true);
-    const { data: eventRows, error: eventsError } = await supabase
-      .from('leave_request_events')
+    const { data: eventRows, error: eventsError } = await untypedFrom('leave_request_events')
       .select('id, leave_request_id, event_type, occurred_at, actor_user_id, actor_role, from_status, to_status, from_cancellation_status, to_cancellation_status, metadata, created_at')
       .eq('leave_request_id', nextRequest.id)
       .order('occurred_at', { ascending: true })

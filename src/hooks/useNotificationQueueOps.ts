@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database, Json } from '@/integrations/supabase/types';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type NotificationQueueStatusFilter =
@@ -11,8 +12,20 @@ export type NotificationQueueStatusFilter =
   | 'sent'
   | 'discarded';
 
-export type NotificationDeliveryQueueRow =
-  Database['public']['Tables']['notification_delivery_queue']['Row'];
+// Local type for notification_delivery_queue (not in generated types)
+export interface NotificationDeliveryQueueRow {
+  id: string;
+  user_id: string;
+  notification_id: string | null;
+  channel: string;
+  status: string;
+  payload: unknown;
+  error_message: string | null;
+  retry_count: number;
+  next_retry_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export type NotificationQueueSummary = {
   pending_count: number;
@@ -90,7 +103,7 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_email_queue_summary');
+      const { data, error } = await untypedRpc('notification_admin_email_queue_summary');
       if (error) throw error;
       return parseQueueSummary(data ?? null);
     },
@@ -101,7 +114,7 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('notification_admin_list_email_queue', {
+      const { data, error } = await untypedRpc('notification_admin_list_email_queue', {
         _status: status,
         _limit: limitCount,
         _offset: 0,
@@ -134,7 +147,7 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
 
   const requeueMutation = useMutation({
     mutationFn: async ({ queueId, delaySeconds = 0 }: { queueId: string; delaySeconds?: number }) => {
-      const { data, error } = await supabase.rpc('notification_admin_requeue_email_queue_item', {
+      const { data, error } = await untypedRpc('notification_admin_requeue_email_queue_item', {
         _queue_id: queueId,
         _delay_seconds: delaySeconds,
       });
@@ -146,7 +159,7 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
 
   const discardMutation = useMutation({
     mutationFn: async ({ queueId, reason }: { queueId: string; reason?: string }) => {
-      const { data, error } = await supabase.rpc('notification_admin_discard_email_queue_item', {
+      const { data, error } = await untypedRpc('notification_admin_discard_email_queue_item', {
         _queue_id: queueId,
         _reason: reason ?? null,
       });

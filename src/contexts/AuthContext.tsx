@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { AppRole, Profile } from '@/types/hrms';
 
 interface AuthContextType {
@@ -61,11 +62,11 @@ async function resolveLoginEmail(identifier: string) {
   }
 
   // Fallback for environments where the standard client RPC path works.
-  const { data, error } = await supabase.rpc('resolve_login_email', {
+  const { data, error } = await untypedRpc('resolve_login_email', {
     _identifier: identifier,
   });
 
-  return { email: data ?? null, error };
+  return { email: (typeof data === 'string' ? data : null), error };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -178,11 +179,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: new Error('Email, username, or employee ID is required') };
     }
 
-    let emailToUse = normalizedIdentifier.value;
+    let emailToUse: string = normalizedIdentifier.value;
 
     if (!normalizedIdentifier.isEmail) {
-      // Transitional approach: resolve identifier to email in a definer RPC.
-      // A future edge function login endpoint can avoid returning the email to the client entirely.
       const { email: resolvedEmail, error: resolveError } = await resolveLoginEmail(normalizedIdentifier.value);
 
       if (resolveError) {

@@ -11,6 +11,11 @@ import type { Department } from '@/types/hrms';
 
 type WorkflowAuditFilter = 'all' | 'leave_approval' | 'leave_cancellation';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getField(event: any, field: string, fallback: any = undefined) {
+  return event[field] ?? fallback;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -46,23 +51,27 @@ function actionBadgeClass(action: string) {
 }
 
 function summarizeChange(event: WorkflowConfigEventWithActor) {
-  const oldStages = parseStages(event.old_values);
-  const newStages = parseStages(event.new_values);
+  const oldVal = getField(event, 'old_values', getField(event, 'old_value', null));
+  const newVal = getField(event, 'new_values', getField(event, 'new_value', null));
+  const oldStages = parseStages(oldVal);
+  const newStages = parseStages(newVal);
   const oldPreview = routePreview(oldStages);
   const newPreview = routePreview(newStages);
 
-  if (event.action === 'created') {
+  const action = getField(event, 'action', event.event_type);
+
+  if (action === 'created') {
     return `Route: ${newPreview}`;
   }
-  if (event.action === 'deleted') {
+  if (action === 'deleted') {
     return `Removed route: ${oldPreview}`;
   }
   if (oldPreview !== newPreview) {
     return `Route changed: ${oldPreview} -> ${newPreview}`;
   }
 
-  const oldValues = isRecord(event.old_values) ? event.old_values : null;
-  const newValues = isRecord(event.new_values) ? event.new_values : null;
+  const oldValues = isRecord(oldVal) ? oldVal : null;
+  const newValues = isRecord(newVal) ? newVal : null;
 
   const changes: string[] = [];
 
@@ -92,13 +101,17 @@ function WorkflowAuditItem({
       ? departments?.find((department) => department.id === event.department_id)?.name ?? 'Unknown Department'
       : 'All Departments (Default)';
 
+  const action = getField(event, 'action', event.event_type);
+  const requesterRole = getField(event, 'requester_role', '');
+  const changedByRole = getField(event, 'changed_by_role', null);
+
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{workflowTypeLabel(event.workflow_type)}</Badge>
-          <Badge variant="outline" className={actionBadgeClass(event.action)}>
-            {event.action}
+          <Badge variant="outline" className={actionBadgeClass(action)}>
+            {action}
           </Badge>
           <Badge variant="secondary">{departmentName}</Badge>
         </div>
@@ -109,7 +122,7 @@ function WorkflowAuditItem({
 
       <div className="space-y-1">
         <p className="text-sm font-medium">
-          {workflowTypeLabel(event.workflow_type)} workflow ({event.requester_role.replace('_', ' ')})
+          {workflowTypeLabel(event.workflow_type)} workflow{requesterRole ? ` (${requesterRole.replace('_', ' ')})` : ''}
         </p>
         <p className="text-xs text-muted-foreground">
           {summarizeChange(event)}
@@ -119,7 +132,7 @@ function WorkflowAuditItem({
       <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
         <span>
           By: <span className="font-medium text-foreground">{actorName}</span>
-          {event.changed_by_role ? ` (${event.changed_by_role.replace('_', ' ')})` : ''}
+          {changedByRole ? ` (${changedByRole.replace('_', ' ')})` : ''}
         </span>
         {event.actor?.email && <span>Email: {event.actor.email}</span>}
       </div>

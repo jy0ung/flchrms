@@ -90,14 +90,14 @@ function NotificationRow({
               {categoryLabel(notification.category)}
             </Badge>
             <Badge variant="outline" className="font-mono text-[10px]">
-              {notification.event_type}
+              {(notification as any).event_type ?? notification.category}
             </Badge>
             {isUnread && <Badge className="bg-primary/15 text-primary">Unread</Badge>}
           </div>
           <div>
             <p className="font-medium text-sm">{notification.title}</p>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              {notification.message}
+              {notification.body}
             </p>
           </div>
           <p className="text-xs text-muted-foreground">

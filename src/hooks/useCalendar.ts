@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -56,7 +57,6 @@ interface LeaveCalendarRpcRow {
 }
 
 function parseDateOnlyLocal(value: string) {
-  // Supabase DATE columns come back as YYYY-MM-DD. Parse as local date to avoid UTC shift.
   return parseISO(value);
 }
 
@@ -223,15 +223,15 @@ export function useCalendarEvents(month: Date) {
     queryFn: async () => {
       const events: CalendarEvent[] = [];
 
-      // Fetch approved leave requests
-      const { data: leaves, error: leavesError } = await supabase.rpc('get_calendar_visible_leaves', {
+      // Fetch approved leave requests via untyped RPC (not in generated types)
+      const { data: leaves, error: leavesError } = await untypedRpc('get_calendar_visible_leaves', {
         _start_date: monthStartDate,
         _end_date: monthEndDate,
       });
 
       if (leavesError) throw leavesError;
 
-      leaves?.forEach((leave: LeaveCalendarRpcRow) => {
+      (leaves as LeaveCalendarRpcRow[] | null)?.forEach((leave: LeaveCalendarRpcRow) => {
         const employeeName = `${leave.employee_first_name || ''} ${leave.employee_last_name || ''}`.trim();
         events.push({
           id: leave.id,
