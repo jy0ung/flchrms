@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_training_enrollments_employee_status
 
 -- Notifications by user for quick read/unread lookups
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user_read
-  ON public.user_notifications (user_id, is_read);
+  ON public.user_notifications (user_id, read_at);
 
 -- ═══════════════════════════════════════════════════════════════════
 -- 2. UNIQUE CONSTRAINTS to prevent duplicate records

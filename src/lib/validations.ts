@@ -19,7 +19,7 @@ export const createLeaveRequestSchema = z
     end_date: isoDateString,
     days_count: z.number().int().positive('Must be at least 1 day'),
     reason: z.string().max(2000).optional(),
-    document_url: z.string().url().optional().or(z.literal('')),
+    document_url: z.string().min(1).optional().or(z.literal('')),
   })
   .refine((d: { start_date: string; end_date: string }) => d.start_date <= d.end_date, {
     message: 'Start date must be on or before end date',

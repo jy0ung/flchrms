@@ -5,55 +5,31 @@ import { LeaveBalanceMetricCard } from '@/components/leave/LeaveBalanceMetricCar
 
 export interface LeaveBalanceSectionProps {
   balances: LeaveBalance[];
-  priorityTypeNames?: string[];
   maxPrimaryCards?: number;
   defaultCollapsedSecondary?: boolean;
 }
 
-const DEFAULT_PRIORITY = ['Annual Leave', 'Sick Leave', 'Personal Leave', 'Unpaid Leave'];
-
-function normalizeTypeName(name: string) {
-  return name.trim().toLowerCase();
-}
-
+/**
+ * Renders leave balance cards.
+ *
+ * The `balances` array is already filtered & ordered by the parent
+ * (via `useLeaveDisplayPrefs`). This component simply splits the list
+ * into primary (first N) and secondary (the rest, collapsible).
+ */
 export function LeaveBalanceSection({
   balances,
-  priorityTypeNames = DEFAULT_PRIORITY,
   maxPrimaryCards = 4,
   defaultCollapsedSecondary = true,
 }: LeaveBalanceSectionProps) {
   const [secondaryCollapsed, setSecondaryCollapsed] = useState(defaultCollapsedSecondary);
 
-  const { primaryBalances, secondaryBalances } = useMemo(() => {
-    const byNormalizedName = new Map(
-      balances.map((balance) => [normalizeTypeName(balance.leave_type_name), balance] as const),
-    );
-    const usedIds = new Set<string>();
+  const { showPrimary, showSecondary } = useMemo(() => {
+    return {
+      showPrimary: balances.slice(0, maxPrimaryCards),
+      showSecondary: balances.slice(maxPrimaryCards),
+    };
+  }, [balances, maxPrimaryCards]);
 
-    const priorityMatches = priorityTypeNames
-      .map((name) => byNormalizedName.get(normalizeTypeName(name)))
-      .filter((balance): balance is LeaveBalance => Boolean(balance))
-      .filter((balance) => {
-        if (usedIds.has(balance.leave_type_id)) return false;
-        usedIds.add(balance.leave_type_id);
-        return true;
-      });
-
-    const remaining = balances.filter((balance) => !usedIds.has(balance.leave_type_id));
-
-    const primary = priorityMatches.slice(0, maxPrimaryCards);
-    const secondary = [
-      ...priorityMatches.slice(maxPrimaryCards),
-      ...remaining,
-    ];
-
-    return { primaryBalances: primary, secondaryBalances: secondary };
-  }, [balances, maxPrimaryCards, priorityTypeNames]);
-
-  const showPrimary = primaryBalances.length > 0 ? primaryBalances : balances.slice(0, maxPrimaryCards);
-  const showSecondary = primaryBalances.length > 0
-    ? secondaryBalances
-    : balances.slice(maxPrimaryCards);
   const secondaryRegionId = 'leave-balance-secondary-region';
 
   if (!balances.length) {
@@ -95,4 +71,3 @@ export function LeaveBalanceSection({
     </section>
   );
 }
-

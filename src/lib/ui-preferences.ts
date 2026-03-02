@@ -377,3 +377,76 @@ export function resetAdminStatsLayoutState(userId: string, role: string): void {
     }),
   );
 }
+
+// ── Leave Display Preferences ────────────────────────────────────
+const LEAVE_DISPLAY_PREFS_STORAGE_KEY_PREFIX = 'hrms.ui.leave.displayPrefs';
+
+export interface LeaveDisplayPrefs {
+  /** Ordered array of leave type IDs the user wants visible. */
+  visibleIds: string[];
+}
+
+function getLeaveDisplayPrefsStorageKey(userId: string, role: string) {
+  return `${LEAVE_DISPLAY_PREFS_STORAGE_KEY_PREFIX}.${userId}.${role}`;
+}
+
+/**
+ * Read the user's leave-display preferences from localStorage.
+ * Falls back to `allLeaveTypeIds` (i.e. show everything) when no prefs are stored.
+ */
+export function getLeaveDisplayPrefs(
+  userId: string,
+  role: string,
+  allLeaveTypeIds: string[],
+): LeaveDisplayPrefs {
+  if (typeof window === 'undefined') return { visibleIds: allLeaveTypeIds };
+
+  const storageKey = getLeaveDisplayPrefsStorageKey(userId, role);
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) return { visibleIds: allLeaveTypeIds };
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<LeaveDisplayPrefs> | null;
+    if (!parsed || typeof parsed !== 'object') return { visibleIds: allLeaveTypeIds };
+    if (!Array.isArray(parsed.visibleIds)) return { visibleIds: allLeaveTypeIds };
+
+    const known = new Set(allLeaveTypeIds);
+    const filtered = parsed.visibleIds.filter(
+      (id): id is string => typeof id === 'string' && known.has(id),
+    );
+
+    return { visibleIds: filtered };
+  } catch {
+    return { visibleIds: allLeaveTypeIds };
+  }
+}
+
+/** Persist the user's leave-display preferences to localStorage. */
+export function setLeaveDisplayPrefs(
+  userId: string,
+  role: string,
+  prefs: LeaveDisplayPrefs,
+): void {
+  if (typeof window === 'undefined') return;
+
+  const storageKey = getLeaveDisplayPrefsStorageKey(userId, role);
+  window.localStorage.setItem(storageKey, JSON.stringify(prefs));
+  window.dispatchEvent(
+    new CustomEvent(UI_PREFERENCES_CHANGED_EVENT, {
+      detail: { key: storageKey, value: prefs },
+    }),
+  );
+}
+
+/** Remove the user's leave-display preferences (reset to defaults). */
+export function resetLeaveDisplayPrefs(userId: string, role: string): void {
+  if (typeof window === 'undefined') return;
+
+  const storageKey = getLeaveDisplayPrefsStorageKey(userId, role);
+  window.localStorage.removeItem(storageKey);
+  window.dispatchEvent(
+    new CustomEvent(UI_PREFERENCES_CHANGED_EVENT, {
+      detail: { key: storageKey, value: null },
+    }),
+  );
+}

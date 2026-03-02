@@ -7,10 +7,12 @@ import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Info } from 'lucide-react';
+import { Plus, Info, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
+import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
+import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
 import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
@@ -42,6 +44,8 @@ export default function Leave() {
   const uploadDocument = useUploadLeaveDocument();
   
   const [open, setOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const { prefs: leaveDisplayPrefs, visibleBalances, hiddenBalances, updatePrefs: updateLeaveDisplayPrefs, resetPrefs: resetLeaveDisplayPrefs } = useLeaveDisplayPrefs(user?.id, role ?? undefined, balances ?? []);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
@@ -489,6 +493,13 @@ export default function Leave() {
         description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
         actions={[
           {
+            id: 'customize-display',
+            label: 'Customize',
+            icon: Settings2,
+            onClick: () => setCustomizeOpen(true),
+            variant: 'outline',
+          },
+          {
             id: 'request-leave',
             label: 'Request Leave',
             icon: Plus,
@@ -526,7 +537,16 @@ export default function Leave() {
         showCloseButton
       />
 
-      <LeaveBalanceSection balances={balances ?? []} />
+      <LeaveDisplayCustomizeDialog
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        balances={balances ?? []}
+        currentPrefs={leaveDisplayPrefs}
+        onSave={updateLeaveDisplayPrefs}
+        onReset={resetLeaveDisplayPrefs}
+      />
+
+      <LeaveBalanceSection balances={visibleBalances} />
 
       {/* Loading state */}
       {isLoading && (
