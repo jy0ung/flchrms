@@ -121,6 +121,22 @@ export async function getTestUser(
   throw new Error(`Failed to create test user ${resolvedEmail} after ${maxRetries} retries (rate limited)`);
 }
 
+// ── Pre-existing admin credentials ─────────────────────────────────────
+export const ADMIN_EMAIL = 'admin@flchrms.test';
+export const ADMIN_USER_ID = 'f771e28e-4f0c-4bd4-b3b6-0e10e18da292';
+
+/**
+ * Returns an authenticated client for the pre-existing admin user.
+ * Cached under key 'admin'.
+ */
+export async function getAdminClient(): Promise<{
+  client: SupabaseClient<Database>;
+  userId: string;
+  email: string;
+}> {
+  return getTestUser('admin', ADMIN_EMAIL);
+}
+
 /**
  * Sign out and clear the client cache. Call in afterAll().
  */

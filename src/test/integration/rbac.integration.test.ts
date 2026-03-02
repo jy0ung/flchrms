@@ -1,12 +1,14 @@
 /**
  * Integration Tests — RBAC (Role-Based Access Control)
  *
- * Verifies RLS policy boundaries. All tests share 'rbac-main';
- * cross-user RLS tests share 'rbac-other'.
+ * Verifies RLS policy boundaries for both employee and admin roles.
+ * Employee tests share 'rbac-main'; cross-user tests share 'rbac-other'.
+ * Admin tests use the pre-existing admin@flchrms.test user.
  */
 import { describe, it, expect, afterAll } from 'vitest';
 import {
   getTestUser,
+  getAdminClient,
   cleanupClients,
   offsetDate,
 } from './helpers/supabase-test-client';
@@ -186,6 +188,45 @@ describe('RBAC Integration', () => {
         .eq('user_id', userId)
         .select();
       expect(data).toEqual([]);
+    });
+  });
+
+  // ── Admin-side RBAC ────────────────────────────────────────────────
+  describe('admin role elevation', () => {
+    it('admin can read all profiles (cross-user)', async () => {
+      const { client } = await getAdminClient();
+      const { count, error } = await client
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      expect(error).toBeNull();
+      expect(count).toBeGreaterThan(1);
+    });
+
+    it('admin can read all user_roles', async () => {
+      const { client } = await getAdminClient();
+      const { data, error } = await client
+        .from('user_roles')
+        .select('user_id, role');
+      expect(error).toBeNull();
+      expect(data!.length).toBeGreaterThan(1);
+    });
+
+    it('admin can see cross-user leave requests', async () => {
+      const { client } = await getAdminClient();
+      const { data, error } = await client
+        .from('leave_requests')
+        .select('id, employee_id');
+      expect(error).toBeNull();
+      expect(Array.isArray(data)).toBe(true);
+    });
+
+    it('admin can see cross-user attendance', async () => {
+      const { client } = await getAdminClient();
+      const { data, error } = await client
+        .from('attendance')
+        .select('id, employee_id');
+      expect(error).toBeNull();
+      expect(Array.isArray(data)).toBe(true);
     });
   });
 });
