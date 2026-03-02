@@ -10,6 +10,29 @@ import {
   normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
 
+function getLeaveApprovalErrorDescription(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : '';
+
+  if (
+    /Could not find the function\s+public\.approve_leave_request/i.test(raw) ||
+    (/approve_leave_request/i.test(raw) && /function/i.test(raw)) ||
+    /PGRST\d{3}/i.test(raw)
+  ) {
+    return 'Leave approval service is unavailable. Apply latest Supabase migrations and refresh the app.';
+  }
+
+  if (/permission denied/i.test(raw) && /(function|approve_leave_request|leave_requests|user_roles)/i.test(raw)) {
+    return 'Leave approval is blocked by database permissions. Verify execute grant on approve_leave_request and leave policies.';
+  }
+
+  return sanitizeErrorMessage(error);
+}
+
 export function useLeaveRequests() {
   const { role, user } = useAuth();
   
@@ -131,7 +154,8 @@ export function useApproveLeaveRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process leave request', { description: sanitizeErrorMessage(error) });
+      console.error('[leave] approve_leave_request failed', error);
+      toast.error('Failed to process leave request', { description: getLeaveApprovalErrorDescription(error) });
     },
   });
 }

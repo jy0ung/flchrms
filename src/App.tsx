@@ -19,10 +19,19 @@ const Training = lazy(() => import("./pages/Training"));
 const Performance = lazy(() => import("./pages/Performance"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Profile = lazy(() => import("./pages/Profile"));
-const Admin = lazy(() => import("./pages/Admin"));
 const Documents = lazy(() => import("./pages/Documents"));
 const TeamCalendar = lazy(() => import("./pages/TeamCalendar"));
 const Payroll = lazy(() => import("./pages/Payroll"));
+import { AdminLayout } from "@/components/admin/AdminLayout";
+const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
+const AdminEmployeesPage = lazy(() => import("./pages/admin/AdminEmployeesPage"));
+const AdminDepartmentsPage = lazy(() => import("./pages/admin/AdminDepartmentsPage"));
+const AdminRolesPage = lazy(() => import("./pages/admin/AdminRolesPage"));
+const AdminLeavePoliciesPage = lazy(() => import("./pages/admin/AdminLeavePoliciesPage"));
+const AdminAnnouncementsPage = lazy(() => import("./pages/admin/AdminAnnouncementsPage"));
+const AdminAuditLogPage = lazy(() => import("./pages/admin/AdminAuditLogPage"));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage"));
+const AdminQuickActionsPage = lazy(() => import("./pages/admin/AdminQuickActionsPage"));
 import NotFound from "./pages/NotFound";
 import {
   ADMIN_PAGE_ALLOWED_ROLES,
@@ -92,9 +101,20 @@ const App = () => (
                   <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
                     <Route path="/employees" element={<Employees />} />
                   </Route>
-                  {/* Admin routes - Admin/HR/Director */}
-                  <Route element={<ProtectedRoute allowedRoles={ADMIN_PAGE_ALLOWED_ROLES} />}>
-                    <Route path="/admin" element={<Admin />} />
+                </Route>
+                {/* Admin panel — dedicated layout with its own sidebar */}
+                <Route element={<ProtectedRoute allowedRoles={ADMIN_PAGE_ALLOWED_ROLES} />}>
+                  <Route element={<AdminLayout />}>
+                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                    <Route path="/admin/employees" element={<AdminEmployeesPage />} />
+                    <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
+                    <Route path="/admin/roles" element={<AdminRolesPage />} />
+                    <Route path="/admin/leave-policies" element={<AdminLeavePoliciesPage />} />
+                    <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+                    <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
+                    <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                    <Route path="/admin/quick-actions" element={<AdminQuickActionsPage />} />
                   </Route>
                 </Route>
                 <Route path="*" element={<NotFound />} />

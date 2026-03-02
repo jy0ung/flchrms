@@ -20,13 +20,13 @@ export type AdminCapabilities = {
 };
 
 export function getAdminCapabilities(role: AppRole | null | undefined): AdminCapabilities {
-  const canManageEmployeeProfiles = isHr(role) || isDirector(role);
-  const canCreateEmployee = isHr(role) || isDirector(role);
+  const canManageEmployeeProfiles = isAdmin(role) || isHr(role) || isDirector(role);
+  const canCreateEmployee = isAdmin(role) || isHr(role) || isDirector(role);
   const canManageDepartments = isAdmin(role) || isHr(role) || isDirector(role);
   const canManageLeaveTypes = isAdmin(role) || isHr(role) || isDirector(role);
   const canManageRoles = isAdmin(role) || isDirector(role);
   const canResetEmployeePasswords = isAdmin(role) || isHr(role);
-  const isAdminLimitedProfileEditor = isAdmin(role);
+  const isAdminLimitedProfileEditor = false; // Admin gets full profile editor
 
   return {
     canAccessAdminPage: canAccessAdminPage(role),
@@ -36,15 +36,15 @@ export function getAdminCapabilities(role: AppRole | null | undefined): AdminCap
     canManageLeaveTypes,
     canManageRoles,
     canResetEmployeePasswords,
-    canOpenAccountProfileEditor: canManageEmployeeProfiles || isAdmin(role),
+    canOpenAccountProfileEditor: canManageEmployeeProfiles,
     isAdminLimitedProfileEditor,
-    canViewSensitiveEmployeeIdentifiers: !isAdmin(role),
+    canViewSensitiveEmployeeIdentifiers: true,
   };
 }
 
 export function getRolePermissionSummary(role: AppRole): string {
   if (role === 'admin') {
-    return 'System administration and app configuration (no payroll/salary or sensitive employee identifiers)';
+    return 'Full system administration, employee management, and app configuration (no payroll/salary)';
   }
   if (role === 'hr') {
     return 'Employee management, policies, leave monitoring (view-only leave status)';

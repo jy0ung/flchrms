@@ -44,7 +44,7 @@ export const EXECUTIVE_CRITICAL_DASHBOARD_ROLES: AppRole[] = [
 ];
 
 export const PAYROLL_MANAGER_ROLES: AppRole[] = ['hr', 'director'];
-export const DOCUMENT_MANAGER_ROLES: AppRole[] = ['hr', 'director'];
+export const DOCUMENT_MANAGER_ROLES: AppRole[] = ['hr', 'director', 'admin'];
 export const HOLIDAY_MANAGER_ROLES: AppRole[] = ['hr', 'director', 'admin'];
 export const DEPARTMENT_EVENT_MANAGER_ROLES: AppRole[] = [
   'hr',
@@ -130,11 +130,11 @@ export function canManageDepartmentEvents(role: MaybeRole) {
 }
 
 export function canViewSensitiveEmployeeIdentifiers(role: MaybeRole) {
-  return role !== 'admin';
+  return !!role;
 }
 
 export function canViewSensitiveEmployeeContact(role: MaybeRole) {
-  return role !== 'admin';
+  return !!role;
 }
 
 export function canViewCalendarLeaveTypeLabel(role: MaybeRole) {
@@ -150,7 +150,7 @@ export function canRequestLeaveSupportingDocument(role: MaybeRole) {
 }
 
 export function canViewLeaveSupportingDocument(role: MaybeRole) {
-  return !!role && role !== 'admin';
+  return !!role;
 }
 
 export function canConductPerformanceReviews(role: MaybeRole) {

@@ -65,7 +65,7 @@ const developmentNavigation: SidebarNavItem[] = [
 
 const employeeNavigation: SidebarNavItem[] = [{ name: 'Employees', href: '/employees', icon: Users }];
 
-const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin', icon: Shield, danger: true }];
+const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin/dashboard', icon: Shield, danger: true }];
 
 function SidebarNavItem({
   item,
@@ -77,7 +77,7 @@ function SidebarNavItem({
   onNavigate?: () => void;
 }) {
   const location = useLocation();
-  const isActive = location.pathname === item.href;
+  const isActive = location.pathname === item.href || (item.href.startsWith('/admin') && location.pathname.startsWith('/admin'));
 
   const link = (
     <NavLink

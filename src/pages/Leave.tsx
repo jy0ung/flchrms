@@ -136,6 +136,7 @@ export default function Leave() {
       rejectionReason: actionType === 'reject' ? rejectionReason : undefined,
       documentRequired: actionType === 'request_document',
       managerComments: managerComments || undefined,
+      currentStatus: selectedRequest.status,
     }, {
       onSuccess: () => {
         setActionDialogOpen(false);
