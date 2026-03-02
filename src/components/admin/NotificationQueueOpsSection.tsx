@@ -12,6 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canAccessAdminPage } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getField(row: any, field: string, fallback: any = undefined) {
+  return row[field] ?? fallback;
+}
+
 const FILTERS: { value: NotificationQueueStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'failed', label: 'Failed' },
@@ -53,6 +58,14 @@ function QueueOpsRow({
     ? `${row.user_profile.first_name} ${row.user_profile.last_name}`.trim()
     : null;
 
+  const attempts = getField(row, 'attempts', getField(row, 'retry_count', 0));
+  const eventType = getField(row, 'event_type', getField(row, 'channel', ''));
+  const subject = getField(row, 'subject', '');
+  const recipientEmail = getField(row, 'recipient_email', row.user_profile?.email ?? '');
+  const nextAttemptAt = getField(row, 'next_attempt_at', getField(row, 'next_retry_at', null));
+  const leasedBy = getField(row, 'leased_by', null);
+  const lastError = getField(row, 'last_error', getField(row, 'error_message', null));
+
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -61,35 +74,35 @@ function QueueOpsRow({
             <Badge variant="outline" className={statusBadgeClass(row.status)}>
               {row.status}
             </Badge>
-            <Badge variant="secondary">#{row.attempts} attempt{row.attempts === 1 ? '' : 's'}</Badge>
+            <Badge variant="secondary">#{attempts} attempt{attempts === 1 ? '' : 's'}</Badge>
             <Badge variant="outline" className="font-mono text-[10px]">
-              {row.event_type}
+              {eventType}
             </Badge>
           </div>
-          <p className="text-sm font-medium truncate">{row.subject}</p>
+          <p className="text-sm font-medium truncate">{subject}</p>
           <p className="text-xs text-muted-foreground break-all">
-            {userName ? `${userName} · ` : ''}{row.recipient_email}
+            {userName ? `${userName} · ` : ''}{recipientEmail}
           </p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
           <p>{formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}</p>
           <p>
             Next try:{' '}
-            {row.status === 'sent'
+            {row.status === 'sent' || !nextAttemptAt
               ? 'n/a'
-              : formatDistanceToNow(new Date(row.next_attempt_at), { addSuffix: true })}
+              : formatDistanceToNow(new Date(nextAttemptAt), { addSuffix: true })}
           </p>
-          {row.leased_by && <p>Leased: {row.leased_by}</p>}
+          {leasedBy && <p>Leased: {leasedBy}</p>}
         </div>
       </div>
 
-      {row.last_error && (
+      {lastError && (
         <div className="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span className="font-medium">Last Error</span>
           </div>
-          <p className="whitespace-pre-wrap break-words">{row.last_error}</p>
+          <p className="whitespace-pre-wrap break-words">{lastError}</p>
         </div>
       )}
 
@@ -161,7 +174,7 @@ export function NotificationQueueOpsSection() {
       await requeueItem(row.id, 0);
       toast({
         title: 'Queue item requeued',
-        description: `Email notification for ${row.recipient_email} was requeued.`,
+        description: `Email notification was requeued.`,
       });
     } catch (error) {
       console.error('Failed to requeue notification email:', error);
@@ -178,7 +191,7 @@ export function NotificationQueueOpsSection() {
       await discardItem(row.id, 'discarded from HR Admin queue ops');
       toast({
         title: 'Queue item discarded',
-        description: `Email notification for ${row.recipient_email} was discarded.`,
+        description: `Email notification was discarded.`,
       });
     } catch (error) {
       console.error('Failed to discard notification email:', error);

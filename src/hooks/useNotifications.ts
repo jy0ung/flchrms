@@ -1,11 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import { untypedFrom, untypedRpc } from '@/integrations/supabase/untyped-client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserNotification = Database['public']['Tables']['user_notifications']['Row'];
-export type UserNotificationPreferences =
-  Database['public']['Tables']['user_notification_preferences']['Row'];
+// Local type definitions for tables not in generated types
+export interface UserNotification {
+  id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  body: string | null;
+  metadata: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface UserNotificationPreferences {
+  user_id: string;
+  leave_enabled: boolean;
+  admin_enabled: boolean;
+  system_enabled: boolean;
+  email_leave_enabled: boolean;
+  email_admin_enabled: boolean;
+  email_system_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationCategoryFilter = 'all' | 'leave' | 'admin' | 'system';
 export type NotificationReadFilter = 'all' | 'unread' | 'read';
 export type NotificationPreferenceCategory = 'leave' | 'admin' | 'system';
@@ -50,7 +70,7 @@ function useMarkNotificationsReadMutation() {
 
   return useMutation({
     mutationFn: async (notificationIds?: string[]) => {
-      const { data, error } = await supabase.rpc('mark_user_notifications_read', {
+      const { data, error } = await untypedRpc('mark_user_notifications_read', {
         _notification_ids: notificationIds && notificationIds.length > 0 ? notificationIds : null,
       });
 
@@ -75,7 +95,7 @@ function useMarkNotificationsUnreadMutation() {
 
   return useMutation({
     mutationFn: async (notificationIds: string[]) => {
-      const { data, error } = await supabase.rpc('mark_user_notifications_unread', {
+      const { data, error } = await untypedRpc('mark_user_notifications_unread', {
         _notification_ids: notificationIds,
       });
 
@@ -106,7 +126,7 @@ function useDeleteNotificationsMutation() {
       olderThanDays?: number;
       readOnly?: boolean;
     }) => {
-      const { data, error } = await supabase.rpc('delete_user_notifications', {
+      const { data, error } = await untypedRpc('delete_user_notifications', {
         _older_than_days: olderThanDays,
         _read_only: readOnly,
       });
@@ -128,8 +148,7 @@ export function useUserNotifications(limitCount = 15) {
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_notifications')
+      const { data, error } = await untypedFrom('user_notifications')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limitCount);
@@ -144,8 +163,7 @@ export function useUserNotifications(limitCount = 15) {
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('user_notifications')
+      const { count, error } = await untypedFrom('user_notifications')
         .select('*', { count: 'exact', head: true })
         .is('read_at', null);
 
@@ -194,8 +212,7 @@ export function useNotificationHistory({
     queryKey: ['user-notifications-history', user?.id, safePage, pageSize, category, readFilter],
     enabled: !!user,
     queryFn: async () => {
-      let query = supabase
-        .from('user_notifications')
+      let query = untypedFrom('user_notifications')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(from, to);
@@ -256,8 +273,7 @@ export function useNotificationPreferences() {
     queryKey: ['user-notification-preferences', user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_notification_preferences')
+      const { data, error } = await untypedFrom('user_notification_preferences')
         .select('*')
         .maybeSingle();
 
@@ -284,8 +300,7 @@ export function useNotificationPreferences() {
     ) => {
       if (!user) throw new Error('Authentication required.');
 
-      const { data, error } = await supabase
-        .from('user_notification_preferences')
+      const { data, error } = await untypedFrom('user_notification_preferences')
         .upsert(
           {
             user_id: user.id,
