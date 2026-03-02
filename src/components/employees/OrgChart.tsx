@@ -76,12 +76,23 @@ function OrgTreeNode({ node, depth = 0 }: { node: OrgNode; depth?: number }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 export function OrgChart() {
-  const { data: employees } = useEmployees();
+  const { data: employees, isLoading } = useEmployees();
 
   const roots = useMemo(() => {
     if (!employees) return [];
     return buildOrgTree(employees);
   }, [employees]);
+
+  if (isLoading) {
+    return (
+      <div className="py-12 text-center">
+        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Loading organization chart…
+        </div>
+      </div>
+    );
+  }
 
   if (!employees?.length) {
     return (

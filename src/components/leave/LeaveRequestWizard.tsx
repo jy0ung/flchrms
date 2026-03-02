@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format, differenceInDays, startOfDay, eachDayOfInterval, isWeekend } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Upload, FileText, X, AlertCircle, Loader2, Clock, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Upload, FileText, X, AlertCircle, Loader2, Clock, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -341,6 +341,7 @@ function StepDates({
                 type="date"
                 value={startDate}
                 onChange={(e) => onStartDateChange(e.target.value)}
+                min={format(new Date(), 'yyyy-MM-dd')}
                 className="h-9 text-sm"
               />
             </div>
@@ -652,6 +653,15 @@ export function LeaveRequestWizard({
             setValidationError(
               `${selectedType.name} requires at least ${selectedType.min_days} day(s) advance notice. Your leave starts in ${daysUntil} day(s).`,
             );
+            return false;
+          }
+        }
+        // Past date check
+        {
+          const today = startOfDay(new Date());
+          const leaveStart = startOfDay(new Date(startDate));
+          if (leaveStart < today) {
+            setValidationError('Start date cannot be in the past.');
             return false;
           }
         }

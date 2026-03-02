@@ -14,7 +14,6 @@ import {
   CreditCard,
   UserCheck,
   Clock,
-  ChevronRight,
 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEmployee } from '@/hooks/useEmployees';
@@ -71,7 +70,7 @@ function LifecycleTimeline({ events }: { events: LifecycleEvent[] }) {
       {/* Vertical line */}
       <div className="absolute left-5 top-2 bottom-2 w-px bg-border" />
 
-      {events.map((event, idx) => (
+      {events.map((event) => (
         <div key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
           {/* Dot */}
           <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-card text-sm">
@@ -109,6 +108,17 @@ function OnboardingSection({
   const toggleItem = useToggleChecklistItem();
   const seedChecklist = useSeedOnboardingChecklist();
 
+  // Group by category — must be above any conditional returns (React hooks rule)
+  const grouped = useMemo(() => {
+    const map = new Map<string, OnboardingChecklistItem[]>();
+    for (const item of items) {
+      const cat = item.category || 'general';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(item);
+    }
+    return Array.from(map.entries());
+  }, [items]);
+
   if (!items.length) {
     return (
       <div className="text-center py-8 space-y-3">
@@ -124,17 +134,6 @@ function OnboardingSection({
       </div>
     );
   }
-
-  // Group by category
-  const grouped = useMemo(() => {
-    const map = new Map<string, OnboardingChecklistItem[]>();
-    for (const item of items) {
-      const cat = item.category || 'general';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(item);
-    }
-    return Array.from(map.entries());
-  }, [items]);
 
   const totalItems = items.length;
   const completedItems = items.filter((i) => i.is_completed).length;
@@ -316,7 +315,7 @@ export default function EmployeeProfile() {
               </div>
               <p className="text-sm text-muted-foreground">
                 {profile.job_title ?? 'No title'}
-                {(basicProfile as any)?.department?.name && ` · ${(basicProfile as any).department.name}`}
+                {basicProfile?.department?.name && ` · ${basicProfile.department.name}`}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -424,7 +423,7 @@ export default function EmployeeProfile() {
               </CardHeader>
               <CardContent className="divide-y divide-border">
                 <InfoRow icon={Briefcase} label="Job Title" value={profile.job_title} />
-                <InfoRow icon={Building} label="Department" value={(basicProfile as any)?.department?.name} />
+                <InfoRow icon={Building} label="Department" value={basicProfile?.department?.name ?? null} />
                 <InfoRow
                   icon={UserCheck}
                   label="Employment Type"

@@ -12,6 +12,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBrandingContext } from '@/contexts/BrandingContext';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,14 @@ export function AdminSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { profile, role } = useAuth();
+  const { branding } = useBrandingContext();
+
+  const companyInitials = branding.company_name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || 'HR';
 
   const roleDisplayName: Record<string, string> = {
     admin: 'Admin',
@@ -84,11 +93,15 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">FL</span>
-          </div>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt={branding.company_name} className="h-8 w-8 shrink-0 rounded-lg object-contain" />
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+              <span className="text-xs font-bold text-primary-foreground">{companyInitials}</span>
+            </div>
+          )}
           <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold">HRMS</span>
+            <span className="text-sm font-semibold">{branding.company_name}</span>
             <Badge variant="secondary" className="w-fit text-[10px] px-1.5 py-0">
               Admin Panel
             </Badge>

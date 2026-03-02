@@ -272,102 +272,12 @@ export default function Auth() {
                   </form>
                 </div>
               ) : (
-                <Tabs defaultValue="signin" className="w-full">
-                  <TabsList className="mb-4 grid w-full grid-cols-2">
-                    <TabsTrigger value="signin" className="text-sm font-medium">
-                      Sign In
-                    </TabsTrigger>
-                    <TabsTrigger value="signup" className="text-sm font-medium">
-                      Sign Up
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="signin" className="mt-0">
-                    <LoginForm
-                      onSubmit={handleCredentialsSubmit}
-                      onForgotPassword={() => setForgotPasswordOpen(true)}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="signup" className="mt-0">
-                    <form onSubmit={handleSignUp} className="space-y-5">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
-                          <Input
-                            id="firstName"
-                            name="firstName"
-                            placeholder="John"
-                            required
-                            
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input
-                            id="lastName"
-                            name="lastName"
-                            placeholder="Doe"
-                            required
-                            
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email">Email</Label>
-                        <Input
-                          id="signup-email"
-                          name="email"
-                          type="email"
-                          placeholder="you@company.com"
-                          autoComplete="email"
-                          required
-                          
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="signup-password"
-                            name="password"
-                            type={showSignUpPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            minLength={8}
-                            autoComplete="new-password"
-                            required
-                            className="pr-10"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
-                            onClick={() => setShowSignUpPassword((value) => !value)}
-                            aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
-                            aria-pressed={showSignUpPassword}
-                          >
-                            {showSignUpPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={isSignUpLoading}
-                      >
-                        {isSignUpLoading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
-                        Create Account
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
+                <div className="w-full">
+                  <LoginForm
+                    onSubmit={handleCredentialsSubmit}
+                    onForgotPassword={() => setForgotPasswordOpen(true)}
+                  />
+                </div>
               )}
           </AuthCard>
       </div>

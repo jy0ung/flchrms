@@ -64,14 +64,23 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   // Update favicon if custom one is set
   useEffect(() => {
-    if (!resolved.favicon_url) return;
+    const existingLink = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+    const defaultHref = existingLink?.href ?? '/favicon.ico';
 
-    const link =
-      (document.querySelector("link[rel~='icon']") as HTMLLinkElement) ??
-      document.createElement('link');
+    if (!resolved.favicon_url) {
+      // Restore default favicon if custom was removed
+      if (existingLink) existingLink.href = defaultHref;
+      return;
+    }
+
+    const link = existingLink ?? document.createElement('link');
     link.rel = 'icon';
     link.href = resolved.favicon_url;
-    document.head.appendChild(link);
+    if (!existingLink) document.head.appendChild(link);
+
+    return () => {
+      link.href = defaultHref;
+    };
   }, [resolved.favicon_url]);
 
   return (

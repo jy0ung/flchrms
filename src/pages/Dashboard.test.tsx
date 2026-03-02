@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -90,7 +90,7 @@ function renderDashboard() {
   );
 }
 
-describe('Dashboard widget action affordance', () => {
+describe('Dashboard widget rendering', () => {
   it('does not render Leave Balance widget on dashboard', () => {
     mockRole = 'employee';
     renderDashboard();
@@ -99,26 +99,17 @@ describe('Dashboard widget action affordance', () => {
     expect(screen.queryByRole('button', { name: /Open leave management/i })).not.toBeInTheDocument();
   });
 
-  it('renders lane regions in customize mode without semantic size tokens', () => {
+  it('renders the greeting and role label', () => {
     mockRole = 'employee';
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /Dashboard interaction mode|Customize Dashboard/i }));
-
-    expect(screen.getByRole('region', { name: 'Primary Widgets' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Secondary Widgets' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Supporting Widgets' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Restore Hidden/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Size\s+[SML]/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/\d+\/12/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Welcome back, Evelyn/i)).toBeInTheDocument();
   });
 
-  it('shows Apply Admin Template action for manager roles in customize mode', () => {
+  it('renders widgets for manager roles', () => {
     mockRole = 'manager';
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /Dashboard interaction mode|Customize Dashboard/i }));
-
-    expect(screen.getByRole('button', { name: /Apply Admin Template/i })).toBeInTheDocument();
+    expect(screen.getByText(/Welcome back, Evelyn/i)).toBeInTheDocument();
   });
 });

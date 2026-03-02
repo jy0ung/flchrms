@@ -69,7 +69,7 @@ export function useLeaveBalance(employeeId?: string) {
           days_allowed: type.days_allowed,
           days_used: usedDays,
           days_pending: pendingDays,
-          days_remaining: type.days_allowed - usedDays,
+          days_remaining: Math.max(0, type.days_allowed - usedDays - pendingDays),
         };
       });
 

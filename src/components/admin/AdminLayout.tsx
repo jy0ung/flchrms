@@ -1,7 +1,6 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { canAccessAdminPage } from '@/lib/permissions';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 import { InteractionModeProvider } from '@/components/system';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -76,7 +75,7 @@ export function AdminLayout() {
                       {isLast ? (
                         <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink href={path}>{label}</BreadcrumbLink>
+                        <BreadcrumbLink asChild><Link to={path}>{label}</Link></BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
                   );

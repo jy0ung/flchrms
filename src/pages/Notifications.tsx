@@ -101,7 +101,7 @@ function NotificationRow({
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+            {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
           </p>
         </div>
 

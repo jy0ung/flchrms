@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Save, Building2, Bell, Shield, Palette, Upload, X, ImageIcon, Loader2 } from 'lucide-react';
+import { Save, Building2, Bell, Shield, Palette, X, ImageIcon, Loader2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -201,17 +201,25 @@ export default function AdminSettingsPage() {
   }, []);
 
   const handleUploadLogo = useCallback(async (file: File) => {
-    const ext = file.name.split('.').pop() || 'png';
-    const path = `logo/company-logo.${ext}`;
-    const url = await uploadAsset.mutateAsync({ file, path });
-    updateBrandingDraft('logo_url', url);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `logo/company-logo.${ext}`;
+      const url = await uploadAsset.mutateAsync({ file, path });
+      updateBrandingDraft('logo_url', url);
+    } catch {
+      // Error toast is handled by the mutation's onError
+    }
   }, [uploadAsset, updateBrandingDraft]);
 
   const handleUploadFavicon = useCallback(async (file: File) => {
-    const ext = file.name.split('.').pop() || 'ico';
-    const path = `favicon/company-favicon.${ext}`;
-    const url = await uploadAsset.mutateAsync({ file, path });
-    updateBrandingDraft('favicon_url', url);
+    try {
+      const ext = file.name.split('.').pop() || 'ico';
+      const path = `favicon/company-favicon.${ext}`;
+      const url = await uploadAsset.mutateAsync({ file, path });
+      updateBrandingDraft('favicon_url', url);
+    } catch {
+      // Error toast is handled by the mutation's onError
+    }
   }, [uploadAsset, updateBrandingDraft]);
 
   const handleSaveBranding = () => {
