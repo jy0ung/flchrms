@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedRpc } from '@/integrations/supabase/untyped-client';
-import type { Json } from '@/integrations/supabase/types';
+import type { Database, Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type NotificationQueueStatusFilter =
@@ -11,21 +10,12 @@ export type NotificationQueueStatusFilter =
   | 'failed'
   | 'sent'
   | 'discarded';
+export type NotificationWorkerRunStatusFilter = 'all' | 'running' | 'completed' | 'failed';
 
-// Local type for notification_delivery_queue (not in generated types)
-export interface NotificationDeliveryQueueRow {
-  id: string;
-  user_id: string;
-  notification_id: string | null;
-  channel: string;
-  status: string;
-  payload: unknown;
-  error_message: string | null;
-  retry_count: number;
-  next_retry_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type NotificationDeliveryQueueRow =
+  Database['public']['Tables']['notification_delivery_queue']['Row'];
+export type NotificationEmailWorkerRunRow =
+  Database['public']['Tables']['notification_email_worker_runs']['Row'];
 
 export type NotificationQueueSummary = {
   pending_count: number;
@@ -36,6 +26,70 @@ export type NotificationQueueSummary = {
   ready_to_retry_failed_count: number;
   oldest_pending_at: string | null;
   generated_at: string;
+};
+
+export type NotificationWorkerRunSummary = {
+  running_count: number;
+  completed_24h_count: number;
+  failed_24h_count: number;
+  claimed_24h_count: number;
+  processed_24h_count: number;
+  sent_24h_count: number;
+  failed_items_24h_count: number;
+  discarded_24h_count: number;
+  avg_duration_ms_24h: number | null;
+  latest_started_at: string | null;
+  latest_completed_at: string | null;
+  latest_failed_at: string | null;
+  generated_at: string;
+};
+
+export type NotificationDeadLetterProviderRollup = {
+  provider: string;
+  count: number;
+  failed_count: number;
+  discarded_count: number;
+  retry_ready_failed_count: number;
+};
+
+export type NotificationDeadLetterEventTypeRollup = {
+  event_type: string;
+  count: number;
+  failed_count: number;
+  discarded_count: number;
+};
+
+export type NotificationDeadLetterProviderEventTypeRollup = {
+  provider: string;
+  event_type: string;
+  count: number;
+  failed_count: number;
+  discarded_count: number;
+  retry_ready_failed_count: number;
+};
+
+export type NotificationDeadLetterTopError = {
+  provider: string;
+  event_type: string;
+  error_fingerprint: string;
+  count: number;
+  max_attempts: number;
+  latest_seen_at: string | null;
+  retry_ready_failed_count: number;
+};
+
+export type NotificationDeadLetterAnalytics = {
+  window_hours: number;
+  generated_at: string;
+  window_start: string | null;
+  dead_letter_count: number;
+  failed_count: number;
+  discarded_count: number;
+  retry_ready_failed_count: number;
+  providers: NotificationDeadLetterProviderRollup[];
+  event_types: NotificationDeadLetterEventTypeRollup[];
+  provider_event_types: NotificationDeadLetterProviderEventTypeRollup[];
+  top_errors: NotificationDeadLetterTopError[];
 };
 
 type ProfileLite = {
@@ -87,67 +141,188 @@ function parseQueueSummary(value: Json | null): NotificationQueueSummary {
   };
 }
 
+function parseWorkerRunSummary(value: Json | null): NotificationWorkerRunSummary {
+  const fallback: NotificationWorkerRunSummary = {
+    running_count: 0,
+    completed_24h_count: 0,
+    failed_24h_count: 0,
+    claimed_24h_count: 0,
+    processed_24h_count: 0,
+    sent_24h_count: 0,
+    failed_items_24h_count: 0,
+    discarded_24h_count: 0,
+    avg_duration_ms_24h: null,
+    latest_started_at: null,
+    latest_completed_at: null,
+    latest_failed_at: null,
+    generated_at: new Date().toISOString(),
+  };
+
+  if (!isObject(value)) return fallback;
+
+  const toInt = (key: keyof NotificationWorkerRunSummary) => {
+    const raw = value[key as string];
+    const parsed = typeof raw === 'number' ? raw : Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const toNullableString = (key: keyof NotificationWorkerRunSummary) => {
+    const raw = value[key as string];
+    return typeof raw === 'string' ? raw : null;
+  };
+
+  const rawAvg = value.avg_duration_ms_24h;
+  const avgParsed = typeof rawAvg === 'number' ? rawAvg : rawAvg == null ? null : Number(rawAvg);
+
+  return {
+    running_count: toInt('running_count'),
+    completed_24h_count: toInt('completed_24h_count'),
+    failed_24h_count: toInt('failed_24h_count'),
+    claimed_24h_count: toInt('claimed_24h_count'),
+    processed_24h_count: toInt('processed_24h_count'),
+    sent_24h_count: toInt('sent_24h_count'),
+    failed_items_24h_count: toInt('failed_items_24h_count'),
+    discarded_24h_count: toInt('discarded_24h_count'),
+    avg_duration_ms_24h: avgParsed == null || !Number.isFinite(avgParsed) ? null : avgParsed,
+    latest_started_at: toNullableString('latest_started_at'),
+    latest_completed_at: toNullableString('latest_completed_at'),
+    latest_failed_at: toNullableString('latest_failed_at'),
+    generated_at:
+      typeof value.generated_at === 'string' ? value.generated_at : fallback.generated_at,
+  };
+}
+
+function parseString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function parseNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function parseIntValue(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseObjectArray(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isObject) : [];
+}
+
+function parseDeadLetterAnalytics(value: Json | null): NotificationDeadLetterAnalytics {
+  const fallback: NotificationDeadLetterAnalytics = {
+    window_hours: 24,
+    generated_at: new Date().toISOString(),
+    window_start: null,
+    dead_letter_count: 0,
+    failed_count: 0,
+    discarded_count: 0,
+    retry_ready_failed_count: 0,
+    providers: [],
+    event_types: [],
+    provider_event_types: [],
+    top_errors: [],
+  };
+
+  if (!isObject(value)) return fallback;
+
+  return {
+    window_hours: parseIntValue(value.window_hours, 24),
+    generated_at: parseString(value.generated_at, fallback.generated_at),
+    window_start: parseNullableString(value.window_start),
+    dead_letter_count: parseIntValue(value.dead_letter_count),
+    failed_count: parseIntValue(value.failed_count),
+    discarded_count: parseIntValue(value.discarded_count),
+    retry_ready_failed_count: parseIntValue(value.retry_ready_failed_count),
+    providers: parseObjectArray(value.providers).map((row) => ({
+      provider: parseString(row.provider, 'unknown'),
+      count: parseIntValue(row.count),
+      failed_count: parseIntValue(row.failed_count),
+      discarded_count: parseIntValue(row.discarded_count),
+      retry_ready_failed_count: parseIntValue(row.retry_ready_failed_count),
+    })),
+    event_types: parseObjectArray(value.event_types).map((row) => ({
+      event_type: parseString(row.event_type, 'unknown'),
+      count: parseIntValue(row.count),
+      failed_count: parseIntValue(row.failed_count),
+      discarded_count: parseIntValue(row.discarded_count),
+    })),
+    provider_event_types: parseObjectArray(value.provider_event_types).map((row) => ({
+      provider: parseString(row.provider, 'unknown'),
+      event_type: parseString(row.event_type, 'unknown'),
+      count: parseIntValue(row.count),
+      failed_count: parseIntValue(row.failed_count),
+      discarded_count: parseIntValue(row.discarded_count),
+      retry_ready_failed_count: parseIntValue(row.retry_ready_failed_count),
+    })),
+    top_errors: parseObjectArray(value.top_errors).map((row) => ({
+      provider: parseString(row.provider, 'unknown'),
+      event_type: parseString(row.event_type, 'unknown'),
+      error_fingerprint: parseString(row.error_fingerprint, '(no error captured)'),
+      count: parseIntValue(row.count),
+      max_attempts: parseIntValue(row.max_attempts),
+      latest_seen_at: parseNullableString(row.latest_seen_at),
+      retry_ready_failed_count: parseIntValue(row.retry_ready_failed_count),
+    })),
+  };
+}
+
 export function useNotificationQueueOps(status: NotificationQueueStatusFilter, limitCount = 25) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const invalidate = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['notification-queue-summary', user?.id] }),
-      queryClient.invalidateQueries({ queryKey: ['notification-queue-list', user?.id] }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: ['notification-admin-dashboard', user?.id] });
   };
 
-  const summaryQuery = useQuery({
-    queryKey: ['notification-queue-summary', user?.id],
+  // Single combined query replaces 5 independent polling queries
+  const combinedQuery = useQuery({
+    queryKey: ['notification-admin-dashboard', user?.id, status, limitCount],
     enabled: !!user,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await untypedRpc('notification_admin_email_queue_summary');
-      if (error) throw error;
-      return parseQueueSummary(data ?? null);
-    },
-  });
-
-  const listQuery = useQuery({
-    queryKey: ['notification-queue-list', user?.id, status, limitCount],
-    enabled: !!user,
-    refetchInterval: 30_000,
-    queryFn: async () => {
-      const { data, error } = await untypedRpc('notification_admin_list_email_queue', {
-        _status: status,
-        _limit: limitCount,
-        _offset: 0,
+      const { data, error } = await supabase.rpc('notification_admin_combined_dashboard', {
+        _queue_status: status,
+        _queue_limit: limitCount,
+        _queue_offset: 0,
+        _run_status: 'all',
+        _run_limit: 8,
+        _run_offset: 0,
+        _dl_window_hours: 24,
+        _dl_limit: 8,
       });
-
       if (error) throw error;
 
-      const rows = (data ?? []) as NotificationDeliveryQueueRow[];
-      const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
+      const result = data as Record<string, unknown> | null;
+      const queueSummary = parseQueueSummary((result?.queue_summary ?? null) as Json | null);
+      const workerRunSummary = parseWorkerRunSummary((result?.worker_summary ?? null) as Json | null);
+      const deadLetterAnalytics = parseDeadLetterAnalytics((result?.dead_letter ?? null) as Json | null);
+      const workerRuns = ((result?.worker_runs ?? []) as NotificationEmailWorkerRunRow[]);
+      const rawQueueList = ((result?.queue_list ?? []) as NotificationDeliveryQueueRow[]);
 
+      // Enrich queue items with user profiles
+      const userIds = Array.from(new Set(rawQueueList.map((row: NotificationDeliveryQueueRow) => row.user_id).filter(Boolean)));
       let profileById = new Map<string, ProfileLite>();
-
       if (userIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, first_name, last_name, email')
           .in('id', userIds);
-
         if (profilesError) throw profilesError;
-
-        profileById = new Map(((profiles ?? []) as ProfileLite[]).map((row) => [row.id, row]));
+        profileById = new Map(((profiles ?? []) as ProfileLite[]).map((row: ProfileLite) => [row.id, row]));
       }
-
-      return rows.map((row) => ({
+      const queueItems = rawQueueList.map((row: NotificationDeliveryQueueRow) => ({
         ...row,
         user_profile: profileById.get(row.user_id) ?? null,
       })) as NotificationQueueItemWithUser[];
+
+      return { queueSummary, queueItems, workerRunSummary, workerRuns, deadLetterAnalytics };
     },
   });
 
   const requeueMutation = useMutation({
     mutationFn: async ({ queueId, delaySeconds = 0 }: { queueId: string; delaySeconds?: number }) => {
-      const { data, error } = await untypedRpc('notification_admin_requeue_email_queue_item', {
+      const { data, error } = await supabase.rpc('notification_admin_requeue_email_queue_item', {
         _queue_id: queueId,
         _delay_seconds: delaySeconds,
       });
@@ -159,7 +334,7 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
 
   const discardMutation = useMutation({
     mutationFn: async ({ queueId, reason }: { queueId: string; reason?: string }) => {
-      const { data, error } = await untypedRpc('notification_admin_discard_email_queue_item', {
+      const { data, error } = await supabase.rpc('notification_admin_discard_email_queue_item', {
         _queue_id: queueId,
         _reason: reason ?? null,
       });
@@ -170,17 +345,21 @@ export function useNotificationQueueOps(status: NotificationQueueStatusFilter, l
   });
 
   return {
-    summary: summaryQuery.data ?? null,
-    queueItems: listQuery.data ?? [],
-    isLoading: summaryQuery.isLoading || listQuery.isLoading,
-    isFetching: summaryQuery.isFetching || listQuery.isFetching,
-    summaryError: summaryQuery.error,
-    listError: listQuery.error,
+    summary: combinedQuery.data?.queueSummary ?? null,
+    queueItems: combinedQuery.data?.queueItems ?? [],
+    workerRunSummary: combinedQuery.data?.workerRunSummary ?? null,
+    workerRuns: combinedQuery.data?.workerRuns ?? [],
+    deadLetterAnalytics: combinedQuery.data?.deadLetterAnalytics ?? null,
+    isLoading: combinedQuery.isLoading,
+    isFetching: combinedQuery.isFetching,
+    summaryError: combinedQuery.error,
+    listError: combinedQuery.error,
+    workerRunSummaryError: combinedQuery.error,
+    workerRunListError: combinedQuery.error,
+    deadLetterAnalyticsError: combinedQuery.error,
     isRequeueing: requeueMutation.isPending,
     isDiscarding: discardMutation.isPending,
-    refetch: async () => {
-      await Promise.all([summaryQuery.refetch(), listQuery.refetch()]);
-    },
+    refetch: async () => { await combinedQuery.refetch(); },
     requeueItem: async (queueId: string, delaySeconds = 0) =>
       requeueMutation.mutateAsync({ queueId, delaySeconds }),
     discardItem: async (queueId: string, reason?: string) =>

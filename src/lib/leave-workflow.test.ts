@@ -5,6 +5,8 @@ import {
   CALENDAR_VISIBLE_LEAVE_STATUSES,
   buildLeaveApprovalUpdate,
   buildLeaveCancellationApprovalUpdate,
+  canRoleHandleLeaveApprovalStage,
+  getNextLeaveApprovalStageFromRouteSnapshot,
 } from '@/lib/leave-workflow';
 
 describe('leave workflow', () => {
@@ -24,6 +26,47 @@ describe('leave workflow', () => {
     expect(update.status).toBe('manager_approved');
     expect(update.manager_approved_by).toBe(approverId);
     expect(update.manager_approved_at).toBe(now);
+  });
+
+  it('resolves next stage directly from route snapshot for pending requests', () => {
+    expect(
+      getNextLeaveApprovalStageFromRouteSnapshot({
+        currentStatus: 'pending',
+        approvalRouteSnapshot: ['general_manager', 'director'],
+      }),
+    ).toBe('general_manager');
+  });
+
+  it('resolves next stage directly from route snapshot for progressed requests', () => {
+    expect(
+      getNextLeaveApprovalStageFromRouteSnapshot({
+        currentStatus: 'manager_approved',
+        approvalRouteSnapshot: ['manager', 'general_manager', 'director'],
+      }),
+    ).toBe('general_manager');
+
+    expect(
+      getNextLeaveApprovalStageFromRouteSnapshot({
+        currentStatus: 'gm_approved',
+        approvalRouteSnapshot: ['general_manager', 'director'],
+      }),
+    ).toBe('director');
+  });
+
+  it('uses canonical fallback when route snapshot is missing', () => {
+    expect(
+      getNextLeaveApprovalStageFromRouteSnapshot({
+        currentStatus: 'pending',
+        approvalRouteSnapshot: null,
+      }),
+    ).toBe('manager');
+  });
+
+  it('checks role eligibility for current leave approval stage', () => {
+    expect(canRoleHandleLeaveApprovalStage('manager', 'manager')).toBe(true);
+    expect(canRoleHandleLeaveApprovalStage('general_manager', 'manager')).toBe(false);
+    expect(canRoleHandleLeaveApprovalStage('director', 'director')).toBe(true);
+    expect(canRoleHandleLeaveApprovalStage('hr', 'director')).toBe(false);
   });
 
   it('allows GM to approve manager pending requests', () => {

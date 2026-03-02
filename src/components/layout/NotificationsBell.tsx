@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Loader2, Settings2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   useNotificationPreferences,
@@ -106,7 +106,12 @@ function NotificationListItem({
   );
 }
 
-export function NotificationsBell() {
+export function NotificationsBell({
+  triggerClassName,
+}: {
+  floating?: boolean;
+  triggerClassName?: string;
+} = {}) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const {
@@ -178,10 +183,8 @@ export function NotificationsBell() {
       await updateCategoryEnabled(category, enabled);
     } catch (error) {
       console.error('Failed to update notification preferences:', error);
-      toast({
-        title: 'Unable to update preferences',
+      toast.error('Unable to update preferences', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };
@@ -200,20 +203,29 @@ export function NotificationsBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="relative bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75"
+          className={cn(
+            'relative h-8 w-8',
+            triggerClassName,
+          )}
           aria-label="Open notifications"
         >
-          {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+          {isRefreshing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Bell className="h-4 w-4" />
+          )}
           {unreadBadgeLabel && (
-            <span className="absolute -right-1 -top-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
+            <span
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground"
+            >
               {unreadBadgeLabel}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[360px] p-0" align="end">
+      <PopoverContent className="w-[calc(100vw-1.5rem)] sm:w-[360px] p-0" align="end">
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <p className="text-sm font-semibold">Notifications</p>

@@ -9,6 +9,7 @@ import { AlertCircle, Upload, FileText, X } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LeaveType } from '@/types/hrms';
 import { LeaveBalance } from '@/hooks/useLeaveBalance';
+import { validateDocumentFile } from '@/lib/validations';
 
 interface LeaveRequestFormProps {
   leaveTypes: LeaveType[] | undefined;
@@ -93,6 +94,15 @@ export function LeaveRequestForm({
     if (selectedType?.requires_document && !documentFile) {
       setValidationError(`${selectedType.name} requires a supporting document.`);
       return;
+    }
+
+    // Validate document file constraints (size & type)
+    if (documentFile) {
+      const fileError = validateDocumentFile(documentFile);
+      if (fileError) {
+        setValidationError(fileError);
+        return;
+      }
     }
 
     let documentUrl: string | undefined;
@@ -200,6 +210,7 @@ export function LeaveRequestForm({
           onChange={(e) => setReason(e.target.value)}
           placeholder="Optional reason for leave..."
           rows={2}
+          maxLength={2000}
         />
       </div>
 

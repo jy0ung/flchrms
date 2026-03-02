@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Attendance } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { format } from 'date-fns';
 
 export function useTodayAttendance() {
@@ -10,19 +11,21 @@ export function useTodayAttendance() {
   const today = format(new Date(), 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: ['attendance', 'today', user?.id],
+    queryKey: ['attendance', 'today', user?.id, today],
     queryFn: async () => {
+      const currentDate = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('attendance')
         .select('*')
         .eq('employee_id', user!.id)
-        .eq('date', today)
+        .eq('date', currentDate)
         .maybeSingle();
       
       if (error) throw error;
       return data as Attendance | null;
     },
     enabled: !!user,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -36,7 +39,8 @@ export function useAttendanceHistory(startDate?: string, endDate?: string) {
         .from('attendance')
         .select('*')
         .eq('employee_id', user!.id)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .limit(500);
 
       if (startDate) query = query.gte('date', startDate);
       if (endDate) query = query.lte('date', endDate);
@@ -77,12 +81,33 @@ export function useClockIn() {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['attendance', 'today', user?.id] });
+      const previous = queryClient.getQueryData<Attendance | null>(['attendance', 'today', user?.id]);
+      const now = new Date();
+      queryClient.setQueryData<Attendance | null>(['attendance', 'today', user?.id], {
+        id: 'optimistic',
+        employee_id: user!.id,
+        date: format(now, 'yyyy-MM-dd'),
+        clock_in: now.toISOString(),
+        clock_out: null,
+        status: now.getHours() >= 9 ? 'late' : 'present',
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      } as Attendance);
+      return { previous };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(['attendance', 'today', user?.id], context.previous);
+      }
+      toast.error('Failed to clock in', { description: sanitizeErrorMessage(error) });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Clocked in successfully');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to clock in: ' + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 }
@@ -109,12 +134,28 @@ export function useClockOut() {
       if (error) throw error;
       return data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['attendance', 'today', user?.id] });
+      const previous = queryClient.getQueryData<Attendance | null>(['attendance', 'today', user?.id]);
+      if (previous) {
+        queryClient.setQueryData<Attendance | null>(['attendance', 'today', user?.id], {
+          ...previous,
+          clock_out: new Date().toISOString(),
+        });
+      }
+      return { previous };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(['attendance', 'today', user?.id], context.previous);
+      }
+      toast.error('Failed to clock out', { description: sanitizeErrorMessage(error) });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('Clocked out successfully');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to clock out: ' + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 }

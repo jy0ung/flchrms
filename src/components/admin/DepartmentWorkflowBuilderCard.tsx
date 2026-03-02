@@ -1,6 +1,6 @@
-import { RotateCcw, Workflow } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,6 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { Department, LeaveApprovalStage } from '@/types/hrms';
 import { LEAVE_APPROVAL_STAGE_LABELS, LEAVE_APPROVAL_STAGE_OPTIONS } from '@/lib/leave-workflow';
+import { CardHeaderStandard } from '@/components/system';
 
 type WorkflowDraft = {
   approval_stages: LeaveApprovalStage[];
@@ -82,27 +83,24 @@ export function DepartmentWorkflowBuilderCard({
   savePendingLabel = 'Saving...',
 }: DepartmentWorkflowBuilderCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Workflow className="w-5 h-5" />
-              {title}
-            </CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
+    <Card className="border-border shadow-sm">
+      <CardHeaderStandard
+        title={title}
+        description={description}
+        className="p-4 pb-2"
+        actions={(
           <Button
             variant="outline"
+            className="w-full rounded-full md:w-auto"
             onClick={onResetDefaults}
             disabled={resetDefaultsPending}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             {resetDefaultsPending ? resetDefaultsPendingLabel : resetDefaultsIdleLabel}
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
+        )}
+      />
+      <CardContent className="space-y-4">
         {loading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
@@ -134,14 +132,14 @@ export function DepartmentWorkflowBuilderCard({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4 space-y-4">
+            <div className="rounded-lg border bg-card p-4 space-y-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="font-medium">{routeTitle}</p>
                   <p className="text-xs text-muted-foreground">Scope: {scopeLabel}</p>
                   <p className="text-xs text-muted-foreground">Current route profile: {routePreview}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border px-3 py-1.5">
                   <Label htmlFor={activeSwitchId} className="text-sm">Active</Label>
                   <Switch
                     id={activeSwitchId}
@@ -157,7 +155,7 @@ export function DepartmentWorkflowBuilderCard({
                   const isFinalStage = draft.approval_stages[draft.approval_stages.length - 1] === stage;
 
                   return (
-                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div key={`${activeSwitchId}-${stage}`} className="flex items-center justify-between rounded-lg border bg-muted/50 px-3 py-2">
                       <div>
                         <p className="text-sm font-medium">{LEAVE_APPROVAL_STAGE_LABELS[stage]}</p>
                         <p className="text-[11px] text-muted-foreground">
@@ -180,14 +178,15 @@ export function DepartmentWorkflowBuilderCard({
                   value={draft.notes}
                   onChange={(e) => onNotesChange(e.target.value)}
                   placeholder={notesPlaceholder}
+                  className="rounded-lg"
                 />
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button type="button" variant="outline" onClick={onResetRoute}>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" className="w-full rounded-full sm:w-auto" onClick={onResetRoute}>
                   Reset Route
                 </Button>
-                <Button type="button" onClick={onSaveProfile} disabled={savePending}>
+                <Button type="button" className="w-full rounded-full sm:w-auto" onClick={onSaveProfile} disabled={savePending}>
                   {savePending ? savePendingLabel : saveIdleLabel}
                 </Button>
               </div>

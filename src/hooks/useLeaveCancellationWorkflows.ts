@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { untypedFrom } from '@/integrations/supabase/untyped-client';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { AppRole, LeaveApprovalStage, LeaveCancellationWorkflow } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import {
   DEFAULT_LEAVE_CANCELLATION_WORKFLOW_BY_REQUESTER_ROLE,
   normalizeLeaveCancellationApprovalStages,
@@ -10,7 +11,8 @@ import {
 const DEPARTMENT_WORKFLOW_REQUESTER_ROLE: AppRole = 'employee';
 
 async function findExistingLeaveCancellationWorkflowId(departmentId?: string | null) {
-  let query = untypedFrom('leave_cancellation_workflows')
+  let query = supabase
+    .from('leave_cancellation_workflows')
     .select('id')
     .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
 
@@ -25,7 +27,8 @@ export function useLeaveCancellationWorkflows() {
   return useQuery({
     queryKey: ['leave-cancellation-workflows'],
     queryFn: async () => {
-      const { data, error } = await untypedFrom('leave_cancellation_workflows')
+      const { data, error } = await supabase
+        .from('leave_cancellation_workflows')
         .select('*')
         .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE)
         .order('department_id', { ascending: true, nullsFirst: true })
@@ -33,8 +36,7 @@ export function useLeaveCancellationWorkflows() {
 
       if (error) throw error;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return ((data as any[]) || []).map((row: any) => ({
+      return (data || []).map((row) => ({
         ...row,
         approval_stages: normalizeLeaveCancellationApprovalStages(row.approval_stages),
       })) as LeaveCancellationWorkflow[];
@@ -69,12 +71,14 @@ export function useUpsertLeaveCancellationWorkflow() {
       };
 
       const { data, error } = existingId
-        ? await untypedFrom('leave_cancellation_workflows')
+        ? await supabase
+            .from('leave_cancellation_workflows')
             .update(payload)
             .eq('id', existingId)
             .select()
             .single()
-        : await untypedFrom('leave_cancellation_workflows')
+        : await supabase
+            .from('leave_cancellation_workflows')
             .insert(payload)
             .select()
             .single();
@@ -87,7 +91,7 @@ export function useUpsertLeaveCancellationWorkflow() {
       toast.success('Leave cancellation workflow updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update leave cancellation workflow: ' + error.message);
+      toast.error('Failed to update leave cancellation workflow', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -106,7 +110,8 @@ export function useResetLeaveCancellationWorkflows() {
         notes: null,
       };
 
-      const scopeDelete = untypedFrom('leave_cancellation_workflows')
+      const scopeDelete = supabase
+        .from('leave_cancellation_workflows')
         .delete()
         .neq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
       const { error: cleanupError } = departmentId
@@ -115,10 +120,12 @@ export function useResetLeaveCancellationWorkflows() {
       if (cleanupError) throw cleanupError;
 
       const { error } = existingId
-        ? await untypedFrom('leave_cancellation_workflows')
+        ? await supabase
+            .from('leave_cancellation_workflows')
             .update(payload)
             .eq('id', existingId)
-        : await untypedFrom('leave_cancellation_workflows')
+        : await supabase
+            .from('leave_cancellation_workflows')
             .insert(payload);
 
       if (error) throw error;
@@ -128,7 +135,7 @@ export function useResetLeaveCancellationWorkflows() {
       toast.success('Leave cancellation workflows reset to defaults');
     },
     onError: (error: Error) => {
-      toast.error('Failed to reset leave cancellation workflows: ' + error.message);
+      toast.error('Failed to reset leave cancellation workflows', { description: sanitizeErrorMessage(error) });
     },
   });
 }

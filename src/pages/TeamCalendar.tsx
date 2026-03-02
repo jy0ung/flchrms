@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   useCalendarEvents, 
   useHolidays, 
@@ -11,22 +13,19 @@ import {
   CalendarEvent
 } from '@/hooks/useCalendar';
 import { useDepartments } from '@/hooks/useEmployees';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, PartyPopper, Users, Plane, CalendarPlus } from 'lucide-react';
 import { format, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, ModalScaffold, ModalSection, PageHeader } from '@/components/system';
 import {
   canManageDepartmentEvents as canManageDepartmentEventsPermission,
   canManageHolidays as canManageHolidaysPermission,
@@ -48,7 +47,9 @@ const eventTypeIcons: Record<string, React.ReactNode> = {
 };
 
 export default function TeamCalendar() {
+  usePageTitle('Team Calendar');
   const { role } = useAuth();
+  const isMobile = useIsMobile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
@@ -149,200 +150,294 @@ export default function TeamCalendar() {
     return event.title;
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Team Calendar</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            View leave schedules, holidays, and department events
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {canManageDepartmentEvents && (
-            <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <CalendarPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Add Event</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Department Event</DialogTitle>
-                  <DialogDescription>
-                    Create a new event for your team or department.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Event Title</Label>
-                    <Input
-                      value={eventForm.title}
-                      onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                      placeholder="e.g., Team Meeting"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Start Date</Label>
-                      <Input
-                        type="date"
-                        value={eventForm.event_date}
-                        onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Date (Optional)</Label>
-                      <Input
-                        type="date"
-                        value={eventForm.end_date}
-                        onChange={(e) => setEventForm({ ...eventForm, end_date: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Event Type</Label>
-                    <Select
-                      value={eventForm.event_type}
-                      onValueChange={(value) => setEventForm({ ...eventForm, event_type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="meeting">Meeting</SelectItem>
-                        <SelectItem value="training">Training</SelectItem>
-                        <SelectItem value="team_building">Team Building</SelectItem>
-                        <SelectItem value="deadline">Deadline</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {canManageHolidays && (
-                    <div className="space-y-2">
-                      <Label>Department (Optional)</Label>
-                      <Select
-                        value={eventForm.department_id}
-                        onValueChange={(value) => setEventForm({ ...eventForm, department_id: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All departments" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={ALL_DEPARTMENTS_VALUE}>All Departments</SelectItem>
-                          {departments?.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.id}>
-                              {dept.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>Description (Optional)</Label>
-                    <Textarea
-                      value={eventForm.description}
-                      onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                      placeholder="Event details..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEventDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddEvent} disabled={!eventForm.title || !eventForm.event_date || createEvent.isPending}>
-                    {createEvent.isPending ? 'Creating...' : 'Create Event'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-          {canManageHolidays && (
-            <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Add Holiday</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Company Holiday</DialogTitle>
-                  <DialogDescription>
-                    Add a new company-wide holiday to the calendar.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Holiday Name</Label>
-                    <Input
-                      value={holidayForm.name}
-                      onChange={(e) => setHolidayForm({ ...holidayForm, name: e.target.value })}
-                      placeholder="e.g., Independence Day"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={holidayForm.date}
-                      onChange={(e) => setHolidayForm({ ...holidayForm, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description (Optional)</Label>
-                    <Textarea
-                      value={holidayForm.description}
-                      onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
-                      placeholder="Additional details..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsHolidayDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddHoliday} disabled={!holidayForm.name || !holidayForm.date || createHoliday.isPending}>
-                    {createHoliday.isPending ? 'Adding...' : 'Add Holiday'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </div>
+  // Mobile agenda: days with events for the current month
+  const agendaDays = useMemo(() => {
+    if (!isMobile) return [];
+    return calendarDays
+      .map((date) => ({ date, events: getEventsForDate(date) }))
+      .filter(({ events }) => events.length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, calendarDays, calendarEvents]);
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar Grid */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5" />
-                {format(currentMonth, 'MMMM yyyy')}
-              </CardTitle>
-              <div className="flex gap-1">
-                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-                  <ChevronLeft className="w-4 h-4" />
+  return (
+    <AppPageContainer>
+      <PageHeader
+        title="Team Calendar"
+        description="View leave schedules, holidays, and department events"
+        actionsSlot={
+          <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:items-center">
+            {canManageDepartmentEvents && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 w-full gap-2 rounded-full lg:w-auto"
+                onClick={() => setIsEventDialogOpen(true)}
+              >
+                <CalendarPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add Event</span>
+              </Button>
+            )}
+            {canManageHolidays && (
+              <Button
+                type="button"
+                className="h-9 w-full gap-2 rounded-full lg:w-auto"
+                onClick={() => setIsHolidayDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add Holiday</span>
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      <ModalScaffold
+        open={isEventDialogOpen}
+        onOpenChange={setIsEventDialogOpen}
+        title="Add Department Event"
+        description="Create a new event for your team or department."
+        maxWidth="2xl"
+        body={
+          <div className="space-y-4">
+            <ModalSection title="Event Details" description="Set the title and event type." tone="default">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Event Title</Label>
+                  <Input
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                    placeholder="e.g., Team Meeting"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Event Type</Label>
+                  <Select
+                    value={eventForm.event_type}
+                    onValueChange={(value) => setEventForm({ ...eventForm, event_type: value })}
+                  >
+                    <SelectTrigger className="rounded-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="training">Training</SelectItem>
+                      <SelectItem value="team_building">Team Building</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </ModalSection>
+            <ModalSection title="Schedule" tone="muted">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={eventForm.event_date}
+                    onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date (Optional)</Label>
+                  <Input
+                    type="date"
+                    value={eventForm.end_date}
+                    onChange={(e) => setEventForm({ ...eventForm, end_date: e.target.value })}
+                  />
+                </div>
+              </div>
+            </ModalSection>
+            {canManageHolidays && (
+              <ModalSection title="Department Scope" compact>
+                <Label>Department (Optional)</Label>
+                <Select
+                  value={eventForm.department_id}
+                  onValueChange={(value) => setEventForm({ ...eventForm, department_id: value })}
+                >
+                  <SelectTrigger className="rounded-full">
+                    <SelectValue placeholder="All departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_DEPARTMENTS_VALUE}>All Departments</SelectItem>
+                    {departments?.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ModalSection>
+            )}
+            <ModalSection title="Description" compact tone="muted">
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={eventForm.description}
+                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                placeholder="Event details..."
+                rows={3}
+                className="min-h-[96px] resize-y"
+              />
+            </ModalSection>
+          </div>
+        }
+        footer={
+          <>
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setIsEventDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="w-full rounded-full sm:w-auto"
+              onClick={handleAddEvent}
+              disabled={!eventForm.title || !eventForm.event_date || createEvent.isPending}
+            >
+              {createEvent.isPending ? 'Creating...' : 'Create Event'}
+            </Button>
+          </>
+        }
+      />
+
+      <ModalScaffold
+        open={isHolidayDialogOpen}
+        onOpenChange={setIsHolidayDialogOpen}
+        title="Add Company Holiday"
+        description="Add a new company-wide holiday to the calendar."
+        maxWidth="xl"
+        body={
+          <div className="space-y-4">
+            <ModalSection title="Holiday Details" description="Name and date for the company holiday.">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Holiday Name</Label>
+                  <Input
+                    value={holidayForm.name}
+                    onChange={(e) => setHolidayForm({ ...holidayForm, name: e.target.value })}
+                    placeholder="e.g., Independence Day"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    type="date"
+                    value={holidayForm.date}
+                    onChange={(e) => setHolidayForm({ ...holidayForm, date: e.target.value })}
+                  />
+                </div>
+              </div>
+            </ModalSection>
+            <ModalSection title="Description" compact tone="muted">
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={holidayForm.description}
+                onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
+                placeholder="Additional details..."
+                rows={3}
+                className="min-h-[96px] resize-y"
+              />
+            </ModalSection>
+          </div>
+        }
+        footer={
+          <>
+            <Button variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setIsHolidayDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="w-full rounded-full sm:w-auto"
+              onClick={handleAddHoliday}
+              disabled={!holidayForm.name || !holidayForm.date || createHoliday.isPending}
+            >
+              {createHoliday.isPending ? 'Adding...' : 'Add Holiday'}
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Calendar — grid on desktop, agenda on mobile */}
+        <Card className="lg:col-span-2 border-border shadow-sm">
+          <CardHeaderStandard
+            title={format(currentMonth, 'MMMM yyyy')}
+            description="Calendar month schedule and leave events."
+            className="p-4 pb-0"
+            actions={
+              <div role="region" aria-label="Calendar month controls" className="grid grid-cols-3 gap-2 sm:flex sm:gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Previous month"
+                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setCurrentMonth(new Date())}>
                   Today
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-                  <ChevronRight className="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="Next month"
+                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+            }
+          />
+          <CardContent className="pt-4">
             {isLoading ? (
-              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-96 w-full rounded-lg" />
+            ) : isMobile ? (
+              /* ── Mobile agenda list ── */
+              agendaDays.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/50 p-5 text-center text-sm text-muted-foreground">
+                  No events this month
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {agendaDays.map(({ date, events }) => {
+                    const isToday = isSameDay(date, new Date());
+                    return (
+                      <div key={format(date, 'yyyy-MM-dd')}>
+                        <div className={cn(
+                          'flex items-center gap-2 py-1.5 text-xs font-semibold uppercase tracking-wide',
+                          isToday ? 'text-primary' : 'text-muted-foreground'
+                        )}>
+                          <span>{format(date, 'EEE, MMM d')}</span>
+                          {isToday && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Today</Badge>}
+                        </div>
+                        <div className="space-y-1.5">
+                          {events.map((event) => (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                'flex items-center gap-2.5 rounded-lg border p-3',
+                                eventTypeColors[event.type]
+                              )}
+                            >
+                              <span className="shrink-0">{eventTypeIcons[event.type]}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{getEventPrimaryLabel(event)}</p>
+                                {event.description && <p className="truncate text-xs text-muted-foreground">{event.description}</p>}
+                              </div>
+                              <Badge variant="outline" className="shrink-0 text-[10px] capitalize">{event.type}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
-              <div className="border rounded-lg overflow-hidden">
+              /* ── Desktop grid calendar ── */
+              <div className="overflow-x-auto">
+                <div className="min-w-[640px] border border-border rounded-lg overflow-hidden">
                 {/* Day headers */}
-                <div className="grid grid-cols-7 bg-muted">
+                <div className="grid grid-cols-7 bg-muted/60">
                   {daysOfWeek.map((day) => (
                     <div key={day} className="p-2 text-center text-xs font-medium text-muted-foreground border-b">
                       {day}
@@ -353,7 +448,7 @@ export default function TeamCalendar() {
                 <div className="grid grid-cols-7">
                   {paddedDays.map((date, index) => {
                     if (!date) {
-                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/30" />;
+                      return <div key={`empty-${index}`} className="h-24 md:h-28 border-b border-r bg-muted/50" />;
                     }
                     const dayEvents = getEventsForDate(date);
                     const isToday = isSameDay(date, new Date());
@@ -363,11 +458,20 @@ export default function TeamCalendar() {
                       <div
                         key={format(date, 'yyyy-MM-dd')}
                         className={cn(
-                          'h-24 md:h-28 border-b border-r p-1 cursor-pointer transition-colors hover:bg-muted/50',
+                          'h-24 md:h-28 border-b border-r p-1.5 cursor-pointer transition-colors hover:bg-muted/40',
                           isToday && 'bg-primary/5',
                           isSelected && 'ring-2 ring-primary ring-inset'
                         )}
                         onClick={() => setSelectedDate(date)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedDate(date);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View events for ${format(date, 'MMMM d, yyyy')}`}
                       >
                         <div className={cn(
                           'text-xs font-medium mb-1',
@@ -380,7 +484,7 @@ export default function TeamCalendar() {
                             <div
                               key={event.id}
                               className={cn(
-                                'text-[10px] px-1 py-0.5 rounded truncate border',
+                                'text-[10px] px-1 py-0.5 rounded-md truncate border',
                                 eventTypeColors[event.type]
                               )}
                             >
@@ -399,10 +503,11 @@ export default function TeamCalendar() {
                   })}
                 </div>
               </div>
+              </div>
             )}
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 mt-4 text-xs">
+            <div className="flex flex-wrap gap-4 mt-4 rounded-lg border border-border bg-muted/50 p-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-info/20 border border-info/30" />
                 <span>Leave</span>
@@ -420,73 +525,71 @@ export default function TeamCalendar() {
         </Card>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Selected Date Details */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : 'Select a date'}
-              </CardTitle>
-              <CardDescription>
-                {selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedDayEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No events on this date
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {selectedDayEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className={cn(
-                        'p-3 rounded-lg border',
-                        eventTypeColors[event.type]
-                      )}
-                    >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            {eventTypeIcons[event.type]}
-                            <span className="font-medium text-sm">{getEventPrimaryLabel(event)}</span>
-                          </div>
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {event.type}
-                          </Badge>
-                        </div>
-                      {event.description && (
-                        <p className="text-xs mt-1 opacity-80">{event.description}</p>
-                      )}
-                      {event.type === 'leave' && canViewLeaveTypeLabel && event.employeeName && (
-                        <p className="text-xs mt-1 opacity-80">
-                          On leave: {event.employeeName}
-                        </p>
-                      )}
-                      {event.endDate && !isSameDay(event.date, event.endDate) && (
-                        <p className="text-xs mt-1 opacity-60">
-                          Until {format(event.endDate, 'MMM d')}
-                        </p>
-                      )}
+        <div className="space-y-4">
+          {/* Selected Date Details — desktop only (mobile uses inline agenda) */}
+          {!isMobile && (
+          <DataTableShell
+            title={selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : 'Select a date'}
+            description={`${selectedDayEvents.length} event${selectedDayEvents.length !== 1 ? 's' : ''}`}
+            hasData={selectedDayEvents.length > 0}
+            emptyState={
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No events on this date
+              </p>
+            }
+            content={
+              <div className="space-y-2">
+                {selectedDayEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className={cn(
+                      'rounded-lg border p-3 shadow-sm',
+                      eventTypeColors[event.type]
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {eventTypeIcons[event.type]}
+                        <span className="text-sm font-medium">{getEventPrimaryLabel(event)}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {event.type}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    {event.description && (
+                      <p className="mt-1 text-xs text-muted-foreground">{event.description}</p>
+                    )}
+                    {event.type === 'leave' && canViewLeaveTypeLabel && event.employeeName && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        On leave: {event.employeeName}
+                      </p>
+                    )}
+                    {event.endDate && !isSameDay(event.date, event.endDate) && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Until {format(event.endDate, 'MMM d')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            }
+          />
+          )}
 
           {/* Upcoming Holidays */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <PartyPopper className="w-4 h-4" />
-                Upcoming Holidays
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <DataTableShell
+            title="Upcoming Holidays"
+            description="Next company holidays visible in your calendar."
+            hasData={upcomingHolidays.length > 0}
+            emptyState={
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No upcoming holidays
+              </p>
+            }
+            content={
               <div className="space-y-2">
                 {upcomingHolidays.map((holiday) => (
-                  <div key={holiday.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                  <div key={holiday.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 p-3">
                     <div>
                       <p className="text-sm font-medium">{holiday.name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -496,8 +599,13 @@ export default function TeamCalendar() {
                     {canManageHolidays && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                            <Trash2 className="w-3 h-3" />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-destructive hover:text-destructive"
+                            aria-label={`Delete holiday ${holiday.name}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -521,16 +629,11 @@ export default function TeamCalendar() {
                     )}
                   </div>
                 ))}
-                {upcomingHolidays.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming holidays
-                  </p>
-                )}
               </div>
-            </CardContent>
-          </Card>
+            }
+          />
         </div>
       </div>
-    </div>
+    </AppPageContainer>
   );
 }

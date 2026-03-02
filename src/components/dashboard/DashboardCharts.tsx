@@ -1,10 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
+import { CardHeaderStandard } from '@/components/system';
 
 const chartConfig = {
   present: { label: 'Present', color: 'hsl(var(--success))' },
@@ -27,9 +28,9 @@ export function DashboardCharts() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-64 md:h-72" />
+          <Skeleton key={i} className="h-64 md:h-72 rounded-lg" />
         ))}
       </div>
     );
@@ -70,13 +71,16 @@ export function DashboardCharts() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Attendance Distribution */}
-      <Card className="col-span-1">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base md:text-lg">Today's Attendance</CardTitle>
-          <CardDescription className="text-xs md:text-sm">Employee presence overview</CardDescription>
-        </CardHeader>
+      <Card className="col-span-1 border-border shadow-sm">
+        <CardHeaderStandard
+          title="Today Attendance"
+          description="Employee presence overview."
+          className="p-4 pb-2"
+          titleClassName="text-base md:text-lg"
+          descriptionClassName="text-xs md:text-sm"
+        />
         <CardContent>
           <ChartContainer config={chartConfig} className="h-48 md:h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -118,11 +122,14 @@ export function DashboardCharts() {
       </Card>
 
       {/* Leave Requests */}
-      <Card className="col-span-1">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base md:text-lg">Leave Requests</CardTitle>
-          <CardDescription className="text-xs md:text-sm">This month's status breakdown</CardDescription>
-        </CardHeader>
+      <Card className="col-span-1 border-border shadow-sm">
+        <CardHeaderStandard
+          title="Leave Requests"
+          description="Monthly status breakdown."
+          className="p-4 pb-2"
+          titleClassName="text-base md:text-lg"
+          descriptionClassName="text-xs md:text-sm"
+        />
         <CardContent>
           <ChartContainer config={chartConfig} className="h-48 md:h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -152,11 +159,14 @@ export function DashboardCharts() {
       </Card>
 
       {/* Training Progress */}
-      <Card className="col-span-1">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base md:text-lg">Training Progress</CardTitle>
-          <CardDescription className="text-xs md:text-sm">{stats.trainingCompletionRate}% completion rate</CardDescription>
-        </CardHeader>
+      <Card className="col-span-1 border-border shadow-sm">
+        <CardHeaderStandard
+          title="Training Progress"
+          description={`${stats.trainingCompletionRate}% completion rate.`}
+          className="p-4 pb-2"
+          titleClassName="text-base md:text-lg"
+          descriptionClassName="text-xs md:text-sm"
+        />
         <CardContent>
           <ChartContainer config={chartConfig} className="h-48 md:h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">

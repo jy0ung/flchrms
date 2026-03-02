@@ -59,9 +59,10 @@ describe('permissions', () => {
     expect(canManagePayroll('director')).toBe(true);
     expect(canManagePayroll('admin')).toBe(false);
 
+    // admin now has document management access
     expect(canManageDocuments('hr')).toBe(true);
     expect(canManageDocuments('director')).toBe(true);
-    expect(canManageDocuments('admin')).toBe(false);
+    expect(canManageDocuments('admin')).toBe(true);
 
     expect(canManageHolidays('hr')).toBe(true);
     expect(canManageHolidays('director')).toBe(true);
@@ -80,10 +81,11 @@ describe('permissions', () => {
     expect(canViewTeamLeaveRequests('employee')).toBe(false);
 
     expect(canRequestLeaveSupportingDocument('manager')).toBe(true);
-    expect(canRequestLeaveSupportingDocument('director')).toBe(false);
+    expect(canRequestLeaveSupportingDocument('director')).toBe(true);
 
+    // admin can now view leave supporting documents
     expect(canViewLeaveSupportingDocument('employee')).toBe(true);
-    expect(canViewLeaveSupportingDocument('admin')).toBe(false);
+    expect(canViewLeaveSupportingDocument('admin')).toBe(true);
     expect(canViewLeaveSupportingDocument(null)).toBe(false);
   });
 
@@ -96,9 +98,10 @@ describe('permissions', () => {
     expect(canConductPerformanceReviews('director')).toBe(true);
     expect(canConductPerformanceReviews('employee')).toBe(false);
 
-    expect(canViewSensitiveEmployeeIdentifiers('admin')).toBe(false);
+    // admin now has sensitive data access (elevated privileges)
+    expect(canViewSensitiveEmployeeIdentifiers('admin')).toBe(true);
     expect(canViewSensitiveEmployeeIdentifiers('hr')).toBe(true);
-    expect(canViewSensitiveEmployeeContact('admin')).toBe(false);
+    expect(canViewSensitiveEmployeeContact('admin')).toBe(true);
     expect(canViewSensitiveEmployeeContact('director')).toBe(true);
   });
 });

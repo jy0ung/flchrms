@@ -4,19 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useCreateSalaryStructure, useUpdateSalaryStructure } from '@/hooks/usePayroll';
 import { Profile, Department } from '@/types/hrms';
 import { SalaryStructure } from '@/types/payroll';
 import { DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
+import { ModalScaffold } from '@/components/system';
 
 type SalaryStructureWithEmployee = SalaryStructure & {
   employee?: (Profile & { department: Department | null }) | null;
@@ -109,21 +102,20 @@ export function SalaryStructureDialog({
     (Number(otherAllowances) || 0);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            {isEditing ? 'Edit Salary Structure' : 'Add Salary Structure'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing 
-              ? `Update salary for ${salary?.employee?.first_name} ${salary?.employee?.last_name}`
-              : 'Set up salary structure for an employee'}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <ModalScaffold
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEditing ? 'Edit Salary Structure' : 'Add Salary Structure'}
+      description={
+        isEditing
+          ? `Update salary for ${salary?.employee?.first_name} ${salary?.employee?.last_name}`
+          : 'Set up salary structure for an employee'
+      }
+      maxWidth="2xl"
+      contentClassName="max-h-[90vh] overflow-y-auto"
+      headerMeta={<DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+      body={(
+        <form onSubmit={handleSubmit} className="space-y-4" id="salary-structure-form">
           {!isEditing && (
             <div className="space-y-2">
               <Label>Employee</Label>
@@ -155,7 +147,7 @@ export function SalaryStructureDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="housingAllowance">Housing (RM)</Label>
               <Input
@@ -180,7 +172,7 @@ export function SalaryStructureDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="mealAllowance">Meal (RM)</Label>
               <Input
@@ -217,25 +209,37 @@ export function SalaryStructureDialog({
           </div>
 
           {/* Total Preview */}
-          <div className="p-4 rounded-lg bg-primary/10">
-            <div className="flex justify-between items-center">
+          <div className="rounded-lg border border-primary/20 bg-primary/10 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">Total Monthly</span>
               <span className="text-xl font-bold text-primary">
                 RM {totalMonthly.toLocaleString()}
               </span>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createSalary.isPending || updateSalary.isPending}>
-              {createSalary.isPending || updateSalary.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      )}
+      footer={(
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-full sm:w-auto"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="salary-structure-form"
+            className="w-full rounded-full sm:w-auto"
+            disabled={createSalary.isPending || updateSalary.isPending}
+          >
+            {createSalary.isPending || updateSalary.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </>
+      )}
+      footerClassName="flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+    />
   );
 }

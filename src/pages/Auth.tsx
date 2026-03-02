@@ -1,26 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import { Building2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
+import { ModalScaffold } from '@/components/system';
+import { AuthCard, type AuthFlowStage } from '@/components/auth/AuthCard';
+import { LoginForm, type LoginFormPayload, type LoginFormSubmitResult } from '@/components/auth/LoginForm';
 
 function hasRecoveryParams() {
   if (typeof window === 'undefined') return false;
-
   return (
     window.location.hash.includes('type=recovery') ||
     new URLSearchParams(window.location.search).get('type') === 'recovery'
@@ -30,20 +24,27 @@ function hasRecoveryParams() {
 export default function Auth() {
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSignInPassword, setShowSignInPassword] = useState(false);
+
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
+
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isResetRequestLoading, setIsResetRequestLoading] = useState(false);
+
   const [isRecoveryMode, setIsRecoveryMode] = useState(hasRecoveryParams);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isUpdatingRecoveryPassword, setIsUpdatingRecoveryPassword] = useState(false);
 
+  const [isSignUpLoading, setIsSignUpLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
+  const [resetError, setResetError] = useState('');
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecoveryMode(true);
       }
@@ -52,39 +53,36 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect if already logged in (except when handling password recovery link)
   if (user && !isRecoveryMode) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const handleCredentialsSubmit = async (
+    payload: LoginFormPayload,
+  ): Promise<LoginFormSubmitResult> => {
     try {
-      const formData = new FormData(e.currentTarget);
-      const identifier = formData.get('identifier') as string;
-      const password = formData.get('password') as string;
+      const { error } = await signIn(payload.identifier, payload.password);
 
-      const { error } = await signIn(identifier, password);
-
-      if (error) {
-        toast.error(error.message);
-      } else {
+      if (!error) {
         toast.success('Welcome back!');
         navigate('/dashboard');
       }
+
+      return { error };
     } catch (error) {
       console.error('Unhandled sign-in error:', error);
-      toast.error('Unable to sign in at the moment. Please try again.');
-    } finally {
-      setIsLoading(false);
+      return {
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Unable to reach authentication service.'),
+      };
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSignUpLoading(true);
 
     try {
       const formData = new FormData(e.currentTarget);
@@ -105,18 +103,19 @@ export default function Auth() {
       console.error('Unhandled sign-up error:', error);
       toast.error('Unable to create account at the moment. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSignUpLoading(false);
     }
   };
 
-  const handlePasswordResetRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordResetRequest = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const email = forgotEmail.trim();
     if (!email || !email.includes('@')) {
-      toast.error('Please enter the email address for the account.');
+      setResetError('Please enter a valid email address.');
       return;
     }
+    setResetError('');
 
     setIsResetRequestLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -126,8 +125,9 @@ export default function Auth() {
     if (error) {
       toast.error(error.message);
     } else {
-      // Keep this generic to avoid leaking whether the email exists.
-      toast.success('If the account exists, a password reset link has been sent to the email address.');
+      toast.success(
+        'If the account exists, a password reset link has been sent to the email address.',
+      );
       setForgotPasswordOpen(false);
       setForgotEmail('');
     }
@@ -142,19 +142,24 @@ export default function Auth() {
     window.history.replaceState({}, document.title, '/auth');
   };
 
-  const handleRecoveryPasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRecoveryPasswordUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters.');
+    if (newPassword.length < 8) {
+      setRecoveryError('Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+      setRecoveryError('Password must contain uppercase, lowercase, number, and special character.');
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      toast.error('Passwords do not match.');
+      setRecoveryError('Passwords do not match.');
       return;
     }
 
+    setRecoveryError('');
     setIsUpdatingRecoveryPassword(true);
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -171,243 +176,161 @@ export default function Auth() {
     setIsUpdatingRecoveryPassword(false);
   };
 
+  const stage: AuthFlowStage = isRecoveryMode ? 'recovery' : 'credentials';
+
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4">
-        <Card className="w-full max-w-md shadow-xl border-border/50">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold">FLC-HRMS</CardTitle>
-              <CardDescription>Fook Loi Group HR Management System</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isRecoveryMode ? (
-              <div className="space-y-4">
-                <div className="rounded-lg border bg-muted/30 p-4">
-                  <div className="flex items-start gap-3">
-                    <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
-                    <div>
-                      <p className="font-medium">Reset your password</p>
-                      <p className="text-sm text-muted-foreground">
-                        Enter a new password for your account. After updating, you will be signed out and can log in again.
-                      </p>
-                    </div>
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+          <AuthCard
+            stage={stage}
+            className="w-full max-w-md"
+          >
+              {isRecoveryMode ? (
+                <div className="space-y-5">
+                  <div className="rounded-lg border border-border bg-muted/50 p-4">
+                    <p className="font-medium">Reset your password</p>
+                    <p className="text-sm text-muted-foreground">
+                      Enter a new password for your account. After updating, you will be signed out and can log in again.
+                    </p>
                   </div>
-                </div>
 
-                <form onSubmit={handleRecoveryPasswordUpdate} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recovery-password">New Password</Label>
-                    <div className="relative">
+                  <form onSubmit={handleRecoveryPasswordUpdate} className="space-y-4">
+                    {recoveryError ? (
+                      <p className="text-sm text-destructive">{recoveryError}</p>
+                    ) : null}
+                    <div className="space-y-2">
+                      <Label htmlFor="recovery-password">New Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="recovery-password"
+                          type={showRecoveryPassword ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => { setNewPassword(e.target.value); setRecoveryError(''); }}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          minLength={8}
+                          required
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
+                          onClick={() => setShowRecoveryPassword((value) => !value)}
+                          aria-label={showRecoveryPassword ? 'Hide password' : 'Show password'}
+                          aria-pressed={showRecoveryPassword}
+                        >
+                          {showRecoveryPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="recovery-password-confirm">Confirm New Password</Label>
                       <Input
-                        id="recovery-password"
+                        id="recovery-password-confirm"
                         type={showRecoveryPassword ? 'text' : 'password'}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
                         placeholder="••••••••"
                         autoComplete="new-password"
-                        minLength={6}
+                        minLength={8}
                         required
-                        className="pr-10"
+                        
                       />
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isUpdatingRecoveryPassword}
+                      >
+                        {isUpdatingRecoveryPassword ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Update Password
+                      </Button>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                        onClick={() => setShowRecoveryPassword((value) => !value)}
-                        aria-label={showRecoveryPassword ? 'Hide password' : 'Show password'}
+                        variant="outline"
+                        className="w-full"
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          clearRecoveryState();
+                        }}
+                        disabled={isUpdatingRecoveryPassword}
                       >
-                        {showRecoveryPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        Cancel
                       </Button>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="recovery-password-confirm">Confirm New Password</Label>
-                    <Input
-                      id="recovery-password-confirm"
-                      type={showRecoveryPassword ? 'text' : 'password'}
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      minLength={6}
-                      required
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button type="submit" className="w-full" disabled={isUpdatingRecoveryPassword}>
-                      {isUpdatingRecoveryPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Update Password
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        clearRecoveryState();
-                      }}
-                      disabled={isUpdatingRecoveryPassword}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-identifier">Email, Username, or Employee ID</Label>
-                      <Input
-                        id="signin-identifier"
-                        name="identifier"
-                        type="text"
-                        placeholder="you@company.com, username, or EMP-001"
-                        autoComplete="username"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="signin-password">Password</Label>
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="h-auto px-0 text-xs"
-                          onClick={() => setForgotPasswordOpen(true)}
-                        >
-                          Forgot password?
-                        </Button>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="signin-password"
-                          name="password"
-                          type={showSignInPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="current-password"
-                          required
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                          onClick={() => setShowSignInPassword((value) => !value)}
-                          aria-label={showSignInPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Sign In
-                    </Button>
                   </form>
-                </TabsContent>
-
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input id="firstName" name="firstName" placeholder="John" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input id="lastName" name="lastName" placeholder="Doe" required />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" name="email" type="email" placeholder="you@company.com" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="signup-password"
-                          name="password"
-                          type={showSignUpPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          minLength={6}
-                          autoComplete="new-password"
-                          required
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                          onClick={() => setShowSignUpPassword((value) => !value)}
-                          aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Create Account
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : (
+                <div className="w-full">
+                  <LoginForm
+                    onSubmit={handleCredentialsSubmit}
+                    onForgotPassword={() => setForgotPasswordOpen(true)}
+                  />
+                </div>
+              )}
+          </AuthCard>
       </div>
 
-      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
-              Enter your account email. If it exists, we will send a password reset link.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handlePasswordResetRequest} className="space-y-4">
+      <ModalScaffold
+        open={forgotPasswordOpen}
+        onOpenChange={setForgotPasswordOpen}
+        title="Reset Password"
+        description="Enter your account email. If it exists, we will send a password reset link."
+        maxWidth="md"
+        body={(
+          <form
+            onSubmit={handlePasswordResetRequest}
+            className="space-y-4"
+            id="forgot-password-form"
+          >
+            {resetError ? (
+              <p className="text-sm text-destructive">{resetError}</p>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="forgot-email">Email</Label>
               <Input
                 id="forgot-email"
                 type="email"
                 value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
+                onChange={(e) => { setForgotEmail(e.target.value); setResetError(''); }}
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isResetRequestLoading}>
-                {isResetRequestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Send Reset Link
-              </Button>
-            </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        )}
+        footer={(
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setForgotPasswordOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="forgot-password-form"
+              disabled={isResetRequestLoading}
+            >
+              {isResetRequestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Send Reset Link
+            </Button>
+          </>
+        )}
+      />
     </>
   );
 }

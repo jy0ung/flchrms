@@ -1,217 +1,297 @@
+﻿import { type ComponentType, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, Users, Calendar, Clock, GraduationCap, 
-  BarChart3, Megaphone, LogOut, Building2, Shield, Menu, X,
-  CalendarDays, FileText, Wallet, Bell
+import {
+  BarChart3,
+  Bell,
+  Calendar,
+  CalendarDays,
+  Clock,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  Megaphone,
+  Shield,
+  Users,
+  Wallet,
+  ChevronsLeft,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useState } from 'react';
-import { canAccessAdminPage, canViewEmployeeDirectory } from '@/lib/permissions';
 
-const navigation = [
+import { useAuth } from '@/contexts/AuthContext';
+import { useBrandingContext } from '@/contexts/BrandingContext';
+import { cn } from '@/lib/utils';
+import {
+  canAccessAdminPage,
+  canViewEmployeeDirectory,
+  hasRole,
+  MANAGER_AND_ABOVE_ROLES,
+  DOCUMENT_MANAGER_ROLES,
+  PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
+} from '@/lib/permissions';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUserNotifications } from '@/hooks/useNotifications';
+
+type SidebarNavItem = {
+  name: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  danger?: boolean;
+  badge?: number;
+};
+
+const mainNavigation: SidebarNavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Leave Management', href: '/leave', icon: Calendar },
   { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Team Calendar', href: '/calendar', icon: CalendarDays },
+];
+
+const operationsNavigation: SidebarNavItem[] = [
+  { name: 'Leave', href: '/leave', icon: Calendar },
   { name: 'Attendance', href: '/attendance', icon: Clock },
+  { name: 'Calendar', href: '/calendar', icon: CalendarDays },
+];
+
+const resourcesNavigation: SidebarNavItem[] = [
   { name: 'Payroll', href: '/payroll', icon: Wallet },
+  { name: 'Documents', href: '/documents', icon: FileText },
+];
+
+const developmentNavigation: SidebarNavItem[] = [
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
-  { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
 
-const hrNavigation = [
-  { name: 'Employees', href: '/employees', icon: Users },
-];
+const employeeNavigation: SidebarNavItem[] = [{ name: 'Employees', href: '/employees', icon: Users }];
 
-const adminNavigation = [
-  { name: 'HR Admin', href: '/admin', icon: Shield },
-];
+const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin/dashboard', icon: Shield, danger: true }];
 
-const roleDisplayNames: Record<string, string> = {
-  admin: 'Admin',
-  hr: 'HR',
-  director: 'Director',
-  general_manager: 'General Manager',
-  manager: 'Manager',
-  employee: 'Employee',
-};
-
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { profile, role, signOut } = useAuth();
+function SidebarNavItem({
+  item,
+  collapsed,
+  onNavigate,
+}: {
+  item: SidebarNavItem;
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
   const location = useLocation();
+  const isActive = location.pathname === item.href || (item.href.startsWith('/admin') && location.pathname.startsWith('/admin'));
 
-  const initials = profile 
-    ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
-    : 'U';
+  const link = (
+    <NavLink
+      to={item.href}
+      onClick={onNavigate}
+      className={cn(
+        'group flex items-center gap-3 rounded-md px-2 py-2 min-h-11 text-sm font-medium transition-colors',
+        collapsed && 'justify-center px-0',
+        item.danger
+          ? isActive
+            ? 'bg-destructive/15 text-destructive'
+            : 'text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive'
+          : isActive
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+      )}
+    >
+      <item.icon className="h-4 w-4 shrink-0" />
+      {!collapsed && <span className="truncate">{item.name}</span>}
+      {!collapsed && item.badge != null && item.badge > 0 && (
+        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+          {item.badge > 99 ? '99+' : item.badge}
+        </span>
+      )}
+      {collapsed && item.badge != null && item.badge > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground">
+          {item.badge > 99 ? '99+' : item.badge}
+        </span>
+      )}
+    </NavLink>
+  );
 
-  const handleNavClick = () => {
-    onNavigate?.();
-  };
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <div className="relative">{link}</div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="font-medium">
+          {item.name}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
+  return link;
+}
+
+function SidebarNavGroup({
+  items,
+  collapsed,
+  onNavigate,
+}: {
+  items: SidebarNavItem[];
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  if (items.length === 0) return null;
   return (
-    <>
-      {/* Logo */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-          <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
-        </div>
-        <div>
-          <h1 className="font-bold text-lg text-sidebar-primary-foreground">FLC-HRMS</h1>
-          <p className="text-xs text-sidebar-foreground/60">Fook Loi Corp</p>
-        </div>
-      </div>
-
-      <Separator className="bg-sidebar-border" />
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              onClick={handleNavClick}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-              )}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </NavLink>
-          );
-        })}
-        
-        {/* HR/Admin/Manager/GM/Director Navigation - Employee Directory */}
-        {canViewEmployeeDirectory(role) && (
-          <>
-            <Separator className="my-2 bg-sidebar-border" />
-            {hrNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
-                  onClick={handleNavClick}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                    isActive 
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </NavLink>
-              );
-            })}
-          </>
-        )}
-        
-        {/* Admin Navigation - Visible to Admin/HR/Director */}
-        {canAccessAdminPage(role) && (
-          <>
-            <Separator className="my-2 bg-sidebar-border" />
-            {adminNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
-                  onClick={handleNavClick}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                    isActive 
-                      ? 'bg-destructive/20 text-destructive' 
-                      : 'text-destructive/70 hover:bg-destructive/10 hover:text-destructive'
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </NavLink>
-              );
-            })}
-          </>
-        )}
-      </nav>
-
-      <Separator className="bg-sidebar-border" />
-
-      {/* User Section */}
-      <div className="p-4 space-y-3">
-        <NavLink 
-          to="/profile"
-          onClick={handleNavClick}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-            location.pathname === '/profile'
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50'
-          )}
-        >
-          <Avatar className="w-8 h-8">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
-            <p className="text-xs text-sidebar-foreground/50">{role ? roleDisplayNames[role] || role : 'Employee'}</p>
-          </div>
-        </NavLink>
-        
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10"
-          onClick={signOut}
-        >
-          <LogOut className="w-4 h-4 mr-3" />
-          Sign Out
-        </Button>
-      </div>
-    </>
+    <div className="space-y-0.5">
+      {items.map((item) => (
+        <SidebarNavItem key={item.name} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+      ))}
+    </div>
   );
 }
 
-export function AppSidebar() {
+function SidebarContent({
+  collapsed,
+  onNavigate,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+  onToggle?: () => void;
+}) {
+  const { role } = useAuth();
+  const { branding } = useBrandingContext();
+  const { unreadCount } = useUserNotifications(10);
+
+  const mainWithBadge = mainNavigation.map((item) =>
+    item.href === '/notifications' ? { ...item, badge: unreadCount } : item,
+  );
+
+  const scopedResources = canViewEmployeeDirectory(role)
+    ? [...resourcesNavigation, ...employeeNavigation]
+    : resourcesNavigation;
+
+  // Filter nav items by role-based permissions
+  const scopedOperations = operationsNavigation.filter((item) => {
+    if (item.href === '/calendar') return hasRole(role, MANAGER_AND_ABOVE_ROLES);
+    return true;
+  });
+
+  const filteredResources = scopedResources.filter((item) => {
+    if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
+    return true;
+  });
+
+  const scopedDevelopment = developmentNavigation.filter((item) => {
+    if (item.href === '/performance') return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
+    return true;
+  });
+
+  const scopedAdmin = canAccessAdminPage(role) ? adminNavigation : [];
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Logo */}
+      <div className={cn('flex items-center h-14 shrink-0 border-b border-sidebar-border', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
+        {branding.logo_url ? (
+          <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-7 rounded-md object-cover" />
+        ) : (
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">
+              {branding.company_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </span>
+          </div>
+        )}
+        {!collapsed && (
+          <span className="text-sm font-semibold text-sidebar-accent-foreground truncate">
+            {branding.company_tagline || 'HRMS'}
+          </span>
+        )}
+        {!collapsed && onToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="ml-auto h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav aria-label="Main navigation" className={cn('flex-1 overflow-y-auto scrollbar-thin py-3', collapsed ? 'px-2' : 'px-3')}>
+        <div className="space-y-4">
+          <SidebarNavGroup items={mainWithBadge} collapsed={collapsed} onNavigate={onNavigate} />
+          <Separator className="bg-sidebar-border" />
+          <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} />
+          <Separator className="bg-sidebar-border" />
+          <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} />
+          <Separator className="bg-sidebar-border" />
+          <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} />
+          {scopedAdmin.length > 0 && (
+            <>
+              <Separator className="bg-sidebar-border" />
+              <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} />
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Collapse toggle at bottom for collapsed state */}
+      {collapsed && onToggle && (
+        <div className="shrink-0 border-t border-sidebar-border p-2">
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="w-full h-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <ChevronsLeft className="h-4 w-4 rotate-180" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AppSidebar({
+  collapsed,
+  onToggle,
+  mobileOpen,
+  onMobileOpenChange,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+}) {
   const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Support external control from MobileBottomNav "More" button
+  const isOpen = mobileOpen ?? internalOpen;
+  const setIsOpen = onMobileOpenChange ?? setInternalOpen;
 
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="fixed top-4 left-4 z-50 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-sidebar-border">
-          <div className="flex flex-col h-full">
-            <SidebarContent onNavigate={() => setOpen(false)} />
-          </div>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
+          <SidebarContent collapsed={false} onNavigate={() => setIsOpen(false)} />
         </SheetContent>
       </Sheet>
     );
   }
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0">
-      <SidebarContent />
+    <aside
+      className={cn(
+        'sticky top-0 h-screen shrink-0 border-r border-border bg-sidebar transition-[width] duration-200 ease-in-out',
+        collapsed ? 'w-14' : 'w-60',
+      )}
+    >
+      <SidebarContent collapsed={collapsed} onToggle={onToggle} />
     </aside>
   );
 }

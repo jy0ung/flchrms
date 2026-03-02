@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,17 +10,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import type { LeaveType } from '@/types/hrms';
 import type { AdminLeaveTypeForm } from '@/components/admin/admin-form-types';
 
@@ -51,7 +46,7 @@ function LeaveTypeFormFields({
   onLeaveTypeFormChange: (next: AdminLeaveTypeForm) => void;
 }) {
   return (
-    <div className="grid gap-4 py-4">
+      <div className="grid gap-4 py-4">
       <div className="space-y-2">
         <Label htmlFor={`${prefix}_leave_name`}>Leave Type Name</Label>
         <Input
@@ -70,7 +65,7 @@ function LeaveTypeFormFields({
           placeholder="Brief description of this leave type"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`${prefix}_days_allowed`}>Days Allowed Per Year</Label>
           <Input
@@ -95,7 +90,7 @@ function LeaveTypeFormFields({
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center justify-between gap-4 p-4 border rounded-lg">
         <div>
           <Label htmlFor={`${prefix}_is_paid`}>Paid Leave</Label>
           <p className="text-sm text-muted-foreground">Employee receives salary during this leave</p>
@@ -106,7 +101,7 @@ function LeaveTypeFormFields({
           onCheckedChange={(checked) => onLeaveTypeFormChange({ ...leaveTypeForm, is_paid: checked })}
         />
       </div>
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center justify-between gap-4 p-4 border rounded-lg">
         <div>
           <Label htmlFor={`${prefix}_requires_document`}>Document Required</Label>
           <p className="text-sm text-muted-foreground">
@@ -142,58 +137,118 @@ export function AdminLeaveTypeDialogs({
   createLeaveTypePending,
   deleteLeaveTypePending,
 }: AdminLeaveTypeDialogsProps) {
+  const [confirmPublishEdit, setConfirmPublishEdit] = useState(false);
+  const [confirmPublishCreate, setConfirmPublishCreate] = useState(false);
+
+  useEffect(() => {
+    if (!editLeaveTypeDialogOpen) setConfirmPublishEdit(false);
+  }, [editLeaveTypeDialogOpen]);
+
+  useEffect(() => {
+    if (!createLeaveTypeDialogOpen) setConfirmPublishCreate(false);
+  }, [createLeaveTypeDialogOpen]);
+
   return (
     <>
-      <Dialog open={editLeaveTypeDialogOpen} onOpenChange={onEditLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Leave Policy</DialogTitle>
-            <DialogDescription>
-              Configure policy settings for {selectedLeaveType?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <LeaveTypeFormFields
-            prefix="edit"
-            leaveTypeForm={leaveTypeForm}
-            onLeaveTypeFormChange={onLeaveTypeFormChange}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditLeaveTypeDialogOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={onSaveLeaveType} disabled={updateLeaveTypePending}>
-              {updateLeaveTypePending ? 'Saving...' : 'Save Policy'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={createLeaveTypeDialogOpen} onOpenChange={onCreateLeaveTypeDialogOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add New Leave Type</DialogTitle>
-            <DialogDescription>
-              Create a new leave type with its policy settings
-            </DialogDescription>
-          </DialogHeader>
-          <LeaveTypeFormFields
-            prefix="new"
-            leaveTypeForm={leaveTypeForm}
-            onLeaveTypeFormChange={onLeaveTypeFormChange}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onCreateLeaveTypeDialogOpenChange(false)}>
+      <ModalScaffold
+        open={editLeaveTypeDialogOpen}
+        onOpenChange={onEditLeaveTypeDialogOpenChange}
+        title="Edit Leave Policy"
+        description={`Configure policy settings for ${selectedLeaveType?.name ?? 'leave type'}`}
+        maxWidth="xl"
+        body={(
+          <div className="space-y-4">
+            <ModalSection title="Policy Settings">
+              <LeaveTypeFormFields
+                prefix="edit"
+                leaveTypeForm={leaveTypeForm}
+                onLeaveTypeFormChange={onLeaveTypeFormChange}
+              />
+            </ModalSection>
+            <ModalSection title="Publishing State" tone="warning" compact>
+              <div className="space-y-3 rounded-lg border border-amber-300/40 bg-amber-50/40 p-3">
+                <p className="text-sm text-amber-900">
+                  This policy is published immediately after saving and affects future leave requests.
+                </p>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="confirm-policy-publish-edit"
+                    checked={confirmPublishEdit}
+                    onCheckedChange={(checked) => setConfirmPublishEdit(Boolean(checked))}
+                  />
+                  <Label htmlFor="confirm-policy-publish-edit" className="text-sm font-normal leading-relaxed">
+                    I confirm this policy update is ready to publish.
+                  </Label>
+                </div>
+              </div>
+            </ModalSection>
+          </div>
+        )}
+        footer={(
+          <>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditLeaveTypeDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
-              onClick={onSaveNewLeaveType}
-              disabled={!leaveTypeForm.name.trim() || createLeaveTypePending}
+              className="w-full sm:w-auto"
+              onClick={onSaveLeaveType}
+              disabled={updateLeaveTypePending || !confirmPublishEdit}
             >
-              {createLeaveTypePending ? 'Creating...' : 'Create Leave Type'}
+              {updateLeaveTypePending ? 'Publishing...' : 'Publish Policy'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
+
+      <ModalScaffold
+        open={createLeaveTypeDialogOpen}
+        onOpenChange={onCreateLeaveTypeDialogOpenChange}
+        title="Add New Leave Type"
+        description="Create a new leave type with its policy settings"
+        maxWidth="xl"
+        body={(
+          <div className="space-y-4">
+            <ModalSection title="Policy Settings">
+              <LeaveTypeFormFields
+                prefix="new"
+                leaveTypeForm={leaveTypeForm}
+                onLeaveTypeFormChange={onLeaveTypeFormChange}
+              />
+            </ModalSection>
+            <ModalSection title="Publishing State" tone="warning" compact>
+              <div className="space-y-3 rounded-lg border border-amber-300/40 bg-amber-50/40 p-3">
+                <p className="text-sm text-amber-900">
+                  New leave policies are published immediately once created.
+                </p>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="confirm-policy-publish-create"
+                    checked={confirmPublishCreate}
+                    onCheckedChange={(checked) => setConfirmPublishCreate(Boolean(checked))}
+                  />
+                  <Label htmlFor="confirm-policy-publish-create" className="text-sm font-normal leading-relaxed">
+                    I confirm this new policy is ready to publish.
+                  </Label>
+                </div>
+              </div>
+            </ModalSection>
+          </div>
+        )}
+        footer={(
+          <>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onCreateLeaveTypeDialogOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={onSaveNewLeaveType}
+              disabled={!leaveTypeForm.name.trim() || createLeaveTypePending || !confirmPublishCreate}
+            >
+              {createLeaveTypePending ? 'Publishing...' : 'Publish Leave Type'}
+            </Button>
+          </>
+        )}
+      />
 
       <AlertDialog open={deleteLeaveTypeDialogOpen} onOpenChange={onDeleteLeaveTypeDialogOpenChange}>
         <AlertDialogContent>
@@ -204,7 +259,7 @@ export function AdminLeaveTypeDialogs({
               Existing leave requests using this type may be affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={onDeleteLeaveType}

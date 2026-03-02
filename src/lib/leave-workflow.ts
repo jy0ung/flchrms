@@ -159,6 +159,53 @@ function canApproverRoleHandleStage(approverRole: AppRole, stage: LeaveApprovalS
   return approverRole === 'director';
 }
 
+/**
+ * Resolves the next approval stage from a request's persisted route snapshot.
+ * Falls back to canonical workflow progression when snapshot is missing.
+ */
+export function getNextLeaveApprovalStageFromRouteSnapshot({
+  currentStatus,
+  approvalRouteSnapshot,
+}: {
+  currentStatus: LeaveStatus;
+  approvalRouteSnapshot?: LeaveApprovalStage[] | null;
+}): LeaveApprovalStage | null {
+  if (
+    currentStatus === 'rejected' ||
+    currentStatus === 'cancelled' ||
+    currentStatus === 'director_approved' ||
+    currentStatus === 'hr_approved'
+  ) {
+    return null;
+  }
+
+  const route = normalizeLeaveApprovalStages(approvalRouteSnapshot);
+  const effectiveRoute = route.length > 0 ? route : LEAVE_APPROVAL_STAGE_OPTIONS;
+
+  if (currentStatus === 'pending') {
+    return effectiveRoute[0] ?? null;
+  }
+
+  const currentStage = getCurrentApprovalStageFromStatus(currentStatus);
+  if (!currentStage) return null;
+
+  const routeIndex = effectiveRoute.indexOf(currentStage);
+  if (routeIndex >= 0) {
+    return effectiveRoute[routeIndex + 1] ?? null;
+  }
+
+  const currentOrderIndex = LEAVE_APPROVAL_STAGE_OPTIONS.indexOf(currentStage);
+  return effectiveRoute.find((stage) => LEAVE_APPROVAL_STAGE_OPTIONS.indexOf(stage) > currentOrderIndex) ?? null;
+}
+
+export function canRoleHandleLeaveApprovalStage(
+  approverRole: AppRole | null | undefined,
+  stage: LeaveApprovalStage | null | undefined,
+) {
+  if (!approverRole || !stage) return false;
+  return canApproverRoleHandleStage(approverRole, stage);
+}
+
 export function getNextRequiredApprovalStage({
   currentStatus,
   requesterRole,

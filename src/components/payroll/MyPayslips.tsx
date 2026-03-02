@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -8,39 +7,48 @@ import { Switch } from '@/components/ui/switch';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { FileText, Eye, EyeOff, Wallet, TrendingUp } from 'lucide-react';
+import { FileText, Eye, EyeOff } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
+import { CardHeaderStandard, StatusBadge } from '@/components/system';
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-warning/20 text-warning border-warning/30',
-  paid: 'bg-success/20 text-success border-success/30',
-  cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
-};
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
-export function MyPayslips() {
+interface MyPayslipsProps {
+  hideAmounts?: boolean;
+  onHideAmountsChange?: (value: boolean) => void;
+  showVisibilityToggle?: boolean;
+}
+
+export function MyPayslips({
+  hideAmounts: controlledHideAmounts,
+  onHideAmountsChange,
+  showVisibilityToggle = true,
+}: MyPayslipsProps = {}) {
   const { user } = useAuth();
   const { data: payslips, isLoading: payslipsLoading } = useMyPayslips();
   const { data: salary, isLoading: salaryLoading } = useEmployeeSalaryStructure(user?.id);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
-  const [hideAmounts, setHideAmounts] = useState<boolean>(() => {
+  const [internalHideAmounts, setInternalHideAmounts] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
   });
+  const hideAmounts = controlledHideAmounts ?? internalHideAmounts;
+  const setHideAmounts = onHideAmountsChange ?? setInternalHideAmounts;
 
   useEffect(() => {
+    if (controlledHideAmounts !== undefined) return;
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hideAmounts ? '1' : '0');
-  }, [hideAmounts]);
+  }, [controlledHideAmounts, hideAmounts]);
 
   if (payslipsLoading || salaryLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28" />)}
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-lg" />)}
         </div>
-        <Skeleton className="h-64" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     );
   }
@@ -66,27 +74,31 @@ export function MyPayslips() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
-          {hideAmounts ? (
-            <EyeOff className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <Eye className="w-4 h-4 text-muted-foreground" />
-          )}
-          <Label htmlFor="hide-payroll-amounts" className="text-sm">
-            Hide salary amounts
-          </Label>
-          <Switch
-            id="hide-payroll-amounts"
-            checked={hideAmounts}
-            onCheckedChange={setHideAmounts}
-          />
+      {showVisibilityToggle ? (
+        <div className="flex justify-end">
+          <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm sm:w-auto sm:justify-start">
+            <div className="flex min-w-0 items-center gap-3">
+              {hideAmounts ? (
+                <EyeOff className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <Eye className="w-4 h-4 text-muted-foreground" />
+              )}
+              <Label htmlFor="hide-payroll-amounts" className="text-sm">
+                Hide salary amounts
+              </Label>
+            </div>
+            <Switch
+              id="hide-payroll-amounts"
+              checked={hideAmounts}
+              onCheckedChange={setHideAmounts}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* No salary structure warning */}
       {!salary && (
-        <Card className="border-warning bg-warning/5">
+        <Card className="border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-4">
             <p className="text-sm text-warning">
               Your salary structure has not been configured yet. Please contact HR for assistance.
@@ -97,79 +109,65 @@ export function MyPayslips() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Basic Salary</p>
-                <p className="text-2xl font-bold">
-                  {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
-                </p>
-                {totalAllowances > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {hideAmounts ? '+RM ••••• allowances' : `+RM ${totalAllowances.toLocaleString()} allowances`}
-                  </p>
-                )}
-              </div>
-              <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                <Wallet className="w-5 h-5" />
-              </div>
-            </div>
+        <Card className="border-border shadow-sm">
+          <CardHeaderStandard
+            title="Basic Salary"
+            description={totalAllowances > 0
+              ? hideAmounts
+                ? '+RM ••••• allowances'
+                : `+RM ${totalAllowances.toLocaleString()} allowances`
+              : undefined}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Last Net Pay</p>
-                <p className="text-2xl font-bold">
-                  {latestPayslip 
-                    ? formatCurrency(Number(latestPayslip.net_salary))
-                    : '—'}
-                </p>
-                {latestPayslip && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(latestPayslip.created_at), 'MMM yyyy')}
-                  </p>
-                )}
-              </div>
-              <div className="p-3 rounded-lg bg-success/10 text-success">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-            </div>
+        <Card className="border-border shadow-sm">
+          <CardHeaderStandard
+            title="Last Net Pay"
+            description={latestPayslip ? format(new Date(latestPayslip.created_at), 'MMM yyyy') : undefined}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {latestPayslip
+                ? formatCurrency(Number(latestPayslip.net_salary))
+                : '—'}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">YTD Earnings</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(totalEarningsThisYear)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date().getFullYear()} total
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-info/10 text-info">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-            </div>
+        <Card className="border-border shadow-sm">
+          <CardHeaderStandard
+            title="YTD Earnings"
+            description={`${new Date().getFullYear()} total`}
+            className="p-4 pb-2"
+            titleClassName="text-base font-semibold"
+            descriptionClassName="text-xs"
+          />
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">
+              {formatCurrency(totalEarningsThisYear)}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Payslips List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Payslip History
-          </CardTitle>
-          <CardDescription>View and download your payslips</CardDescription>
-        </CardHeader>
+      <Card className="border-border shadow-sm">
+        <CardHeaderStandard
+          title="Payslip History"
+          description="Payslip records and download access."
+          className="p-4 pb-2"
+        />
         <CardContent>
           {!payslips?.length ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -181,40 +179,42 @@ export function MyPayslips() {
               {payslips.map(payslip => (
                 <div
                   key={payslip.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="rounded-lg border border-border p-4 shadow-sm transition-colors hover:bg-muted/40"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <FileText className="w-5 h-5 text-primary" />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">
+                          {payslip.payroll_period?.name || 'Payslip'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {payslip.payroll_period?.start_date &&
+                            format(new Date(payslip.payroll_period.start_date), 'MMM d')} -{' '}
+                          {payslip.payroll_period?.end_date &&
+                            format(new Date(payslip.payroll_period.end_date), 'MMM d, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">
-                        {payslip.payroll_period?.name || 'Payslip'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {payslip.payroll_period?.start_date && 
-                          format(new Date(payslip.payroll_period.start_date), 'MMM d')} - {' '}
-                        {payslip.payroll_period?.end_date && 
-                          format(new Date(payslip.payroll_period.end_date), 'MMM d, yyyy')}
-                      </p>
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                      <div className="sm:text-right">
+                        <p className="font-semibold">
+                          {formatCurrency(payslip.net_salary)}
+                        </p>
+                        <StatusBadge status={payslip.status} />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => setSelectedPayslip(payslip)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatCurrency(payslip.net_salary)}
-                      </p>
-                      <Badge className={statusColors[payslip.status]}>
-                        {payslip.status}
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedPayslip(payslip)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               ))}

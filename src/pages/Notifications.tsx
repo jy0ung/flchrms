@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -22,8 +21,9 @@ import {
   type NotificationReadFilter,
   type UserNotification,
 } from '@/hooks/useNotifications';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -79,11 +79,11 @@ function NotificationRow({
   return (
     <div
       className={cn(
-        'rounded-lg border p-4 transition-colors',
-        isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background',
+        'rounded-lg border p-4 transition-colors shadow-sm',
+        isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background border-border',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
@@ -92,7 +92,7 @@ function NotificationRow({
             <Badge variant="outline" className="font-mono text-[10px]">
               {(notification as any).event_type ?? notification.category}
             </Badge>
-            {isUnread && <Badge className="bg-primary/15 text-primary">Unread</Badge>}
+            {isUnread && <StatusBadge status="unread" />}
           </div>
           <div>
             <p className="font-medium text-sm">{notification.title}</p>
@@ -101,15 +101,16 @@ function NotificationRow({
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+            {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
           {isUnread && (
             <Button
               variant="outline"
               size="sm"
+              className="rounded-full"
               onClick={() => void onMarkRead(notification)}
               disabled={markingRead}
             >
@@ -121,6 +122,7 @@ function NotificationRow({
             <Button
               variant="outline"
               size="sm"
+              className="rounded-full"
               onClick={() => void onMarkUnread(notification)}
               disabled={markingRead}
             >
@@ -130,6 +132,7 @@ function NotificationRow({
           {target && (
             <Button
               size="sm"
+              className="rounded-full"
               onClick={() => void onOpenRelated(notification)}
               disabled={markingRead}
             >
@@ -144,6 +147,7 @@ function NotificationRow({
 }
 
 export default function Notifications() {
+  usePageTitle('Notifications');
   const navigate = useNavigate();
   const [category, setCategory] = useState<NotificationCategoryFilter>('all');
   const [readFilter, setReadFilter] = useState<NotificationReadFilter>('all');
@@ -211,8 +215,8 @@ export default function Notifications() {
   const handleCleanupReadNotifications = async () => {
     try {
       const deletedCount = await deleteNotifications({ olderThanDays: cleanupDays, readOnly: true });
-      toast({
-        title: 'Cleanup complete',
+      setPage(1);
+      toast.success('Cleanup complete', {
         description:
           deletedCount > 0
             ? `Deleted ${deletedCount} read notification(s) older than ${cleanupDays} days.`
@@ -220,141 +224,139 @@ export default function Notifications() {
       });
     } catch (error) {
       console.error('Failed to delete old notifications:', error);
-      toast({
-        title: 'Unable to clean up notifications',
+      toast.error('Unable to clean up notifications', {
         description: 'Please try again.',
-        variant: 'destructive',
       });
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Bell className="w-6 h-6" />
-            Notifications
-          </h1>
-          <p className="text-muted-foreground">
-            Review leave workflow and workflow configuration activity.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Select
-            value={String(cleanupDays)}
-            onValueChange={(value) => setCleanupDays(Number(value))}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Cleanup window" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30">Cleanup Read: 30d+</SelectItem>
-              <SelectItem value="90">Cleanup Read: 90d+</SelectItem>
-              <SelectItem value="180">Cleanup Read: 180d+</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            onClick={() => void handleCleanupReadNotifications()}
-            disabled={isDeleting}
-          >
-            {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-            Cleanup Read
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => void refetch()}
-            disabled={isFetching}
-          >
-            {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => void markAllNotificationsRead()}
-            disabled={unreadCount === 0 || isMarkingRead}
-          >
-            <CheckCheck className="w-4 h-4 mr-2" />
-            Mark All Read
-          </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notification Settings</CardTitle>
-          <CardDescription>
-            Notification preferences have moved to <span className="font-medium text-foreground">Profile → Notification Settings</span>.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" onClick={() => navigate('/profile?tab=notifications')}>
-            Open Notification Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notification History</CardTitle>
-          <CardDescription>
-            {unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Category</p>
-              <Select value={category} onValueChange={(value) => handleChangeCategory(value as NotificationCategoryFilter)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+    <AppPageContainer>
+      <PageHeader
+        title="Notifications"
+        description="Review leave workflow and workflow configuration activity."
+        actionsSlot={
+          <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end">
+            <div className="col-span-2 lg:col-span-1">
+              <Select value={String(cleanupDays)} onValueChange={(value) => setCleanupDays(Number(value))}>
+                <SelectTrigger className="h-9 w-full rounded-full lg:w-[180px]">
+                  <SelectValue placeholder="Cleanup window" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryOptions().map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="30">Cleanup Read: 30d+</SelectItem>
+                  <SelectItem value="90">Cleanup Read: 90d+</SelectItem>
+                  <SelectItem value="180">Cleanup Read: 180d+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Read Status</p>
-              <Select value={readFilter} onValueChange={(value) => handleChangeReadFilter(value as NotificationReadFilter)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select read status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {readFilterOptions().map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Button
+              variant="outline"
+              className="h-9 rounded-full"
+              onClick={() => void handleCleanupReadNotifications()}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Cleanup Read
+            </Button>
+            <Button variant="outline" className="h-9 rounded-full" onClick={() => void refetch()} disabled={isFetching}>
+              {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Refresh
+            </Button>
+            <div className="col-span-2 grid grid-cols-[1fr_auto] gap-2 lg:contents">
+              <Button
+                variant="outline"
+                className="h-9 rounded-full"
+                onClick={() => void markAllNotificationsRead()}
+                disabled={unreadCount === 0 || isMarkingRead}
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark All Read
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 rounded-full justify-self-end"
+                onClick={() => navigate('/profile?tab=notifications')}
+                title="Notification settings"
+                aria-label="Open notification settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </div>
           </div>
+        }
+      />
 
-          <div className="flex items-center justify-between text-sm">
+      <DataTableShell
+        title="Notification History"
+        description={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
+        hasData={notifications.length > 0}
+        headerActions={
+          <SectionToolbar
+            variant="inline"
+            density="compact"
+            ariaLabel="Notification history filters"
+            filters={[
+              {
+                id: 'notification-category',
+                label: 'Category',
+                control: (
+                  <Select value={category} onValueChange={(value) => handleChangeCategory(value as NotificationCategoryFilter)}>
+                    <SelectTrigger className="rounded-full bg-background">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions().map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ),
+              },
+              {
+                id: 'notification-read-status',
+                label: 'Read Status',
+                control: (
+                  <Select value={readFilter} onValueChange={(value) => handleChangeReadFilter(value as NotificationReadFilter)}>
+                    <SelectTrigger className="rounded-full bg-background">
+                      <SelectValue placeholder="Select read status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {readFilterOptions().map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ),
+              },
+            ]}
+          />
+        }
+        pagination={
+          <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground">{pageLabel}</span>
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-full"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page <= 1 || isFetching}
               >
                 Previous
               </Button>
-              <span className="text-xs text-muted-foreground min-w-[70px] text-center">
+              <span className="text-xs text-muted-foreground min-w-[70px] text-center self-center">
                 Page {page} / {totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-full"
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                 disabled={page >= totalPages || isFetching}
               >
@@ -362,36 +364,36 @@ export default function Notifications() {
               </Button>
             </div>
           </div>
-
-          <Separator />
-
-          {isLoading ? (
-            <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading notifications...
+        }
+        loading={isLoading}
+        loadingSkeleton={
+          <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Loading notifications...
+          </div>
+        }
+        emptyState={
+          <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
+            No notifications match the selected filters.
+          </div>
+        }
+        content={
+          <ScrollArea className="h-[460px] sm:h-[520px]">
+            <div className="space-y-3 pr-3">
+              {notifications.map((notification) => (
+                <NotificationRow
+                  key={notification.id}
+                  notification={notification}
+                  onMarkRead={handleMarkRead}
+                  onMarkUnread={handleMarkUnread}
+                  onOpenRelated={handleOpenRelated}
+                  markingRead={isMarkingRead || isMarkingUnread}
+                />
+              ))}
             </div>
-          ) : notifications.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
-              No notifications match the selected filters.
-            </div>
-          ) : (
-            <ScrollArea className="h-[520px]">
-              <div className="space-y-3 pr-3">
-                {notifications.map((notification) => (
-                  <NotificationRow
-                    key={notification.id}
-                    notification={notification}
-                    onMarkRead={handleMarkRead}
-                    onMarkUnread={handleMarkUnread}
-                    onOpenRelated={handleOpenRelated}
-                    markingRead={isMarkingRead || isMarkingUnread}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </ScrollArea>
+        }
+      />
+    </AppPageContainer>
   );
 }

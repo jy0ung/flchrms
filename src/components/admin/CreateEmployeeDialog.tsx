@@ -1,0 +1,232 @@
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ModalScaffold, ModalSection } from '@/components/system';
+import type { Department, Profile } from '@/types/hrms';
+import type { AdminCreateEmployeeForm } from '@/components/admin/admin-form-types';
+
+interface CreateEmployeeDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: AdminCreateEmployeeForm;
+  onFormChange: (next: AdminCreateEmployeeForm) => void;
+  onSubmit: () => void;
+  isPending: boolean;
+  departments?: Department[];
+  employees?: (Profile & { department: Department | null })[];
+}
+
+export function CreateEmployeeDialog({
+  open,
+  onOpenChange,
+  form,
+  onFormChange,
+  onSubmit,
+  isPending,
+  departments,
+  employees,
+}: CreateEmployeeDialogProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleClose = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setShowPassword(false);
+    }
+    onOpenChange(nextOpen);
+  };
+
+  return (
+    <ModalScaffold
+      open={open}
+      onOpenChange={handleClose}
+      title="Create Employee"
+      description="Create a new employee account with a temporary password. They will be able to sign in immediately."
+      maxWidth="2xl"
+      body={(
+        <div className="space-y-4">
+          <ModalSection title="Account Credentials">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-email">Email <span className="text-destructive">*</span></Label>
+                <Input
+                  id="create-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => onFormChange({ ...form, email: e.target.value })}
+                  placeholder="employee@company.com"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="create-password">Temporary Password <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <Input
+                      id="create-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(e) => onFormChange({ ...form, password: e.target.value })}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                      minLength={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-confirm-password">Confirm Password <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="create-confirm-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={form.confirmPassword}
+                    onChange={(e) => onFormChange({ ...form, confirmPassword: e.target.value })}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    minLength={6}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 6 characters. The employee should change it after first sign-in.
+              </p>
+            </div>
+          </ModalSection>
+
+          <ModalSection title="Personal Information">
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="create-first-name">First Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="create-first-name"
+                    value={form.first_name}
+                    onChange={(e) => onFormChange({ ...form, first_name: e.target.value })}
+                    placeholder="John"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-last-name">Last Name</Label>
+                  <Input
+                    id="create-last-name"
+                    value={form.last_name}
+                    onChange={(e) => onFormChange({ ...form, last_name: e.target.value })}
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-phone">Phone</Label>
+                <Input
+                  id="create-phone"
+                  value={form.phone}
+                  onChange={(e) => onFormChange({ ...form, phone: e.target.value })}
+                  placeholder="+1 555-0100"
+                />
+              </div>
+            </div>
+          </ModalSection>
+
+          <ModalSection title="Employment Details">
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="create-job-title">Job Title</Label>
+                  <Input
+                    id="create-job-title"
+                    value={form.job_title}
+                    onChange={(e) => onFormChange({ ...form, job_title: e.target.value })}
+                    placeholder="Software Engineer"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-department">Department</Label>
+                  <Select
+                    value={form.department_id}
+                    onValueChange={(value) => onFormChange({ ...form, department_id: value })}
+                  >
+                    <SelectTrigger id="create-department">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Department</SelectItem>
+                      {departments?.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="create-hire-date">Hire Date</Label>
+                  <Input
+                    id="create-hire-date"
+                    type="date"
+                    value={form.hire_date}
+                    onChange={(e) => onFormChange({ ...form, hire_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-manager">Manager</Label>
+                  <Select
+                    value={form.manager_id}
+                    onValueChange={(value) => onFormChange({ ...form, manager_id: value })}
+                  >
+                    <SelectTrigger id="create-manager">
+                      <SelectValue placeholder="Select manager" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Manager</SelectItem>
+                      {employees?.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.first_name} {emp.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </ModalSection>
+
+          <ModalSection tone="muted" compact>
+            <p className="text-xs text-muted-foreground">
+              Employee ID and username will be auto-generated on creation. The employee will be assigned
+              the default <strong>employee</strong> role. You can change their role from the Roles tab after creation.
+            </p>
+          </ModalSection>
+        </div>
+      )}
+      footer={(
+        <>
+          <Button className="w-full sm:w-auto" variant="outline" onClick={() => handleClose(false)} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={onSubmit} disabled={isPending}>
+            {isPending ? 'Creating...' : 'Create Employee'}
+          </Button>
+        </>
+      )}
+    />
+  );
+}

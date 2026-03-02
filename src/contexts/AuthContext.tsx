@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { AppRole, Profile } from '@/types/hrms';
+import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -76,12 +78,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const resetAuthState = () => {
+  const resetAuthState = useCallback(() => {
     setUser(null);
     setSession(null);
     setProfile(null);
     setRole(null);
-  };
+  }, []);
 
   const getProfileStatus = async (userId: string) => {
     const { data, error } = await supabase
@@ -135,22 +137,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id);
     }
-  };
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    // Track whether the initial getSession has resolved to avoid
+    // duplicate fetchProfile calls from the auth state listener.
+    let initialSessionResolved = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => {
+          // Only fetch profile from the listener once the initial
+          // getSession has completed — otherwise both paths race.
+          if (initialSessionResolved) {
             fetchProfile(session.user.id);
-          }, 0);
+          }
         } else {
           setProfile(null);
           setRole(null);
@@ -167,12 +175,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
       }
       setIsLoading(false);
+      initialSessionResolved = true;
     });
 
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const signIn = async (identifier: string, password: string) => {
+  const signIn = useCallback(async (identifier: string, password: string) => {
     const normalizedIdentifier = normalizeLoginIdentifier(identifier);
 
     if (!normalizedIdentifier.value) {
@@ -223,9 +232,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     return { error: null };
-  };
+  }, [resetAuthState]);
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signUp = useCallback(async (email: string, password: string, firstName: string, lastName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -240,27 +249,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     return { error: error as Error | null };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     resetAuthState();
-  };
+  }, [resetAuthState]);
+
+  const handleIdleTimeout = useCallback(async () => {
+    if (user) {
+      toast.info('You have been signed out due to inactivity.');
+      await signOut();
+    }
+  }, [user, signOut]);
+
+  // Auto sign-out after 30 minutes of inactivity
+  useIdleTimeout(handleIdleTimeout, 30 * 60 * 1000, !!user);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user,
+    session,
+    profile,
+    role,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+    refreshProfile,
+  }), [user, session, profile, role, isLoading, signIn, signUp, signOut, refreshProfile]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        role,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-        refreshProfile,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

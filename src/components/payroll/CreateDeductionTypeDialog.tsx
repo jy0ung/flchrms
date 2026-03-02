@@ -5,16 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useCreateDeductionType } from '@/hooks/usePayroll';
 import { Settings } from 'lucide-react';
+import { ModalScaffold } from '@/components/system';
 
 interface CreateDeductionTypeDialogProps {
   open: boolean;
@@ -55,19 +48,15 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Add Deduction Type
-          </DialogTitle>
-          <DialogDescription>
-            Configure a new deduction type for payroll
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <ModalScaffold
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add Deduction Type"
+      description="Configure a new deduction type for payroll"
+      maxWidth="xl"
+      headerMeta={<Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+      body={(
+        <form onSubmit={handleSubmit} className="space-y-4" id="deduction-type-form">
           <div className="space-y-2">
             <Label htmlFor="name">Deduction Name</Label>
             <Input
@@ -86,11 +75,12 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the deduction"
-              rows={2}
+              rows={3}
+              className="resize-y min-h-[84px]"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Type</Label>
               <Select 
@@ -136,17 +126,29 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
               onCheckedChange={setIsMandatory}
             />
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createDeduction.isPending}>
-              {createDeduction.isPending ? 'Creating...' : 'Create'}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      )}
+      footer={(
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-full sm:w-auto"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="deduction-type-form"
+            className="w-full rounded-full sm:w-auto"
+            disabled={createDeduction.isPending}
+          >
+            {createDeduction.isPending ? 'Creating...' : 'Create'}
+          </Button>
+        </>
+      )}
+      footerClassName="flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+    />
   );
 }

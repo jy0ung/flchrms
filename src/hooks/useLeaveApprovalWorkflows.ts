@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { untypedFrom } from '@/integrations/supabase/untyped-client';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { AppRole, LeaveApprovalStage, LeaveApprovalWorkflow } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import {
   DEFAULT_LEAVE_APPROVAL_WORKFLOW_BY_REQUESTER_ROLE,
   normalizeLeaveApprovalStages,
@@ -10,7 +11,8 @@ import {
 const DEPARTMENT_WORKFLOW_REQUESTER_ROLE: AppRole = 'employee';
 
 async function findExistingLeaveApprovalWorkflowId(departmentId?: string | null) {
-  let query = untypedFrom('leave_approval_workflows')
+  let query = supabase
+    .from('leave_approval_workflows')
     .select('id')
     .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
 
@@ -25,7 +27,8 @@ export function useLeaveApprovalWorkflows() {
   return useQuery({
     queryKey: ['leave-approval-workflows'],
     queryFn: async () => {
-      const { data, error } = await untypedFrom('leave_approval_workflows')
+      const { data, error } = await supabase
+        .from('leave_approval_workflows')
         .select('*')
         .eq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE)
         .order('department_id', { ascending: true, nullsFirst: true })
@@ -33,8 +36,7 @@ export function useLeaveApprovalWorkflows() {
 
       if (error) throw error;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return ((data as any[]) || []).map((row: any) => ({
+      return (data || []).map((row) => ({
         ...row,
         approval_stages: normalizeLeaveApprovalStages(row.approval_stages),
       })) as LeaveApprovalWorkflow[];
@@ -69,12 +71,14 @@ export function useUpsertLeaveApprovalWorkflow() {
       };
 
       const { data, error } = existingId
-        ? await untypedFrom('leave_approval_workflows')
+        ? await supabase
+            .from('leave_approval_workflows')
             .update(payload)
             .eq('id', existingId)
             .select()
             .single()
-        : await untypedFrom('leave_approval_workflows')
+        : await supabase
+            .from('leave_approval_workflows')
             .insert(payload)
             .select()
             .single();
@@ -87,7 +91,7 @@ export function useUpsertLeaveApprovalWorkflow() {
       toast.success('Leave approval workflow updated');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update leave approval workflow: ' + error.message);
+      toast.error('Failed to update leave approval workflow', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -106,7 +110,8 @@ export function useResetLeaveApprovalWorkflows() {
         notes: null,
       };
 
-      const scopeDelete = untypedFrom('leave_approval_workflows')
+      const scopeDelete = supabase
+        .from('leave_approval_workflows')
         .delete()
         .neq('requester_role', DEPARTMENT_WORKFLOW_REQUESTER_ROLE);
       const { error: cleanupError } = departmentId
@@ -115,10 +120,12 @@ export function useResetLeaveApprovalWorkflows() {
       if (cleanupError) throw cleanupError;
 
       const { error } = existingId
-        ? await untypedFrom('leave_approval_workflows')
+        ? await supabase
+            .from('leave_approval_workflows')
             .update(payload)
             .eq('id', existingId)
-        : await untypedFrom('leave_approval_workflows')
+        : await supabase
+            .from('leave_approval_workflows')
             .insert(payload);
 
       if (error) throw error;
@@ -128,7 +135,7 @@ export function useResetLeaveApprovalWorkflows() {
       toast.success('Leave approval workflows reset to defaults');
     },
     onError: (error: Error) => {
-      toast.error('Failed to reset leave approval workflows: ' + error.message);
+      toast.error('Failed to reset leave approval workflows', { description: sanitizeErrorMessage(error) });
     },
   });
 }

@@ -3,62 +3,58 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { type KeyboardEvent } from 'react';
 import { 
-  Users, 
-  UserCheck, 
-  Calendar, 
-  ClipboardList,
   TrendingUp,
   TrendingDown,
   Minus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
+import { CardHeaderStandard } from '@/components/system';
 
 interface QuickStatProps {
   title: string;
   value: number | string;
   subtitle?: string;
-  icon: React.ElementType;
   trend?: 'up' | 'down' | 'neutral';
   trendLabel?: string;
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
   onClick?: () => void;
   clickable?: boolean;
 }
 
-function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, variant = 'default', onClick, clickable }: QuickStatProps) {
-  const variantStyles = {
-    default: 'bg-muted/50 text-muted-foreground',
-    success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning',
-    danger: 'bg-destructive/10 text-destructive',
-    info: 'bg-info/10 text-info',
-  };
+function handleKeyActivate(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
+  if (!onClick) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    onClick();
+  }
+}
 
+function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickable }: QuickStatProps) {
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
   return (
     <Card 
       className={cn(
-        "relative overflow-hidden transition-shadow",
+        "relative overflow-hidden border-border shadow-sm transition-shadow",
         clickable && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20"
       )}
       onClick={onClick}
+      onKeyDown={(event) => handleKeyActivate(event, onClick)}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `Open ${title}` : undefined}
     >
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1 min-w-0 flex-1">
-            <p className="text-xs md:text-sm font-medium text-muted-foreground truncate">{title}</p>
-            <p className="text-2xl md:text-3xl font-bold tracking-tight">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
-            )}
-          </div>
-          <div className={cn('p-2 md:p-3 rounded-xl shrink-0', variantStyles[variant])}>
-            <Icon className="w-4 h-4 md:w-5 md:h-5" />
-          </div>
-        </div>
+      <CardHeaderStandard
+        title={title}
+        description={subtitle}
+        className="p-4 pb-2"
+        titleClassName="text-sm font-semibold"
+        descriptionClassName="truncate text-xs"
+      />
+      <CardContent className="px-4 pb-4 pt-0">
+        <p className="text-xl font-bold tracking-tight md:text-2xl">{value}</p>
         {trend && trendLabel && (
           <div className="mt-3 flex items-center gap-1.5 text-xs">
             <TrendIcon 
@@ -79,7 +75,7 @@ function QuickStat({ title, value, subtitle, icon: Icon, trend, trendLabel, vari
           </div>
         )}
         {clickable && (
-          <p className="mt-2 text-xs text-primary font-medium">Click to view details →</p>
+          <p className="mt-2 text-xs text-primary font-medium">Tap to view details →</p>
         )}
       </CardContent>
     </Card>
@@ -99,7 +95,7 @@ export function QuickStats() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-28 md:h-32" />
+          <Skeleton key={i} className="h-28 md:h-32 rounded-lg" />
         ))}
       </div>
     );
@@ -115,8 +111,6 @@ export function QuickStats() {
         title="Total Employees"
         value={stats.totalEmployees}
         subtitle={`${stats.activeEmployees} active`}
-        icon={Users}
-        variant="info"
         trend={stats.newHiresThisMonth > 0 ? 'up' : 'neutral'}
         trendLabel={stats.newHiresThisMonth > 0 ? `+${stats.newHiresThisMonth} new` : 'No new hires'}
         clickable
@@ -126,8 +120,6 @@ export function QuickStats() {
         title="Attendance Rate"
         value={`${stats.attendanceRate}%`}
         subtitle={`${stats.presentToday} present today`}
-        icon={UserCheck}
-        variant={stats.attendanceRate >= 80 ? 'success' : stats.attendanceRate >= 60 ? 'warning' : 'danger'}
         trend={attendanceTrend}
         trendLabel={`${stats.avgAttendanceThisMonth}% monthly avg`}
         clickable
@@ -137,8 +129,6 @@ export function QuickStats() {
         title="Pending Leaves"
         value={stats.pendingLeaveRequests}
         subtitle={`${stats.onLeaveToday} on leave today`}
-        icon={Calendar}
-        variant={stats.pendingLeaveRequests > 5 ? 'warning' : 'default'}
         clickable
         onClick={() => navigate('/leave')}
       />
@@ -146,8 +136,6 @@ export function QuickStats() {
         title="Pending Reviews"
         value={stats.pendingReviews}
         subtitle={`${stats.completedReviewsThisMonth} completed`}
-        icon={ClipboardList}
-        variant={stats.pendingReviews > 0 ? 'warning' : 'success'}
         clickable
         onClick={() => navigate('/performance')}
       />

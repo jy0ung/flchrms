@@ -1,38 +1,43 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCancelLeaveRequest, useAmendLeaveRequest, useProcessLeaveCancellationRequest, useUploadLeaveDocument } from '@/hooks/useLeaveRequests';
 import { useLeaveRequestDetailsDialog } from '@/hooks/useLeaveRequestDetailsDialog';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Calendar, Plus, X, Clock, CheckCircle2, XCircle, Info } from 'lucide-react';
+import { Plus, Info, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeaveRequest, LeaveStatus } from '@/types/hrms';
-import { LeaveBalanceCard } from '@/components/leave/LeaveBalanceCard';
-import { LeaveRequestForm } from '@/components/leave/LeaveRequestForm';
+import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
+import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
+import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
+import { LeaveRequestWizard } from '@/components/leave/LeaveRequestWizard';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
-import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
-import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AppPageContainer, DataTableShell, ModalScaffold, ModalSection, PageHeader, QueryErrorState } from '@/components/system';
 import {
   canViewTeamLeaveRequests as canViewTeamLeaveRequestsPermission,
-  isDirector,
   isEmployee,
-  isGeneralManager,
-  isManager,
 } from '@/lib/permissions';
+import {
+  canRoleHandleLeaveApprovalStage,
+  canRoleApproveLeaveCancellationAtCurrentStage,
+  getNextLeaveApprovalStageFromRouteSnapshot,
+  LEAVE_APPROVAL_STAGE_LABELS,
+  normalizeLeaveCancellationApprovalStages,
+} from '@/lib/leave-workflow';
+import { isCancellationPending } from '@/lib/leave-utils';
 
 export default function Leave() {
+  usePageTitle('Leave');
   const { role, user } = useAuth();
-  const { data: requests, isLoading } = useLeaveRequests();
+  const { data: requests, isLoading, isError, refetch } = useLeaveRequests();
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances, refetch: refetchBalances } = useLeaveBalance();
   const createRequest = useCreateLeaveRequest();
@@ -43,6 +48,8 @@ export default function Leave() {
   const uploadDocument = useUploadLeaveDocument();
   
   const [open, setOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const { prefs: leaveDisplayPrefs, visibleBalances, hiddenBalances, updatePrefs: updateLeaveDisplayPrefs, resetPrefs: resetLeaveDisplayPrefs } = useLeaveDisplayPrefs(user?.id, role ?? undefined, balances ?? []);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
@@ -60,8 +67,6 @@ export default function Leave() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [amendmentNotes, setAmendmentNotes] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [myLeaveView, setMyLeaveView] = useState<'current' | 'history'>('current');
-  const [teamLeaveView, setTeamLeaveView] = useState<'current' | 'history'>('current');
   const {
     detailDialogOpen,
     detailRequest,
@@ -79,22 +84,9 @@ export default function Leave() {
     return format(new Date(value), 'PPp');
   };
 
-  // Upload document helper for new requests - uses user ID folder for RLS compliance
+  // Upload document helper for new requests - delegates to the shared hook
   const handleUploadDocument = async (file: File): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    const fileExt = file.name.split('.').pop();
-    // Use user ID as folder for RLS policy compliance
-    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('leave-documents')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    // Store the file path instead of URL - signed URLs will be generated on demand
-    return filePath;
+    return uploadDocument.mutateAsync({ file });
   };
 
   const handleSubmit = async (data: {
@@ -130,6 +122,7 @@ export default function Leave() {
       rejectionReason: actionType === 'reject' ? rejectionReason : undefined,
       documentRequired: actionType === 'request_document',
       managerComments: managerComments || undefined,
+      currentStatus: selectedRequest.status,
     }, {
       onSuccess: () => {
         setActionDialogOpen(false);
@@ -151,10 +144,15 @@ export default function Leave() {
     let documentUrl: string | undefined;
     
     if (documentFile) {
-      documentUrl = await uploadDocument.mutateAsync({
-        file: documentFile,
-        requestId: selectedRequest.id,
-      });
+      try {
+        documentUrl = await uploadDocument.mutateAsync({
+          file: documentFile,
+          requestId: selectedRequest.id,
+        });
+      } catch {
+        // uploadDocument.mutateAsync already triggers error toast via mutation config
+        return;
+      }
     }
 
     amendRequest.mutate({
@@ -166,17 +164,17 @@ export default function Leave() {
     });
   };
 
-  const statusConfig: Record<LeaveStatus, { color: string; icon: React.ReactNode; label: string }> = {
-    pending: { color: 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30', icon: <Clock className="w-3 h-3" />, label: 'Pending Manager' },
-    manager_approved: { color: 'bg-blue-500/20 text-blue-600 border-blue-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting GM' },
-    gm_approved: { color: 'bg-cyan-500/20 text-cyan-600 border-cyan-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Awaiting Director' },
-    director_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved' },
-    hr_approved: { color: 'bg-green-500/20 text-green-600 border-green-500/30', icon: <CheckCircle2 className="w-3 h-3" />, label: 'Approved (Legacy)' },
-    rejected: { color: 'bg-red-500/20 text-red-600 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: 'Rejected' },
-    cancelled: { color: 'bg-muted text-muted-foreground', icon: <X className="w-3 h-3" />, label: 'Cancelled' },
+  const statusConfig: Record<LeaveStatus, { status: string; label: string }> = {
+    pending: { status: 'pending', label: 'Pending' },
+    manager_approved: { status: 'manager_approved', label: 'Awaiting Approval' },
+    gm_approved: { status: 'gm_approved', label: 'Awaiting Approval' },
+    director_approved: { status: 'approved', label: 'Approved' },
+    hr_approved: { status: 'approved', label: 'Approved (Legacy)' },
+    rejected: { status: 'rejected', label: 'Rejected' },
+    cancelled: { status: 'cancelled', label: 'Cancelled' },
   };
 
-  const getStatusDisplay = (request: LeaveRequest) => {
+  const getStatusDisplay = (request: LeaveRequest): { status: string; label: string } => {
     if (request.status === 'cancelled' || request.status === 'rejected') {
       return statusConfig[request.status];
     }
@@ -185,14 +183,22 @@ export default function Leave() {
       return statusConfig.director_approved;
     }
 
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
+
+    if (nextApprovalStage) {
+      const nextApprovalLabel = LEAVE_APPROVAL_STAGE_LABELS[nextApprovalStage];
+      if (request.status === 'pending') {
+        return { status: 'pending', label: `Pending ${nextApprovalLabel}` };
+      }
+
+      return { status: request.status, label: `Awaiting ${nextApprovalLabel}` };
+    }
+
     return statusConfig[request.status];
   };
-
-  const isCancellationPending = useCallback((request: LeaveRequest) =>
-    request.cancellation_status === 'pending' ||
-    request.cancellation_status === 'manager_approved' ||
-    request.cancellation_status === 'gm_approved' ||
-    request.cancellation_status === 'director_approved', []);
 
   const getCancellationNextStageLabel = (request: LeaveRequest) => {
     const route = (request.cancellation_route_snapshot || []).filter(
@@ -236,14 +242,14 @@ export default function Leave() {
 
     if (request.cancellation_status === 'rejected') {
       return {
-        className: 'mt-1 text-red-500 border-red-500/30',
+        status: 'rejected',
         label: 'Cancellation Rejected',
       };
     }
 
     if (request.cancellation_status === 'approved') {
       return {
-        className: 'mt-1 text-muted-foreground border-border',
+        status: 'cancelled',
         label: 'Cancellation Approved',
       };
     }
@@ -251,7 +257,7 @@ export default function Leave() {
     if (isCancellationPending(request)) {
       const nextStage = getCancellationNextStageLabel(request);
       return {
-        className: 'mt-1 text-amber-600 border-amber-500/30',
+        status: 'pending',
         label: nextStage ? `Cancellation Pending ${nextStage}` : 'Cancellation Pending',
       };
     }
@@ -263,20 +269,12 @@ export default function Leave() {
     if (isCancellationPending(request)) return false;
     if (request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled') return false;
 
-    // Multi-level approval workflow (route-specific and validated server-side using
-    // the request's workflow snapshot). These UI checks stay intentionally broad.
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
 
-    // Manager can approve pending requests
-    if (isManager(role) && request.status === 'pending') return true;
-    
-    // GM can approve manager_approved requests (or pending if the employee is a manager)
-    if (isGeneralManager(role) && (request.status === 'manager_approved' || request.status === 'pending')) return true;
-    
-    // Director can approve final-stage requests; allow pending here to cover routes
-    // that start directly at Director (e.g. HR/Admin/Director requester profiles).
-    if (isDirector(role) && (request.status === 'gm_approved' || request.status === 'pending')) return true;
-    
-    return false;
+    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
   };
 
   const canAmend = (request: LeaveRequest) => {
@@ -285,7 +283,7 @@ export default function Leave() {
 
   const isHistoricalRequest = useCallback((request: LeaveRequest) =>
     !isCancellationPending(request) && (!!request.final_approved_at || request.status === 'rejected' || request.status === 'cancelled'),
-  [isCancellationPending]);
+  []);
 
   const canCancelPendingRequest = (request: LeaveRequest) =>
     request.employee_id === user?.id &&
@@ -299,17 +297,24 @@ export default function Leave() {
     !isCancellationPending(request);
 
   const canApproveCancellation = (request: LeaveRequest) => {
+    if (!role) return false;
     if (!isCancellationPending(request)) return false;
     if (request.status === 'cancelled' || !request.final_approved_at) return false;
 
-    if (isManager(role) && request.cancellation_status === 'pending') return true;
-    if (isGeneralManager(role) && (request.cancellation_status === 'pending' || request.cancellation_status === 'manager_approved')) return true;
-    if (isDirector(role) && (
-      request.cancellation_status === 'pending' ||
-      request.cancellation_status === 'gm_approved'
-    )) return true;
+    // Resolve workflow stages from the route snapshot (persisted at cancellation-request time)
+    const workflowStages = normalizeLeaveCancellationApprovalStages(
+      request.cancellation_route_snapshot ?? undefined,
+    );
 
-    return false;
+    // Determine the requester role (approximate from employee_id or default to 'employee')
+    const requesterRole = 'employee' as const;
+
+    return canRoleApproveLeaveCancellationAtCurrentStage({
+      approverRole: role,
+      currentCancellationStatus: request.cancellation_status!,
+      requesterRole,
+      workflowStages: workflowStages.length > 0 ? workflowStages : undefined,
+    });
   };
 
   const handleCancellation = (request: LeaveRequest) => {
@@ -392,9 +397,29 @@ export default function Leave() {
     [requests, user?.id]
   );
 
-  const teamRequests = useMemo(() => 
-    requests?.filter(r => r.employee_id !== user?.id) || [],
-    [requests, user?.id]
+  const canViewRequestAtCurrentApprovalStage = useCallback((request: LeaveRequest) => {
+    if (!role) return false;
+
+    if (role === 'hr' || role === 'admin') return true;
+
+    // Keep cancellation visibility behavior unchanged.
+    if (isCancellationPending(request)) return true;
+
+    if (isHistoricalRequest(request)) return true;
+
+    const nextApprovalStage = getNextLeaveApprovalStageFromRouteSnapshot({
+      currentStatus: request.status,
+      approvalRouteSnapshot: request.approval_route_snapshot,
+    });
+
+    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
+  }, [isCancellationPending, isHistoricalRequest, role]);
+
+  const teamRequests = useMemo(() =>
+    requests?.filter((request) =>
+      request.employee_id !== user?.id && canViewRequestAtCurrentApprovalStage(request),
+    ) || [],
+    [canViewRequestAtCurrentApprovalStage, requests, user?.id]
   );
 
   const myCurrentRequests = useMemo(
@@ -417,193 +442,162 @@ export default function Leave() {
     [teamRequests, isHistoricalRequest]
   );
 
-  const visibleMyRequests = myLeaveView === 'history' ? myHistoryRequests : myCurrentRequests;
-  const visibleTeamRequests = teamLeaveView === 'history' ? teamHistoryRequests : teamCurrentRequests;
-
   const canViewTeamRequests = canViewTeamLeaveRequestsPermission(role);
+  const defaultWorkspaceView: LeaveViewOption =
+    canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0
+      ? 'TEAM_CURRENT'
+      : 'MY_CURRENT';
+
+  const workflowInfoPopover = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="Approval workflow examples"
+        >
+          <Info className="w-4 h-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[min(90vw,26rem)]" align="end">
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
+          <p className="text-[11px] text-muted-foreground">
+            Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
+          </p>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">Employee:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">Manager:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="font-medium text-foreground">GM:</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
+                <span>→</span>
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-accent" />
-            Leave Management
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Request Leave</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>New Leave Request</DialogTitle>
-              <DialogDescription>Submit a new leave request for approval</DialogDescription>
-            </DialogHeader>
-            <LeaveRequestForm
-              leaveTypes={leaveTypes}
-              balances={balances}
-              onSubmit={handleSubmit}
-              onUploadDocument={handleUploadDocument}
-              isPending={createRequest.isPending}
-              isUploading={false}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+    <AppPageContainer>
+      <PageHeader
+        title="Leave Management"
+        description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
+        actions={[
+          {
+            id: 'customize-display',
+            label: 'Customize',
+            icon: Settings2,
+            onClick: () => setCustomizeOpen(true),
+            variant: 'outline',
+          },
+          {
+            id: 'request-leave',
+            label: 'Request Leave',
+            icon: Plus,
+            onClick: () => setOpen(true),
+            variant: 'default',
+          },
+        ]}
+      />
 
-      {/* Leave Balance Card - show for all users */}
-      <LeaveBalanceCard />
+      {isError && (
+        <QueryErrorState label="leave requests" onRetry={() => refetch()} />
+      )}
+
+      <ModalScaffold
+        open={open}
+        onOpenChange={setOpen}
+        title="New Leave Request"
+        description="Submit a new leave request for approval"
+        maxWidth="3xl"
+        body={
+          <LeaveRequestWizard
+            leaveTypes={leaveTypes}
+            balances={balances}
+            onSubmit={handleSubmit}
+            onUploadDocument={handleUploadDocument}
+            onCancel={() => setOpen(false)}
+            isPending={createRequest.isPending}
+          />
+        }
+        showCloseButton
+      />
+
+      <LeaveDisplayCustomizeDialog
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        balances={balances ?? []}
+        currentPrefs={leaveDisplayPrefs}
+        onSave={updateLeaveDisplayPrefs}
+        onReset={resetLeaveDisplayPrefs}
+      />
+
+      <LeaveBalanceSection balances={visibleBalances} />
 
       {/* Loading state */}
       {isLoading && (
-        <Card className="card-stat">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            Loading leave requests...
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty state */}
-      {!isLoading && requests?.length === 0 && (
-        <Card className="card-stat">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            No leave requests yet. Click "Request Leave" to submit your first request.
-          </CardContent>
-        </Card>
-      )}
-
-      {!isLoading && (requests?.length || 0) > 0 && (
-        <Tabs
-          defaultValue={canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0 ? 'team' : 'my'}
-          className="space-y-4"
-        >
-          <TabsList className={canViewTeamRequests ? 'grid w-full grid-cols-2 max-w-md' : 'grid w-full grid-cols-1 max-w-xs'}>
-            <TabsTrigger value="my">
-              My Leave
-              <span className="ml-2 text-xs text-muted-foreground">({myRequests.length})</span>
-            </TabsTrigger>
-            {canViewTeamRequests && (
-              <TabsTrigger value="team">
-                Team Leave
-                <span className="ml-2 text-xs text-muted-foreground">({teamRequests.length})</span>
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="my" className="space-y-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">My Requests</h2>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="text-muted-foreground hover:text-foreground transition-colors">
-                    <Info className="w-4 h-4" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
-                    </p>
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">Employee:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">Manager:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="font-medium text-foreground">GM:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
-                          <span>→</span>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+        <DataTableShell
+          title="Leave Requests"
+          loading
+          loadingSkeleton={
+            <div className="p-4 text-center text-muted-foreground">
+              Loading leave requests...
             </div>
+          }
+        />
+      )}
 
-            <Tabs value={myLeaveView} onValueChange={(value) => setMyLeaveView(value as 'current' | 'history')} className="space-y-3">
-              <TabsList className="grid w-full grid-cols-2 max-w-sm">
-                <TabsTrigger value="current">
-                  Current
-                  <span className="ml-2 text-xs text-muted-foreground">({myCurrentRequests.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="history">
-                  History
-                  <span className="ml-2 text-xs text-muted-foreground">({myHistoryRequests.length})</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <MyLeaveRequestsTable
-                requests={visibleMyRequests}
-                emptyMessage={myLeaveView === 'history' ? 'No leave history yet.' : 'No active leave requests right now.'}
-                getStatusDisplay={getStatusDisplay}
-                getCancellationBadge={getCancellationBadge}
-                canAmend={canAmend}
-                canCancelPendingRequest={canCancelPendingRequest}
-                canRequestCancellation={canRequestCancellation}
-                onAmend={handleAmend}
-                onCancel={handleCancellation}
-              />
-            </Tabs>
-          </TabsContent>
-
-          {canViewTeamRequests && (
-            <TabsContent value="team" className="space-y-3">
-              <h2 className="text-lg font-semibold">Team Requests</h2>
-              <Tabs value={teamLeaveView} onValueChange={(value) => setTeamLeaveView(value as 'current' | 'history')} className="space-y-3">
-                <TabsList className="grid w-full grid-cols-2 max-w-sm">
-                  <TabsTrigger value="current">
-                    Current
-                    <span className="ml-2 text-xs text-muted-foreground">({teamCurrentRequests.length})</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="history">
-                    History
-                    <span className="ml-2 text-xs text-muted-foreground">({teamHistoryRequests.length})</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                <TeamLeaveRequestsTable
-                  requests={visibleTeamRequests}
-                  emptyMessage={teamLeaveView === 'history' ? 'No leave approval history yet.' : 'No active team leave requests available.'}
-                  role={role}
-                  getStatusDisplay={getStatusDisplay}
-                  getCancellationBadge={getCancellationBadge}
-                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
-                  canApproveCancellation={canApproveCancellation}
-                  canApprove={canApprove}
-                  onOpenDetails={(request) => void handleOpenDetails(request)}
-                  onCancellationReview={handleCancellationReview}
-                  onAction={handleAction}
-                />
-              </Tabs>
-            </TabsContent>
-          )}
-        </Tabs>
+      {!isLoading && (
+        <LeaveRequestWorkspace
+          role={role}
+          canViewTeamRequests={canViewTeamRequests}
+          myCurrentRequests={myCurrentRequests}
+          myHistoryRequests={myHistoryRequests}
+          teamCurrentRequests={teamCurrentRequests}
+          teamHistoryRequests={teamHistoryRequests}
+          defaultView={defaultWorkspaceView}
+          getStatusDisplay={getStatusDisplay}
+          getCancellationBadge={getCancellationBadge}
+          canAmend={canAmend}
+          canCancelPendingRequest={canCancelPendingRequest}
+          canRequestCancellation={canRequestCancellation}
+          canApproveCancellation={canApproveCancellation}
+          canApprove={canApprove}
+          shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
+          onAmend={handleAmend}
+          onCancel={handleCancellation}
+          onOpenDetails={(request) => void handleOpenDetails(request)}
+          onCancellationReview={handleCancellationReview}
+          onAction={handleAction}
+          workflowInfoPopover={workflowInfoPopover}
+        />
       )}
 
       <LeaveDetailsDialog
@@ -679,6 +673,6 @@ export default function Leave() {
         onSubmitReview={submitCancellationReview}
         reviewSubmitPending={processCancellationRequest.isPending}
       />
-    </div>
+    </AppPageContainer>
   );
 }

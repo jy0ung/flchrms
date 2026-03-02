@@ -1,20 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Activity, Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWorkflowConfigEvents, type WorkflowConfigEventWithActor } from '@/hooks/useWorkflowConfigEvents';
 import type { Department } from '@/types/hrms';
+import { CardHeaderStandard, StatusBadge } from '@/components/system';
 
 type WorkflowAuditFilter = 'all' | 'leave_approval' | 'leave_cancellation';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getField(event: any, field: string, fallback: any = undefined) {
-  return event[field] ?? fallback;
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -43,35 +39,31 @@ function workflowTypeLabel(workflowType: string) {
   return workflowType === 'leave_cancellation' ? 'Cancellation' : 'Approval';
 }
 
-function actionBadgeClass(action: string) {
-  if (action === 'created') return 'bg-green-500/15 text-green-700 border-green-500/20';
-  if (action === 'updated') return 'bg-blue-500/15 text-blue-700 border-blue-500/20';
-  if (action === 'deleted') return 'bg-red-500/15 text-red-700 border-red-500/20';
-  return 'bg-muted text-muted-foreground';
+function actionStatus(action: string) {
+  if (action === 'created' || action === 'updated' || action === 'deleted') {
+    return action;
+  }
+  return 'info';
 }
 
 function summarizeChange(event: WorkflowConfigEventWithActor) {
-  const oldVal = getField(event, 'old_values', getField(event, 'old_value', null));
-  const newVal = getField(event, 'new_values', getField(event, 'new_value', null));
-  const oldStages = parseStages(oldVal);
-  const newStages = parseStages(newVal);
+  const oldStages = parseStages(event.old_values);
+  const newStages = parseStages(event.new_values);
   const oldPreview = routePreview(oldStages);
   const newPreview = routePreview(newStages);
 
-  const action = getField(event, 'action', event.event_type);
-
-  if (action === 'created') {
+  if (event.action === 'created') {
     return `Route: ${newPreview}`;
   }
-  if (action === 'deleted') {
+  if (event.action === 'deleted') {
     return `Removed route: ${oldPreview}`;
   }
   if (oldPreview !== newPreview) {
     return `Route changed: ${oldPreview} -> ${newPreview}`;
   }
 
-  const oldValues = isRecord(oldVal) ? oldVal : null;
-  const newValues = isRecord(newVal) ? newVal : null;
+  const oldValues = isRecord(event.old_values) ? event.old_values : null;
+  const newValues = isRecord(event.new_values) ? event.new_values : null;
 
   const changes: string[] = [];
 
@@ -101,18 +93,12 @@ function WorkflowAuditItem({
       ? departments?.find((department) => department.id === event.department_id)?.name ?? 'Unknown Department'
       : 'All Departments (Default)';
 
-  const action = getField(event, 'action', event.event_type);
-  const requesterRole = getField(event, 'requester_role', '');
-  const changedByRole = getField(event, 'changed_by_role', null);
-
   return (
-    <div className="rounded-lg border p-3 space-y-2">
+    <div className="rounded-lg border bg-card p-3 space-y-2 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">{workflowTypeLabel(event.workflow_type)}</Badge>
-          <Badge variant="outline" className={actionBadgeClass(action)}>
-            {action}
-          </Badge>
+          <StatusBadge status={actionStatus(event.action)} labelOverride={event.action.replace(/_/g, ' ')} />
           <Badge variant="secondary">{departmentName}</Badge>
         </div>
         <span className="text-xs text-muted-foreground">
@@ -122,7 +108,7 @@ function WorkflowAuditItem({
 
       <div className="space-y-1">
         <p className="text-sm font-medium">
-          {workflowTypeLabel(event.workflow_type)} workflow{requesterRole ? ` (${requesterRole.replace('_', ' ')})` : ''}
+          {workflowTypeLabel(event.workflow_type)} workflow ({event.requester_role.replace('_', ' ')})
         </p>
         <p className="text-xs text-muted-foreground">
           {summarizeChange(event)}
@@ -132,7 +118,7 @@ function WorkflowAuditItem({
       <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
         <span>
           By: <span className="font-medium text-foreground">{actorName}</span>
-          {changedByRole ? ` (${changedByRole.replace('_', ' ')})` : ''}
+          {event.changed_by_role ? ` (${event.changed_by_role.replace('_', ' ')})` : ''}
         </span>
         {event.actor?.email && <span>Email: {event.actor.email}</span>}
       </div>
@@ -155,32 +141,27 @@ export function WorkflowConfigAuditSection({ departments }: WorkflowConfigAuditS
   }, [events, filter]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Workflow Configuration Activity
-            </CardTitle>
-            <CardDescription>
-              Recent approval and cancellation workflow changes for audit and supervision.
-            </CardDescription>
-          </div>
+    <Card className="border-border shadow-sm">
+      <CardHeaderStandard
+        title="Workflow Configuration Activity"
+        description="Approval and cancellation workflow change records for supervision."
+        className="p-4 pb-2"
+        actions={(
           <Button
             variant="outline"
             size="sm"
+            className="rounded-full"
             onClick={() => void refetch()}
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-        </div>
-      </CardHeader>
+        )}
+      />
       <CardContent className="space-y-4">
         <Tabs value={filter} onValueChange={(value) => setFilter(value as WorkflowAuditFilter)}>
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1 rounded-lg p-1">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="leave_approval">Approval</TabsTrigger>
             <TabsTrigger value="leave_cancellation">Cancellation</TabsTrigger>

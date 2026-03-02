@@ -1,55 +1,64 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Square } from 'lucide-react';
+import { Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
+import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
 
 export default function Attendance() {
-  const { data: history, isLoading } = useAttendanceHistory();
+  usePageTitle('Attendance');
+  const { data: history, isLoading, isError, refetch } = useAttendanceHistory();
   const { data: today } = useTodayAttendance();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
 
-  const statusColors: Record<string, string> = {
-    present: 'badge-success',
-    absent: 'badge-destructive',
-    late: 'badge-warning',
-    half_day: 'badge-info',
-    on_leave: 'bg-muted text-muted-foreground',
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Clock className="w-8 h-8 text-accent" />
-            Attendance
-          </h1>
-          <p className="text-muted-foreground mt-1">Track your work hours</p>
-        </div>
-        <div className="flex gap-2">
-          {!today ? (
-            <Button onClick={() => clockIn.mutate()} disabled={clockIn.isPending} className="bg-success hover:bg-success/90">
-              <Play className="w-4 h-4 mr-2" /> Clock In
-            </Button>
-          ) : !today.clock_out ? (
-            <Button onClick={() => clockOut.mutate()} disabled={clockOut.isPending} variant="destructive">
-              <Square className="w-4 h-4 mr-2" /> Clock Out
-            </Button>
-          ) : null}
-        </div>
-      </div>
+    <AppPageContainer>
+      <PageHeader
+        title="Attendance"
+        description="Track your work hours"
+        actions={
+          !today
+            ? [
+                {
+                  id: 'clock-in',
+                  label: 'Clock In',
+                  icon: Play,
+                  onClick: () => clockIn.mutate(),
+                  disabled: clockIn.isPending,
+                  variant: 'default',
+                },
+              ]
+            : !today.clock_out
+              ? [
+                  {
+                    id: 'clock-out',
+                    label: 'Clock Out',
+                    icon: Square,
+                    onClick: () => clockOut.mutate(),
+                    disabled: clockOut.isPending,
+                    variant: 'destructive',
+                  },
+                ]
+              : []
+        }
+      />
+
+      {isError && (
+        <QueryErrorState label="attendance records" onRetry={() => refetch()} />
+      )}
 
       {today && (
-        <Card className="card-stat bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Today's Status</p>
-                <p className="text-2xl font-bold mt-1">{format(new Date(), 'EEEE, MMM d')}</p>
-              </div>
+        <Card className="bg-accent/5 border-accent/20 shadow-sm">
+          <CardHeaderStandard
+            title="Today Attendance Status"
+            description={format(new Date(), 'EEEE, MMM d')}
+            className="p-4 pb-2"
+            actions={<StatusBadge status={today.status} />}
+          />
+          <CardContent className="pt-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">
                   In: {today.clock_in ? format(new Date(today.clock_in), 'h:mm a') : '-'}
@@ -57,19 +66,37 @@ export default function Attendance() {
                 <p className="text-sm text-muted-foreground">
                   Out: {today.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '-'}
                 </p>
-                <Badge className={`mt-2 ${statusColors[today.status]}`}>{today.status}</Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="card-stat">
-        <CardHeader>
-          <CardTitle>Attendance History</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
+      <DataTableShell
+        title="Attendance History"
+        loading={isLoading}
+        hasData={Boolean(history?.length)}
+        emptyState={<div className="p-4 text-center text-muted-foreground">No attendance records</div>}
+        mobileList={
+          <div className="space-y-3 p-4 md:hidden">
+            {history?.map((record) => (
+              <div key={record.id} className="rounded-lg border border-border p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</p>
+                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <p>Clock In: {record.clock_in ? format(new Date(record.clock_in), 'h:mm a') : '-'}</p>
+                      <p>Clock Out: {record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</p>
+                    </div>
+                  </div>
+                  <StatusBadge status={record.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        }
+        table={
+          <div className="overflow-x-auto rounded-b-xl">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
@@ -80,25 +107,21 @@ export default function Attendance() {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
-                ) : history?.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No attendance records</td></tr>
-                ) : (
-                  history?.map(record => (
-                    <tr key={record.id} className="border-t border-border table-row-hover">
-                      <td className="p-4 font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</td>
-                      <td className="p-4">{record.clock_in ? format(new Date(record.clock_in), 'h:mm a') : '-'}</td>
-                      <td className="p-4">{record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</td>
-                      <td className="p-4"><Badge className={statusColors[record.status]}>{record.status}</Badge></td>
-                    </tr>
-                  ))
-                )}
+                {history?.map((record) => (
+                  <tr key={record.id} className="border-t border-border table-row-hover">
+                    <td className="p-4 font-medium">{format(new Date(record.date), 'EEE, MMM d, yyyy')}</td>
+                    <td className="p-4">{record.clock_in ? format(new Date(record.clock_in), 'h:mm a') : '-'}</td>
+                    <td className="p-4">{record.clock_out ? format(new Date(record.clock_out), 'h:mm a') : '-'}</td>
+                    <td className="p-4">
+                      <StatusBadge status={record.status} />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        }
+      />
+    </AppPageContainer>
   );
 }

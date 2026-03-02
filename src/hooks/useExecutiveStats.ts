@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -40,16 +40,33 @@ export interface ExecutiveStats {
 export function useExecutiveStats() {
   const { user, role, profile } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
-  const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-  const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
   
   const isManager = isManagerRole(role);
   const isExecutiveViewer = canQueryExecutiveStats(role) && !isManager;
 
   return useQuery({
-    queryKey: ['executive-stats', user?.id, role, profile?.department_id],
+    queryKey: ['executive-stats', user?.id, role, profile?.department_id, today],
     queryFn: async (): Promise<ExecutiveStats> => {
-      let departmentFilter: string | null = null;
+      // Recompute date boundaries inside queryFn for freshness
+      const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
+      // Determine department scope for managers
+      const departmentId = isManager && profile?.department_id ? profile.department_id : null;
+
+      // Try RPC first (single round-trip)
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        'get_executive_stats',
+        departmentId ? { _department_id: departmentId } : {},
+      );
+
+      if (!rpcError && rpcData) {
+        const stats = typeof rpcData === 'string' ? JSON.parse(rpcData) : rpcData;
+        return stats as ExecutiveStats;
+      }
+
+      // ── Fallback: parallel queries ─────────────────────────────────────
+      let departmentFilter: string | null = departmentId;
       let departmentName: string | undefined;
       
       // For managers, get their department
@@ -64,40 +81,25 @@ export function useExecutiveStats() {
         departmentName = dept?.name;
       }
 
-      // Build base query for profiles
-      let profilesQuery = supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-      
-      if (departmentFilter) {
-        profilesQuery = profilesQuery.eq('department_id', departmentFilter);
-      }
+      // Helper to apply optional department filter on profiles-linked tables
+      const withDeptFilter = <T extends { eq: (col: string, val: string) => T }>(q: T) =>
+        departmentFilter ? q.eq('department_id', departmentFilter) : q;
 
-      // Total employees
-      const { count: totalEmployees } = await profilesQuery;
+      // ── Batch 1: Profile counts (independent) ──────────────────────────
+      const [totalRes, activeRes, newHiresRes] = await Promise.all([
+        withDeptFilter(supabase.from('profiles').select('*', { count: 'exact', head: true })),
+        withDeptFilter(supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'active')),
+        withDeptFilter(
+          supabase.from('profiles').select('*', { count: 'exact', head: true })
+            .gte('hire_date', monthStart).lte('hire_date', monthEnd),
+        ),
+      ]);
 
-      // Active employees
-      let activeQuery = supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-      if (departmentFilter) {
-        activeQuery = activeQuery.eq('department_id', departmentFilter);
-      }
-      const { count: activeEmployees } = await activeQuery;
+      const totalEmployees = totalRes.count || 0;
+      const activeEmployees = activeRes.count || 0;
+      const newHiresThisMonth = newHiresRes.count || 0;
 
-      // New hires this month
-      let newHiresQuery = supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('hire_date', monthStart)
-        .lte('hire_date', monthEnd);
-      if (departmentFilter) {
-        newHiresQuery = newHiresQuery.eq('department_id', departmentFilter);
-      }
-      const { count: newHiresThisMonth } = await newHiresQuery;
-
-      // Get employee IDs for department filter
+      // Get employee IDs for department-scoped queries on non-profile tables
       let employeeIds: string[] = [];
       if (departmentFilter) {
         const { data: deptEmployees } = await supabase
@@ -109,11 +111,11 @@ export function useExecutiveStats() {
 
       if (departmentFilter && employeeIds.length === 0) {
         return {
-          totalEmployees: totalEmployees || 0,
-          activeEmployees: activeEmployees || 0,
-          newHiresThisMonth: newHiresThisMonth || 0,
+          totalEmployees,
+          activeEmployees,
+          newHiresThisMonth,
           presentToday: 0,
-          absentToday: activeEmployees || 0,
+          absentToday: activeEmployees,
           attendanceRate: 0,
           avgAttendanceThisMonth: 0,
           pendingLeaveRequests: 0,
@@ -125,171 +127,131 @@ export function useExecutiveStats() {
           pendingReviews: 0,
           completedReviewsThisMonth: 0,
           departmentName,
-          departmentEmployeeCount: activeEmployees || 0,
+          departmentEmployeeCount: activeEmployees,
         };
       }
 
-      // Present today
-      let presentQuery = supabase
-        .from('attendance')
-        .select('*', { count: 'exact', head: true })
-        .eq('date', today)
-        .in('status', ['present', 'late']);
-      if (departmentFilter && employeeIds.length > 0) {
-        presentQuery = presentQuery.in('employee_id', employeeIds);
-      }
-      const { count: presentToday } = await presentQuery;
+      // Helper to apply optional employee ID filter on non-profile tables
+      const withEmpFilter = <T extends { in: (col: string, vals: string[]) => T }>(q: T) =>
+        departmentFilter && employeeIds.length > 0 ? q.in('employee_id', employeeIds) : q;
 
-      // Average attendance this month
-      let monthAttendanceQuery = supabase
-        .from('attendance')
-        .select('*', { count: 'exact', head: true })
-        .gte('date', monthStart)
-        .lte('date', today)
-        .in('status', ['present', 'late']);
-      if (departmentFilter && employeeIds.length > 0) {
-        monthAttendanceQuery = monthAttendanceQuery.in('employee_id', employeeIds);
-      }
-      const { count: totalAttendanceRecords } = await monthAttendanceQuery;
-      
+      // ── Batch 2: All remaining count queries in parallel ───────────────
+      const [
+        presentRes,
+        monthAttendanceRes,
+        pendingLeaveRes,
+        approvedLeavesRes,
+        onLeaveTodayRes,
+        activeTrainingsRes,
+        completedTrainingsRes,
+        totalEnrollmentsRes,
+        completedEnrollmentsRes,
+        pendingReviewsRes,
+        completedReviewsRes,
+      ] = await Promise.all([
+        // Present today
+        withEmpFilter(
+          supabase.from('attendance').select('*', { count: 'exact', head: true })
+            .eq('date', today).in('status', ['present', 'late']),
+        ),
+        // Month attendance
+        withEmpFilter(
+          supabase.from('attendance').select('*', { count: 'exact', head: true })
+            .gte('date', monthStart).lte('date', today).in('status', ['present', 'late']),
+        ),
+        // Pending leave requests
+        withEmpFilter(
+          supabase.from('leave_requests').select('*', { count: 'exact', head: true })
+            .is('final_approved_at', null).not('status', 'in', '(rejected,cancelled)'),
+        ),
+        // Approved leaves this month
+        withEmpFilter(
+          supabase.from('leave_requests').select('*', { count: 'exact', head: true })
+            .not('final_approved_at', 'is', null).not('status', 'in', '(cancelled,rejected)')
+            .gte('start_date', monthStart).lte('start_date', monthEnd),
+        ),
+        // On leave today
+        withEmpFilter(
+          supabase.from('leave_requests').select('*', { count: 'exact', head: true })
+            .not('final_approved_at', 'is', null).not('status', 'in', '(cancelled,rejected)')
+            .lte('start_date', today).gte('end_date', today),
+        ),
+        // Active trainings
+        withEmpFilter(
+          supabase.from('training_enrollments').select('*', { count: 'exact', head: true })
+            .in('status', ['enrolled', 'in_progress']),
+        ),
+        // Completed trainings this month
+        withEmpFilter(
+          supabase.from('training_enrollments').select('*', { count: 'exact', head: true })
+            .eq('status', 'completed').gte('completed_at', monthStart).lte('completed_at', monthEnd),
+        ),
+        // Total enrollments
+        withEmpFilter(
+          supabase.from('training_enrollments').select('*', { count: 'exact', head: true }),
+        ),
+        // Completed enrollments
+        withEmpFilter(
+          supabase.from('training_enrollments').select('*', { count: 'exact', head: true })
+            .eq('status', 'completed'),
+        ),
+        // Pending reviews
+        withEmpFilter(
+          supabase.from('performance_reviews').select('*', { count: 'exact', head: true })
+            .eq('status', 'draft'),
+        ),
+        // Completed reviews this month
+        withEmpFilter(
+          supabase.from('performance_reviews').select('*', { count: 'exact', head: true })
+            .in('status', [...COMPLETED_REVIEW_STATUSES])
+            .gte('submitted_at', monthStart).lte('submitted_at', monthEnd),
+        ),
+      ]);
+
+      const presentToday = presentRes.count || 0;
+      const totalAttendanceRecords = monthAttendanceRes.count || 0;
+      const pendingLeaveRequests = pendingLeaveRes.count || 0;
+      const approvedLeavesThisMonth = approvedLeavesRes.count || 0;
+      const onLeaveToday = onLeaveTodayRes.count || 0;
+      const activeTrainings = activeTrainingsRes.count || 0;
+      const completedTrainingsThisMonth = completedTrainingsRes.count || 0;
+      const totalEnrollments = totalEnrollmentsRes.count || 0;
+      const completedEnrollments = completedEnrollmentsRes.count || 0;
+      const pendingReviews = pendingReviewsRes.count || 0;
+      const completedReviewsThisMonth = completedReviewsRes.count || 0;
+
       const workingDays = Math.max(1, calculateWorkingDays(monthStart, today));
       const expectedRecords = (activeEmployees || 1) * workingDays;
-      const avgAttendanceThisMonth = Math.round(((totalAttendanceRecords || 0) / expectedRecords) * 100);
+      const avgAttendanceThisMonth = Math.round((totalAttendanceRecords / expectedRecords) * 100);
 
-      // Pending leave requests
-      let pendingLeaveQuery = supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .is('final_approved_at', null)
-        .not('status', 'in', '(rejected,cancelled)');
-      if (departmentFilter && employeeIds.length > 0) {
-        pendingLeaveQuery = pendingLeaveQuery.in('employee_id', employeeIds);
-      }
-      const { count: pendingLeaveRequests } = await pendingLeaveQuery;
-
-      // Approved leaves this month
-      let approvedLeavesQuery = supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .not('final_approved_at', 'is', null)
-        .not('status', 'in', '(cancelled,rejected)')
-        .gte('start_date', monthStart)
-        .lte('start_date', monthEnd);
-      if (departmentFilter && employeeIds.length > 0) {
-        approvedLeavesQuery = approvedLeavesQuery.in('employee_id', employeeIds);
-      }
-      const { count: approvedLeavesThisMonth } = await approvedLeavesQuery;
-
-      // On leave today
-      let onLeaveTodayQuery = supabase
-        .from('leave_requests')
-        .select('*', { count: 'exact', head: true })
-        .not('final_approved_at', 'is', null)
-        .not('status', 'in', '(cancelled,rejected)')
-        .lte('start_date', today)
-        .gte('end_date', today);
-      if (departmentFilter && employeeIds.length > 0) {
-        onLeaveTodayQuery = onLeaveTodayQuery.in('employee_id', employeeIds);
-      }
-      const { count: onLeaveToday } = await onLeaveTodayQuery;
-
-      // Calculate absent (active employees - present - on leave)
-      const absentToday = calculateAbsentEmployees(
-        activeEmployees || 0,
-        presentToday || 0,
-        onLeaveToday || 0,
-      );
-      
-      // Attendance rate
-      const attendanceRate = activeEmployees ? Math.round(((presentToday || 0) / activeEmployees) * 100) : 0;
-
-      // Active trainings
-      let activeTrainingsQuery = supabase
-        .from('training_enrollments')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['enrolled', 'in_progress']);
-      if (departmentFilter && employeeIds.length > 0) {
-        activeTrainingsQuery = activeTrainingsQuery.in('employee_id', employeeIds);
-      }
-      const { count: activeTrainings } = await activeTrainingsQuery;
-
-      // Completed trainings this month
-      let completedTrainingsQuery = supabase
-        .from('training_enrollments')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed')
-        .gte('completed_at', monthStart)
-        .lte('completed_at', monthEnd);
-      if (departmentFilter && employeeIds.length > 0) {
-        completedTrainingsQuery = completedTrainingsQuery.in('employee_id', employeeIds);
-      }
-      const { count: completedTrainingsThisMonth } = await completedTrainingsQuery;
-
-      // Training completion rate
-      let totalEnrollmentsQuery = supabase
-        .from('training_enrollments')
-        .select('*', { count: 'exact', head: true });
-      if (departmentFilter && employeeIds.length > 0) {
-        totalEnrollmentsQuery = totalEnrollmentsQuery.in('employee_id', employeeIds);
-      }
-      const { count: totalEnrollments } = await totalEnrollmentsQuery;
-
-      let completedEnrollmentsQuery = supabase
-        .from('training_enrollments')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
-      if (departmentFilter && employeeIds.length > 0) {
-        completedEnrollmentsQuery = completedEnrollmentsQuery.in('employee_id', employeeIds);
-      }
-      const { count: completedEnrollments } = await completedEnrollmentsQuery;
-      
-      const trainingCompletionRate = totalEnrollments 
-        ? Math.round(((completedEnrollments || 0) / totalEnrollments) * 100) 
+      const absentToday = calculateAbsentEmployees(activeEmployees, presentToday, onLeaveToday);
+      const attendanceRate = activeEmployees ? Math.round((presentToday / activeEmployees) * 100) : 0;
+      const trainingCompletionRate = totalEnrollments
+        ? Math.round((completedEnrollments / totalEnrollments) * 100)
         : 0;
 
-      // Pending reviews
-      let pendingReviewsQuery = supabase
-        .from('performance_reviews')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'draft');
-      if (departmentFilter && employeeIds.length > 0) {
-        pendingReviewsQuery = pendingReviewsQuery.in('employee_id', employeeIds);
-      }
-      const { count: pendingReviews } = await pendingReviewsQuery;
-
-      // Completed reviews this month
-      let completedReviewsQuery = supabase
-        .from('performance_reviews')
-        .select('*', { count: 'exact', head: true })
-        .in('status', [...COMPLETED_REVIEW_STATUSES])
-        .gte('submitted_at', monthStart)
-        .lte('submitted_at', monthEnd);
-      if (departmentFilter && employeeIds.length > 0) {
-        completedReviewsQuery = completedReviewsQuery.in('employee_id', employeeIds);
-      }
-      const { count: completedReviewsThisMonth } = await completedReviewsQuery;
-
       return {
-        totalEmployees: totalEmployees || 0,
-        activeEmployees: activeEmployees || 0,
-        newHiresThisMonth: newHiresThisMonth || 0,
-        presentToday: presentToday || 0,
+        totalEmployees,
+        activeEmployees,
+        newHiresThisMonth,
+        presentToday,
         absentToday,
         attendanceRate,
         avgAttendanceThisMonth: Math.min(100, avgAttendanceThisMonth),
-        pendingLeaveRequests: pendingLeaveRequests || 0,
-        approvedLeavesThisMonth: approvedLeavesThisMonth || 0,
-        onLeaveToday: onLeaveToday || 0,
-        activeTrainings: activeTrainings || 0,
-        completedTrainingsThisMonth: completedTrainingsThisMonth || 0,
+        pendingLeaveRequests,
+        approvedLeavesThisMonth,
+        onLeaveToday,
+        activeTrainings,
+        completedTrainingsThisMonth,
         trainingCompletionRate,
-        pendingReviews: pendingReviews || 0,
-        completedReviewsThisMonth: completedReviewsThisMonth || 0,
+        pendingReviews,
+        completedReviewsThisMonth,
         departmentName,
-        departmentEmployeeCount: departmentFilter ? (activeEmployees || 0) : undefined,
+        departmentEmployeeCount: departmentFilter ? activeEmployees : undefined,
       };
     },
     enabled: !!user && (isManager || isExecutiveViewer),
     staleTime: 60000, // Cache for 1 minute
+    refetchOnWindowFocus: true,
   });
 }

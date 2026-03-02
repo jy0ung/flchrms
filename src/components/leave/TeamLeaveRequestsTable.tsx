@@ -1,22 +1,20 @@
-import type { ReactNode } from 'react';
 import { format } from 'date-fns';
 import { AlertCircle, Check, Eye, FileText, MessageSquare, Upload, X, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { canRequestLeaveSupportingDocument, canViewLeaveSupportingDocument } from '@/lib/permissions';
+import { StatusBadge } from '@/components/system';
 
 type LeaveStatusDisplay = {
-  color: string;
-  icon: ReactNode;
+  status: string;
   label: string;
 };
 
 type LeaveCancellationBadge = {
-  className: string;
+  status: string;
   label: string;
 } | null;
 
@@ -47,15 +45,187 @@ export function TeamLeaveRequestsTable({
   onCancellationReview,
   onAction,
 }: TeamLeaveRequestsTableProps) {
+  const canRequestDocumentAtCurrentStage = (request: LeaveRequest) =>
+    canApprove(request) &&
+    request.status === 'pending' &&
+    role === 'manager' &&
+    canRequestLeaveSupportingDocument(role);
+
   return (
-    <Card className="card-stat">
-      <CardContent className="p-0">
+    <div className="rounded-lg border border-border shadow-sm">
+      <div className="p-0">
         {requests.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">{emptyMessage}</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
+          <>
+            <div className="divide-y md:hidden">
+              {requests.map((request) => {
+                const status = getStatusDisplay(request);
+                const cancellationBadge = getCancellationBadge(request);
+
+                return (
+                  <div key={request.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm">
+                          {request.employee?.first_name} {request.employee?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{request.employee?.email}</p>
+                      </div>
+                      <StatusBadge status={status.status} labelOverride={status.label} className="shrink-0" />
+                    </div>
+
+                    <div className="rounded-md bg-muted/40 px-3 py-2 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">{request.leave_type?.name}</span>
+                        {request.leave_type?.requires_document && (
+                          <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
+                        )}
+                        {request.amended_at && (
+                          <StatusBadge status="amended" className="text-[11px]" />
+                        )}
+                      </div>
+                      <p className="text-sm">
+                        {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{request.days_count} days</p>
+                      <div className="flex flex-wrap gap-1">
+                        {request.document_required && !request.document_url && request.status === 'pending' && (
+                          <StatusBadge status="document_requested" className="text-[11px]" />
+                        )}
+                        {request.document_url && (
+                          <StatusBadge status="document_attached" className="text-[11px]" />
+                        )}
+                        {cancellationBadge && (
+                          <StatusBadge
+                            status={cancellationBadge.status}
+                            labelOverride={cancellationBadge.label}
+                            className="text-[11px]"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border p-3 space-y-1 text-xs">
+                      {request.reason && (
+                        <p className="text-muted-foreground" title={request.reason}>
+                          <MessageSquare className="w-3 h-3 inline mr-1" />
+                          {request.reason}
+                        </p>
+                      )}
+                      {request.rejection_reason && (
+                        <p className="text-red-500" title={request.rejection_reason}>
+                          <XCircle className="w-3 h-3 inline mr-1" />
+                          {request.rejection_reason}
+                        </p>
+                      )}
+                      {request.manager_comments && (
+                        <p className="text-blue-500" title={request.manager_comments}>
+                          <MessageSquare className="w-3 h-3 inline mr-1" />
+                          {request.manager_comments}
+                        </p>
+                      )}
+                      {request.amendment_notes && (
+                        <p className="text-violet-600" title={request.amendment_notes}>
+                          <FileText className="w-3 h-3 inline mr-1" />
+                          Amendment: {request.amendment_notes}
+                        </p>
+                      )}
+                      {request.cancellation_reason && (
+                        <p className="text-amber-600" title={request.cancellation_reason}>
+                          <AlertCircle className="w-3 h-3 inline mr-1" />
+                          Cancel req: {request.cancellation_reason}
+                        </p>
+                      )}
+                      {request.cancellation_rejection_reason && (
+                        <p className="text-red-500" title={request.cancellation_rejection_reason}>
+                          <XCircle className="w-3 h-3 inline mr-1" />
+                          Cancel reject: {request.cancellation_rejection_reason}
+                        </p>
+                      )}
+                      {!request.reason &&
+                        !request.rejection_reason &&
+                        !request.manager_comments &&
+                        !request.amendment_notes &&
+                        !request.cancellation_reason &&
+                        !request.cancellation_rejection_reason && (
+                          <p className="text-muted-foreground">No details provided.</p>
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {shouldShowLeaveDetailsButton(request) && (
+                        <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                          <Eye className="w-4 h-4 mr-1" />
+                          Details
+                        </Button>
+                      )}
+                      {canApproveCancellation(request) ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                            onClick={() => onCancellationReview(request, 'approve')}
+                          >
+                            Approve Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                            onClick={() => onCancellationReview(request, 'reject')}
+                          >
+                            Reject Cancel
+                          </Button>
+                        </>
+                      ) : canApprove(request) && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                            onClick={() => onAction(request, 'approve')}
+                            aria-label="Approve"
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                            onClick={() => onAction(request, 'reject')}
+                            aria-label="Reject"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                          {canRequestDocumentAtCurrentStage(request) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
+                              onClick={() => onAction(request, 'request_document')}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Request Doc
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      {request.document_url && canViewLeaveSupportingDocument(role) && (
+                        <DocumentViewButton documentPath={request.document_url} />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[1120px]">
+                <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
@@ -71,7 +241,7 @@ export function TeamLeaveRequestsTable({
                   const cancellationBadge = getCancellationBadge(request);
 
                   return (
-                    <tr key={request.id} className="border-t border-border table-row-hover">
+                    <tr key={request.id} className="border-t border-border table-row-hover align-top">
                       <td className="p-4">
                         <p className="font-medium">{request.employee?.first_name} {request.employee?.last_name}</p>
                         <p className="text-sm text-muted-foreground">{request.employee?.email}</p>
@@ -89,32 +259,22 @@ export function TeamLeaveRequestsTable({
                         <p className="text-sm text-muted-foreground">{request.days_count} days</p>
                       </td>
                       <td className="p-4">
-                        <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
-                          {status.icon}
-                          {status.label}
-                        </Badge>
+                        <StatusBadge status={status.status} labelOverride={status.label} />
                         {request.document_required && !request.document_url && request.status === 'pending' && (
-                          <Badge variant="outline" className="mt-1 text-orange-500 border-orange-500/30 flex items-center gap-1">
-                            <Upload className="w-3 h-3" />
-                            Doc Requested
-                          </Badge>
+                          <StatusBadge status="document_requested" className="mt-1" />
                         )}
                         {request.document_url && (
-                          <Badge variant="outline" className="mt-1 text-green-500 border-green-500/30 flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
-                            Doc Attached
-                          </Badge>
+                          <StatusBadge status="document_attached" className="mt-1" />
                         )}
                         {request.amended_at && (
-                          <Badge variant="outline" className="mt-1 text-blue-500 border-blue-500/30 text-xs">
-                            Amended
-                          </Badge>
+                          <StatusBadge status="amended" className="mt-1 text-xs" />
                         )}
                         {cancellationBadge && (
-                          <Badge variant="outline" className={`${cancellationBadge.className} flex items-center gap-1`}>
-                            <AlertCircle className="w-3 h-3" />
-                            {cancellationBadge.label}
-                          </Badge>
+                          <StatusBadge
+                            status={cancellationBadge.status}
+                            labelOverride={cancellationBadge.label}
+                            className="mt-1"
+                          />
                         )}
                       </td>
                       <td className="p-4 max-w-xs">
@@ -161,6 +321,7 @@ export function TeamLeaveRequestsTable({
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="rounded-full"
                               onClick={() => onOpenDetails(request)}
                             >
                               <Eye className="w-4 h-4 mr-1" />
@@ -172,7 +333,7 @@ export function TeamLeaveRequestsTable({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-green-600 hover:bg-green-500/10"
+                                className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
                                 onClick={() => onCancellationReview(request, 'approve')}
                               >
                                 Approve Cancel
@@ -180,7 +341,7 @@ export function TeamLeaveRequestsTable({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-red-600 hover:bg-red-500/10"
+                                className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
                                 onClick={() => onCancellationReview(request, 'reject')}
                               >
                                 Reject Cancel
@@ -191,27 +352,32 @@ export function TeamLeaveRequestsTable({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-green-600 hover:bg-green-500/10"
+                                className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
                                 onClick={() => onAction(request, 'approve')}
+                                aria-label="Approve"
                               >
-                                <Check className="w-4 h-4" />
+                                <Check className="w-4 h-4 mr-1" />
+                                <span className="hidden lg:inline">Approve</span>
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-red-600 hover:bg-red-500/10"
+                                className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
                                 onClick={() => onAction(request, 'reject')}
+                                aria-label="Reject"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-4 h-4 mr-1" />
+                                <span className="hidden lg:inline">Reject</span>
                               </Button>
-                              {canRequestLeaveSupportingDocument(role) && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-orange-600 hover:bg-orange-500/10"
-                                  onClick={() => onAction(request, 'request_document')}
+                          {canRequestDocumentAtCurrentStage(request) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
+                              onClick={() => onAction(request, 'request_document')}
                                 >
-                                  <FileText className="w-4 h-4" />
+                                  <FileText className="w-4 h-4 mr-1" />
+                                  <span className="hidden xl:inline">Request Doc</span>
                                 </Button>
                               )}
                             </>
@@ -225,10 +391,11 @@ export function TeamLeaveRequestsTable({
                   );
                 })}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

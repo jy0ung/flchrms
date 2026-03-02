@@ -18,12 +18,17 @@ type QueueItem = {
   leased_by: string | null
   sent_at: string | null
   failed_at: string | null
+  last_provider: string | null
   last_error: string | null
   created_at: string
   updated_at: string
 }
 
 type FinalizedQueueItem = QueueItem
+type WorkerRunRecord = {
+  id: string
+  run_status: string
+}
 
 type EmailProviderId = 'stub' | 'resend' | 'postmark' | 'webhook'
 
@@ -248,10 +253,11 @@ async function processQueueItem(
   try {
     await options.provider.send(queueItem)
 
-    const { data, error } = await supabaseAdmin.rpc('notification_worker_finalize_email_queue_item', {
+    const { data, error } = await supabaseAdmin.rpc('notification_worker_finalize_email_queue_item_v2', {
       _queue_id: queueItem.id,
       _outcome: 'sent',
       _worker_id: options.workerId,
+      _provider: options.provider.id,
       _error: null,
       _retry_delay_seconds: options.retryDelaySeconds,
     })
@@ -263,10 +269,11 @@ async function processQueueItem(
     const errMsg = error instanceof Error ? error.message : String(error)
     const shouldDiscard = queueItem.attempts >= options.maxAttempts
 
-    const { data, error: finalizeError } = await supabaseAdmin.rpc('notification_worker_finalize_email_queue_item', {
+    const { data, error: finalizeError } = await supabaseAdmin.rpc('notification_worker_finalize_email_queue_item_v2', {
       _queue_id: queueItem.id,
       _outcome: shouldDiscard ? 'discarded' : 'failed',
       _worker_id: options.workerId,
+      _provider: options.provider.id,
       _error: errMsg,
       _retry_delay_seconds: options.retryDelaySeconds,
     })
@@ -283,8 +290,75 @@ async function processQueueItem(
   }
 }
 
+async function startWorkerRun(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  args: {
+    workerId: string
+    providerId: string
+    batchSize: number
+    leaseSeconds: number
+    retryDelaySeconds: number
+    maxAttempts: number
+    requestPayload: Record<string, unknown>
+  },
+) {
+  const { data, error } = await supabaseAdmin.rpc('notification_worker_start_email_run', {
+    _worker_id: args.workerId,
+    _provider: args.providerId,
+    _batch_size: args.batchSize,
+    _lease_seconds: args.leaseSeconds,
+    _retry_delay_seconds: args.retryDelaySeconds,
+    _max_attempts: args.maxAttempts,
+    _request_payload: args.requestPayload,
+  })
+
+  if (error) {
+    throw new Error(`Failed to start worker telemetry run: ${error.message}`)
+  }
+
+  return data as string
+}
+
+async function finishWorkerRun(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  args: {
+    runId: string
+    claimedCount: number
+    processedCount: number
+    sentCount: number
+    failedCount: number
+    discardedCount: number
+    durationMs: number
+    error?: string | null
+  },
+) {
+  const { data, error } = await supabaseAdmin.rpc('notification_worker_finish_email_run', {
+    _run_id: args.runId,
+    _claimed_count: args.claimedCount,
+    _processed_count: args.processedCount,
+    _sent_count: args.sentCount,
+    _failed_count: args.failedCount,
+    _discarded_count: args.discardedCount,
+    _duration_ms: args.durationMs,
+    _error: args.error ?? null,
+  })
+
+  if (error) {
+    throw new Error(`Failed to finish worker telemetry run: ${error.message}`)
+  }
+
+  return data as WorkerRunRecord
+}
+
 Deno.serve(async (req) => {
   const startedAt = Date.now()
+  let supabaseAdmin: ReturnType<typeof createClient> | null = null
+  let telemetryRunId: string | null = null
+  let claimedCount = 0
+  let sentCount = 0
+  let failedCount = 0
+  let discardedCount = 0
+  let processedCount = 0
 
   try {
     if (req.method !== 'POST') {
@@ -323,8 +397,20 @@ Deno.serve(async (req) => {
     const provider = createEmailProviderAdapter(providerId)
 
     const workerId = `notification-email-worker:${crypto.randomUUID()}`
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    telemetryRunId = await startWorkerRun(supabaseAdmin, {
+      workerId,
+      providerId: provider.id,
+      batchSize,
+      leaseSeconds,
+      retryDelaySeconds,
+      maxAttempts,
+      requestPayload: {
+        requestedProvider: body.provider ?? body.mode ?? null,
+      },
     })
 
     const { data: claimed, error: claimError } = await supabaseAdmin.rpc('notification_worker_claim_email_queue', {
@@ -339,6 +425,7 @@ Deno.serve(async (req) => {
     }
 
     const queueItems = (claimed ?? []) as QueueItem[]
+    claimedCount = queueItems.length
     const results: Array<{ id: string; outcome: 'sent' | 'failed' | 'discarded'; error?: string }> = []
 
     for (const queueItem of queueItems) {
@@ -354,6 +441,11 @@ Deno.serve(async (req) => {
         outcome: result.outcome,
         ...(result.error ? { error: result.error } : {}),
       })
+
+      processedCount += 1
+      if (result.outcome === 'sent') sentCount += 1
+      else if (result.outcome === 'failed') failedCount += 1
+      else discardedCount += 1
     }
 
     const summary = results.reduce(
@@ -363,6 +455,18 @@ Deno.serve(async (req) => {
       },
       { sent: 0, failed: 0, discarded: 0 },
     )
+
+    if (telemetryRunId) {
+      await finishWorkerRun(supabaseAdmin, {
+        runId: telemetryRunId,
+        claimedCount,
+        processedCount,
+        sentCount: summary.sent,
+        failedCount: summary.failed,
+        discardedCount: summary.discarded,
+        durationMs: Date.now() - startedAt,
+      })
+    }
 
     return json({
       ok: true,
@@ -376,6 +480,24 @@ Deno.serve(async (req) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+    if (supabaseAdmin && telemetryRunId) {
+      try {
+        await finishWorkerRun(supabaseAdmin, {
+          runId: telemetryRunId,
+          claimedCount,
+          processedCount,
+          sentCount,
+          failedCount,
+          discardedCount,
+          durationMs: Date.now() - startedAt,
+          error: message,
+        })
+      } catch (telemetryError) {
+        const telemetryMessage =
+          telemetryError instanceof Error ? telemetryError.message : String(telemetryError)
+        console.error('notification-email-worker telemetry finalize failed:', telemetryMessage)
+      }
+    }
     console.error('notification-email-worker failed:', message)
     return json({ ok: false, error: message }, { status: 500 })
   }

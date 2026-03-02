@@ -1,11 +1,4 @@
 import { Profile, Department, AppRole } from '@/types/hrms';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -17,6 +10,7 @@ import {
   canViewSensitiveEmployeeContact,
   canViewSensitiveEmployeeIdentifiers,
 } from '@/lib/permissions';
+import { ModalScaffold, ModalSection, StatusBadge } from '@/components/system';
 
 interface EmployeeDetailDialogProps {
   employee: (Profile & { department: Department | null }) | null;
@@ -26,20 +20,13 @@ interface EmployeeDetailDialogProps {
   viewerRole?: AppRole | null;
 }
 
-const statusColors: Record<string, string> = {
-  active: 'bg-green-500/20 text-green-600 border-green-500/30',
-  inactive: 'bg-muted text-muted-foreground',
-  on_leave: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-  terminated: 'bg-red-500/20 text-red-600 border-red-500/30',
-};
-
 const roleColors: Record<AppRole, string> = {
-  admin: 'bg-red-500/20 text-red-400 border-red-500/30',
-  hr: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  director: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  general_manager: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  manager: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  employee: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+  admin: 'bg-rose-50 text-rose-800 border-rose-200',
+  hr: 'bg-violet-50 text-violet-800 border-violet-200',
+  director: 'bg-amber-50 text-amber-800 border-amber-200',
+  general_manager: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+  manager: 'bg-blue-50 text-blue-800 border-blue-200',
+  employee: 'bg-slate-100 text-slate-700 border-slate-300',
 };
 
 export function EmployeeDetailDialog({ 
@@ -53,64 +40,65 @@ export function EmployeeDetailDialog({
 
   const showSensitiveIdentifiers = canViewSensitiveEmployeeIdentifiers(viewerRole);
   const showSensitiveContact = canViewSensitiveEmployeeContact(viewerRole);
+  const roleLabel = userRole.replace(/_/g, ' ');
+  const statusLabel = employee.status.replace(/_/g, ' ');
+  const employeeName = `${employee.first_name} ${employee.last_name}`;
+  const dialogDescription = `View detailed information about ${employeeName}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Employee Details</DialogTitle>
-          <DialogDescription className="sr-only">
-            View detailed information about {employee.first_name} {employee.last_name}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Left Column - Profile Header */}
-          <div className="flex flex-col items-center text-center md:w-1/3 py-4">
-            <Avatar className="w-20 h-20 mb-4">
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                {employee.first_name[0]}{employee.last_name[0]}
-              </AvatarFallback>
-            </Avatar>
-            <h3 className="text-lg font-semibold">
-              {employee.first_name} {employee.last_name}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">{employee.job_title || 'No job title'}</p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Badge className={statusColors[employee.status]}>
-                {employee.status}
-              </Badge>
-              <Badge className={roleColors[userRole]}>
-                {userRole.replace('_', ' ')}
-              </Badge>
-            </div>
-            
-            {/* Contact Quick Actions */}
-            <div className="mt-4 pt-4 border-t border-border w-full space-y-2">
-              <a 
-                href={`mailto:${employee.email}`} 
-                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-                <span className="truncate max-w-[150px]">{employee.email}</span>
-              </a>
-              {showSensitiveContact && employee.phone && (
-                <a 
-                  href={`tel:${employee.phone}`}
-                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>{employee.phone}</span>
-                </a>
-              )}
-            </div>
-          </div>
+    <ModalScaffold
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Employee Details"
+      description={dialogDescription}
+      maxWidth="3xl"
+      statusBadge={<StatusBadge status={employee.status} labelOverride={statusLabel} />}
+      headerMeta={(
+        <Badge className={roleColors[userRole]}>
+          {roleLabel}
+        </Badge>
+      )}
+      bodyClassName="max-h-[78vh] overflow-y-auto pr-1"
+      body={(
+        <div className="flex flex-col gap-4 md:flex-row">
+          <ModalSection title="Profile" className="md:w-1/3">
+            <div className="flex flex-col items-center text-center rounded-lg border border-border bg-muted/50 py-4">
+              <Avatar className="mb-4 h-20 w-20">
+                <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
+                  {employee.first_name[0]}{employee.last_name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <h3 className="text-lg font-semibold">{employeeName}</h3>
+              <p className="mb-3 text-sm text-muted-foreground">{employee.job_title || 'No job title'}</p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <StatusBadge status={employee.status} labelOverride={statusLabel} />
+                <Badge className={roleColors[userRole]}>{roleLabel}</Badge>
+              </div>
 
-          {/* Right Column - Details Grid */}
-          <div className="flex-1 md:border-l md:border-border md:pl-6">
+              <div className="mt-4 w-full space-y-2 border-t border-border px-4 pt-4">
+                <a
+                  href={`mailto:${employee.email}`}
+                  className="flex items-center justify-center gap-2 rounded-full border border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:text-primary"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span className="max-w-[150px] truncate">{employee.email}</span>
+                </a>
+                {showSensitiveContact && employee.phone && (
+                  <a
+                    href={`tel:${employee.phone}`}
+                    className="flex items-center justify-center gap-2 rounded-full border border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:text-primary"
+                  >
+                    <Phone className="h-4 w-4" />
+                    <span>{employee.phone}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          </ModalSection>
+
+          <ModalSection title="Details" className="flex-1 md:border-l md:border-border md:pl-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Employee ID */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <Hash className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Employee ID</span>
@@ -119,27 +107,24 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
               </div>
-              
-              {/* Department */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <Building className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Department</span>
                   <p className="text-sm">{employee.department?.name || 'Not assigned'}</p>
                 </div>
               </div>
-              
-              {/* Job Title */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <Briefcase className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Job Title</span>
                   <p className="text-sm">{employee.job_title || 'Not specified'}</p>
                 </div>
               </div>
-              
-              {/* Hire Date */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Hire Date</span>
@@ -150,9 +135,8 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
               </div>
-              
-              {/* Account Created */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">Account Created</span>
@@ -161,9 +145,8 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
               </div>
-              
-              {/* User ID */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/50">
                 <User className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-xs text-muted-foreground">User ID</span>
@@ -173,9 +156,10 @@ export function EmployeeDetailDialog({
                 </div>
               </div>
             </div>
-          </div>
+          </ModalSection>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+      showCloseButton
+    />
   );
 }

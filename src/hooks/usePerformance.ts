@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PerformanceReview, Profile } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { canConductPerformanceReviews } from '@/lib/permissions';
 
 export function useMyReviews() {
@@ -80,7 +81,7 @@ export function useCreateReview() {
       toast.success('Review created successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create review: ' + error.message);
+      toast.error('Failed to create review', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -108,7 +109,7 @@ export function useSubmitReview() {
       toast.success('Review submitted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to submit review: ' + error.message);
+      toast.error('Failed to submit review', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -136,7 +137,7 @@ export function useAcknowledgeReview() {
       toast.success('Review acknowledged');
     },
     onError: (error: Error) => {
-      toast.error('Failed to acknowledge review: ' + error.message);
+      toast.error('Failed to acknowledge review', { description: sanitizeErrorMessage(error) });
     },
   });
 }

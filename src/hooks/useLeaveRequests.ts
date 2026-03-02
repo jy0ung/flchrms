@@ -1,15 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedFrom, untypedRpc } from '@/integrations/supabase/untyped-client';
-import { AppRole, LeaveApprovalStage, LeaveCancellationStatus, LeaveRequest, LeaveStatus } from '@/types/hrms';
+import { AppRole, LeaveCancellationStatus, LeaveRequest } from '@/types/hrms';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
+import { createLeaveRequestSchema } from '@/lib/validations';
 import {
-  buildLeaveApprovalUpdate,
   buildLeaveCancellationApprovalUpdate,
-  normalizeLeaveApprovalStages,
   normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
+
+function getLeaveApprovalErrorDescription(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : '';
+
+  if (
+    /Could not find the function\s+public\.approve_leave_request/i.test(raw) ||
+    (/approve_leave_request/i.test(raw) && /function/i.test(raw)) ||
+    /PGRST\d{3}/i.test(raw)
+  ) {
+    return 'Leave approval service is unavailable. Apply latest Supabase migrations and refresh the app.';
+  }
+
+  if (/permission denied/i.test(raw) && /(function|approve_leave_request|leave_requests|user_roles)/i.test(raw)) {
+    return 'Leave approval is blocked by database permissions. Verify execute grant on approve_leave_request and leave policies.';
+  }
+
+  return sanitizeErrorMessage(error);
+}
 
 export function useLeaveRequests() {
   const { role, user } = useAuth();
@@ -24,10 +46,11 @@ export function useLeaveRequests() {
           employee:profiles!leave_requests_employee_id_fkey(id, first_name, last_name, email, department_id),
           leave_type:leave_types(*)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
       
       if (error) throw error;
-      return data as unknown as LeaveRequest[];
+      return data as LeaveRequest[];
     },
     enabled: !!user,
   });
@@ -46,6 +69,12 @@ export function useCreateLeaveRequest() {
       reason?: string;
       document_url?: string;
     }) => {
+      // Validate input before sending to Supabase
+      const validation = createLeaveRequestSchema.safeParse(request);
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0]?.message ?? 'Invalid leave request data');
+      }
+
       const { data, error } = await supabase
         .from('leave_requests')
         .insert({
@@ -69,7 +98,7 @@ export function useCreateLeaveRequest() {
       toast.success('Leave request submitted successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to submit leave request: ' + error.message);
+      toast.error('Failed to submit leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -85,99 +114,35 @@ export function useApproveLeaveRequest() {
       rejectionReason,
       documentRequired,
       managerComments,
-      employeeRole,
+      currentStatus,
     }: { 
       requestId: string; 
       action: 'approve' | 'reject' | 'request_document'; 
       rejectionReason?: string;
       documentRequired?: boolean;
       managerComments?: string;
-      employeeRole?: string;
+      currentStatus?: string; // Optimistic lock — pass current known status
     }) => {
       if (!user || !role) {
         throw new Error('Only authenticated approvers can process leave requests.');
       }
 
-      // Use untypedFrom to select columns not in generated types
-      const { data: existingRequest, error: requestError } = await untypedFrom('leave_requests')
-        .select('status, employee_id, approval_route_snapshot')
-        .eq('id', requestId)
-        .single();
-
-      if (requestError) throw requestError;
-      if (!existingRequest.status) {
-        throw new Error('Leave request status is missing.');
-      }
-
-      let requesterRole: AppRole = 'employee';
-
-      if (employeeRole) {
-        requesterRole = employeeRole as AppRole;
-      } else {
-        const { data: roleData, error: roleError } = await supabase.rpc('get_user_role', {
-          _user_id: existingRequest.employee_id,
-        });
-
-        if (roleError) throw roleError;
-        if (roleData) {
-          requesterRole = roleData as AppRole;
-        }
-      }
-
-      let workflowStages = normalizeLeaveApprovalStages(existingRequest.approval_route_snapshot || undefined);
-
-      if (workflowStages.length === 0) {
-        const { data: employeeProfile } = await supabase
-          .from('profiles')
-          .select('department_id')
-          .eq('id', existingRequest.employee_id)
-          .maybeSingle();
-
-        const employeeDepartmentId = employeeProfile?.department_id || null;
-
-        const { data: workflowRow, error: workflowError } = await untypedFrom('leave_approval_workflows')
-          .select('approval_stages, is_active')
-          .eq('requester_role', 'employee')
-          .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
-          .order('department_id', { ascending: true, nullsFirst: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (workflowError && workflowError.code !== 'PGRST116' && workflowError.code !== '42P01') {
-          throw workflowError;
-        }
-
-        if (workflowRow?.is_active !== false) {
-          workflowStages = normalizeLeaveApprovalStages(workflowRow?.approval_stages || undefined);
-        }
-      }
-
-      const updateData = buildLeaveApprovalUpdate({
-        action,
-        approverRole: role,
-        approverId: user.id,
-        currentStatus: existingRequest.status as LeaveStatus,
-        requesterRole,
-        rejectionReason,
-        managerComments,
-        workflowStages,
+      // Use server-side RPC for atomic approval (prevents TOCTOU race conditions).
+      // The RPC handles: row locking, status verification, workflow resolution,
+      // role-based stage matching, and the final update — all in one transaction.
+      const { data, error } = await supabase.rpc('approve_leave_request', {
+        _request_id: requestId,
+        _action: action,
+        _rejection_reason: rejectionReason ?? null,
+        _manager_comments: managerComments ?? null,
+        _document_required: action === 'reject' ? (documentRequired ?? false) : false,
+        _expected_status: currentStatus ?? null,
       });
 
-      if (action === 'reject') {
-        updateData.document_required = documentRequired || false;
-      }
-
-      const { data, error } = await supabase
-        .from('leave_requests')
-        .update(updateData)
-        .eq('id', requestId)
-        .select()
-        .single();
-      
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' | 'request_document' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (variables.action === 'approve') {
@@ -189,7 +154,8 @@ export function useApproveLeaveRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process leave request: ' + error.message);
+      console.error('[leave] approve_leave_request failed', error);
+      toast.error('Failed to process leave request', { description: getLeaveApprovalErrorDescription(error) });
     },
   });
 }
@@ -209,7 +175,7 @@ export function useAmendLeaveRequest() {
       documentUrl?: string;
       reason?: string;
     }) => {
-      const { data, error } = await untypedRpc('amend_leave_request', {
+      const { data, error } = await supabase.rpc('amend_leave_request', {
         _request_id: requestId,
         _amendment_notes: amendmentNotes,
         _document_url: documentUrl ?? null,
@@ -227,7 +193,7 @@ export function useAmendLeaveRequest() {
       toast.success('Leave request amended and resubmitted');
     },
     onError: (error: Error) => {
-      toast.error('Failed to amend leave request: ' + error.message);
+      toast.error('Failed to amend leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -243,7 +209,7 @@ export function useCancelLeaveRequest() {
       requestId: string;
       reason?: string;
     }) => {
-      const { data, error } = await untypedRpc('request_leave_cancellation', {
+      const { data, error } = await supabase.rpc('request_leave_cancellation', {
         _request_id: requestId,
         _reason: reason || null,
       });
@@ -251,7 +217,7 @@ export function useCancelLeaveRequest() {
       if (error) throw error;
       return (data || 'requested') as string;
     },
-    onSuccess: (result) => {
+    onSuccess: (result: string) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (result === 'cancelled') {
@@ -265,7 +231,7 @@ export function useCancelLeaveRequest() {
       toast.success('Leave cancellation request submitted');
     },
     onError: (error: Error) => {
-      toast.error('Failed to cancel leave request: ' + error.message);
+      toast.error('Failed to cancel leave request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -292,8 +258,15 @@ export function useProcessLeaveCancellationRequest() {
         throw new Error('Only authenticated approvers can process cancellation requests.');
       }
 
-      const { data: existingRequest, error: requestError } = await untypedFrom('leave_requests')
-        .select('status, final_approved_at, employee_id, cancellation_status, cancellation_route_snapshot')
+      const { data: existingRequest, error: requestError } = await supabase
+        .from('leave_requests')
+        .select(`
+          status,
+          final_approved_at,
+          employee_id,
+          cancellation_status,
+          cancellation_route_snapshot
+        `)
         .eq('id', requestId)
         .single();
 
@@ -336,7 +309,8 @@ export function useProcessLeaveCancellationRequest() {
 
         const employeeDepartmentId = employeeProfile?.department_id || null;
 
-        const { data: workflowRow, error: workflowError } = await untypedFrom('leave_cancellation_workflows')
+        const { data: workflowRow, error: workflowError } = await supabase
+          .from('leave_cancellation_workflows')
           .select('approval_stages, is_active')
           .eq('requester_role', 'employee')
           .or(employeeDepartmentId ? `department_id.eq.${employeeDepartmentId},department_id.is.null` : 'department_id.is.null')
@@ -368,13 +342,14 @@ export function useProcessLeaveCancellationRequest() {
         .from('leave_requests')
         .update(updateData)
         .eq('id', requestId)
+        .eq('cancellation_status', existingRequest.cancellation_status)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
       if (variables.action === 'approve') {
@@ -384,7 +359,7 @@ export function useProcessLeaveCancellationRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process cancellation request: ' + error.message);
+      toast.error('Failed to process cancellation request', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -397,6 +372,7 @@ export function useUploadLeaveDocument() {
       if (!user) throw new Error('User not authenticated');
       
       const fileExt = file.name.split('.').pop();
+      // Use user ID as folder for RLS policy compliance
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
@@ -405,26 +381,29 @@ export function useUploadLeaveDocument() {
 
       if (uploadError) throw uploadError;
 
+      // Use signed URL instead of public URL for security
       const { data, error: signedUrlError } = await supabase.storage
         .from('leave-documents')
-        .createSignedUrl(filePath, 3600);
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (signedUrlError) throw signedUrlError;
       
+      // Store the file path, not the signed URL (signed URLs expire)
       return filePath;
     },
     onError: (error: Error) => {
-      toast.error('Failed to upload document: ' + error.message);
+      toast.error('Failed to upload document', { description: sanitizeErrorMessage(error) });
     },
   });
 }
 
+// Hook to get a signed URL for viewing a document
 export function useGetDocumentUrl() {
   return useMutation({
     mutationFn: async (filePath: string) => {
       const { data, error } = await supabase.storage
         .from('leave-documents')
-        .createSignedUrl(filePath, 3600);
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (error) throw error;
       return data.signedUrl;

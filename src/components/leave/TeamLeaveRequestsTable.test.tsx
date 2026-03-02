@@ -111,7 +111,7 @@ describe('TeamLeaveRequestsTable', () => {
     expect(screen.getByText('No team leave requests')).toBeInTheDocument();
   });
 
-  it('opens details and shows document button for manager but not admin', () => {
+  it('opens details and shows document button for manager and admin', () => {
     const onOpenDetails = vi.fn();
     const request = makeLeaveRequest({ document_url: 'user-1/doc.pdf' });
 
@@ -131,10 +131,11 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Details/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Details/i })[0]);
     expect(onOpenDetails).toHaveBeenCalledWith(request);
-    expect(screen.getByText(/View Doc: user-1\/doc\.pdf/)).toBeInTheDocument();
+    expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
 
+    // Admin now has elevated privileges — document view is visible
     rerender(
       <TeamLeaveRequestsTable
         requests={[request]}
@@ -151,7 +152,7 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    expect(screen.queryByText(/View Doc: user-1\/doc\.pdf/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
   });
 
   it('renders cancellation review actions when approver can approve cancellation', () => {
@@ -171,8 +172,66 @@ describe('TeamLeaveRequestsTable', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /Approve Cancel/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reject Cancel/i })).toBeInTheDocument();
-    expect(screen.getByText(/Cancellation Pending/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Approve Cancel/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /Reject Cancel/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cancellation Pending/i).length).toBeGreaterThan(0);
+  });
+
+  it('shows request document action only for manager on pending stage', () => {
+    const onAction = vi.fn();
+
+    const { rerender } = render(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyMessage="No requests"
+        role="manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /Request Doc/i }).length).toBeGreaterThan(0);
+
+    rerender(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'manager_approved' })]}
+        emptyMessage="No requests"
+        role="manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Request Doc/i })).not.toBeInTheDocument();
+
+    rerender(
+      <TeamLeaveRequestsTable
+        requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyMessage="No requests"
+        role="general_manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => true}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={onAction}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Request Doc/i })).not.toBeInTheDocument();
   });
 });

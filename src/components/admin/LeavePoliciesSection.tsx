@@ -1,7 +1,7 @@
-import { Edit, Plus, Settings, Trash2 } from 'lucide-react';
+import { Edit, FileText, GitBranch, History, Mail, Plus, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -10,10 +10,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTableShell, StatusBadge } from '@/components/system';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
 import { WorkflowConfigAuditSection } from '@/components/admin/WorkflowConfigAuditSection';
 import type { Department, LeaveType } from '@/types/hrms';
+import type { LeavePolicySubTabKey } from '@/components/admin/admin-ui-constants';
 
 interface LeavePoliciesSectionProps {
   leaveTypes?: LeaveType[];
@@ -34,116 +37,233 @@ export function LeavePoliciesSection({
   onEditLeaveType,
   onDeleteLeaveType,
 }: LeavePoliciesSectionProps) {
+  const getPolicyVersion = (leaveType: LeaveType) => {
+    if (!leaveType.updated_at || leaveType.updated_at === leaveType.created_at) return 'v1';
+    return 'v2';
+  };
+
+  const getEffectiveDate = (leaveType: LeaveType) => format(new Date(leaveType.created_at), 'MMM d, yyyy');
+  const getLastModifiedDate = (leaveType: LeaveType) =>
+    format(new Date(leaveType.updated_at ?? leaveType.created_at), 'MMM d, yyyy');
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Leave Policy Configuration
-              </CardTitle>
-              <CardDescription>Configure leave types, advance notice, and document requirements</CardDescription>
-            </div>
-            {canManageLeaveTypes && (
-              <Button onClick={onCreateLeaveType}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Leave Type
-              </Button>
-            )}
+    <Tabs defaultValue={'leave-types' satisfies LeavePolicySubTabKey} className="space-y-4">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-4">
+        <TabsTrigger value="leave-types" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <FileText className="w-4 h-4" />
+          <span className="truncate">Leave Types</span>
+        </TabsTrigger>
+        <TabsTrigger value="workflow-builders" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <GitBranch className="w-4 h-4" />
+          <span className="truncate">Workflow Builders</span>
+        </TabsTrigger>
+        <TabsTrigger value="workflow-audit" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <History className="w-4 h-4" />
+          <span className="truncate">Workflow Audit</span>
+        </TabsTrigger>
+        <TabsTrigger value="notification-queue" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <Mail className="w-4 h-4" />
+          <span className="truncate">Notification Queue</span>
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="leave-types" className="space-y-4">
+      <DataTableShell
+        density="compact"
+        title="Leave Policy Configuration"
+        description="Configure leave types, advance notice, and document requirements"
+        headerActions={
+          canManageLeaveTypes ? (
+            <Button className="w-full rounded-full sm:w-auto" onClick={onCreateLeaveType}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Leave Type
+            </Button>
+          ) : null
+        }
+        loading={leaveTypesLoading}
+        loadingSkeleton={
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          {leaveTypesLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-              ))}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Days Allowed</TableHead>
-                  <TableHead>Advance Notice</TableHead>
-                  <TableHead>Paid Leave</TableHead>
-                  <TableHead>Document Required</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        }
+        content={
+          <>
+              <div className="space-y-3 md:hidden">
                 {leaveTypes?.map((leaveType) => (
-                  <TableRow key={leaveType.id}>
-                    <TableCell>
-                      <div>
+                  <div key={leaveType.id} className="rounded-lg border p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <p className="font-medium">{leaveType.name}</p>
                         {leaveType.description && (
                           <p className="text-sm text-muted-foreground">{leaveType.description}</p>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
                       <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                      <StatusBadge status="success" labelOverride="Published" />
                       <Badge variant="secondary">
                         {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={leaveType.is_paid ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}>
-                        {leaveType.is_paid ? 'Paid' : 'Unpaid'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={leaveType.requires_document ? 'bg-amber-500/20 text-amber-600' : 'bg-muted text-muted-foreground'}>
-                        {leaveType.requires_document ? 'Required' : 'Optional'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {canManageLeaveTypes && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEditLeaveType(leaveType)}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => onDeleteLeaveType(leaveType)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
+                      <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
+                      <StatusBadge
+                        status={leaveType.requires_document ? 'warning' : 'info'}
+                        labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
+                      />
+                    </div>
+                    <div className="mt-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
+                      Effective {getEffectiveDate(leaveType)} · Last modified {getLastModifiedDate(leaveType)} · by System
+                    </div>
+                    {canManageLeaveTypes && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full"
+                          onClick={() => onEditLeaveType(leaveType)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full border-destructive/30 text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteLeaveType(leaveType)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    )}
+                  </div>
                 ))}
                 {(!leaveTypes || leaveTypes.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      No leave types configured. Add your first leave type.
-                    </TableCell>
-                  </TableRow>
+                  <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                    No leave types configured. Add your first leave type.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              </div>
 
-      <LeaveWorkflowBuildersSection departments={departments} />
-      <WorkflowConfigAuditSection departments={departments} />
-      <NotificationQueueOpsSection />
-    </div>
+              <div className="hidden rounded-lg border md:block">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[1320px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Leave Type</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead>State</TableHead>
+                        <TableHead>Effective Date</TableHead>
+                        <TableHead>Days Allowed</TableHead>
+                        <TableHead>Advance Notice</TableHead>
+                        <TableHead>Paid Leave</TableHead>
+                        <TableHead>Document Required</TableHead>
+                        <TableHead>Last Modified By</TableHead>
+                        <TableHead>Last Modified Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leaveTypes?.map((leaveType) => (
+                        <TableRow key={leaveType.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{leaveType.name}</p>
+                              {leaveType.description && (
+                                <p className="text-sm text-muted-foreground">{leaveType.description}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status="success" labelOverride="Published" />
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {getEffectiveDate(leaveType)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              status={leaveType.requires_document ? 'warning' : 'info'}
+                              labelOverride={leaveType.requires_document ? 'Required' : 'Optional'}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">System</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {getLastModifiedDate(leaveType)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {canManageLeaveTypes && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full"
+                                    onClick={() => onEditLeaveType(leaveType)}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    aria-label={`Delete leave type ${leaveType.name}`}
+                                    onClick={() => onDeleteLeaveType(leaveType)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {(!leaveTypes || leaveTypes.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                            No leave types configured. Add your first leave type.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+          </>
+        }
+      />
+      </TabsContent>
+
+      <TabsContent value="workflow-builders" className="space-y-4">
+        <LeaveWorkflowBuildersSection departments={departments} />
+      </TabsContent>
+
+      <TabsContent value="workflow-audit" className="space-y-4">
+        <WorkflowConfigAuditSection departments={departments} />
+      </TabsContent>
+
+      <TabsContent value="notification-queue" className="space-y-4">
+        <NotificationQueueOpsSection />
+      </TabsContent>
+    </Tabs>
   );
 }

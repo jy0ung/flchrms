@@ -1,14 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,13 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { ModalScaffold, ModalSection } from '@/components/system';
+import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
 import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
 
 interface AdminAccountDialogsProps {
   selectedEmployee: Profile | null;
   departments?: Department[];
+  employees?: (Profile & { department: Department | null })[];
   isAdminLimitedProfileEditor: boolean;
   editProfileDialogOpen: boolean;
   onEditProfileDialogOpenChange: (open: boolean) => void;
@@ -40,6 +36,7 @@ interface AdminAccountDialogsProps {
   resetPasswordPending: boolean;
   editRoleDialogOpen: boolean;
   onEditRoleDialogOpenChange: (open: boolean) => void;
+  currentAssignedRole: AppRole;
   selectedRole: AppRole;
   onSelectedRoleChange: (role: AppRole) => void;
   onSaveRole: () => void;
@@ -51,6 +48,7 @@ interface AdminAccountDialogsProps {
 export function AdminAccountDialogs({
   selectedEmployee,
   departments,
+  employees,
   isAdminLimitedProfileEditor,
   editProfileDialogOpen,
   onEditProfileDialogOpenChange,
@@ -66,6 +64,7 @@ export function AdminAccountDialogs({
   resetPasswordPending,
   editRoleDialogOpen,
   onEditRoleDialogOpenChange,
+  currentAssignedRole,
   selectedRole,
   onSelectedRoleChange,
   onSaveRole,
@@ -73,22 +72,43 @@ export function AdminAccountDialogs({
   updateRolePending,
   deleteRolePending,
 }: AdminAccountDialogsProps) {
+  const [confirmRoleChange, setConfirmRoleChange] = useState(false);
+
+  useEffect(() => {
+    if (!editRoleDialogOpen) {
+      setConfirmRoleChange(false);
+    }
+  }, [editRoleDialogOpen]);
+
+  const roleChangePreview = useMemo(() => {
+    const previousTier = getRoleAuthorityTier(currentAssignedRole);
+    const nextTier = getRoleAuthorityTier(selectedRole);
+    return {
+      hasRoleChange: selectedRole !== currentAssignedRole,
+      previousTier,
+      nextTier,
+    };
+  }, [currentAssignedRole, selectedRole]);
+
   return (
     <>
-      <Dialog open={editProfileDialogOpen} onOpenChange={onEditProfileDialogOpenChange}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}</DialogTitle>
-            <DialogDescription>
-              {isAdminLimitedProfileEditor
-                ? `Admin can update the username alias only for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}.`
-                : `Update profile information for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+      <ModalScaffold
+        open={editProfileDialogOpen}
+        onOpenChange={onEditProfileDialogOpenChange}
+        title={isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}
+        description={
+          isAdminLimitedProfileEditor
+            ? `Admin can update the username alias only for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}.`
+            : `Update profile information for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}`
+        }
+        maxWidth="2xl"
+        body={(
+          <div className="space-y-4">
+          <ModalSection title={isAdminLimitedProfileEditor ? 'Account Access' : 'Profile Information'}>
+          <div className="grid gap-4">
             {isAdminLimitedProfileEditor ? (
               <div className="space-y-4">
-                <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="rounded-lg border bg-muted/50 p-4">
                   <p className="font-medium">{selectedEmployee?.first_name} {selectedEmployee?.last_name}</p>
                   <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
                   {!isAdminLimitedProfileEditor && selectedEmployee?.employee_id ? (
@@ -100,7 +120,7 @@ export function AdminAccountDialogs({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">First Name</Label>
                   <Input
@@ -156,7 +176,7 @@ export function AdminAccountDialogs({
             </div>
             {!isAdminLimitedProfileEditor && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="job_title">Job Title</Label>
                     <Input
@@ -176,7 +196,7 @@ export function AdminAccountDialogs({
                     <p className="text-xs text-muted-foreground">Recommended primary non-email login identifier.</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <Select
@@ -214,35 +234,70 @@ export function AdminAccountDialogs({
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hire_date">Hire Date</Label>
+                    <Input
+                      id="hire_date"
+                      type="date"
+                      value={editForm.hire_date}
+                      onChange={(e) => onEditFormChange({ ...editForm, hire_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="manager">Manager</Label>
+                    <Select
+                      value={editForm.manager_id}
+                      onValueChange={(value) => onEditFormChange({ ...editForm, manager_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Manager</SelectItem>
+                        {employees
+                          ?.filter((emp) => emp.id !== selectedEmployee?.id)
+                          .map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.first_name} {emp.last_name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
+          </ModalSection>
+          </div>
+        )}
+        footer={(
+          <>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={onSaveProfile} disabled={saveProfilePending}>
+            <Button className="w-full sm:w-auto" onClick={onSaveProfile} disabled={saveProfilePending}>
               {saveProfilePending
                 ? 'Saving...'
                 : isAdminLimitedProfileEditor
                   ? 'Save Username Alias'
                   : 'Save Changes'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={resetPasswordDialogOpen} onOpenChange={onResetPasswordDialogOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset User Password</DialogTitle>
-            <DialogDescription>
-              Set a new temporary password for {selectedEmployee?.first_name} {selectedEmployee?.last_name}. They will be signed out from existing sessions.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg border bg-muted/30 p-4">
+      <ModalScaffold
+        open={resetPasswordDialogOpen}
+        onOpenChange={onResetPasswordDialogOpenChange}
+        title="Reset User Password"
+        description={`Set a new temporary password for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. They will be signed out from existing sessions.`}
+        maxWidth="xl"
+        body={(
+          <ModalSection title="Password Reset">
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/50 p-4">
               <p className="font-medium">
                 {selectedEmployee?.first_name} {selectedEmployee?.last_name}
               </p>
@@ -284,28 +339,30 @@ export function AdminAccountDialogs({
               Username alias changes remain restricted to HR/Admin only and are enforced in the database.
             </p>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
+          </ModalSection>
+        )}
+        footer={(
+          <>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
               Cancel
             </Button>
-            <Button onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
+            <Button className="w-full sm:w-auto" onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
               {resetPasswordPending ? 'Resetting...' : 'Reset Password'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
 
-      <Dialog open={editRoleDialogOpen} onOpenChange={onEditRoleDialogOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change User Role</DialogTitle>
-            <DialogDescription>
-              Update the system role for {selectedEmployee?.first_name} {selectedEmployee?.last_name}.
-              This will affect their permissions immediately.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
+      <ModalScaffold
+        open={editRoleDialogOpen}
+        onOpenChange={onEditRoleDialogOpenChange}
+        title="Change User Role"
+        description={`Update the system role for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. This will affect their permissions immediately.`}
+        maxWidth="2xl"
+        contentClassName="sm:!left-auto sm:!right-0 sm:!top-0 sm:!h-screen sm:!max-h-screen sm:!w-[760px] sm:!max-w-[760px] sm:!translate-x-0 sm:!translate-y-0 sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l"
+        body={(
+          <div className="space-y-4">
+            <ModalSection title="Selected User" tone="muted">
             <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
               <Avatar className="w-12 h-12">
                 <AvatarFallback className="bg-primary text-primary-foreground">
@@ -317,6 +374,8 @@ export function AdminAccountDialogs({
                 <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
               </div>
             </div>
+            </ModalSection>
+            <ModalSection title="Role Assignment">
             <div className="space-y-2">
               <Label>Select Role Assignment</Label>
               <Select value={selectedRole} onValueChange={(value) => onSelectedRoleChange(value as AppRole)}>
@@ -363,33 +422,75 @@ export function AdminAccountDialogs({
                 </SelectContent>
               </Select>
             </div>
+            </ModalSection>
+            <ModalSection title="Change Preview" tone="muted">
+              <div aria-live="polite" className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-muted/50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Current Role</p>
+                    <p className="font-medium capitalize">{currentAssignedRole.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">{roleChangePreview.previousTier.label}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Proposed Role</p>
+                    <p className="font-medium capitalize">{selectedRole.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">{roleChangePreview.nextTier.label}</p>
+                  </div>
+                </div>
+                {!roleChangePreview.hasRoleChange ? (
+                  <p className="text-xs text-muted-foreground">
+                    No role change detected. Select a different role to proceed.
+                  </p>
+                ) : (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-300/40 bg-amber-50/40 p-3">
+                    <Checkbox
+                      id="confirm-role-change"
+                      checked={confirmRoleChange}
+                      onCheckedChange={(checked) => setConfirmRoleChange(Boolean(checked))}
+                    />
+                    <Label htmlFor="confirm-role-change" className="text-sm font-normal leading-relaxed">
+                      I confirm this role change is governance-impacting and takes effect immediately.
+                    </Label>
+                  </div>
+                )}
+              </div>
+            </ModalSection>
+            <ModalSection tone="warning" compact>
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-sm text-amber-400 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 Role changes take effect immediately. The user may need to refresh their browser to see updated permissions.
               </p>
             </div>
+            </ModalSection>
             <p className="text-xs text-muted-foreground">
               Removing a role assignment reverts the user to the default `employee` role.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
+        )}
+        footer={(
+          <>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              className="w-full sm:w-auto"
               onClick={onDeleteRole}
-              disabled={deleteRolePending || !selectedEmployee}
+              disabled={deleteRolePending || !selectedEmployee || !confirmRoleChange}
             >
               {deleteRolePending ? 'Removing...' : 'Delete Role (Revert to Employee)'}
             </Button>
-            <Button onClick={onSaveRole} disabled={updateRolePending}>
-              {updateRolePending ? 'Updating...' : 'Update Role'}
+            <Button
+              className="w-full sm:w-auto"
+              onClick={onSaveRole}
+              disabled={updateRolePending || !roleChangePreview.hasRoleChange || !confirmRoleChange}
+            >
+              {updateRolePending ? 'Publishing...' : 'Publish Role Change'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      />
     </>
   );
 }

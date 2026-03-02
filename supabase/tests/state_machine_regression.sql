@@ -1773,4 +1773,312 @@ $$;
 
 ROLLBACK;
 
+BEGIN;
+
+DO $$
+DECLARE
+  admin_id uuid := '91010000-0000-0000-0000-0000000000a1';
+  emp_id uuid := '92020000-0000-0000-0000-0000000000a2';
+  run_id uuid;
+  run_row public.notification_email_worker_runs%ROWTYPE;
+  run_summary jsonb;
+  listed_count integer;
+BEGIN
+  INSERT INTO auth.users (
+    id, aud, role, email, raw_user_meta_data, email_confirmed_at, created_at, updated_at
+  )
+  VALUES
+    (admin_id, 'authenticated', 'authenticated', 'zz_phase9_admin@example.com', '{}'::jsonb, now(), now(), now()),
+    (emp_id, 'authenticated', 'authenticated', 'zz_phase9_emp@example.com', '{}'::jsonb, now(), now(), now());
+
+  UPDATE public.user_roles SET role = 'admin' WHERE user_id = admin_id;
+  UPDATE public.user_roles SET role = 'employee' WHERE user_id = emp_id;
+
+  run_id := public.notification_worker_start_email_run(
+    'phase9-test-worker',
+    'stub',
+    25,
+    300,
+    120,
+    5,
+    jsonb_build_object('source', 'state_machine_test')
+  );
+
+  IF run_id IS NULL THEN
+    RAISE EXCEPTION 'notification_worker_start_email_run returned NULL.';
+  END IF;
+
+  SELECT *
+  INTO run_row
+  FROM public.notification_worker_finish_email_run(
+    run_id,
+    3, -- claimed
+    3, -- processed
+    2, -- sent
+    1, -- failed
+    0, -- discarded
+    987,
+    NULL
+  );
+
+  IF run_row.id IS DISTINCT FROM run_id OR run_row.run_status IS DISTINCT FROM 'completed' THEN
+    RAISE EXCEPTION 'notification_worker_finish_email_run did not complete the run correctly.';
+  END IF;
+  IF run_row.sent_count <> 2 OR run_row.failed_count <> 1 OR run_row.duration_ms <> 987 THEN
+    RAISE EXCEPTION 'notification_worker_finish_email_run did not persist run metrics.';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub', admin_id::text, true);
+
+  run_summary := public.notification_admin_email_worker_run_summary();
+  IF coalesce((run_summary ->> 'completed_24h_count')::int, 0) < 1 THEN
+    RAISE EXCEPTION 'notification_admin_email_worker_run_summary did not report completed runs.';
+  END IF;
+  IF coalesce((run_summary ->> 'sent_24h_count')::int, 0) < 2 THEN
+    RAISE EXCEPTION 'notification_admin_email_worker_run_summary did not aggregate sent item counts.';
+  END IF;
+
+  SELECT count(*)
+  INTO listed_count
+  FROM public.notification_admin_list_email_worker_runs('completed', 20, 0) r
+  WHERE r.id = run_id;
+
+  IF listed_count <> 1 THEN
+    RAISE EXCEPTION 'notification_admin_list_email_worker_runs did not return the inserted worker run.';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub', emp_id::text, true);
+
+  BEGIN
+    PERFORM public.notification_admin_email_worker_run_summary();
+    RAISE EXCEPTION 'notification_admin_email_worker_run_summary should deny employee role.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM NOT ILIKE '%insufficient privileges%' THEN
+        RAISE;
+      END IF;
+  END;
+
+  BEGIN
+    PERFORM public.notification_admin_list_email_worker_runs('all', 5, 0);
+    RAISE EXCEPTION 'notification_admin_list_email_worker_runs should deny employee role.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM NOT ILIKE '%insufficient privileges%' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+ROLLBACK;
+
+BEGIN;
+
+DO $$
+DECLARE
+  admin_id uuid := '91090000-0000-0000-0000-0000000000a9';
+  emp_id uuid := '92090000-0000-0000-0000-0000000000a9';
+  notif_failed_id uuid := '93090000-0000-0000-0000-0000000000a9';
+  notif_discarded_id uuid := '94090000-0000-0000-0000-0000000000a9';
+  notif_ready_retry_id uuid := '95090000-0000-0000-0000-0000000000a9';
+  q_failed_id uuid := '96090000-0000-0000-0000-0000000000a9';
+  q_discarded_id uuid := '97090000-0000-0000-0000-0000000000a9';
+  analytics jsonb;
+  provider_resend_count integer;
+  provider_stub_count integer;
+  event_row_count integer;
+  top_error_match_count integer;
+  retry_ready_count integer;
+  finalized_provider text;
+BEGIN
+  INSERT INTO auth.users (
+    id, aud, role, email, raw_user_meta_data, email_confirmed_at, created_at, updated_at
+  )
+  VALUES
+    (admin_id, 'authenticated', 'authenticated', 'zz_phase9_deadletter_admin@example.com', '{}'::jsonb, now(), now(), now()),
+    (emp_id, 'authenticated', 'authenticated', 'zz_phase9_deadletter_emp@example.com', '{}'::jsonb, now(), now(), now());
+
+  UPDATE public.user_roles SET role = 'admin' WHERE user_id = admin_id;
+  UPDATE public.user_roles SET role = 'employee' WHERE user_id = emp_id;
+
+  INSERT INTO public.user_notifications (
+    id, user_id, category, event_type, title, message, source_table, source_id
+  )
+  VALUES
+    (notif_failed_id, admin_id, 'system', 'phase9_dead_letter_failed', 'DLQ Failed', 'Phase 9 dead-letter failed row', 'state_machine_dead_letter', notif_failed_id),
+    (notif_discarded_id, admin_id, 'system', 'phase9_dead_letter_discarded', 'DLQ Discarded', 'Phase 9 dead-letter discarded row', 'state_machine_dead_letter', notif_discarded_id),
+    (notif_ready_retry_id, admin_id, 'system', 'phase9_dead_letter_ready_retry', 'DLQ Retry Ready', 'Phase 9 dead-letter retry-ready row', 'state_machine_dead_letter', notif_ready_retry_id);
+
+  INSERT INTO public.notification_delivery_queue (
+    id, notification_id, user_id, channel, category, event_type, recipient_email, subject, body_text,
+    payload, status, attempts, next_attempt_at, leased_at, leased_by
+  )
+  VALUES
+    (
+      q_failed_id,
+      notif_failed_id,
+      admin_id,
+      'email',
+      'system',
+      'phase9_dead_letter_failed',
+      'zz_phase9_deadletter_admin@example.com',
+      'Dead letter failed',
+      'Dead letter failed body',
+      '{}'::jsonb,
+      'processing',
+      2,
+      now(),
+      now(),
+      'phase9-dead-letter-worker'
+    ),
+    (
+      q_discarded_id,
+      notif_discarded_id,
+      admin_id,
+      'email',
+      'system',
+      'phase9_dead_letter_discarded',
+      'zz_phase9_deadletter_admin@example.com',
+      'Dead letter discarded',
+      'Dead letter discarded body',
+      '{}'::jsonb,
+      'processing',
+      6,
+      now(),
+      now(),
+      'phase9-dead-letter-worker'
+    )
+  ON CONFLICT (notification_id, channel) DO UPDATE
+    SET status = EXCLUDED.status,
+        attempts = EXCLUDED.attempts,
+        leased_at = EXCLUDED.leased_at,
+        leased_by = EXCLUDED.leased_by,
+        next_attempt_at = EXCLUDED.next_attempt_at,
+        failed_at = NULL,
+        sent_at = NULL,
+        last_error = NULL,
+        last_provider = NULL;
+
+  SELECT q.last_provider
+  INTO finalized_provider
+  FROM public.notification_worker_finalize_email_queue_item_v2(
+    q_failed_id,
+    'failed',
+    'phase9-dead-letter-worker',
+    'resend',
+    '429 rate limit exceeded for resend account',
+    120
+  ) q;
+
+  IF finalized_provider IS DISTINCT FROM 'resend' THEN
+    RAISE EXCEPTION 'notification_worker_finalize_email_queue_item_v2 failed path did not stamp last_provider. Got: %', finalized_provider;
+  END IF;
+
+  SELECT q.last_provider
+  INTO finalized_provider
+  FROM public.notification_worker_finalize_email_queue_item_v2(
+    q_discarded_id,
+    'discarded',
+    'phase9-dead-letter-worker',
+    'stub',
+    'permanent test discard',
+    300
+  ) q;
+
+  IF finalized_provider IS DISTINCT FROM 'stub' THEN
+    RAISE EXCEPTION 'notification_worker_finalize_email_queue_item_v2 discarded path did not stamp last_provider. Got: %', finalized_provider;
+  END IF;
+
+  INSERT INTO public.notification_delivery_queue (
+    notification_id, user_id, channel, category, event_type, recipient_email, subject, body_text,
+    payload, status, attempts, next_attempt_at, failed_at, last_error, last_provider
+  )
+  VALUES (
+    notif_ready_retry_id,
+    admin_id,
+    'email',
+    'system',
+    'phase9_dead_letter_failed',
+    'zz_phase9_deadletter_admin@example.com',
+    'Dead letter ready retry',
+    'Dead letter ready retry body',
+    '{}'::jsonb,
+    'failed',
+    3,
+    now() - interval '2 minutes',
+    now() - interval '3 minutes',
+    '429 rate limit exceeded for resend account',
+    'resend'
+  )
+  ON CONFLICT (notification_id, channel) DO UPDATE
+    SET status = 'failed',
+        attempts = 3,
+        next_attempt_at = now() - interval '2 minutes',
+        failed_at = now() - interval '3 minutes',
+        last_error = '429 rate limit exceeded for resend account',
+        last_provider = 'resend';
+
+  PERFORM set_config('request.jwt.claim.sub', admin_id::text, true);
+
+  analytics := public.notification_admin_email_dead_letter_analytics(24, 10);
+
+  SELECT coalesce(sum((e->>'count')::int), 0)
+  INTO provider_resend_count
+  FROM jsonb_array_elements(coalesce(analytics->'providers', '[]'::jsonb)) e
+  WHERE e->>'provider' = 'resend';
+
+  IF provider_resend_count < 2 THEN
+    RAISE EXCEPTION 'Dead-letter analytics provider rollup missing resend counts. Got: %', provider_resend_count;
+  END IF;
+
+  SELECT coalesce(sum((e->>'count')::int), 0)
+  INTO provider_stub_count
+  FROM jsonb_array_elements(coalesce(analytics->'providers', '[]'::jsonb)) e
+  WHERE e->>'provider' = 'stub';
+
+  IF provider_stub_count < 1 THEN
+    RAISE EXCEPTION 'Dead-letter analytics provider rollup missing stub counts.';
+  END IF;
+
+  SELECT count(*)
+  INTO event_row_count
+  FROM jsonb_array_elements(coalesce(analytics->'provider_event_types', '[]'::jsonb)) e
+  WHERE e->>'provider' = 'resend'
+    AND e->>'event_type' = 'phase9_dead_letter_failed';
+
+  IF event_row_count < 1 THEN
+    RAISE EXCEPTION 'Dead-letter analytics provider_event_types missing resend/phase9_dead_letter_failed row.';
+  END IF;
+
+  SELECT count(*)
+  INTO top_error_match_count
+  FROM jsonb_array_elements(coalesce(analytics->'top_errors', '[]'::jsonb)) e
+  WHERE coalesce(e->>'error_fingerprint', '') ILIKE '%rate limit exceeded%';
+
+  IF top_error_match_count < 1 THEN
+    RAISE EXCEPTION 'Dead-letter analytics top_errors missing expected rate-limit fingerprint.';
+  END IF;
+
+  retry_ready_count := coalesce((analytics->>'retry_ready_failed_count')::int, 0);
+  IF retry_ready_count < 1 THEN
+    RAISE EXCEPTION 'Dead-letter analytics retry_ready_failed_count should be >= 1.';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub', emp_id::text, true);
+
+  BEGIN
+    PERFORM public.notification_admin_email_dead_letter_analytics(24, 10);
+    RAISE EXCEPTION 'notification_admin_email_dead_letter_analytics should deny employee role.';
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM NOT ILIKE '%insufficient privileges%' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+ROLLBACK;
+
 \echo 'State-machine SQL regression checks passed.'

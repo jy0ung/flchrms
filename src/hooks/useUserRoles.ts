@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole } from '@/types/hrms';
 import { toast } from 'sonner';
+import { sanitizeErrorMessage } from '@/lib/error-utils';
 
 interface UserRole {
   id: string;
@@ -68,7 +69,7 @@ export function useUpdateUserRole() {
       toast.success('User role updated successfully');
     },
     onError: (error: Error) => {
-      toast.error('Failed to update role: ' + error.message);
+      toast.error('Failed to update role', { description: sanitizeErrorMessage(error) });
     },
   });
 }
@@ -91,7 +92,7 @@ export function useDeleteUserRole() {
       toast.success('Role assignment removed. User now falls back to Employee access.');
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete role: ' + error.message);
+      toast.error('Failed to delete role', { description: sanitizeErrorMessage(error) });
     },
   });
 }

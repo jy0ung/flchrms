@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+/** Returns the fiscal year start date (January 1 of current year). */
+function getFiscalYearStart(): string {
+  return `${new Date().getFullYear()}-01-01`;
+}
+
 export interface LeaveBalance {
   leave_type_id: string;
   leave_type_name: string;
@@ -24,23 +30,26 @@ export function useLeaveBalance(employeeId?: string) {
 
       if (typesError) throw typesError;
 
-      // Fetch approved leave requests for this employee
+      // Fetch approved leave requests for this employee (current fiscal year only)
+      const fiscalYearStart = getFiscalYearStart();
       const { data: approvedRequests, error: approvedError } = await supabase
         .from('leave_requests')
         .select('leave_type_id, days_count')
         .eq('employee_id', targetId!)
         .not('final_approved_at', 'is', null)
-        .not('status', 'in', '(cancelled,rejected)');
+        .not('status', 'in', '(cancelled,rejected)')
+        .gte('start_date', fiscalYearStart);
 
       if (approvedError) throw approvedError;
 
-      // Fetch pending leave requests
+      // Fetch pending leave requests (current fiscal year only)
       const { data: pendingRequests, error: pendingError } = await supabase
         .from('leave_requests')
         .select('leave_type_id, days_count')
         .eq('employee_id', targetId!)
         .is('final_approved_at', null)
-        .not('status', 'in', '(rejected,cancelled)');
+        .not('status', 'in', '(rejected,cancelled)')
+        .gte('start_date', fiscalYearStart);
 
       if (pendingError) throw pendingError;
 
@@ -60,7 +69,7 @@ export function useLeaveBalance(employeeId?: string) {
           days_allowed: type.days_allowed,
           days_used: usedDays,
           days_pending: pendingDays,
-          days_remaining: type.days_allowed - usedDays,
+          days_remaining: Math.max(0, type.days_allowed - usedDays - pendingDays),
         };
       });
 

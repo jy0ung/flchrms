@@ -1,11 +1,8 @@
-import type { ReactNode } from 'react';
 import { format } from 'date-fns';
-import { AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { type LeaveRequest } from '@/types/hrms';
 import { canViewLeaveSupportingDocument } from '@/lib/permissions';
+import { ModalScaffold, ModalSection, StatusBadge } from '@/components/system';
 
 type TimelineDisplayEvent = {
   id: string;
@@ -18,13 +15,12 @@ type TimelineDisplayEvent = {
 };
 
 type LeaveStatusDisplay = {
-  color: string;
-  icon: ReactNode;
+  status: string;
   label: string;
 };
 
 type LeaveCancellationBadge = {
-  className: string;
+  status: string;
   label: string;
 } | null;
 
@@ -66,16 +62,14 @@ export function LeaveDetailsDialog({
 }: LeaveDetailsDialogProps) {
   if (!request) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Leave Request Details</DialogTitle>
-            <DialogDescription>
-              Approval history and request timeline for the selected leave request.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <ModalScaffold
+        open={open}
+        onOpenChange={onOpenChange}
+        maxWidth="4xl"
+        title="Leave Request Details"
+        description="Approval history and request timeline for the selected leave request."
+        body={<div />}
+      />
     );
   }
 
@@ -83,19 +77,17 @@ export function LeaveDetailsDialog({
   const cancellationBadge = getCancellationBadge(request);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Leave Request Details</DialogTitle>
-          <DialogDescription>
-            Approval history and request timeline for the selected leave request.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border p-4 space-y-2">
-              <p className="text-sm font-semibold">Request Summary</p>
+    <ModalScaffold
+      open={open}
+      onOpenChange={onOpenChange}
+      maxWidth="4xl"
+      title="Leave Request Details"
+      description="Approval history and request timeline for the selected leave request."
+      bodyClassName="max-h-[75vh] overflow-y-auto pr-1"
+      body={
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ModalSection title="Request Summary" className="space-y-2 shadow-sm">
               <div className="text-sm space-y-1">
                 <p><span className="text-muted-foreground">Employee:</span> {request.employee?.first_name} {request.employee?.last_name}</p>
                 <p><span className="text-muted-foreground">Email:</span> {request.employee?.email || '—'}</p>
@@ -105,20 +97,18 @@ export function LeaveDetailsDialog({
                 <p><span className="text-muted-foreground">Created:</span> {formatDateTime(request.created_at)}</p>
                 <p><span className="text-muted-foreground">Last Updated:</span> {formatDateTime(request.updated_at)}</p>
               </div>
-            </div>
+            </ModalSection>
 
-            <div className="rounded-lg border p-4 space-y-2">
-              <p className="text-sm font-semibold">Status</p>
+            <ModalSection title="Status & Routing" className="space-y-2 shadow-sm">
               <div className="space-y-2">
-                <Badge className={`${statusDisplay.color} flex items-center gap-1 w-fit`}>
-                  {statusDisplay.icon}
-                  {statusDisplay.label}
-                </Badge>
+                <StatusBadge status={statusDisplay.status} labelOverride={statusDisplay.label} />
                 {cancellationBadge && (
-                  <Badge variant="outline" className={`${cancellationBadge.className} flex items-center gap-1 w-fit`}>
-                    <AlertCircle className="w-3 h-3" />
-                    {cancellationBadge.label}
-                  </Badge>
+                  <StatusBadge
+                    status={cancellationBadge.status}
+                    labelOverride={cancellationBadge.label}
+                    className="mt-1"
+                    showIcon
+                  />
                 )}
                 <p className="text-sm">
                   <span className="text-muted-foreground">Approval Route:</span>{' '}
@@ -143,18 +133,17 @@ export function LeaveDetailsDialog({
                   <p className="text-xs text-muted-foreground">Loading approver names...</p>
                 )}
               </div>
-            </div>
+            </ModalSection>
           </div>
 
-          <div className="rounded-lg border p-4 space-y-3">
-            <p className="text-sm font-semibold">Approval Timeline</p>
+          <ModalSection title="Approval Timeline" className="space-y-3 shadow-sm">
             <div className="space-y-2 text-sm">
               {eventsLoading && (
                 <p className="text-muted-foreground">Loading event history...</p>
               )}
               {!eventsLoading && approvalTimelineEvents.length > 0 ? (
                 approvalTimelineEvents.map((event) => (
-                  <div key={event.id} className="rounded border bg-muted/20 px-3 py-2">
+                  <div key={event.id} className="rounded-lg border bg-muted/50 px-3 py-2">
                     <p className="font-medium">{event.label}</p>
                     <p className="text-muted-foreground">
                       {formatDateTime(event.at)}
@@ -218,7 +207,7 @@ export function LeaveDetailsDialog({
                   ]
                     .filter((item) => !!item.at)
                     .map((item) => (
-                      <div key={`${item.label}-${item.at}`} className="rounded border bg-muted/20 px-3 py-2">
+                      <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/50 px-3 py-2">
                         <p className="font-medium">{item.label}</p>
                         <p className="text-muted-foreground">
                           {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}
@@ -234,18 +223,17 @@ export function LeaveDetailsDialog({
                 </>
               )}
             </div>
-          </div>
+          </ModalSection>
 
           {(request.cancellation_status || request.cancelled_at) && (
-            <div className="rounded-lg border p-4 space-y-3">
-              <p className="text-sm font-semibold">Cancellation Timeline</p>
+            <ModalSection title="Cancellation Timeline" className="space-y-3 shadow-sm">
               <div className="space-y-2 text-sm">
                 {eventsLoading && (
                   <p className="text-muted-foreground">Loading event history...</p>
                 )}
                 {!eventsLoading && cancellationTimelineEvents.length > 0 ? (
                   cancellationTimelineEvents.map((event) => (
-                    <div key={event.id} className="rounded border bg-muted/20 px-3 py-2">
+                    <div key={event.id} className="rounded-lg border bg-muted/50 px-3 py-2">
                       <p className="font-medium">{event.label}</p>
                       <p className="text-muted-foreground">
                         {formatDateTime(event.at)}
@@ -310,7 +298,7 @@ export function LeaveDetailsDialog({
                     ]
                       .filter((item) => !!item.at)
                       .map((item) => (
-                        <div key={`${item.label}-${item.at}`} className="rounded border bg-muted/20 px-3 py-2">
+                        <div key={`${item.label}-${item.at}`} className="rounded-lg border bg-muted/50 px-3 py-2">
                           <p className="font-medium">{item.label}</p>
                           <p className="text-muted-foreground">
                             {formatDateTime(item.at)} by {getActorLabel(item.by, item.roleLabel)}
@@ -326,12 +314,11 @@ export function LeaveDetailsDialog({
                   </>
                 )}
               </div>
-            </div>
+            </ModalSection>
           )}
 
           {(request.reason || request.manager_comments || request.amendment_notes) && (
-            <div className="rounded-lg border p-4 space-y-2 text-sm">
-              <p className="font-semibold">Notes</p>
+            <ModalSection title="Notes" className="space-y-2 text-sm shadow-sm">
               {request.reason && (
                 <p><span className="text-muted-foreground">Reason:</span> {request.reason}</p>
               )}
@@ -341,10 +328,10 @@ export function LeaveDetailsDialog({
               {request.amendment_notes && (
                 <p><span className="text-muted-foreground">Amendment Notes:</span> {request.amendment_notes}</p>
               )}
-            </div>
+            </ModalSection>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      }
+    />
   );
 }
