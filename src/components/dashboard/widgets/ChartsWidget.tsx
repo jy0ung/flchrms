@@ -1,6 +1,6 @@
 /**
  * ChartsWidget — Tabbed attendance/leave/training charts for managers+.
- * Migrated from DashboardCharts.tsx (which is now dead code).
+ * Tabbed workforce analytics — attendance, leave, training.
  */
 import { memo, useState } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, AreaChart, Area } from 'recharts';

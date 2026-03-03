@@ -25,6 +25,7 @@ function CalendarPreviewWidgetInner() {
   const today = new Date();
   const { data: events, isLoading } = useCalendarEvents(today);
 
+  const todayKey = today.toDateString();
   const { todayEvents, upcomingEvents } = useMemo(() => {
     if (!events) return { todayEvents: [], upcomingEvents: [] };
     const now = startOfDay(today);
@@ -36,7 +37,8 @@ function CalendarPreviewWidgetInner() {
       .slice(0, 5);
 
     return { todayEvents: todayList.slice(0, 5), upcomingEvents: upcoming };
-  }, [events]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, todayKey]);
 
   return (
     <DashboardWidgetCard

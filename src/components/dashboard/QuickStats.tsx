@@ -62,7 +62,7 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
             <p className="mt-1.5 text-2xl font-bold tracking-tight md:text-3xl">{value}</p>
           </div>
           {Icon && (
-            <div className={cn('rounded-lg p-2', accentColor ? accentColor.replace('bg-', 'bg-').replace(/^bg-/, 'bg-') + '/10' : 'bg-muted')}>
+            <div className={cn('rounded-lg p-2', accentColor ? `${accentColor}/10` : 'bg-muted')}>
               <Icon className={cn('h-5 w-5', accentColor ? accentColor.replace('bg-', 'text-') : 'text-muted-foreground')} />
             </div>
           )}

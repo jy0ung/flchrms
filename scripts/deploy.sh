@@ -324,8 +324,11 @@ server {
         try_files \$uri =404;
     }
 
+    # index.html — never cache so deploys take effect immediately
     # SPA fallback — all routes serve index.html
     location / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
         try_files \$uri \$uri/ /index.html;
     }
 

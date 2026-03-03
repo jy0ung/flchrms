@@ -11,8 +11,8 @@ rg -q "\\(role === 'admin' \\|\\| role === 'hr' \\|\\| role === 'director'\\)" s
 rg -q "const canManageDocuments = role === 'hr' \\|\\| role === 'director';" src/pages/Documents.tsx
 rg -q "const canManageHolidays = role === 'hr' \\|\\| role === 'director';" src/pages/TeamCalendar.tsx
 rg -q "const canManageDepartmentEvents =" src/pages/TeamCalendar.tsx
-rg -q "role === 'general_manager'" src/components/dashboard/DashboardCharts.tsx
-rg -q "role === 'director'" src/components/dashboard/DashboardCharts.tsx
+rg -q "canViewManagerDashboardWidgets" src/components/dashboard/widgets/ChartsWidget.tsx
+rg -q "canViewManagerDashboardWidgets" src/components/dashboard/widgets/PendingActionsWidget.tsx
 rg -q "const canOpenAccountProfileEditor = canManageEmployeeProfiles \\|\\| role === 'admin';" src/pages/Admin.tsx
 rg -q "const isAdminLimitedProfileEditor = role === 'admin';" src/pages/Admin.tsx
 rg -q "request\\.document_url && role !== 'admin'" src/pages/Leave.tsx
