@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { format } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,23 +6,18 @@ import type { AppRole } from '@/types/hrms';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
 import {
-  formatRoleLabel,
-  getScopeLabel,
   ROLE_DEFAULT_WIDGETS,
   ROLE_DEFAULT_WIDGET_WIDTHS,
-  WIDGET_META,
-  WIDGET_ICONS,
 } from '@/components/dashboard/dashboard-config';
 
-import {
-  AppPageContainer,
-} from '@/components/system';
+import { AppPageContainer } from '@/components/system';
 import { DashboardWidgetRenderer } from '@/components/dashboard/widgets';
 import { QuickStats } from '@/components/dashboard/QuickStats';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 
 export default function Dashboard() {
   usePageTitle('Dashboard');
-  const { profile, role } = useAuth();
+  const { role } = useAuth();
 
   const normalizedRole: AppRole = role ?? 'employee';
   const showManagerWidgets = canViewManagerDashboardWidgets(normalizedRole);
@@ -31,36 +25,29 @@ export default function Dashboard() {
   const widgetIds = ROLE_DEFAULT_WIDGETS[normalizedRole];
   const widgetWidths = ROLE_DEFAULT_WIDGET_WIDTHS[normalizedRole];
 
-  // View-mode flat grid
   const widgetGrid = useMemo(() => {
     return widgetIds.map((id) => {
       const w = widgetWidths[id] ?? 4;
-      const colSpan = w >= 12 ? 'lg:col-span-2' : '';
+      const colSpan =
+        w >= 12
+          ? 'md:col-span-2 lg:col-span-3'
+          : w >= 8
+            ? 'md:col-span-2 lg:col-span-2'
+            : '';
       return { id, colSpan };
     });
   }, [widgetIds, widgetWidths]);
 
   return (
     <AppPageContainer spacing="comfortable">
-      {/* Greeting */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back, {profile?.first_name || 'there'}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(), 'EEEE, MMMM d, yyyy')} &middot;{' '}
-            {formatRoleLabel(normalizedRole)} &middot;{' '}
-            {getScopeLabel(normalizedRole, null)}
-          </p>
-        </div>
-      </div>
+      {/* Hero Greeting */}
+      <DashboardGreeting role={normalizedRole} />
 
       {/* Quick Stats — managers and above */}
       {showManagerWidgets && <QuickStats />}
 
-      {/* Widget grid */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Widget grid — responsive 3-column layout */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {widgetGrid.map(({ id, colSpan }) => (
           <div key={id} className={colSpan}>
             <DashboardWidgetRenderer

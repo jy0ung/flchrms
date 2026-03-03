@@ -17,7 +17,11 @@ export type DashboardWidgetId =
   | 'teamSnapshot'
   | 'onLeaveToday'
   | 'criticalInsights'
-  | 'executiveMetrics';
+  | 'executiveMetrics'
+  | 'charts'
+  | 'calendarPreview'
+  | 'recentActivity'
+  | 'pendingActions';
 
 export type DashboardTier = 'primary' | 'secondary' | 'supporting';
 

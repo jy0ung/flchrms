@@ -1,7 +1,7 @@
 /**
- * Shared dashboard widget primitives — card wrapper, metric chip, types, and hooks.
+ * Shared dashboard widget primitives — card wrapper, metric chip, types, hooks, and error boundary.
  */
-import { useMemo, type ComponentType, type ReactNode } from 'react';
+import { Component, useMemo, type ComponentType, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { canViewManagerDashboardWidgets, isManager } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { CardHeaderStandard } from '@/components/system';
+import { QueryErrorState } from '@/components/system';
 import type { LeaveStatus } from '@/types/hrms';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ export interface TrainingProgramOverviewItem {
 export function DashboardWidgetCard({
   title,
   description,
-  icon: _icon,
+  icon: Icon,
   action,
   children,
   className,
@@ -77,7 +78,16 @@ export function DashboardWidgetCard({
   return (
     <Card className={cn('flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-lg', className)}>
       <CardHeaderStandard
-        title={title}
+        title={
+          Icon ? (
+            <span className="inline-flex items-center gap-2">
+              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              {title}
+            </span>
+          ) : (
+            title
+          )
+        }
         description={description}
         actions={action}
         className="p-4 pb-2"
@@ -104,6 +114,48 @@ export function MetricChip({ label, value, tone = 'default' }: { label: string; 
       <p className="mt-1 text-base font-semibold leading-none">{value}</p>
     </div>
   );
+}
+
+// ── Error Boundary ───────────────────────────────────────────────
+
+interface WidgetErrorBoundaryProps {
+  widgetLabel?: string;
+  children: ReactNode;
+}
+
+interface WidgetErrorBoundaryState {
+  hasError: boolean;
+}
+
+export class DashboardWidgetErrorBoundary extends Component<WidgetErrorBoundaryProps, WidgetErrorBoundaryState> {
+  constructor(props: WidgetErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): WidgetErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error(`[DashboardWidget:${this.props.widgetLabel ?? 'unknown'}]`, error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-lg">
+          <CardContent className="flex-1 flex items-center justify-center p-6">
+            <QueryErrorState
+              label={this.props.widgetLabel ?? 'widget'}
+              onRetry={() => this.setState({ hasError: false })}
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // ── Shared hooks ─────────────────────────────────────────────────

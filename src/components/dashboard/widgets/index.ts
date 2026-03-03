@@ -1,5 +1,5 @@
 export { DashboardWidgetRenderer } from './DashboardWidgetRenderer';
-export { DashboardWidgetCard, MetricChip, useDashboardOnLeaveTodayRoster } from './shared';
+export { DashboardWidgetCard, DashboardWidgetErrorBoundary, MetricChip, useDashboardOnLeaveTodayRoster } from './shared';
 export {
   AttendanceTodayWidget,
   LeaveBalanceWidget,
@@ -9,3 +9,7 @@ export {
 } from './EmployeeWidgets';
 export { TeamSnapshotWidget, OnLeaveTodayWidget } from './ManagerWidgets';
 export { ExecutiveMetricsWidget, CriticalInsightsWidget } from './ExecutiveWidgets';
+export { ChartsWidget } from './ChartsWidget';
+export { CalendarPreviewWidget } from './CalendarPreviewWidget';
+export { RecentActivityWidget } from './RecentActivityWidget';
+export { PendingActionsWidget } from './PendingActionsWidget';

@@ -1,8 +1,9 @@
 /**
- * Widget dispatcher — maps widgetId → concrete component.
+ * Widget dispatcher — maps widgetId → concrete component, wrapped in error boundary.
  */
 import type { AppRole } from '@/types/hrms';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
+import { WIDGET_META } from '../dashboard-config';
 
 import {
   AttendanceTodayWidget,
@@ -13,8 +14,13 @@ import {
 } from './EmployeeWidgets';
 import { TeamSnapshotWidget, OnLeaveTodayWidget } from './ManagerWidgets';
 import { ExecutiveMetricsWidget, CriticalInsightsWidget } from './ExecutiveWidgets';
+import { ChartsWidget } from './ChartsWidget';
+import { CalendarPreviewWidget } from './CalendarPreviewWidget';
+import { RecentActivityWidget } from './RecentActivityWidget';
+import { PendingActionsWidget } from './PendingActionsWidget';
+import { DashboardWidgetErrorBoundary } from './shared';
 
-export function DashboardWidgetRenderer({ widgetId, role }: { widgetId: DashboardWidgetId; role: AppRole }) {
+function WidgetSwitch({ widgetId, role }: { widgetId: DashboardWidgetId; role: AppRole }) {
   switch (widgetId) {
     case 'attendanceToday':
       return <AttendanceTodayWidget />;
@@ -34,7 +40,24 @@ export function DashboardWidgetRenderer({ widgetId, role }: { widgetId: Dashboar
       return <CriticalInsightsWidget role={role} />;
     case 'executiveMetrics':
       return <ExecutiveMetricsWidget role={role} />;
+    case 'charts':
+      return <ChartsWidget />;
+    case 'calendarPreview':
+      return <CalendarPreviewWidget />;
+    case 'recentActivity':
+      return <RecentActivityWidget />;
+    case 'pendingActions':
+      return <PendingActionsWidget role={role} />;
     default:
       return null;
   }
+}
+
+export function DashboardWidgetRenderer({ widgetId, role }: { widgetId: DashboardWidgetId; role: AppRole }) {
+  const meta = WIDGET_META[widgetId];
+  return (
+    <DashboardWidgetErrorBoundary widgetLabel={meta?.label ?? widgetId}>
+      <WidgetSwitch widgetId={widgetId} role={role} />
+    </DashboardWidgetErrorBoundary>
+  );
 }
