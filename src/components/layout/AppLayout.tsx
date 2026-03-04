@@ -58,12 +58,10 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
         <main id="main-content" className="flex-1 overflow-auto">
-          <div key={location.pathname} className={cn("animate-fadeIn p-4 md:p-6 lg:p-8", isMobile && "pb-20")}>
-            <div className="mx-auto w-full max-w-[1400px]">
-              <InteractionModeProvider resetKeys={[user?.id ?? null]}>
-                <Outlet />
-              </InteractionModeProvider>
-            </div>
+          <div key={location.pathname} className={cn("animate-fadeIn p-4 md:p-6 lg:p-8", isMobile && "pb-20")}> 
+            <InteractionModeProvider resetKeys={[user?.id ?? null]}>
+              <Outlet />
+            </InteractionModeProvider>
           </div>
         </main>
       </div>

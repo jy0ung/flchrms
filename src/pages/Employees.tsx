@@ -95,7 +95,7 @@ export default function Employees() {
   };
 
   const LoadingGridSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {[...Array(6)].map((_, i) => (
         <Card key={i} className="border-border shadow-sm">
           <CardContent className="pt-4">
@@ -221,7 +221,7 @@ export default function Employees() {
           }
           content={
             viewType === 'grid' ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {displayedEmployees.map((employee) => (
                   <Card
                     key={employee.id}

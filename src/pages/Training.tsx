@@ -30,7 +30,7 @@ export default function Training() {
           headerActions={<Badge variant="outline" className="rounded-full">{enrollments.length} active</Badge>}
           hasData={enrollments.length > 0}
           content={
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {enrollments.map((enrollment) => (
                 <Card key={enrollment.id} className="border-border shadow-sm">
                   <CardContent className="pt-4">
@@ -58,7 +58,7 @@ export default function Training() {
         hasData={Boolean(programs?.length)}
         emptyState={<div className="p-4 text-center text-muted-foreground">No training programs available.</div>}
         content={
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {programs?.map((program) => (
               <Card key={program.id} className="border-border shadow-sm">
                 <CardHeaderStandard

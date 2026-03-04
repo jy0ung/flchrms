@@ -231,7 +231,7 @@ export default function Notifications() {
   };
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Notifications"
         description="Review leave workflow and workflow configuration activity."

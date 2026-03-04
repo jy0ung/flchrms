@@ -259,7 +259,7 @@ export default function EmployeeProfile() {
 
   if (profileLoading) {
     return (
-      <AppPageContainer>
+      <AppPageContainer maxWidth="7xl">
         <div className="space-y-6">
           <div className="h-8 w-48 bg-muted animate-pulse rounded" />
           <div className="h-32 bg-muted animate-pulse rounded-xl" />
@@ -271,7 +271,7 @@ export default function EmployeeProfile() {
 
   if (!profile) {
     return (
-      <AppPageContainer>
+      <AppPageContainer maxWidth="7xl">
         <div className="text-center py-16 space-y-3">
           <AlertCircle className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="text-muted-foreground">Employee not found.</p>
@@ -284,7 +284,7 @@ export default function EmployeeProfile() {
   }
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       {/* Back + header */}
       <Button
         variant="ghost"

@@ -12,7 +12,7 @@ export default function Announcements() {
   const count = announcements?.length ?? 0;
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Announcements"
         description={!isLoading ? `${count} item${count === 1 ? '' : 's'} — Company-wide updates, reminders, and internal notices.` : 'Company-wide updates, reminders, and internal notices.'}
