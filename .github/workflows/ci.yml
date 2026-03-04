@@ -188,9 +188,6 @@ jobs:
           fi
           echo "SUPABASE_DB_CONTAINER=${DB_CONTAINER}" >> "${GITHUB_ENV}"
 
-      - name: Seed targeted test fixtures
-        run: npm run seed:test:targeted
-
       - name: Export local Supabase API env for frontend build
         shell: bash
         run: |
@@ -311,9 +308,6 @@ jobs:
             exit 1
           fi
           echo "SUPABASE_DB_CONTAINER=${DB_CONTAINER}" >> "${GITHUB_ENV}"
-
-      - name: Seed targeted test fixtures
-        run: npm run seed:test:targeted
 
       - name: Seed Phase 7 notifications UI fixtures
         shell: bash
@@ -509,7 +503,7 @@ jobs:
             supabase/bootstrap_platform.sql \
             supabase/bootstrap_defaults.sql \
             docs/admin-architecture.md \
-            docs/test-seed-credentials.md
+
 
       - name: Upload release bundle artifact
         uses: actions/upload-artifact@v4

@@ -1,12 +1,15 @@
+/**
+ * Dashboard layout types, defaults builder, and utility functions.
+ *
+ * Position compaction is handled by react-grid-layout at render time.
+ * This module owns the persistent data model and role-aware defaults.
+ */
 import { type AppRole } from '@/types/hrms';
-import {
-  EDITABLE_LAYOUT_COLUMNS,
-  compactLayoutItems,
-  type LayoutDimensionsById,
-  type LayoutItem,
-} from '@/lib/editable-layout';
 
 export const SUPPORTED_DASHBOARD_LAYOUT_VERSION = 2;
+export const GRID_COLUMNS = 12;
+
+// ── Widget ID union ──────────────────────────────────────────────
 
 export type DashboardWidgetId =
   | 'attendanceToday'
@@ -23,7 +26,23 @@ export type DashboardWidgetId =
   | 'recentActivity'
   | 'pendingActions';
 
+// ── Tier / resize rules ──────────────────────────────────────────
+
 export type DashboardTier = 'primary' | 'secondary' | 'supporting';
+
+export interface ResizeRule {
+  minW: number;
+  maxW: number;
+  step: number;
+}
+
+export const TIER_WIDTH_RULES: Record<DashboardTier, ResizeRule> = {
+  primary: { minW: 3, maxW: 12, step: 1 },
+  secondary: { minW: 4, maxW: 12, step: 1 },
+  supporting: { minW: 4, maxW: 12, step: 1 },
+};
+
+// ── Widget definition ────────────────────────────────────────────
 
 export interface DashboardWidgetDefinition {
   id: DashboardWidgetId;
@@ -34,6 +53,10 @@ export interface DashboardWidgetDefinition {
   minW: number;
   maxW: number;
 }
+
+export type DashboardDefinitionMap = Record<DashboardWidgetId, DashboardWidgetDefinition>;
+
+// ── Layout state types ───────────────────────────────────────────
 
 export interface DashboardLayoutWidgetV2 {
   id: DashboardWidgetId;
@@ -51,47 +74,10 @@ export interface DashboardLayoutStateV2 {
   widgets: DashboardLayoutWidgetV2[];
 }
 
-export interface ResizeRule {
-  minW: number;
-  maxW: number;
-  step: number;
-}
-
-export const TIER_WIDTH_RULES: Record<DashboardTier, ResizeRule> = {
-  primary: { minW: 3, maxW: 12, step: 1 },
-  secondary: { minW: 4, maxW: 12, step: 1 },
-  supporting: { minW: 4, maxW: 12, step: 1 },
-};
-
-export type DashboardDefinitionMap = Record<DashboardWidgetId, DashboardWidgetDefinition>;
-
-const DASHBOARD_TIERS: DashboardTier[] = ['primary', 'secondary', 'supporting'];
-
-const DEFAULT_LAYOUT_ITEM: Omit<DashboardLayoutWidgetV2, 'id'> = {
-  x: 0,
-  y: 0,
-  w: 4,
-  h: 4,
-  visible: true,
-};
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
-}
+// ── Type guard ───────────────────────────────────────────────────
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function normalizeFinite(value: unknown, fallback: number): number {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return n;
-}
-
-function normalizeBoolean(value: unknown, fallback: boolean): boolean {
-  if (typeof value === 'boolean') return value;
-  return fallback;
 }
 
 export function isDashboardLayoutStateV2(value: unknown): value is DashboardLayoutStateV2 {
@@ -114,81 +100,123 @@ export function isDashboardLayoutStateV2(value: unknown): value is DashboardLayo
   });
 }
 
+// ── Width clamping ───────────────────────────────────────────────
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
+
 export function clampWidgetWidthByTier(
   width: number,
   tier: DashboardTier,
   rulesByTier: Record<DashboardTier, ResizeRule> = TIER_WIDTH_RULES,
 ): number {
   const rule = rulesByTier[tier];
-  const safeStep = Math.max(1, Math.round(rule.step || 1));
-  const rawWidth = clamp(Math.round(width), 1, EDITABLE_LAYOUT_COLUMNS);
-  const clamped = clamp(rawWidth, rule.minW, rule.maxW);
-  const snapped = rule.minW + Math.round((clamped - rule.minW) / safeStep) * safeStep;
-  return clamp(snapped, rule.minW, rule.maxW);
+  const rawWidth = clamp(Math.round(width), 1, GRID_COLUMNS);
+  return clamp(rawWidth, rule.minW, rule.maxW);
 }
 
-export function compactLaneWidgets(
-  widgets: DashboardLayoutWidgetV2[],
-  tier: DashboardTier,
-  rulesByTier: Record<DashboardTier, ResizeRule> = TIER_WIDTH_RULES,
-): DashboardLayoutWidgetV2[] {
-  const visible = widgets.filter((widget) => widget.visible);
-  if (visible.length === 0) return [];
+// ── Normalize a layout state ─────────────────────────────────────
+//
+// Ensures every role-allowed widget has an entry. Does NOT compact
+// positions — react-grid-layout handles visual compaction at render.
 
-  const laneItems: LayoutItem[] = visible.map((widget) => ({
-    id: widget.id,
-    x: clamp(Math.round(widget.x), 0, EDITABLE_LAYOUT_COLUMNS - 1),
-    y: Math.max(0, Math.round(widget.y)),
-    w: clampWidgetWidthByTier(widget.w, tier, rulesByTier),
-    h: Math.max(1, Math.round(widget.h)),
-  }));
+export function normalizeDashboardLayoutStateV2(params: {
+  state: DashboardLayoutStateV2;
+  definitions: DashboardDefinitionMap;
+  role: AppRole;
+  presetVersion: number;
+}): DashboardLayoutStateV2 {
+  const { state, definitions, role, presetVersion } = params;
+  const seen = new Map<DashboardWidgetId, DashboardLayoutWidgetV2>();
 
-  const compacted = compactLayoutItems(laneItems, EDITABLE_LAYOUT_COLUMNS);
-  return compacted.map((item) => ({
-    id: item.id as DashboardWidgetId,
-    x: item.x,
-    y: item.y,
-    w: item.w,
-    h: item.h,
-    visible: true,
-  }));
-}
+  for (const widget of state.widgets) {
+    const def = definitions[widget.id];
+    if (!def) continue;
+    if (!def.allowedRoles.includes(role)) continue;
+    if (seen.has(widget.id)) continue; // deduplicate
 
-export function splitLayoutByLane(
-  layoutState: DashboardLayoutStateV2,
-  definitions: DashboardDefinitionMap,
-): Record<DashboardTier, DashboardLayoutWidgetV2[]> {
-  const result: Record<DashboardTier, DashboardLayoutWidgetV2[]> = {
-    primary: [],
-    secondary: [],
-    supporting: [],
+    seen.set(widget.id, {
+      id: widget.id,
+      x: Math.max(0, Math.round(widget.x)),
+      y: Math.max(0, Math.round(widget.y)),
+      w: clampWidgetWidthByTier(widget.w, def.defaultTier),
+      h: Math.max(1, Math.round(widget.h)),
+      visible: typeof widget.visible === 'boolean' ? widget.visible : true,
+    });
+  }
+
+  // Seed missing widgets as hidden
+  for (const def of Object.values(definitions)) {
+    if (!def.allowedRoles.includes(role)) continue;
+    if (seen.has(def.id)) continue;
+    seen.set(def.id, {
+      id: def.id,
+      x: 0,
+      y: 0,
+      w: clampWidgetWidthByTier(def.defaultW, def.defaultTier),
+      h: Math.max(1, def.defaultH),
+      visible: false,
+    });
+  }
+
+  return {
+    version: SUPPORTED_DASHBOARD_LAYOUT_VERSION,
+    presetVersion,
+    role,
+    widgets: [...seen.values()],
   };
-
-  for (const widget of layoutState.widgets) {
-    const definition = definitions[widget.id];
-    if (!definition) continue;
-    result[definition.defaultTier].push(widget);
-  }
-
-  for (const tier of DASHBOARD_TIERS) {
-    result[tier] = [...result[tier]].sort((a, b) => (a.y === b.y ? a.x - b.x : a.y - b.y));
-  }
-
-  return result;
 }
 
-export function mergeLanesToLayout(
-  lanes: Partial<Record<DashboardTier, DashboardLayoutWidgetV2[]>>,
-  role: AppRole,
-  presetVersion: number,
-): DashboardLayoutStateV2 {
-  const widgets: DashboardLayoutWidgetV2[] = [];
+// ── Build defaults from role config ──────────────────────────────
 
-  for (const tier of DASHBOARD_TIERS) {
-    const laneWidgets = lanes[tier] ?? [];
-    for (const widget of laneWidgets) {
-      widgets.push({ ...widget });
+export function buildDefaultDashboardLayoutV2(params: {
+  definitions: DashboardDefinitionMap;
+  role: AppRole;
+  presetVersion: number;
+  orderedWidgetIds: DashboardWidgetId[];
+}): DashboardLayoutStateV2 {
+  const { definitions, role, presetVersion, orderedWidgetIds } = params;
+  const allowed = orderedWidgetIds.filter(
+    (id) => definitions[id]?.allowedRoles.includes(role),
+  );
+
+  // Lay out visible widgets in a simple left-to-right, top-to-bottom flow
+  const widgets: DashboardLayoutWidgetV2[] = [];
+  let cursorX = 0;
+  let cursorY = 0;
+  let rowMaxH = 0;
+
+  for (const id of allowed) {
+    const def = definitions[id];
+    const w = clampWidgetWidthByTier(def.defaultW, def.defaultTier);
+    const h = Math.max(1, def.defaultH);
+
+    // Wrap to next row if widget doesn't fit
+    if (cursorX + w > GRID_COLUMNS) {
+      cursorX = 0;
+      cursorY += rowMaxH;
+      rowMaxH = 0;
     }
+
+    widgets.push({ id, x: cursorX, y: cursorY, w, h, visible: true });
+    cursorX += w;
+    rowMaxH = Math.max(rowMaxH, h);
+  }
+
+  // Add hidden widgets for role-allowed but not in default order
+  const visibleSet = new Set(allowed);
+  for (const def of Object.values(definitions)) {
+    if (!def.allowedRoles.includes(role)) continue;
+    if (visibleSet.has(def.id)) continue;
+    widgets.push({
+      id: def.id,
+      x: 0,
+      y: 0,
+      w: clampWidgetWidthByTier(def.defaultW, def.defaultTier),
+      h: Math.max(1, def.defaultH),
+      visible: false,
+    });
   }
 
   return {
@@ -197,257 +225,4 @@ export function mergeLanesToLayout(
     role,
     widgets,
   };
-}
-
-export function normalizeDashboardLayoutStateV2(params: {
-  state: DashboardLayoutStateV2;
-  definitions: DashboardDefinitionMap;
-  role: AppRole;
-  presetVersion: number;
-  rulesByTier?: Record<DashboardTier, ResizeRule>;
-}): DashboardLayoutStateV2 {
-  const { state, definitions, role, presetVersion, rulesByTier = TIER_WIDTH_RULES } = params;
-  const dedupedById = new Map<DashboardWidgetId, DashboardLayoutWidgetV2>();
-
-  for (const widget of state.widgets) {
-    const definition = definitions[widget.id];
-    if (!definition) continue;
-    if (!definition.allowedRoles.includes(role)) continue;
-
-    const tier = definition.defaultTier;
-    dedupedById.set(widget.id, {
-      id: widget.id,
-      x: Math.max(0, Math.round(normalizeFinite(widget.x, 0))),
-      y: Math.max(0, Math.round(normalizeFinite(widget.y, 0))),
-      w: clampWidgetWidthByTier(normalizeFinite(widget.w, definition.defaultW), tier, rulesByTier),
-      h: Math.max(1, Math.round(normalizeFinite(widget.h, definition.defaultH))),
-      visible: normalizeBoolean(widget.visible, true),
-    });
-  }
-
-  for (const definition of Object.values(definitions)) {
-    if (!definition.allowedRoles.includes(role)) continue;
-    if (dedupedById.has(definition.id)) continue;
-    dedupedById.set(definition.id, {
-      id: definition.id,
-      ...DEFAULT_LAYOUT_ITEM,
-      w: clampWidgetWidthByTier(definition.defaultW, definition.defaultTier, rulesByTier),
-      h: Math.max(1, definition.defaultH),
-    });
-  }
-
-  const seededState: DashboardLayoutStateV2 = {
-    version: SUPPORTED_DASHBOARD_LAYOUT_VERSION,
-    presetVersion,
-    role,
-    widgets: [...dedupedById.values()],
-  };
-
-  const laneSplit = splitLayoutByLane(seededState, definitions);
-  const compactedLanes: Partial<Record<DashboardTier, DashboardLayoutWidgetV2[]>> = {};
-
-  for (const tier of DASHBOARD_TIERS) {
-    const laneWidgets = laneSplit[tier];
-    const visibleLane = laneWidgets.filter((widget) => widget.visible);
-    const compactedVisible = compactLaneWidgets(visibleLane, tier, rulesByTier);
-    const compactedById = new Map(compactedVisible.map((widget) => [widget.id, widget]));
-
-    compactedLanes[tier] = laneWidgets.map((widget) => {
-      if (!widget.visible) {
-        return { ...widget, x: 0, y: 0 };
-      }
-      const compacted = compactedById.get(widget.id);
-      if (!compacted) return widget;
-      return { ...widget, x: compacted.x, y: compacted.y, w: compacted.w, h: compacted.h };
-    });
-  }
-
-  const next = mergeLanesToLayout(compactedLanes, role, presetVersion);
-  assertDashboardLayoutInvariants(next, definitions, rulesByTier);
-  return next;
-}
-
-export function buildDefaultDashboardLayoutV2(params: {
-  definitions: DashboardDefinitionMap;
-  role: AppRole;
-  presetVersion: number;
-  orderedWidgetIds: DashboardWidgetId[];
-  defaultDimensionsById?: Partial<LayoutDimensionsById>;
-  rulesByTier?: Record<DashboardTier, ResizeRule>;
-}): DashboardLayoutStateV2 {
-  const {
-    definitions,
-    role,
-    presetVersion,
-    orderedWidgetIds,
-    defaultDimensionsById,
-    rulesByTier = TIER_WIDTH_RULES,
-  } = params;
-  const included = orderedWidgetIds.filter((id) => definitions[id]?.allowedRoles.includes(role));
-  const visibleSet = new Set(included);
-  const laneItems: Partial<Record<DashboardTier, DashboardLayoutWidgetV2[]>> = {
-    primary: [],
-    secondary: [],
-    supporting: [],
-  };
-
-  for (const widgetId of included) {
-    const definition = definitions[widgetId];
-    const tier = definition.defaultTier;
-    const dims = defaultDimensionsById?.[widgetId] ?? {
-      w: definition.defaultW,
-      h: definition.defaultH,
-    };
-    laneItems[tier]!.push({
-      id: widgetId,
-      x: 0,
-      y: laneItems[tier]!.length,
-      w: clampWidgetWidthByTier(dims.w, tier, rulesByTier),
-      h: Math.max(1, Math.round(dims.h)),
-      visible: true,
-    });
-  }
-
-  for (const tier of DASHBOARD_TIERS) {
-    laneItems[tier] = compactLaneWidgets(laneItems[tier] ?? [], tier, rulesByTier);
-  }
-
-  const layout = mergeLanesToLayout(laneItems, role, presetVersion);
-  const hiddenDefaults: DashboardLayoutWidgetV2[] = [];
-
-  for (const definition of Object.values(definitions)) {
-    if (!definition.allowedRoles.includes(role)) continue;
-    if (visibleSet.has(definition.id)) continue;
-    hiddenDefaults.push({
-      id: definition.id,
-      x: 0,
-      y: 0,
-      w: clampWidgetWidthByTier(definition.defaultW, definition.defaultTier, rulesByTier),
-      h: Math.max(1, definition.defaultH),
-      visible: false,
-    });
-  }
-
-  const next = {
-    ...layout,
-    widgets: [...layout.widgets, ...hiddenDefaults],
-  } satisfies DashboardLayoutStateV2;
-
-  assertDashboardLayoutInvariants(next, definitions, rulesByTier);
-  return next;
-}
-
-export function migrateLegacyDashboardLayoutToV2(params: {
-  role: AppRole;
-  presetVersion: number;
-  definitions: DashboardDefinitionMap;
-  legacyLayoutItems?: LayoutItem[] | null;
-  legacyEnabledWidgetIds?: DashboardWidgetId[];
-  legacyWidthById?: Partial<Record<DashboardWidgetId, number>>;
-  defaultOrderedWidgetIds: DashboardWidgetId[];
-  rulesByTier?: Record<DashboardTier, ResizeRule>;
-}): DashboardLayoutStateV2 {
-  const {
-    role,
-    presetVersion,
-    definitions,
-    legacyLayoutItems,
-    legacyEnabledWidgetIds,
-    legacyWidthById,
-    defaultOrderedWidgetIds,
-    rulesByTier = TIER_WIDTH_RULES,
-  } = params;
-
-  const roleAllowed = defaultOrderedWidgetIds.filter((id) => definitions[id]?.allowedRoles.includes(role));
-  const visibleOrder = (legacyEnabledWidgetIds?.length ? legacyEnabledWidgetIds : roleAllowed)
-    .filter((id) => definitions[id]?.allowedRoles.includes(role));
-
-  const legacyItemById = new Map(
-    (legacyLayoutItems ?? [])
-      .filter((item) => item && typeof item.id === 'string')
-      .map((item) => [item.id as DashboardWidgetId, item]),
-  );
-
-  const defaultDimensionsById: Partial<LayoutDimensionsById> = {};
-  for (const widgetId of roleAllowed) {
-    const definition = definitions[widgetId];
-    const legacyItem = legacyItemById.get(widgetId);
-    const legacyWidth = legacyWidthById?.[widgetId] ?? legacyItem?.w;
-    defaultDimensionsById[widgetId] = {
-      w: typeof legacyWidth === 'number' ? legacyWidth : definition.defaultW,
-      h: definition.defaultH,
-    };
-  }
-
-  const baseLayout = buildDefaultDashboardLayoutV2({
-    definitions,
-    role,
-    presetVersion,
-    orderedWidgetIds: visibleOrder.length > 0 ? visibleOrder : roleAllowed,
-    defaultDimensionsById,
-    rulesByTier,
-  });
-
-  const visibleSet = new Set(visibleOrder);
-  const withVisibility = {
-    ...baseLayout,
-    widgets: baseLayout.widgets.map((widget) => ({
-      ...widget,
-      w: clampWidgetWidthByTier(
-        defaultDimensionsById[widget.id]?.w ?? widget.w,
-        definitions[widget.id].defaultTier,
-        rulesByTier,
-      ),
-      visible: visibleSet.size === 0 ? widget.visible : visibleSet.has(widget.id),
-    })),
-  } satisfies DashboardLayoutStateV2;
-
-  return normalizeDashboardLayoutStateV2({
-    state: withVisibility,
-    definitions,
-    role,
-    presetVersion,
-    rulesByTier,
-  });
-}
-
-export function assertDashboardLayoutInvariants(
-  state: DashboardLayoutStateV2,
-  definitions: DashboardDefinitionMap,
-  rulesByTier: Record<DashboardTier, ResizeRule> = TIER_WIDTH_RULES,
-): void {
-  const seen = new Set<string>();
-  for (const widget of state.widgets) {
-    if (seen.has(widget.id)) {
-      throw new Error(`Duplicate dashboard widget id: ${widget.id}`);
-    }
-    seen.add(widget.id);
-
-    const definition = definitions[widget.id];
-    if (!definition) {
-      throw new Error(`Unknown dashboard widget id: ${widget.id}`);
-    }
-
-    if (!Number.isInteger(widget.x) || !Number.isInteger(widget.y)) {
-      throw new Error(`Dashboard widget has non-integer coordinates: ${widget.id}`);
-    }
-    if (widget.x < 0 || widget.y < 0) {
-      throw new Error(`Dashboard widget has negative coordinates: ${widget.id}`);
-    }
-
-    const rule = rulesByTier[definition.defaultTier];
-    const clamped = clampWidgetWidthByTier(widget.w, definition.defaultTier, rulesByTier);
-    if (widget.w !== clamped) {
-      throw new Error(`Dashboard widget width out of bounds for ${widget.id}`);
-    }
-    if (widget.w < rule.minW || widget.w > rule.maxW) {
-      throw new Error(`Dashboard widget width violates tier constraints for ${widget.id}`);
-    }
-    if (widget.x + widget.w > EDITABLE_LAYOUT_COLUMNS) {
-      throw new Error(`Dashboard widget exceeds grid width for ${widget.id}`);
-    }
-    if (widget.h < 1) {
-      throw new Error(`Dashboard widget height must be >= 1 for ${widget.id}`);
-    }
-  }
 }

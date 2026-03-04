@@ -2,16 +2,11 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {
   getFloatingNotificationsVisible,
   setFloatingNotificationsVisible,
-  getDashboardEnabledWidgetIds,
-  setDashboardEnabledWidgetIds,
   resetDashboardEnabledWidgetIds,
-  getDashboardWidgetSpanMap,
-  setDashboardWidgetSpanMap,
   resetDashboardWidgetSpanMap,
-  setDashboardWidgetLayoutState,
   resetDashboardWidgetLayoutState,
-  getDashboardLayoutPresetVersion,
-  setDashboardLayoutPresetVersion,
+  getDashboardLayoutStateV2,
+  setDashboardLayoutStateV2,
   getAdminStatsEnabledCardIds,
   setAdminStatsEnabledCardIds,
   resetAdminStatsEnabledCardIds,
@@ -56,163 +51,59 @@ describe('floatingNotifications visibility', () => {
   });
 });
 
-// ── Dashboard Widget IDs ─────────────────────────────────────────
-describe('getDashboardEnabledWidgetIds', () => {
-  const allowed = ['w1', 'w2', 'w3', 'w4'];
-  const defaults = ['w1', 'w2'];
-
-  it('returns defaults when nothing stored', () => {
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(defaults);
-  });
-
-  it('returns stored selection when valid', () => {
-    setDashboardEnabledWidgetIds(USER, ROLE, ['w3', 'w4']);
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(['w3', 'w4']);
-  });
-
-  it('filters out widget IDs not in allowedWidgetIds', () => {
-    setDashboardEnabledWidgetIds(USER, ROLE, ['w1', 'unknown', 'w3']);
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(['w1', 'w3']);
-  });
-
-  it('returns defaults if stored contains only unknown IDs', () => {
-    setDashboardEnabledWidgetIds(USER, ROLE, ['alien1', 'alien2']);
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(defaults);
-  });
-
-  it('returns defaults for corrupted JSON', () => {
-    window.localStorage.setItem(
-      `hrms.ui.dashboard.widgets.${USER}.${ROLE}`,
-      'not-json',
-    );
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(defaults);
-  });
-
-  it('returns defaults for non-array JSON', () => {
-    window.localStorage.setItem(
-      `hrms.ui.dashboard.widgets.${USER}.${ROLE}`,
-      '{"obj": true}',
-    );
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults)).toEqual(defaults);
-  });
-
-  it('deduplicates stored IDs', () => {
-    setDashboardEnabledWidgetIds(USER, ROLE, ['w1', 'w1', 'w2', 'w2']);
-    const result = getDashboardEnabledWidgetIds(USER, ROLE, allowed, defaults);
-    expect(result).toEqual(['w1', 'w2']);
-  });
-});
-
-describe('resetDashboardEnabledWidgetIds', () => {
-  it('removes stored widget IDs', () => {
-    setDashboardEnabledWidgetIds(USER, ROLE, ['w3']);
-    resetDashboardEnabledWidgetIds(USER, ROLE);
-    expect(getDashboardEnabledWidgetIds(USER, ROLE, ['w1', 'w2', 'w3'], ['w1'])).toEqual(['w1']);
-  });
-
-  it('dispatches custom event', () => {
-    const spy = vi.fn();
-    window.addEventListener(UI_PREFERENCES_CHANGED_EVENT, spy);
-    resetDashboardEnabledWidgetIds(USER, ROLE);
-    expect(spy).toHaveBeenCalledTimes(1);
-    window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, spy);
-  });
-});
-
-// ── Dashboard Widget Span Map ────────────────────────────────────
-describe('getDashboardWidgetSpanMap', () => {
-  const allowed = ['w1', 'w2', 'w3'];
-  const defaultSpans: Record<string, number> = { w1: 1, w2: 2, w3: 1 };
-
-  it('returns defaults when nothing stored', () => {
-    expect(getDashboardWidgetSpanMap(USER, ROLE, allowed, defaultSpans)).toEqual(defaultSpans);
-  });
-
-  it('uses stored span values', () => {
-    setDashboardWidgetSpanMap(USER, ROLE, { w1: 3, w2: 1, w3: 2 });
-    const result = getDashboardWidgetSpanMap(USER, ROLE, allowed, defaultSpans);
-    expect(result.w1).toBe(3);
-    expect(result.w2).toBe(1);
-    expect(result.w3).toBe(2);
-  });
-
-  it('clamps span to valid range 1-3', () => {
-    setDashboardWidgetSpanMap(USER, ROLE, { w1: 0, w2: 5, w3: 2 });
-    const result = getDashboardWidgetSpanMap(USER, ROLE, allowed, defaultSpans);
-    expect(result.w1).toBe(1);  // 0 < 1, uses default
-    expect(result.w2).toBe(2);  // 5 > 3, uses default
-    expect(result.w3).toBe(2);  // valid
-  });
-
-  it('returns defaults for corrupt JSON', () => {
-    window.localStorage.setItem(
-      `hrms.ui.dashboard.widgetSpans.${USER}.${ROLE}`,
-      'bad',
-    );
-    expect(getDashboardWidgetSpanMap(USER, ROLE, allowed, defaultSpans)).toEqual(defaultSpans);
-  });
-
-  it('returns defaults for array JSON', () => {
-    window.localStorage.setItem(
-      `hrms.ui.dashboard.widgetSpans.${USER}.${ROLE}`,
-      '[1,2]',
-    );
-    expect(getDashboardWidgetSpanMap(USER, ROLE, allowed, defaultSpans)).toEqual(defaultSpans);
-  });
-});
-
-describe('resetDashboardWidgetSpanMap', () => {
-  it('removes stored span map', () => {
-    setDashboardWidgetSpanMap(USER, ROLE, { w1: 3 });
-    resetDashboardWidgetSpanMap(USER, ROLE);
-    const allowed = ['w1'];
-    const defs = { w1: 1 };
-    expect(getDashboardWidgetSpanMap(USER, ROLE, allowed, defs)).toEqual(defs);
-  });
-});
-
-// ── Dashboard Widget Layout State ────────────────────────────────
-describe('dashboard widget layout state', () => {
-  it('set and reset layout state', () => {
-    const layout = {
-      version: 1,
-      items: [{ id: 'tile1', x: 0, y: 0, w: 1, h: 1 }],
+// ── Dashboard Layout V2 ─────────────────────────────────────────
+describe('dashboard layout V2', () => {
+  it('round-trips layout state', () => {
+    const state = {
+      version: 2 as const,
+      presetVersion: 6,
+      role: ROLE as const,
+      widgets: [
+        { id: 'attendanceToday' as const, x: 0, y: 0, w: 8, h: 4, visible: true },
+      ],
     };
-    setDashboardWidgetLayoutState(USER, ROLE, layout);
+    setDashboardLayoutStateV2(USER, ROLE, state);
+    expect(getDashboardLayoutStateV2(USER, ROLE)).toEqual(state);
+  });
 
-    // Reset clears it
+  it('resets layout state', () => {
+    const state = {
+      version: 2 as const,
+      presetVersion: 6,
+      role: ROLE as const,
+      widgets: [],
+    };
+    setDashboardLayoutStateV2(USER, ROLE, state);
     resetDashboardWidgetLayoutState(USER, ROLE);
-    const key = `hrms.ui.dashboard.layout.${USER}.${ROLE}`;
-    expect(window.localStorage.getItem(key)).toBeNull();
+    expect(getDashboardLayoutStateV2(USER, ROLE)).toBeNull();
   });
 
   it('dispatches event on set', () => {
     const spy = vi.fn();
     window.addEventListener(UI_PREFERENCES_CHANGED_EVENT, spy);
-    setDashboardWidgetLayoutState(USER, ROLE, {
-      version: 1,
-      items: [],
+    setDashboardLayoutStateV2(USER, ROLE, {
+      version: 2,
+      presetVersion: 6,
+      role: ROLE,
+      widgets: [],
     });
     expect(spy).toHaveBeenCalledTimes(1);
     window.removeEventListener(UI_PREFERENCES_CHANGED_EVENT, spy);
   });
 });
 
-// ── Dashboard Layout Preset Version ──────────────────────────────
-describe('dashboardLayoutPresetVersion', () => {
-  it('returns null when nothing stored', () => {
-    expect(getDashboardLayoutPresetVersion(USER, ROLE)).toBeNull();
+// ── Legacy Key Cleanup ───────────────────────────────────────────
+describe('legacy key cleanup', () => {
+  it('resetDashboardEnabledWidgetIds removes the key', () => {
+    window.localStorage.setItem(`hrms.ui.dashboard.widgets.${USER}.${ROLE}`, '["w1"]');
+    resetDashboardEnabledWidgetIds(USER, ROLE);
+    expect(window.localStorage.getItem(`hrms.ui.dashboard.widgets.${USER}.${ROLE}`)).toBeNull();
   });
 
-  it('returns stored version number', () => {
-    setDashboardLayoutPresetVersion(USER, ROLE, 5);
-    expect(getDashboardLayoutPresetVersion(USER, ROLE)).toBe(5);
-  });
-
-  it('returns null for non-numeric stored value', () => {
-    const key = `hrms.ui.dashboard.layoutPresetVersion.${USER}.${ROLE}`;
-    window.localStorage.setItem(key, 'abc');
-    expect(getDashboardLayoutPresetVersion(USER, ROLE)).toBeNull();
+  it('resetDashboardWidgetSpanMap removes the key', () => {
+    window.localStorage.setItem(`hrms.ui.dashboard.widgetSpans.${USER}.${ROLE}`, '{"w1":2}');
+    resetDashboardWidgetSpanMap(USER, ROLE);
+    expect(window.localStorage.getItem(`hrms.ui.dashboard.widgetSpans.${USER}.${ROLE}`)).toBeNull();
   });
 });
 
@@ -290,24 +181,6 @@ describe('admin stats layout state', () => {
       '{"version": 1}',
     );
     expect(getAdminStatsLayoutState(USER, ROLE)).toBeNull();
-  });
-
-  it('filters out invalid items', () => {
-    window.localStorage.setItem(
-      `hrms.ui.admin.stats.layout.${USER}.${ROLE}`,
-      JSON.stringify({
-        version: 1,
-        items: [
-          { id: 'valid', x: 1, y: 2, w: 1, h: 1 },
-          { id: '', x: 0, y: 0, w: 1, h: 1 }, // empty id → filtered
-          null, // null → filtered
-        ],
-      }),
-    );
-    const result = getAdminStatsLayoutState(USER, ROLE);
-    expect(result).not.toBeNull();
-    expect(result!.items).toHaveLength(1);
-    expect(result!.items[0].id).toBe('valid');
   });
 
   it('resets layout state', () => {

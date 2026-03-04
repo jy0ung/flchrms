@@ -32,18 +32,7 @@ Tips:
   ```
 - First-time runs may be slow because Docker images are pulled.
 
-### 2. Bootstrap + verify with targeted test fixtures
-
-```bash
-npm run db:bootstrap:verify:local:seeded
-```
-
-This adds:
-- `npm run seed:test:targeted`
-
-Use this before Playwright E2E runs.
-
-### 3. Export a clean schema snapshot for review/diff
+### 2. Export a clean schema snapshot for review/diff
 
 ```bash
 npm run db:snapshot:public
@@ -57,7 +46,7 @@ Notes:
 - It intentionally does **not** replace `supabase/default_schema.sql` yet.
 - `supabase/default_schema.sql` currently still acts as a bootstrap file and includes migration-era DDL + DML (default rows, policies, bucket provisioning, etc.).
 
-### 4. Regenerate Supabase TS types from local schema
+### 3. Regenerate Supabase TS types from local schema
 
 ```bash
 npm run types:supabase:gen:local
@@ -73,7 +62,7 @@ Notes:
   2. published `supabase-db` port
   3. `supabase-db` container IP (Linux-host fallback)
 
-### 5. Apply bootstrap defaults locally (Phase 8B split)
+### 4. Apply bootstrap defaults locally (Phase 8B split)
 
 ```bash
 npm run db:bootstrap:defaults:apply:local
@@ -84,7 +73,7 @@ Applies:
 
 This is the new dedicated defaults/bootstrap artifact (data only). It should be applied after migrations on a fresh database.
 
-### 6. Apply platform bootstrap locally (Phase 8B split)
+### 5. Apply platform bootstrap locally (Phase 8B split)
 
 ```bash
 npm run db:bootstrap:platform:apply:local
@@ -95,7 +84,7 @@ Applies:
 
 This contains non-`public` app platform artifacts that are not captured by the `public` schema snapshot (for example `storage.objects` policies and `pg_cron` retention job registration).
 
-### 7. Build compatibility `default_schema.sql` (generated)
+### 6. Build compatibility `default_schema.sql` (generated)
 
 ```bash
 npm run db:build:default-schema:compat

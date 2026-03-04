@@ -158,15 +158,6 @@ export const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   admin: ['criticalInsights', 'pendingActions', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'calendarPreview', 'recentActivity', 'trainingSummary'],
 };
 
-export const ROLE_DEFAULT_WIDGET_WIDTHS: Record<AppRole, Partial<Record<DashboardWidgetId, number>>> = {
-  employee: { attendanceToday: 8, recentActivity: 4, calendarPreview: 4, announcements: 12, leaveBalance: 4, trainingSummary: 8, performanceSummary: 4 },
-  manager: { teamSnapshot: 8, onLeaveToday: 4, pendingActions: 4, charts: 12, announcements: 12, calendarPreview: 4, recentActivity: 4, attendanceToday: 8, trainingSummary: 8, performanceSummary: 4 },
-  general_manager: { criticalInsights: 8, executiveMetrics: 4, pendingActions: 4, charts: 12, announcements: 12, teamSnapshot: 8, onLeaveToday: 4, calendarPreview: 4, recentActivity: 4, attendanceToday: 8, trainingSummary: 8, performanceSummary: 4 },
-  hr: { criticalInsights: 8, executiveMetrics: 4, pendingActions: 4, charts: 12, announcements: 12, teamSnapshot: 8, onLeaveToday: 4, calendarPreview: 4, recentActivity: 4, attendanceToday: 8, trainingSummary: 8, performanceSummary: 4 },
-  director: { criticalInsights: 8, executiveMetrics: 4, pendingActions: 4, charts: 12, announcements: 12, teamSnapshot: 8, onLeaveToday: 4, calendarPreview: 4, recentActivity: 4, attendanceToday: 8, trainingSummary: 8, performanceSummary: 4 },
-  admin: { criticalInsights: 8, pendingActions: 4, charts: 12, announcements: 12, teamSnapshot: 8, onLeaveToday: 4, calendarPreview: 4, recentActivity: 4, trainingSummary: 4 },
-};
-
 export const MAX_LEAVE_BALANCE_ROWS_IN_WIDGET = 4;
 
 export const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefinition> = {

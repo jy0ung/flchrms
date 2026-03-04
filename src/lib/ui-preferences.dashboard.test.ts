@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getDashboardLayoutStateV2,
-  getDashboardStoredLayoutVersion,
-  getDashboardWidgetLayoutState,
+  setDashboardLayoutStateV2,
+  resetDashboardWidgetLayoutState,
 } from '@/lib/ui-preferences';
 
 const USER_ID = 'test-user';
@@ -35,10 +35,9 @@ describe('ui-preferences dashboard layout parsing', () => {
     const parsed = getDashboardLayoutStateV2(USER_ID, ROLE);
     expect(parsed?.version).toBe(2);
     expect(parsed?.widgets).toHaveLength(1);
-    expect(getDashboardWidgetLayoutState(USER_ID, ROLE)).toBeNull();
   });
 
-  it('falls back to legacy layout object parser', () => {
+  it('returns null for non-V2 layout state', () => {
     window.localStorage.clear();
     window.localStorage.setItem(
       DASHBOARD_LAYOUT_KEY,
@@ -48,12 +47,10 @@ describe('ui-preferences dashboard layout parsing', () => {
       }),
     );
 
-    const legacy = getDashboardWidgetLayoutState(USER_ID, ROLE);
-    expect(legacy?.items).toHaveLength(1);
     expect(getDashboardLayoutStateV2(USER_ID, ROLE)).toBeNull();
   });
 
-  it('reads stored layout version for forward-version guards', () => {
+  it('returns null for future version layout state', () => {
     window.localStorage.clear();
     window.localStorage.setItem(
       DASHBOARD_LAYOUT_KEY,
@@ -65,6 +62,50 @@ describe('ui-preferences dashboard layout parsing', () => {
       }),
     );
 
-    expect(getDashboardStoredLayoutVersion(USER_ID, ROLE)).toBe(99);
+    expect(getDashboardLayoutStateV2(USER_ID, ROLE)).toBeNull();
+  });
+
+  it('round-trips via set/get', () => {
+    window.localStorage.clear();
+    const state = {
+      version: 2 as const,
+      presetVersion: 6,
+      role: ROLE as const,
+      widgets: [
+        { id: 'attendanceToday' as const, x: 0, y: 0, w: 8, h: 4, visible: true },
+      ],
+    };
+    setDashboardLayoutStateV2(USER_ID, ROLE, state);
+    const parsed = getDashboardLayoutStateV2(USER_ID, ROLE);
+    expect(parsed).toEqual(state);
+  });
+
+  it('resets layout state', () => {
+    window.localStorage.clear();
+    const state = {
+      version: 2 as const,
+      presetVersion: 6,
+      role: ROLE as const,
+      widgets: [],
+    };
+    setDashboardLayoutStateV2(USER_ID, ROLE, state);
+    resetDashboardWidgetLayoutState(USER_ID, ROLE);
+    expect(getDashboardLayoutStateV2(USER_ID, ROLE)).toBeNull();
+  });
+
+  it('rejects state with mismatched role', () => {
+    window.localStorage.clear();
+    window.localStorage.setItem(
+      DASHBOARD_LAYOUT_KEY,
+      JSON.stringify({
+        version: 2,
+        presetVersion: 4,
+        role: 'admin',
+        widgets: [],
+      }),
+    );
+
+    // Requesting for 'employee' but stored role is 'admin'
+    expect(getDashboardLayoutStateV2(USER_ID, ROLE)).toBeNull();
   });
 });

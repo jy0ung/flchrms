@@ -102,6 +102,38 @@ export type Database = {
           },
         ]
       }
+      dashboard_preferences: {
+        Row: {
+          created_at: string
+          layout_state: Json
+          preset_version: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          layout_state: Json
+          preset_version?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          layout_state?: Json
+          preset_version?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deduction_types: {
         Row: {
           created_at: string

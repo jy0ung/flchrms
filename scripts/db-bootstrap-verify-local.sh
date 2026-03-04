@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DO_SEED=0
+
 DO_DB_TESTS=1
 DO_START=1
 DO_BOOTSTRAP_DEFAULTS=0
@@ -16,16 +16,14 @@ fi
 
 usage() {
   cat <<'EOF'
-Usage: bash scripts/db-bootstrap-verify-local.sh [--seed-targeted] [--apply-bootstrap-defaults] [--skip-db-tests] [--skip-start]
+Usage: bash scripts/db-bootstrap-verify-local.sh [--apply-bootstrap-defaults] [--skip-db-tests] [--skip-start]
 
-Resets the local Supabase database, reapplies migrations, and optionally seeds targeted test data.
-Then runs DB SQL regression suites unless disabled.
+Resets the local Supabase database, reapplies migrations, and runs DB SQL regression suites unless disabled.
 Use separate scripts if you also want to apply compatibility bootstrap artifacts:
   - npm run db:bootstrap:platform:apply:local
   - npm run db:bootstrap:defaults:apply:local
 
 Options:
-  --seed-targeted   Apply supabase/seeds/targeted_test_seed.sql after reset
   --apply-bootstrap-defaults
                     Apply supabase/bootstrap_defaults.sql after migrations
   --skip-db-tests   Skip npm run test:db:sql
@@ -36,10 +34,6 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --seed-targeted)
-      DO_SEED=1
-      shift
-      ;;
     --apply-bootstrap-defaults)
       DO_BOOTSTRAP_DEFAULTS=1
       shift
@@ -101,11 +95,6 @@ echo "Using SUPABASE_DB_CONTAINER=${SUPABASE_DB_CONTAINER}"
 if [[ "${DO_BOOTSTRAP_DEFAULTS}" -eq 1 ]]; then
   echo "Applying bootstrap defaults..."
   npm run db:bootstrap:defaults:apply:local
-fi
-
-if [[ "${DO_SEED}" -eq 1 ]]; then
-  echo "Applying targeted test seed..."
-  npm run seed:test:targeted
 fi
 
 if [[ "${DO_DB_TESTS}" -eq 1 ]]; then
