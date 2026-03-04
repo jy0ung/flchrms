@@ -242,7 +242,8 @@ describe('Dashboard widget rendering', () => {
     renderDashboard();
 
     expect(capturedResizeConfig).toBeDefined();
+    expect(capturedResizeConfig!.handles).toContain('e');
+    expect(capturedResizeConfig!.handles).toContain('w');
     expect(capturedResizeConfig!.handles).toContain('se');
-    expect(capturedResizeConfig!.handles).toContain('sw');
   });
 });
