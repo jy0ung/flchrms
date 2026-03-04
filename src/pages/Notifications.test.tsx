@@ -13,10 +13,6 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  toast: vi.fn(),
-}));
-
 vi.mock('@/hooks/useNotifications', () => ({
   useUserNotifications: () => ({ unreadCount: 2 }),
   useDeleteNotifications: () => ({ deleteNotifications: deleteNotificationsMock, isDeleting: false }),
