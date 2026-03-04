@@ -168,6 +168,41 @@ export function normalizeDashboardLayoutStateV2(params: {
   };
 }
 
+// ── Vertical compaction ──────────────────────────────────────────
+//
+// Re-packs layout items so there are no vertical gaps left by hidden
+// widgets.  Preserves column (x) positions; only adjusts y values.
+
+export interface CompactableItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  [key: string]: unknown;
+}
+
+export function compactLayoutVertically<T extends CompactableItem>(items: T[]): T[] {
+  // Sort by y then x to process top-to-bottom, left-to-right
+  const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+
+  // Track the highest occupied row for each column
+  const colBottom = new Array(GRID_COLUMNS).fill(0);
+
+  return sorted.map((item) => {
+    // Find the earliest y where this item fits without overlapping
+    let bestY = 0;
+    for (let col = item.x; col < item.x + item.w; col++) {
+      bestY = Math.max(bestY, colBottom[col]);
+    }
+    // Update occupied height for each column this item spans
+    for (let col = item.x; col < item.x + item.w; col++) {
+      colBottom[col] = bestY + item.h;
+    }
+    return { ...item, y: bestY };
+  });
+}
+
 // ── Build defaults from role config ──────────────────────────────
 
 export function buildDefaultDashboardLayoutV2(params: {

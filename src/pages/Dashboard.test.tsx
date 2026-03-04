@@ -57,6 +57,7 @@ vi.mock('react-grid-layout', () => ({
     containerRef: { current: null },
     measureWidth: vi.fn(),
   }),
+  verticalCompactor: { type: 'vertical', allowOverlap: false },
 }));
 
 vi.mock('@/hooks/useAnnouncements', () => ({

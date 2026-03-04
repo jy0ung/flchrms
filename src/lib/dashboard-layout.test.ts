@@ -7,6 +7,7 @@ import {
   isDashboardLayoutStateV2,
   normalizeDashboardLayoutStateV2,
   buildDefaultDashboardLayoutV2,
+  compactLayoutVertically,
   type DashboardLayoutStateV2,
   type DashboardWidgetDefinition,
   type DashboardWidgetId,
@@ -260,5 +261,75 @@ describe('dashboard-layout', () => {
     expect(visibleIds).not.toContain('leaveBalance');
     expect(visibleIds).toContain('attendanceToday');
     expect(visibleIds).toContain('announcements');
+  });
+});
+
+describe('compactLayoutVertically', () => {
+  it('leaves an already-compact layout unchanged', () => {
+    const items = [
+      { i: 'a', x: 0, y: 0, w: 8, h: 4 },
+      { i: 'b', x: 8, y: 0, w: 4, h: 4 },
+      { i: 'c', x: 0, y: 4, w: 12, h: 4 },
+    ];
+    const result = compactLayoutVertically(items);
+    expect(result.map(({ i, y }) => ({ i, y }))).toEqual([
+      { i: 'a', y: 0 },
+      { i: 'b', y: 0 },
+      { i: 'c', y: 4 },
+    ]);
+  });
+
+  it('closes vertical gap left by a hidden widget', () => {
+    // Simulates: row0 visible, row1 hidden (absent), row2 visible
+    const items = [
+      { i: 'a', x: 0, y: 0, w: 12, h: 4 },
+      { i: 'c', x: 0, y: 8, w: 12, h: 4 }, // gap from y=4 to y=8
+    ];
+    const result = compactLayoutVertically(items);
+    expect(result[0].y).toBe(0);
+    expect(result[1].y).toBe(4); // compacted up
+  });
+
+  it('compacts items in different columns independently', () => {
+    const items = [
+      { i: 'a', x: 0, y: 0, w: 8, h: 4 },
+      { i: 'b', x: 8, y: 0, w: 4, h: 2 },
+      // Gap where hidden widgets were
+      { i: 'c', x: 0, y: 8, w: 8, h: 4 },
+      { i: 'd', x: 8, y: 8, w: 4, h: 4 },
+    ];
+    const result = compactLayoutVertically(items);
+    // a (w=8): y=0, h=4 → cols 0-7 occupied to y=4
+    // b (w=4): y=0, h=2 → cols 8-11 occupied to y=2
+    // c (w=8): needs cols 0-7, earliest y=4
+    // d (w=4): needs cols 8-11, earliest y=2
+    expect(result.find((r) => r.i === 'c')?.y).toBe(4);
+    expect(result.find((r) => r.i === 'd')?.y).toBe(2);
+  });
+
+  it('handles empty layout', () => {
+    expect(compactLayoutVertically([])).toEqual([]);
+  });
+
+  it('preserves extra properties on items', () => {
+    const items = [
+      { i: 'a', x: 0, y: 5, w: 12, h: 4, minW: 3, maxW: 12 },
+    ];
+    const result = compactLayoutVertically(items);
+    expect(result[0]).toMatchObject({ i: 'a', y: 0, minW: 3, maxW: 12 });
+  });
+
+  it('compacts realistic admin layout with hidden widget gap', () => {
+    // Replicates the actual bug: hidden widget at y=4 leaves gap
+    const items = [
+      { i: 'attendanceToday', x: 0, y: 0, w: 8, h: 4 },
+      { i: 'recentActivity', x: 8, y: 0, w: 4, h: 4 },
+      // calendarPreview at y=4 was hidden — not in visible list
+      { i: 'announcements', x: 0, y: 8, w: 12, h: 4 },
+      { i: 'trainingSummary', x: 4, y: 12, w: 8, h: 4 },
+    ];
+    const result = compactLayoutVertically(items);
+    expect(result.find((r) => r.i === 'announcements')?.y).toBe(4);
+    expect(result.find((r) => r.i === 'trainingSummary')?.y).toBe(8);
   });
 });

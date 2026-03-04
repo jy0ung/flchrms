@@ -69,6 +69,17 @@ function parseServerLayoutState(raw: unknown): DashboardLayoutStateV2 | null {
   return null;
 }
 
+/**
+ * Returns true when the saved layout is stale (preset version < current).
+ * Stale layouts should be replaced with fresh role defaults.
+ */
+function isPresetStale(state: DashboardLayoutStateV2): boolean {
+  return (
+    typeof state.presetVersion !== 'number' ||
+    state.presetVersion < DASHBOARD_LAYOUT_PRESET_VERSION
+  );
+}
+
 // ── RGL ↔ V2 conversion helpers ──────────────────────────────────
 
 export interface RglLayoutItem {
@@ -144,6 +155,13 @@ export function useDashboardLayout() {
       if (!error && serverRow) {
         const parsed = parseServerLayoutState(serverRow.layout_state);
         if (parsed) {
+          // Discard stale layouts when preset version is outdated
+          if (isPresetStale(parsed)) {
+            console.info('[useDashboardLayout] preset version stale, rebuilding defaults');
+            const defaults = buildDefaults(normalizedRole);
+            if (userId) setDashboardLayoutStateV2(userId, normalizedRole, defaults);
+            return defaults;
+          }
           const normalized = normalizeLayout(parsed, normalizedRole);
           // Mirror to localStorage for offline access
           if (userId) setDashboardLayoutStateV2(userId, normalizedRole, normalized);
@@ -155,6 +173,12 @@ export function useDashboardLayout() {
       if (userId) {
         const local = getDashboardLayoutStateV2(userId, normalizedRole);
         if (local) {
+          // Discard stale cached layouts
+          if (isPresetStale(local)) {
+            console.info('[useDashboardLayout] localStorage preset stale, rebuilding defaults');
+            resetDashboardWidgetLayoutState(userId, normalizedRole);
+            return buildDefaults(normalizedRole);
+          }
           return normalizeLayout(local, normalizedRole);
         }
       }

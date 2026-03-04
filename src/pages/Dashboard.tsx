@@ -3,6 +3,7 @@ import { Settings2, Pencil, Save, X, GripHorizontal } from 'lucide-react';
 import {
   ReactGridLayout,
   useContainerWidth,
+  verticalCompactor,
   type Layout,
 } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -11,7 +12,7 @@ import 'react-resizable/css/styles.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
-import { GRID_COLUMNS } from '@/lib/dashboard-layout';
+import { GRID_COLUMNS, compactLayoutVertically } from '@/lib/dashboard-layout';
 import { useDashboardLayout, mergeRglLayoutIntoState } from '@/hooks/useDashboardLayout';
 import {
   WIDGET_DEFINITIONS,
@@ -35,7 +36,7 @@ const GRID_MARGIN: [number, number] = [12, 12];
 function toRglLayout(
   widgets: { id: DashboardWidgetId; x: number; y: number; w: number; h: number; visible: boolean }[],
 ): Layout {
-  return widgets
+  const visible = widgets
     .filter((w) => w.visible)
     .map((w) => {
       const def = WIDGET_DEFINITIONS[w.id];
@@ -50,6 +51,7 @@ function toRglLayout(
         minH: 2,
       };
     });
+  return compactLayoutVertically(visible);
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -175,6 +177,7 @@ export default function Dashboard() {
                 containerPadding: [0, 0],
                 maxRows: Infinity,
               }}
+              compactor={verticalCompactor}
               dragConfig={{
                 enabled: editMode,
                 handle: '.rgl-drag-handle',
