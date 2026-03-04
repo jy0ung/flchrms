@@ -47,10 +47,13 @@ vi.mock('@/hooks/useDashboardLayout', () => ({
 }));
 
 // Mock react-grid-layout to avoid DOM measurement issues in tests
+let capturedResizeConfig: { enabled: boolean; handles: string[] } | undefined;
+
 vi.mock('react-grid-layout', () => ({
-  ReactGridLayout: ({ children, className }: { children: React.ReactNode; layout: unknown[]; className?: string }) => (
-    <div data-testid="rgl-grid" className={className}>{children}</div>
-  ),
+  ReactGridLayout: ({ children, className, resizeConfig }: { children: React.ReactNode; layout: unknown[]; className?: string; resizeConfig?: { enabled: boolean; handles: string[] } }) => {
+    capturedResizeConfig = resizeConfig;
+    return <div data-testid="rgl-grid" className={className}>{children}</div>;
+  },
   useContainerWidth: () => ({
     width: 1200,
     mounted: true,
@@ -137,6 +140,7 @@ describe('Dashboard widget rendering', () => {
   beforeEach(() => {
     mockSaveLayout.mockClear();
     mockResetLayout.mockClear();
+    capturedResizeConfig = undefined;
   });
 
   it('renders the greeting section', () => {
@@ -222,5 +226,23 @@ describe('Dashboard widget rendering', () => {
     const grid = screen.getByTestId('rgl-grid');
     expect(grid).toBeInTheDocument();
     expect(grid.children.length).toBe(3);
+  });
+
+  it('provides both se and sw resize handles so right-anchored widgets can expand left', () => {
+    mockRole = 'employee';
+    mockLayoutState = {
+      version: 2,
+      presetVersion: 7,
+      role: 'employee',
+      widgets: [
+        { id: 'attendanceToday', x: 0, y: 0, w: 8, h: 4, visible: true },
+        { id: 'calendarPreview', x: 8, y: 0, w: 4, h: 4, visible: true },
+      ],
+    };
+    renderDashboard();
+
+    expect(capturedResizeConfig).toBeDefined();
+    expect(capturedResizeConfig!.handles).toContain('se');
+    expect(capturedResizeConfig!.handles).toContain('sw');
   });
 });

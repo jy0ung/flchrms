@@ -184,7 +184,7 @@ export default function Dashboard() {
               }}
               resizeConfig={{
                 enabled: editMode,
-                handles: ['se'],
+                handles: ['se', 'sw'],
               }}
               onLayoutChange={onLayoutChange}
               autoSize
