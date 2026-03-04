@@ -94,7 +94,7 @@ export function DashboardWidgetCard({
         titleClassName="text-base md:text-lg"
         descriptionClassName="text-xs md:text-sm"
       />
-      <CardContent className="flex-1 min-h-0 overflow-hidden pt-0">{children}</CardContent>
+      <CardContent className="flex-1 min-h-0 overflow-y-auto pt-0">{children}</CardContent>
     </Card>
   );
 }

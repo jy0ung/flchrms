@@ -149,13 +149,16 @@ export const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?:
 
 // ── Role → widget mapping ────────────────────────────────────────
 
+// Widget order determines the default row layout via left-to-right packing.
+// Widgets are paired so adjacent widths sum to 12 (=full row), avoiding gaps.
+// General pattern: (w8 + w4 = 12), (w12 = 12), (w4 + w4 + w4 = 12).
 export const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
-  employee: ['attendanceToday', 'recentActivity', 'calendarPreview', 'announcements', 'leaveBalance', 'trainingSummary', 'performanceSummary'],
-  manager: ['teamSnapshot', 'onLeaveToday', 'pendingActions', 'charts', 'announcements', 'calendarPreview', 'recentActivity', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
-  general_manager: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'calendarPreview', 'recentActivity', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
-  hr: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'calendarPreview', 'recentActivity', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
-  director: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'calendarPreview', 'recentActivity', 'attendanceToday', 'trainingSummary', 'performanceSummary'],
-  admin: ['criticalInsights', 'pendingActions', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'calendarPreview', 'recentActivity', 'trainingSummary'],
+  employee: ['attendanceToday', 'leaveBalance', 'announcements', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  manager: ['teamSnapshot', 'onLeaveToday', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  general_manager: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  hr: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  director: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  admin: ['criticalInsights', 'pendingActions', 'teamSnapshot', 'onLeaveToday', 'charts', 'announcements', 'trainingSummary', 'calendarPreview', 'recentActivity'],
 };
 
 export const MAX_LEAVE_BALANCE_ROWS_IN_WIDGET = 4;
@@ -176,7 +179,7 @@ export const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefini
   pendingActions: { id: 'pendingActions', defaultTier: 'primary', allowedRoles: ['manager', 'general_manager', 'hr', 'director', 'admin'], defaultW: 4, defaultH: 4, minW: TIER_WIDTH_RULES.primary.minW, maxW: TIER_WIDTH_RULES.primary.maxW },
 };
 
-export const DASHBOARD_LAYOUT_PRESET_VERSION = 6;
+export const DASHBOARD_LAYOUT_PRESET_VERSION = 7;
 export const DASHBOARD_TIERS: DashboardTier[] = ['primary', 'secondary', 'supporting'];
 
 // ── Utility functions ────────────────────────────────────────────

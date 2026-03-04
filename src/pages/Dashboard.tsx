@@ -27,8 +27,8 @@ import { cn } from '@/lib/utils';
 
 // ── Grid constants ───────────────────────────────────────────────
 
-const ROW_HEIGHT = 80;
-const GRID_MARGIN: [number, number] = [16, 16];
+const ROW_HEIGHT = 72;
+const GRID_MARGIN: [number, number] = [12, 12];
 
 // ── RGL layout helpers ───────────────────────────────────────────
 
@@ -203,7 +203,10 @@ export default function Dashboard() {
                       <GripHorizontal className="h-3.5 w-3.5" />
                     </div>
                   )}
-                  <div className={cn(editMode && 'h-[calc(100%-24px)] overflow-auto')}>
+                  <div className={cn(
+                    'overflow-y-auto',
+                    editMode ? 'h-[calc(100%-24px)]' : 'h-full',
+                  )}>
                     <DashboardWidgetRenderer
                       widgetId={id as DashboardWidgetId}
                       role={role}
