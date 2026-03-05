@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
 import type {
   LeaveAccrualScenarioSimulationResult,
+  LeaveCountryPackContext,
   LeaveForecastResult,
   LeaveLiabilitySnapshotResult,
   LeavePolicyChangeSimulationResult,
@@ -160,6 +161,21 @@ function normalizeAccrualScenarioSimulationResult(data: unknown): LeaveAccrualSc
     delta_total_units: Number(payload.delta_total_units ?? 0),
     by_leave_type: byType,
     scope: (payload.scope as Record<string, unknown> | null) ?? {},
+  };
+}
+
+function normalizeCountryPackContext(data: unknown): LeaveCountryPackContext {
+  const payload = (data ?? {}) as Record<string, unknown>;
+  return {
+    country_pack_id: payload.country_pack_id ? String(payload.country_pack_id) : null,
+    country_pack_version_id: payload.country_pack_version_id ? String(payload.country_pack_version_id) : null,
+    policy_set_id: String(payload.policy_set_id ?? ''),
+    pack_code: String(payload.pack_code ?? ''),
+    country_code: String(payload.country_code ?? 'MY'),
+    legal_entity: payload.legal_entity ? String(payload.legal_entity) : null,
+    location_code: payload.location_code ? String(payload.location_code) : null,
+    resolved_by: String(payload.resolved_by ?? ''),
+    as_of: String(payload.as_of ?? ''),
   };
 }
 
@@ -419,6 +435,34 @@ export function useSimulateLeaveAccrualScenario() {
       toast.error('Failed to simulate accrual scenario', {
         description: sanitizeErrorMessage(error),
       });
+    },
+  });
+}
+
+export function useLeaveCountryPackContext(input?: {
+  asOf?: string;
+  legalEntity?: string | null;
+  locationCode?: string | null;
+  countryCode?: string;
+}) {
+  return useQuery({
+    queryKey: [
+      'leave-country-pack-context',
+      input?.asOf ?? null,
+      input?.legalEntity ?? null,
+      input?.locationCode ?? null,
+      input?.countryCode ?? 'MY',
+    ],
+    queryFn: async () => {
+      const { data, error } = await rpcClient.rpc<unknown>('leave_get_country_pack_context', {
+        _as_of: input?.asOf ?? null,
+        _legal_entity: input?.legalEntity ?? null,
+        _location_code: input?.locationCode ?? null,
+        _country_code: input?.countryCode ?? 'MY',
+      });
+
+      if (error) throw error;
+      return normalizeCountryPackContext(data);
     },
   });
 }

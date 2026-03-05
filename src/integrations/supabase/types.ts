@@ -789,6 +789,126 @@ export type Database = {
           },
         ]
       }
+      leave_country_pack_versions: {
+        Row: {
+          country_pack_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_published: boolean
+          metadata: Json
+          policy_set_id: string | null
+          statutory_rules: Json
+          updated_at: string
+          version_no: number
+        }
+        Insert: {
+          country_pack_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          policy_set_id?: string | null
+          statutory_rules?: Json
+          updated_at?: string
+          version_no: number
+        }
+        Update: {
+          country_pack_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          policy_set_id?: string | null
+          statutory_rules?: Json
+          updated_at?: string
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_country_pack_versions_country_pack_id_fkey"
+            columns: ["country_pack_id"]
+            isOneToOne: false
+            referencedRelation: "leave_country_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_country_pack_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_country_pack_versions_policy_set_id_fkey"
+            columns: ["policy_set_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_country_packs: {
+        Row: {
+          country_code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          legal_entity: string | null
+          location_code: string | null
+          metadata: Json
+          name: string
+          pack_code: string
+          updated_at: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          legal_entity?: string | null
+          location_code?: string | null
+          metadata?: Json
+          name: string
+          pack_code: string
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          legal_entity?: string | null
+          location_code?: string | null
+          metadata?: Json
+          name?: string
+          pack_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_country_packs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_delegations: {
         Row: {
           created_at: string
@@ -3047,6 +3167,28 @@ export type Database = {
         Args: { _as_of?: string }
         Returns: string
       }
+      leave_get_active_policy_version_for_context: {
+        Args: {
+          _as_of?: string
+          _country_code?: string
+          _legal_entity?: string
+          _location_code?: string
+        }
+        Returns: string
+      }
+      leave_get_active_policy_version_for_employee: {
+        Args: { _as_of?: string; _country_code?: string; _employee_id: string }
+        Returns: string
+      }
+      leave_get_country_pack_context: {
+        Args: {
+          _as_of?: string
+          _country_code?: string
+          _legal_entity?: string
+          _location_code?: string
+        }
+        Returns: Json
+      }
       leave_get_my_balance_v2: {
         Args: { _as_of?: string }
         Returns: {
@@ -3076,6 +3218,24 @@ export type Database = {
           _start_date: string
         }
         Returns: Json
+      }
+      leave_resolve_active_country_pack: {
+        Args: {
+          _as_of?: string
+          _country_code?: string
+          _legal_entity?: string
+          _location_code?: string
+        }
+        Returns: {
+          country_code: string
+          country_pack_id: string
+          country_pack_version_id: string
+          legal_entity: string
+          location_code: string
+          pack_code: string
+          policy_set_id: string
+          resolved_by: string
+        }[]
       }
       leave_run_accrual_cycle: {
         Args: { _as_of?: string; _dry_run?: boolean; _employee_id?: string }

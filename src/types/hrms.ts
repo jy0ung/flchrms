@@ -343,6 +343,18 @@ export interface LeaveAccrualScenarioSimulationResult {
   scope: Record<string, unknown>;
 }
 
+export interface LeaveCountryPackContext {
+  country_pack_id: string | null;
+  country_pack_version_id: string | null;
+  policy_set_id: string;
+  pack_code: string;
+  country_code: string;
+  legal_entity: string | null;
+  location_code: string | null;
+  resolved_by: string;
+  as_of: string;
+}
+
 export interface Attendance {
   id: string;
   employee_id: string;
