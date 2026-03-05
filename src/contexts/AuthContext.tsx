@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<boolean> => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -108,14 +108,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        return;
+        setProfile(null);
+        setRole(null);
+        return false;
       }
 
       if (isBlockedAccountStatus(profileData.status)) {
         // Safety net for restored sessions after HR/Admin changes account status.
         await supabase.auth.signOut();
         resetAuthState();
-        return;
+        return false;
       }
 
       setProfile(profileData as Profile);
@@ -128,12 +130,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (roleError) {
         console.error('Error fetching role:', roleError);
-        return;
+        setRole(null);
+        return false;
       }
 
       setRole(roleData.role as AppRole);
+      return true;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
+      setProfile(null);
+      setRole(null);
+      return false;
     }
   };
 
@@ -148,33 +155,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // duplicate fetchProfile calls from the auth state listener.
     let initialSessionResolved = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const hydrateAuthState = async (session: Session | null) => {
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // Only fetch profile from the listener once the initial
-          // getSession has completed — otherwise both paths race.
-          if (initialSessionResolved) {
-            fetchProfile(session.user.id);
-          }
-        } else {
-          setProfile(null);
-          setRole(null);
-        }
-        setIsLoading(false);
+      if (session?.user) {
+        setIsLoading(true);
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setRole(null);
+      }
+      setIsLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        // Only hydrate from the listener once the initial getSession has completed
+        // to prevent races between initialization and auth event callbacks.
+        if (!initialSessionResolved) return;
+        void hydrateAuthState(session);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setIsLoading(false);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await hydrateAuthState(session);
       initialSessionResolved = true;
     });
 
