@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Settings2, Pencil, Save, X, GripHorizontal } from 'lucide-react';
 import {
   ReactGridLayout,
@@ -30,6 +30,18 @@ import { cn } from '@/lib/utils';
 
 const ROW_HEIGHT = 72;
 const GRID_MARGIN: [number, number] = [12, 12];
+const TABLET_GRID_COLUMNS = 6;
+const MOBILE_GRID_COLUMNS = 1;
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
+
+function getGridColumns(width: number): number {
+  if (width < 640) return MOBILE_GRID_COLUMNS;
+  if (width < 1024) return TABLET_GRID_COLUMNS;
+  return GRID_COLUMNS;
+}
 
 // ── RGL layout helpers ───────────────────────────────────────────
 
@@ -54,6 +66,27 @@ function toRglLayout(
   return compactLayoutVertically(visible);
 }
 
+function projectLayoutToColumns(layout: Layout, targetCols: number): Layout {
+  if (targetCols === GRID_COLUMNS) {
+    return compactLayoutVertically(layout);
+  }
+
+  const scale = targetCols / GRID_COLUMNS;
+  const projected = layout.map((item) => {
+    const w = clamp(Math.round(item.w * scale), 1, targetCols);
+    const x = clamp(Math.round(item.x * scale), 0, Math.max(0, targetCols - w));
+    return {
+      ...item,
+      x,
+      w,
+      minW: 1,
+      maxW: targetCols,
+    };
+  });
+
+  return compactLayoutVertically(projected);
+}
+
 // ── Component ────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -74,12 +107,18 @@ export default function Dashboard() {
 
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1200 });
   const showManagerWidgets = canViewManagerDashboardWidgets(role);
+  const currentCols = useMemo(() => getGridColumns(width), [width]);
+  const canEditLayout = currentCols === GRID_COLUMNS;
 
   // Build RGL layout from persisted state
   const rglLayout = useMemo(() => toRglLayout(layoutState.widgets), [layoutState]);
 
   // Active layout: draft during editing, persisted otherwise
   const activeLayout = editMode && draftLayout ? draftLayout : rglLayout;
+  const projectedLayout = useMemo(
+    () => projectLayoutToColumns(activeLayout, currentCols),
+    [activeLayout, currentCols],
+  );
 
   // Visible widget IDs for rendering (stable reference)
   const visibleIds = useMemo(
@@ -90,9 +129,10 @@ export default function Dashboard() {
   // ── Edit mode actions ──────────────────────────────────────────
 
   const enterEditMode = useCallback(() => {
+    if (!canEditLayout) return;
     setDraftLayout(rglLayout.map((item) => ({ ...item })));
     setEditMode(true);
-  }, [rglLayout]);
+  }, [canEditLayout, rglLayout]);
 
   const cancelEdit = useCallback(() => {
     setDraftLayout(null);
@@ -109,12 +149,19 @@ export default function Dashboard() {
 
   const onLayoutChange = useCallback(
     (newLayout: Layout) => {
-      if (editMode) {
+      if (editMode && canEditLayout) {
         setDraftLayout([...newLayout]);
       }
     },
-    [editMode],
+    [editMode, canEditLayout],
   );
+
+  useEffect(() => {
+    if (editMode && !canEditLayout) {
+      setDraftLayout(null);
+      setEditMode(false);
+    }
+  }, [editMode, canEditLayout]);
 
   return (
     <AppPageContainer spacing="comfortable">
@@ -142,6 +189,8 @@ export default function Dashboard() {
                 size="sm"
                 className="gap-1.5"
                 onClick={enterEditMode}
+                disabled={!canEditLayout}
+                title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
               >
                 <Pencil className="h-4 w-4" />
                 <span className="hidden sm:inline">Edit</span>
@@ -169,9 +218,9 @@ export default function Dashboard() {
           {mounted && (
             <ReactGridLayout
               width={width}
-              layout={activeLayout}
+              layout={projectedLayout}
               gridConfig={{
-                cols: GRID_COLUMNS,
+                cols: currentCols,
                 rowHeight: ROW_HEIGHT,
                 margin: GRID_MARGIN,
                 containerPadding: [0, 0],
@@ -179,18 +228,18 @@ export default function Dashboard() {
               }}
               compactor={verticalCompactor}
               dragConfig={{
-                enabled: editMode,
+                enabled: editMode && canEditLayout,
                 handle: '.rgl-drag-handle',
               }}
               resizeConfig={{
-                enabled: editMode,
-                handles: ['e', 'w', 'se'],
+                enabled: editMode && canEditLayout,
+                handles: ['e', 'w', 'se', 'sw'],
               }}
               onLayoutChange={onLayoutChange}
               autoSize
               className={cn(
                 'relative transition-colors duration-200',
-                editMode && 'rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 p-1',
+                editMode && 'rounded-lg border-2 border-dashed border-primary/30 bg-muted/20',
               )}
             >
               {visibleIds.map((id) => (
@@ -207,7 +256,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   <div className={cn(
-                    'overflow-y-auto',
+                    'overflow-hidden',
                     editMode ? 'h-[calc(100%-24px)]' : 'h-full',
                   )}>
                     <DashboardWidgetRenderer

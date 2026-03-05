@@ -228,7 +228,7 @@ describe('Dashboard widget rendering', () => {
     expect(grid.children.length).toBe(3);
   });
 
-  it('provides both se and sw resize handles so right-anchored widgets can expand left', () => {
+  it('provides east/west plus corner resize handles for right-anchored widget resizing', () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -245,5 +245,6 @@ describe('Dashboard widget rendering', () => {
     expect(capturedResizeConfig!.handles).toContain('e');
     expect(capturedResizeConfig!.handles).toContain('w');
     expect(capturedResizeConfig!.handles).toContain('se');
+    expect(capturedResizeConfig!.handles).toContain('sw');
   });
 });

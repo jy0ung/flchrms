@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/system';
+import { QueryErrorState, StatusBadge } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip } from './shared';
 import { getCriticalWidgetTitle, getScopeLabel } from '../dashboard-config';
@@ -22,7 +22,7 @@ import { getCriticalWidgetTitle, getScopeLabel } from '../dashboard-config';
 
 export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading } = useExecutiveStats();
+  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
   const scopeLabel = getScopeLabel(role, stats ?? null);
 
   if (isLoading) {
@@ -36,7 +36,23 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
     );
   }
 
-  if (!stats) return null;
+  if (isError) {
+    return (
+      <DashboardWidgetCard title="Executive Metrics" description={`High-signal KPIs for ${scopeLabel}.`} icon={Target}>
+        <QueryErrorState label="executive metrics" onRetry={() => void refetch()} />
+      </DashboardWidgetCard>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <DashboardWidgetCard title="Executive Metrics" description={`High-signal KPIs for ${scopeLabel}.`} icon={Target}>
+        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+          Executive metrics are temporarily unavailable.
+        </div>
+      </DashboardWidgetCard>
+    );
+  }
 
   return (
     <DashboardWidgetCard
@@ -80,7 +96,7 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
 
 export function CriticalInsightsWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading } = useExecutiveStats();
+  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
   const scopeLabel = getScopeLabel(role, stats ?? null);
 
   const alerts = useMemo(() => {
@@ -160,7 +176,23 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
     );
   }
 
-  if (!stats) return null;
+  if (isError) {
+    return (
+      <DashboardWidgetCard title={getCriticalWidgetTitle(role)} description={`Operational risk signals for ${scopeLabel}.`} icon={ShieldAlert}>
+        <QueryErrorState label="critical insights" onRetry={() => void refetch()} />
+      </DashboardWidgetCard>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <DashboardWidgetCard title={getCriticalWidgetTitle(role)} description={`Operational risk signals for ${scopeLabel}.`} icon={ShieldAlert}>
+        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+          Critical insight data is temporarily unavailable.
+        </div>
+      </DashboardWidgetCard>
+    );
+  }
 
   if (role === 'admin') {
     return (

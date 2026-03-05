@@ -36,8 +36,8 @@ import {
 
 const QUERY_KEY_PREFIX = 'dashboard-layout';
 
-function queryKey(userId: string | undefined) {
-  return [QUERY_KEY_PREFIX, userId] as const;
+function queryKey(userId: string | undefined, role: AppRole) {
+  return [QUERY_KEY_PREFIX, userId, role] as const;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export function useDashboardLayout() {
   // ── Read ─────────────────────────────────────────────────────
 
   const layoutQuery = useQuery({
-    queryKey: queryKey(userId),
+    queryKey: queryKey(userId, normalizedRole),
     enabled: !!userId,
     staleTime: 5 * 60_000, // 5 min
     queryFn: async (): Promise<DashboardLayoutStateV2> => {
@@ -237,7 +237,7 @@ export function useDashboardLayout() {
       return normalized;
     },
     onSuccess: (normalized) => {
-      queryClient.setQueryData(queryKey(userId), normalized);
+      queryClient.setQueryData(queryKey(userId, normalizedRole), normalized);
     },
     onError: (err) => {
       console.error('[useDashboardLayout] save failed', err);
@@ -266,7 +266,7 @@ export function useDashboardLayout() {
       return buildDefaults(normalizedRole);
     },
     onSuccess: (defaults) => {
-      queryClient.setQueryData(queryKey(userId), defaults);
+      queryClient.setQueryData(queryKey(userId, normalizedRole), defaults);
       toast.success('Dashboard reset to default layout.');
     },
     onError: (err) => {

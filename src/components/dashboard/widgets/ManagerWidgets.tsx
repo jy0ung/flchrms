@@ -12,7 +12,7 @@ import type { AppRole } from '@/types/hrms';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/system';
+import { QueryErrorState, StatusBadge } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip, useDashboardOnLeaveTodayRoster } from './shared';
 import { clampPercent, formatStatusLabel, getScopeLabel } from '../dashboard-config';
@@ -21,7 +21,7 @@ import { clampPercent, formatStatusLabel, getScopeLabel } from '../dashboard-con
 
 export function TeamSnapshotWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading } = useExecutiveStats();
+  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
   const scopeLabel = getScopeLabel(role, stats ?? null);
   const title = role === 'manager' ? 'Dept Snapshot' : role === 'admin' ? 'Live Attendance Status' : 'Operational Snapshot';
   const description = role === 'admin'
@@ -39,7 +39,23 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
     );
   }
 
-  if (!stats) return null;
+  if (isError) {
+    return (
+      <DashboardWidgetCard title={title} description={description} icon={Users}>
+        <QueryErrorState label="team snapshot" onRetry={() => void refetch()} />
+      </DashboardWidgetCard>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <DashboardWidgetCard title={title} description={description} icon={Users}>
+        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+          Team metrics are temporarily unavailable.
+        </div>
+      </DashboardWidgetCard>
+    );
+  }
 
   const totalScopeEmployees = role === 'manager' ? (stats.departmentEmployeeCount ?? stats.activeEmployees) : stats.activeEmployees;
 
