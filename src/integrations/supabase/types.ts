@@ -856,6 +856,240 @@ export type Database = {
           },
         ]
       }
+      leave_forecast_rows: {
+        Row: {
+          created_at: string
+          currency_code: string
+          daily_rate: number
+          employee_id: string
+          forecast_run_id: string
+          id: string
+          leave_type_id: string
+          metadata: Json
+          month_start: string
+          opening_balance: number
+          projected_accrual: number
+          projected_closing_balance: number
+          projected_consumption: number
+          projected_liability: number
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          daily_rate?: number
+          employee_id: string
+          forecast_run_id: string
+          id?: string
+          leave_type_id: string
+          metadata?: Json
+          month_start: string
+          opening_balance: number
+          projected_accrual?: number
+          projected_closing_balance: number
+          projected_consumption?: number
+          projected_liability?: number
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          daily_rate?: number
+          employee_id?: string
+          forecast_run_id?: string
+          id?: string
+          leave_type_id?: string
+          metadata?: Json
+          month_start?: string
+          opening_balance?: number
+          projected_accrual?: number
+          projected_closing_balance?: number
+          projected_consumption?: number
+          projected_liability?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_forecast_rows_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_forecast_rows_forecast_run_id_fkey"
+            columns: ["forecast_run_id"]
+            isOneToOne: false
+            referencedRelation: "leave_forecast_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_forecast_rows_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_forecast_runs: {
+        Row: {
+          as_of_date: string
+          assumptions: Json
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency_code: string
+          error_message: string | null
+          generated_rows: number
+          horizon_months: number
+          id: string
+          policy_version_id: string | null
+          run_tag: string | null
+          scope: Json
+          started_at: string
+          status: string
+          total_employees: number
+          total_projected_amount: number
+          total_projected_days: number
+          updated_at: string
+        }
+        Insert: {
+          as_of_date: string
+          assumptions?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          error_message?: string | null
+          generated_rows?: number
+          horizon_months: number
+          id?: string
+          policy_version_id?: string | null
+          run_tag?: string | null
+          scope?: Json
+          started_at?: string
+          status?: string
+          total_employees?: number
+          total_projected_amount?: number
+          total_projected_days?: number
+          updated_at?: string
+        }
+        Update: {
+          as_of_date?: string
+          assumptions?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          error_message?: string | null
+          generated_rows?: number
+          horizon_months?: number
+          id?: string
+          policy_version_id?: string | null
+          run_tag?: string | null
+          scope?: Json
+          started_at?: string
+          status?: string
+          total_employees?: number
+          total_projected_amount?: number
+          total_projected_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_forecast_runs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_forecast_runs_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_liability_snapshots: {
+        Row: {
+          balance_days: number
+          created_at: string
+          created_by: string | null
+          currency_code: string
+          daily_rate: number
+          employee_id: string
+          estimated_amount: number
+          id: string
+          leave_type_id: string
+          metadata: Json
+          policy_version_id: string | null
+          run_tag: string | null
+          scope: Json
+          snapshot_date: string
+        }
+        Insert: {
+          balance_days: number
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          daily_rate?: number
+          employee_id: string
+          estimated_amount?: number
+          id?: string
+          leave_type_id: string
+          metadata?: Json
+          policy_version_id?: string | null
+          run_tag?: string | null
+          scope?: Json
+          snapshot_date: string
+        }
+        Update: {
+          balance_days?: number
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          daily_rate?: number
+          employee_id?: string
+          estimated_amount?: number
+          id?: string
+          leave_type_id?: string
+          metadata?: Json
+          policy_version_id?: string | null
+          run_tag?: string | null
+          scope?: Json
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_liability_snapshots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_liability_snapshots_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_liability_snapshots_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_liability_snapshots_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_payroll_exports: {
         Row: {
           error_message: string | null
@@ -2784,8 +3018,21 @@ export type Database = {
         }
         Returns: Json
       }
+      leave_estimate_daily_rate: {
+        Args: { _as_of?: string; _employee_id: string }
+        Returns: number
+      }
       leave_export_payroll_inputs: {
         Args: { _dry_run?: boolean; _period_end: string; _period_start: string }
+        Returns: Json
+      }
+      leave_generate_liability_snapshot: {
+        Args: {
+          _as_of?: string
+          _dry_run?: boolean
+          _run_tag?: string
+          _scope?: Json
+        }
         Returns: Json
       }
       leave_get_active_approval_delegator: {
@@ -2832,6 +3079,16 @@ export type Database = {
       }
       leave_run_accrual_cycle: {
         Args: { _as_of?: string; _dry_run?: boolean; _employee_id?: string }
+        Returns: Json
+      }
+      leave_run_forecast: {
+        Args: {
+          _as_of?: string
+          _dry_run?: boolean
+          _horizon_months?: number
+          _run_tag?: string
+          _scope?: Json
+        }
         Returns: Json
       }
       leave_run_sla_escalation: {

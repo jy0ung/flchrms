@@ -22,6 +22,7 @@
     "test:e2e:dashboard:layout": "playwright test e2e/dashboard-layout-drag-resize.spec.ts",
     "test:e2e:leave:phase2": "playwright test e2e/leave-phase2-operations-visibility.spec.ts",
     "test:e2e:leave:phase2:ops": "playwright test e2e/leave-phase2-ops-smoke.spec.ts",
+    "test:integration:leave:phase3": "vitest run --config vitest.integration.config.ts src/test/integration/leave-phase3-forecast.integration.test.ts",
     "e2e:accounts:seed-verify:deployed": "bash scripts/seed-e2e-deployed-accounts.sh",
     "e2e:accounts:seed:deployed": "bash scripts/seed-e2e-deployed-accounts.sh --seed-only",
     "e2e:accounts:verify:deployed": "bash scripts/seed-e2e-deployed-accounts.sh --verify-only",

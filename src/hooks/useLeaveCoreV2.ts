@@ -2,7 +2,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
-import type { LeavePolicyDecision, LeavePreviewResult } from '@/types/hrms';
+import type {
+  LeaveForecastResult,
+  LeaveLiabilitySnapshotResult,
+  LeavePolicyDecision,
+  LeavePreviewResult,
+} from '@/types/hrms';
 
 type RpcErrorLike = {
   message?: string;
@@ -51,6 +56,41 @@ function normalizePreviewResult(data: unknown): LeavePreviewResult {
     hard_errors: toStringArray(payload.hard_errors),
     soft_warnings: toStringArray(payload.soft_warnings),
     reason: payload.reason ? String(payload.reason) : null,
+  };
+}
+
+function normalizeLiabilitySnapshotResult(data: unknown): LeaveLiabilitySnapshotResult {
+  const payload = (data ?? {}) as Record<string, unknown>;
+  return {
+    as_of: String(payload.as_of ?? ''),
+    policy_version_id: String(payload.policy_version_id ?? ''),
+    dry_run: Boolean(payload.dry_run),
+    planned_rows: Number(payload.planned_rows ?? 0),
+    written_rows: Number(payload.written_rows ?? 0),
+    total_days: Number(payload.total_days ?? 0),
+    estimated_amount: Number(payload.estimated_amount ?? 0),
+    currency_code: String(payload.currency_code ?? 'MYR'),
+    scope: (payload.scope as Record<string, unknown> | null) ?? {},
+    run_tag: payload.run_tag ? String(payload.run_tag) : null,
+  };
+}
+
+function normalizeForecastResult(data: unknown): LeaveForecastResult {
+  const payload = (data ?? {}) as Record<string, unknown>;
+  return {
+    forecast_run_id: payload.forecast_run_id ? String(payload.forecast_run_id) : null,
+    as_of: String(payload.as_of ?? ''),
+    horizon_months: Number(payload.horizon_months ?? 0),
+    policy_version_id: String(payload.policy_version_id ?? ''),
+    dry_run: Boolean(payload.dry_run),
+    employees: Number(payload.employees ?? 0),
+    planned_rows: Number(payload.planned_rows ?? 0),
+    written_rows: Number(payload.written_rows ?? 0),
+    total_projected_days: Number(payload.total_projected_days ?? 0),
+    total_projected_amount: Number(payload.total_projected_amount ?? 0),
+    currency_code: String(payload.currency_code ?? 'MYR'),
+    scope: (payload.scope as Record<string, unknown> | null) ?? {},
+    run_tag: payload.run_tag ? String(payload.run_tag) : null,
   };
 }
 
@@ -204,6 +244,60 @@ export function useRunLeaveSlaEscalation() {
     },
     onError: (error) => {
       toast.error('Failed to run leave SLA escalation', {
+        description: sanitizeErrorMessage(error),
+      });
+    },
+  });
+}
+
+export function useGenerateLeaveLiabilitySnapshot() {
+  return useMutation({
+    mutationFn: async (input?: {
+      asOf?: string;
+      scope?: Record<string, unknown>;
+      dryRun?: boolean;
+      runTag?: string;
+    }) => {
+      const { data, error } = await rpcClient.rpc<unknown>('leave_generate_liability_snapshot', {
+        _as_of: input?.asOf ?? null,
+        _scope: input?.scope ?? {},
+        _dry_run: input?.dryRun ?? true,
+        _run_tag: input?.runTag ?? null,
+      });
+
+      if (error) throw error;
+      return normalizeLiabilitySnapshotResult(data);
+    },
+    onError: (error) => {
+      toast.error('Failed to generate leave liability snapshot', {
+        description: sanitizeErrorMessage(error),
+      });
+    },
+  });
+}
+
+export function useRunLeaveForecast() {
+  return useMutation({
+    mutationFn: async (input?: {
+      asOf?: string;
+      horizonMonths?: number;
+      scope?: Record<string, unknown>;
+      dryRun?: boolean;
+      runTag?: string;
+    }) => {
+      const { data, error } = await rpcClient.rpc<unknown>('leave_run_forecast', {
+        _as_of: input?.asOf ?? null,
+        _horizon_months: input?.horizonMonths ?? 6,
+        _scope: input?.scope ?? {},
+        _dry_run: input?.dryRun ?? true,
+        _run_tag: input?.runTag ?? null,
+      });
+
+      if (error) throw error;
+      return normalizeForecastResult(data);
+    },
+    onError: (error) => {
+      toast.error('Failed to run leave forecast', {
         description: sanitizeErrorMessage(error),
       });
     },

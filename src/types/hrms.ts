@@ -157,7 +157,9 @@ export type LeaveCapability =
   | 'cancel_request_v2'
   | 'run_accrual_cycle'
   | 'close_period'
-  | 'export_payroll_inputs';
+  | 'export_payroll_inputs'
+  | 'generate_liability_snapshot'
+  | 'run_forecast';
 
 export interface LeavePolicyDecision {
   id: string;
@@ -223,6 +225,69 @@ export interface LeavePreviewResult {
   hard_errors: string[];
   soft_warnings: string[];
   reason: string | null;
+}
+
+export interface LeaveLiabilitySnapshotEntry {
+  id: string;
+  snapshot_date: string;
+  employee_id: string;
+  leave_type_id: string;
+  policy_version_id: string | null;
+  balance_days: number;
+  daily_rate: number;
+  estimated_amount: number;
+  currency_code: string;
+  scope: Record<string, unknown>;
+  run_tag: string | null;
+  metadata: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface LeaveLiabilitySnapshotResult {
+  as_of: string;
+  policy_version_id: string;
+  dry_run: boolean;
+  planned_rows: number;
+  written_rows: number;
+  total_days: number;
+  estimated_amount: number;
+  currency_code: string;
+  scope: Record<string, unknown>;
+  run_tag: string | null;
+}
+
+export interface LeaveForecastRow {
+  id: string;
+  forecast_run_id: string;
+  employee_id: string;
+  leave_type_id: string;
+  month_start: string;
+  opening_balance: number;
+  projected_accrual: number;
+  projected_consumption: number;
+  projected_closing_balance: number;
+  projected_liability: number;
+  daily_rate: number;
+  currency_code: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface LeaveForecastResult {
+  forecast_run_id: string | null;
+  as_of: string;
+  horizon_months: number;
+  policy_version_id: string;
+  dry_run: boolean;
+  employees: number;
+  planned_rows: number;
+  written_rows: number;
+  total_projected_days: number;
+  total_projected_amount: number;
+  currency_code: string;
+  scope: Record<string, unknown>;
+  run_tag: string | null;
 }
 
 export interface Attendance {
