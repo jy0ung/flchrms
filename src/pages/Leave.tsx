@@ -8,19 +8,14 @@ import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Info, Settings2 } from 'lucide-react';
+import { Plus, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { LeavePreviewResult, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
-import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
-import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
 import { useLeaveDelegatedApprovalAccess } from '@/hooks/useLeaveDelegations';
 import { LeaveRequestWizard } from '@/components/leave/LeaveRequestWizard';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
-import { LeaveDelegationsSection } from '@/components/leave/LeaveDelegationsSection';
-import { LeavePeriodOperationsSection } from '@/components/leave/LeavePeriodOperationsSection';
-import { LeaveSlaMonitorSection } from '@/components/leave/LeaveSlaMonitorSection';
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
 import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
@@ -55,8 +50,6 @@ export default function Leave() {
   const uploadDocument = useUploadLeaveDocument();
   
   const [open, setOpen] = useState(false);
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-  const { prefs: leaveDisplayPrefs, visibleBalances, hiddenBalances, updatePrefs: updateLeaveDisplayPrefs, resetPrefs: resetLeaveDisplayPrefs } = useLeaveDisplayPrefs(user?.id, role ?? undefined, balances ?? []);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
@@ -484,7 +477,6 @@ export default function Leave() {
 
   const canViewTeamRequests =
     canViewTeamLeaveRequestsPermission(role) || Boolean(delegatedApprovalAccess?.hasAny);
-  const canRunLeaveOps = role === 'admin' || role === 'hr' || role === 'director';
   const defaultWorkspaceView: LeaveViewOption =
     canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0
       ? 'TEAM_CURRENT'
@@ -553,13 +545,6 @@ export default function Leave() {
         description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}
         actions={[
           {
-            id: 'customize-display',
-            label: 'Customize',
-            icon: Settings2,
-            onClick: () => setCustomizeOpen(true),
-            variant: 'outline',
-          },
-          {
             id: 'request-leave',
             label: 'Request Leave',
             icon: Plus,
@@ -594,19 +579,7 @@ export default function Leave() {
         showCloseButton
       />
 
-      <LeaveDisplayCustomizeDialog
-        open={customizeOpen}
-        onOpenChange={setCustomizeOpen}
-        balances={balances ?? []}
-        currentPrefs={leaveDisplayPrefs}
-        onSave={updateLeaveDisplayPrefs}
-        onReset={resetLeaveDisplayPrefs}
-      />
-
-      <LeaveBalanceSection balances={visibleBalances} />
-      {canViewTeamRequests ? <LeaveDelegationsSection /> : null}
-      {canViewTeamRequests ? <LeaveSlaMonitorSection /> : null}
-      {canRunLeaveOps ? <LeavePeriodOperationsSection /> : null}
+      <LeaveBalanceSection balances={balances ?? []} />
 
       {/* Loading state */}
       {isLoading && (

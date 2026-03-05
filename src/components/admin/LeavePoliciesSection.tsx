@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BarChart3, Edit, FileText, GitBranch, History, Mail, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +13,17 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTableShell, StatusBadge } from '@/components/system';
+import { useAuth } from '@/contexts/AuthContext';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
 import { WorkflowConfigAuditSection } from '@/components/admin/WorkflowConfigAuditSection';
 import { LeavePolicyAnalyticsSection } from '@/components/admin/LeavePolicyAnalyticsSection';
+import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
+import { LeaveDelegationsSection } from '@/components/leave/LeaveDelegationsSection';
+import { LeavePeriodOperationsSection } from '@/components/leave/LeavePeriodOperationsSection';
+import { LeaveSlaMonitorSection } from '@/components/leave/LeaveSlaMonitorSection';
+import { useLeaveBalance } from '@/hooks/useLeaveBalance';
+import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
 import type { Department, LeaveType } from '@/types/hrms';
 import type { LeavePolicySubTabKey } from '@/components/admin/admin-ui-constants';
 
@@ -38,6 +46,16 @@ export function LeavePoliciesSection({
   onEditLeaveType,
   onDeleteLeaveType,
 }: LeavePoliciesSectionProps) {
+  const { user, role } = useAuth();
+  const { data: myBalances } = useLeaveBalance();
+  const [displayCustomizeOpen, setDisplayCustomizeOpen] = useState(false);
+  const {
+    prefs: leaveDisplayPrefs,
+    hiddenBalances,
+    updatePrefs: updateLeaveDisplayPrefs,
+    resetPrefs: resetLeaveDisplayPrefs,
+  } = useLeaveDisplayPrefs(user?.id, role ?? undefined, myBalances ?? []);
+
   const getPolicyVersion = (leaveType: LeaveType) => {
     if (!leaveType.updated_at || leaveType.updated_at === leaveType.created_at) return 'v1';
     return 'v2';
@@ -49,10 +67,14 @@ export function LeavePoliciesSection({
 
   return (
     <Tabs defaultValue={'leave-types' satisfies LeavePolicySubTabKey} className="space-y-4">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-5">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-6">
         <TabsTrigger value="leave-types" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <FileText className="w-4 h-4" />
           <span className="truncate">Leave Types</span>
+        </TabsTrigger>
+        <TabsTrigger value="operations" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <History className="w-4 h-4" />
+          <span className="truncate">Operations</span>
         </TabsTrigger>
         <TabsTrigger value="workflow-builders" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <GitBranch className="w-4 h-4" />
@@ -256,6 +278,40 @@ export function LeavePoliciesSection({
           </>
         }
       />
+      </TabsContent>
+
+      <TabsContent value="operations" className="space-y-4">
+        <DataTableShell
+          density="compact"
+          title="Leave Operations & Settings"
+          description="Configure delegation/escalation operations and manage leave display settings outside request forms."
+          headerActions={
+            <Button type="button" variant="outline" className="w-full rounded-full sm:w-auto" onClick={() => setDisplayCustomizeOpen(true)}>
+              Customize Balance Display
+            </Button>
+          }
+          content={
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{leaveDisplayPrefs.visibleIds.length}</span> leave type cards.
+                {' '}
+                Hidden: <span className="font-medium text-foreground">{hiddenBalances.length}</span>.
+              </div>
+              <LeaveDelegationsSection />
+              <LeaveSlaMonitorSection />
+              <LeavePeriodOperationsSection />
+            </div>
+          }
+        />
+
+        <LeaveDisplayCustomizeDialog
+          open={displayCustomizeOpen}
+          onOpenChange={setDisplayCustomizeOpen}
+          balances={myBalances ?? []}
+          currentPrefs={leaveDisplayPrefs}
+          onSave={updateLeaveDisplayPrefs}
+          onReset={resetLeaveDisplayPrefs}
+        />
       </TabsContent>
 
       <TabsContent value="workflow-builders" className="space-y-4">
