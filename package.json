@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run verify:dist:endpoints",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -19,6 +19,9 @@
     "test:rbac:e2e": "playwright test --grep @rbac",
     "test:rbac:e2e:phase3b": "playwright test e2e/rbac-leave-cancellations.spec.ts e2e/rbac-admin-director-access.spec.ts e2e/rbac-calendar-visibility.spec.ts",
     "test:e2e:notifications": "playwright test e2e/phase7-notifications.spec.ts",
+    "e2e:accounts:seed-verify:deployed": "bash scripts/seed-e2e-deployed-accounts.sh",
+    "e2e:accounts:seed:deployed": "bash scripts/seed-e2e-deployed-accounts.sh --seed-only",
+    "e2e:accounts:verify:deployed": "bash scripts/seed-e2e-deployed-accounts.sh --verify-only",
     "test:state:sql": "bash scripts/test-state-machine-sql.sh",
     "db:bootstrap:verify:local": "bash scripts/db-bootstrap-verify-local.sh",
     "db:bootstrap:verify:local:defaults": "bash scripts/db-bootstrap-verify-local.sh --apply-bootstrap-defaults",
@@ -26,7 +29,8 @@
     "db:bootstrap:defaults:apply:local": "bash scripts/apply-bootstrap-defaults-local.sh",
     "db:build:default-schema:compat": "bash scripts/build-default-schema-compat.sh",
     "db:snapshot:public": "bash scripts/export-public-schema-snapshot.sh",
-    "types:supabase:gen:local": "bash scripts/generate-supabase-types-local.sh"
+    "types:supabase:gen:local": "bash scripts/generate-supabase-types-local.sh",
+    "verify:dist:endpoints": "bash scripts/verify-dist-network-endpoints.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

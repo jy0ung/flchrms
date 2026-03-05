@@ -444,21 +444,65 @@ describe('Admin Integration', () => {
   });
 
   // ── Admin RPC: admin_create_employee ────────────────────────────────
-  // NOTE: admin_create_employee is gated to HR and Director roles only
-  // (not admin). The admin role can manage user_roles, announcements, etc.
-  // but employee creation is HR/Director responsibility.
+  // admin_create_employee is now gated to Admin, HR, and Director roles.
   describe('admin_create_employee RPC', () => {
-    it('admin cannot call admin_create_employee (HR/Director only)', async () => {
+    const createRpcPayload = (email: string) => ({
+      _email: email,
+      _first_name: 'RPC',
+      _last_name: 'Employee',
+      _password: 'Test1234!',
+    });
+
+    const setRoleForTestUser = async (
+      key: string,
+      role: 'employee' | 'manager' | 'general_manager' | 'hr' | 'director',
+    ) => {
+      const { client: adminClient } = await getAdminClient();
+      const user = await getTestUser(key);
+
+      const { error } = await adminClient
+        .from('user_roles')
+        .update({ role })
+        .eq('user_id', user.userId);
+
+      expect(error).toBeNull();
+      return user;
+    };
+
+    it('admin can call admin_create_employee', async () => {
       const { client } = await getAdminClient();
-      const uniqueEmail = `rpc-emp-${Date.now().toString(36)}@flchrms.test`;
-      const { error } = await client.rpc('admin_create_employee', {
-        _email: uniqueEmail,
-        _first_name: 'RPC',
-        _last_name: 'Employee',
-        _password: 'Test1234!',
-      });
-      expect(error).toBeTruthy();
-      expect(error!.message).toContain('HR or Director');
+      const uniqueEmail = `rpc-emp-admin-${Date.now().toString(36)}@flchrms.test`;
+      const { data, error } = await client.rpc(
+        'admin_create_employee',
+        createRpcPayload(uniqueEmail),
+      );
+
+      expect(error).toBeNull();
+      expect(typeof data).toBe('string');
+    });
+
+    it('hr can call admin_create_employee', async () => {
+      const { client } = await setRoleForTestUser('admin-rpc-hr-actor', 'hr');
+      const uniqueEmail = `rpc-emp-hr-${Date.now().toString(36)}@flchrms.test`;
+      const { data, error } = await client.rpc(
+        'admin_create_employee',
+        createRpcPayload(uniqueEmail),
+      );
+
+      expect(error).toBeNull();
+      expect(typeof data).toBe('string');
+    });
+
+    it('director can call admin_create_employee', async () => {
+      const { client } = await setRoleForTestUser('admin-rpc-director-actor', 'director');
+      const uniqueEmail = `rpc-emp-director-${Date.now().toString(36)}@flchrms.test`;
+      const { data, error } = await client.rpc(
+        'admin_create_employee',
+        createRpcPayload(uniqueEmail),
+      );
+
+      expect(error).toBeNull();
+      expect(typeof data).toBe('string');
     });
   });
 
@@ -470,6 +514,42 @@ describe('Admin Integration', () => {
         _email: 'should-fail@flchrms.test',
         _first_name: 'Fail',
         _last_name: 'User',
+        _password: 'Test1234!',
+      });
+      expect(error).toBeTruthy();
+    });
+
+    it('manager cannot call admin_create_employee', async () => {
+      const { client: adminClient } = await getAdminClient();
+      const managerUser = await getTestUser('admin-manager-rpc');
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .update({ role: 'manager' })
+        .eq('user_id', managerUser.userId);
+      expect(roleError).toBeNull();
+
+      const { error } = await managerUser.client.rpc('admin_create_employee', {
+        _email: `should-fail-manager-${Date.now().toString(36)}@flchrms.test`,
+        _first_name: 'Fail',
+        _last_name: 'Manager',
+        _password: 'Test1234!',
+      });
+      expect(error).toBeTruthy();
+    });
+
+    it('general manager cannot call admin_create_employee', async () => {
+      const { client: adminClient } = await getAdminClient();
+      const gmUser = await getTestUser('admin-gm-rpc');
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .update({ role: 'general_manager' })
+        .eq('user_id', gmUser.userId);
+      expect(roleError).toBeNull();
+
+      const { error } = await gmUser.client.rpc('admin_create_employee', {
+        _email: `should-fail-gm-${Date.now().toString(36)}@flchrms.test`,
+        _first_name: 'Fail',
+        _last_name: 'GM',
         _password: 'Test1234!',
       });
       expect(error).toBeTruthy();

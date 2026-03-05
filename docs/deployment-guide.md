@@ -69,6 +69,8 @@ nano .env
 | `VITE_SUPABASE_PROJECT_ID` | Supabase project ID |
 
 > **Important:** `VITE_*` variables are embedded into the static bundle at build time. If you change them, you must rebuild (`npm run build`) and redeploy.
+>
+> **Critical safety check:** production builds must pass endpoint verification so private/local API URLs are never embedded in deployed JS bundles.
 
 ### Edge Function Secrets (Supabase Dashboard or CLI)
 
@@ -99,6 +101,23 @@ sudo bash scripts/deploy.sh --skip-firewall
 ```bash
 cd /opt/flchrms
 sudo bash scripts/deploy.sh --skip-nginx --skip-firewall
+```
+
+### Manual Production Build + Deploy (with endpoint verification)
+
+```bash
+cd /opt/flchrms
+export VITE_SUPABASE_URL="https://<project-ref>.supabase.co"
+export VITE_SUPABASE_PUBLISHABLE_KEY="<anon-key>"
+npm run build
+
+# optional local preflight (already run by npm run build)
+bash scripts/verify-dist-network-endpoints.sh dist
+
+sudo rsync -a --delete dist/ /var/www/flchrms/
+
+# post-deploy verification on deployed web root
+sudo bash scripts/verify-dist-network-endpoints.sh /var/www/flchrms
 ```
 
 ### Deploy Without SSL (HTTP Only)

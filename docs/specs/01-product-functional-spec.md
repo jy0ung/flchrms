@@ -211,7 +211,7 @@ Implemented behavior:
   - Notification Queue
 - Employees tab supports:
   - filter/search
-  - create employee
+  - create employee (`admin`, `hr`, `director`)
   - edit profile/alias
   - reset password
   - archive/restore

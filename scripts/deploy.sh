@@ -262,8 +262,8 @@ if [[ $SKIP_BUILD -eq 0 ]]; then
   source .env 2>/dev/null || true
   set +a
 
-  info "Running vite build…"
-  npx vite build 2>&1 | tail -5
+  info "Running production build (with dist endpoint verification)…"
+  npm run build 2>&1 | tail -5
   ok "Application built successfully."
 else
   info "Step 5/7 — Skipped (--skip-build)."
@@ -286,6 +286,15 @@ if [[ $SKIP_NGINX -eq 0 ]]; then
   rsync -a --delete "${DEPLOY_DIR}/dist/" "${WEB_ROOT}/"
   chown -R www-data:www-data "$WEB_ROOT"
   ok "Static files deployed to ${WEB_ROOT}"
+
+  # Post-deploy safety gate: ensure deployed assets do not reference private/local API endpoints.
+  if [[ -x "${DEPLOY_DIR}/scripts/verify-dist-network-endpoints.sh" ]]; then
+    info "Verifying deployed assets under ${WEB_ROOT}…"
+    "${DEPLOY_DIR}/scripts/verify-dist-network-endpoints.sh" "${WEB_ROOT}"
+    ok "Deployed asset endpoint verification passed."
+  else
+    warn "verify-dist-network-endpoints.sh not found/executable; skipping deployed asset endpoint verification."
+  fi
 
   # Determine server_name
   SERVER_NAME="${DOMAIN:-_}"

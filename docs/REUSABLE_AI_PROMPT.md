@@ -32,13 +32,15 @@
 Project ref:  bmdmdppcbdklfbwksvtu
 URL:          https://bmdmdppcbdklfbwksvtu.supabase.co
 Anon key:     eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtZG1kcHBjYmRrbGZid2tzdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMjk1NzYsImV4cCI6MjA4NzkwNTU3Nn0.Q8WG37liQZHCa_XnAW_sfYqRX1E3c0bbud-dco833j0
-Access token: sbp_9cee85eead30cb8011b5b43dd31fc0772bf8c19b
+Management token: set via `SUPABASE_MANAGEMENT_TOKEN` in your shell (never commit)
 ```
 
 **SQL execution** (supabase CLI `db push` may fail — use Management API):
 ```bash
+export SUPABASE_MANAGEMENT_TOKEN="<set-in-secret-manager>"
+
 curl -s -X POST "https://api.supabase.com/v1/projects/bmdmdppcbdklfbwksvtu/database/query" \
-  -H "Authorization: Bearer sbp_9cee85eead30cb8011b5b43dd31fc0772bf8c19b" \
+  -H "Authorization: Bearer ${SUPABASE_MANAGEMENT_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"query": "YOUR SQL HERE"}'
 ```
@@ -57,10 +59,13 @@ npx supabase gen types typescript \
 cd /home/hrms_admin/projects/flchrms
 VITE_SUPABASE_URL="https://bmdmdppcbdklfbwksvtu.supabase.co" \
 VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtZG1kcHBjYmRrbGZid2tzdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMjk1NzYsImV4cCI6MjA4NzkwNTU3Nn0.Q8WG37liQZHCa_XnAW_sfYqRX1E3c0bbud-dco833j0" \
-npx vite build
+npm run build
 
 # Deploy
 sudo rm -rf /var/www/flchrms/* && sudo cp -r dist/* /var/www/flchrms/
+
+# Post-deploy safety check
+sudo bash scripts/verify-dist-network-endpoints.sh /var/www/flchrms
 ```
 
 ## 5. RBAC Model
@@ -80,6 +85,7 @@ Role enforcement: RLS policies (Supabase) + frontend route guards + permission h
 
 **Test credentials** (all use password `Test1234!`):
 - `admin@flchrms.test`, `hr@flchrms.test`, `manager@flchrms.test`, `employee@flchrms.test`, `gm@flchrms.test`, `director@flchrms.test`
+- These must be explicitly seeded and role-mapped before E2E. Do not assume they exist in production.
 
 ## 6. Architecture Patterns
 

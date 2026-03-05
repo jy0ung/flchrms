@@ -83,6 +83,9 @@
 - `notification_admin_requeue_email_queue_item`
 - `notification_admin_discard_email_queue_item`
 
+Authorization note:
+- `admin_create_employee` is restricted to `admin`, `hr`, and `director`.
+
 ### 3.2 Additional typed functions available in generated schema
 Examples include:
 - role helper functions (`has_role`, `is_manager_of`, `is_department_manager`)
