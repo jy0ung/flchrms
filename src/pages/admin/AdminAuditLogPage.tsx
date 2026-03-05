@@ -1,8 +1,11 @@
 import { useMemo } from 'react';
-import { History, User, FileText } from 'lucide-react';
+import { History, User } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import { useEmployees } from '@/hooks/useEmployees';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 interface AuditEntry {
   id: string;
@@ -40,8 +44,7 @@ function useAuditLog() {
   const { data: workflowAudit, isLoading: auditLoading } = useQuery({
     queryKey: ['admin-audit-workflow'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('workflow_config_audit')
+      const { data, error } = await untypedFrom('workflow_config_audit')
         .select('*')
         .order('changed_at', { ascending: false })
         .limit(50);
@@ -148,7 +151,22 @@ const ACTION_COLORS: Record<string, string> = {
 
 export default function AdminAuditLogPage() {
   usePageTitle('Admin · Audit Log');
+  const { role } = useAuth();
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { entries, isLoading } = useAuditLog();
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canViewAdminAuditLog) {
+    return (
+      <AdminAccessDenied
+        title="Audit log access is disabled"
+        description="Your account does not have the capability to view audit log data."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

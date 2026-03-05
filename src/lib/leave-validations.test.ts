@@ -133,9 +133,16 @@ describe('createLeaveRequestSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects fractional days_count', () => {
+  it('accepts half-day increments for days_count', () => {
     const result = createLeaveRequestSchema.safeParse(
       makeValidLeaveRequest({ days_count: 2.5 }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects days_count values outside 0.5 increments', () => {
+    const result = createLeaveRequestSchema.safeParse(
+      makeValidLeaveRequest({ days_count: 2.25 }),
     );
     expect(result.success).toBe(false);
   });

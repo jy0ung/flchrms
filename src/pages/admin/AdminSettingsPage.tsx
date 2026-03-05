@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Save, Building2, Bell, Shield, Palette, X, ImageIcon, Loader2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
 
@@ -174,6 +177,8 @@ function LogoUpload({
 
 export default function AdminSettingsPage() {
   usePageTitle('Admin · Settings');
+  const { role } = useAuth();
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
   const [dirty, setDirty] = useState(false);
 
@@ -250,6 +255,19 @@ export default function AdminSettingsPage() {
     setDirty(false);
     toast.info('Settings reset to defaults');
   };
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageAdminSettings) {
+    return (
+      <AdminAccessDenied
+        title="Admin settings are disabled"
+        description="Your account does not have the capability to manage admin settings."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

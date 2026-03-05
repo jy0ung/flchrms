@@ -2,16 +2,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminDepartmentManagement } from '@/hooks/admin/useAdminDepartmentManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { DepartmentsTabSection } from '@/components/admin/DepartmentsTabSection';
 import { AdminDepartmentDialogs } from '@/components/admin/AdminDepartmentDialogs';
-import { getAdminCapabilities } from '@/lib/admin-permissions';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 export default function AdminDepartmentsPage() {
   usePageTitle('Admin · Departments');
   const { role } = useAuth();
-  const capabilities = getAdminCapabilities(role);
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles } = useUserRoles();
@@ -30,6 +31,19 @@ export default function AdminDepartmentsPage() {
     openDeleteDepartmentDialog, handleDeleteDepartment,
     createDepartmentPending, updateDepartmentPending, deleteDepartmentPending,
   } = useAdminDepartmentManagement();
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageDepartments) {
+    return (
+      <AdminAccessDenied
+        title="Department management is disabled"
+        description="Your account does not have the capability to manage departments."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

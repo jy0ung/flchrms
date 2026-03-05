@@ -2,17 +2,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminEmployeeManagement } from '@/hooks/admin/useAdminEmployeeManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { RolesTabSection } from '@/components/admin/RolesTabSection';
+import { AdminCapabilityMatrixSection } from '@/components/admin/AdminCapabilityMatrixSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
-import { getAdminCapabilities } from '@/lib/admin-permissions';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { AppRole } from '@/types/hrms';
 
 export default function AdminRolesPage() {
   usePageTitle('Admin · Roles');
   const { role } = useAuth();
-  const capabilities = getAdminCapabilities(role);
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
@@ -35,6 +37,19 @@ export default function AdminRolesPage() {
     adminResetUserPasswordPending, updateUserRolePending, deleteUserRolePending,
   } = useAdminEmployeeManagement({ getUserRole, isAdminLimitedProfileEditor: capabilities.isAdminLimitedProfileEditor });
 
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageRoles) {
+    return (
+      <AdminAccessDenied
+        title="Role management is disabled"
+        description="Your account does not have role-governance capability."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -54,6 +69,8 @@ export default function AdminRolesPage() {
         canManageRoles={capabilities.canManageRoles}
         onEditRole={handleEditRole}
       />
+
+      <AdminCapabilityMatrixSection />
 
       <AdminAccountDialogs
         selectedEmployee={selectedEmployee}

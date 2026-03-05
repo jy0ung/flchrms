@@ -2,15 +2,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useDepartments } from '@/hooks/useEmployees';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
-import { getAdminCapabilities } from '@/lib/admin-permissions';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
   const { role } = useAuth();
-  const capabilities = getAdminCapabilities(role);
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: departments } = useDepartments();
   const { data: leaveTypes, isLoading: leaveTypesLoading } = useLeaveTypes();
 
@@ -24,6 +25,19 @@ export default function AdminLeavePoliciesPage() {
     openDeleteLeaveTypeDialog,
     updateLeaveTypePending, createLeaveTypePending, deleteLeaveTypePending,
   } = useAdminLeaveTypeManagement();
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageLeaveTypes) {
+    return (
+      <AdminAccessDenied
+        title="Leave-policy management is disabled"
+        description="Your account does not have the capability to manage leave policies."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

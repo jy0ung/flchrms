@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_role_capability_audit: {
+        Row: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          changed_at: string
+          changed_by: string
+          id: string
+          new_enabled: boolean
+          old_enabled: boolean | null
+          reason: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_enabled: boolean
+          old_enabled?: boolean | null
+          reason?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          capability?: Database["public"]["Enums"]["admin_capability"]
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_enabled?: boolean
+          old_enabled?: boolean | null
+          reason?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      admin_role_capability_overrides: {
+        Row: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          enabled: boolean
+          id: string
+          reason: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          enabled: boolean
+          id?: string
+          reason?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          capability?: Database["public"]["Enums"]["admin_capability"]
+          enabled?: boolean
+          id?: string
+          reason?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           content: string
@@ -446,6 +509,89 @@ export type Database = {
           },
         ]
       }
+      leave_accrual_ledger: {
+        Row: {
+          balance_after: number | null
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          entry_type: string
+          id: string
+          leave_type_id: string
+          metadata: Json
+          occurred_on: string
+          policy_version_id: string | null
+          posted_at: string
+          quantity: number
+          reason: string | null
+          source: string
+          source_ref: string | null
+        }
+        Insert: {
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          entry_type: string
+          id?: string
+          leave_type_id: string
+          metadata?: Json
+          occurred_on: string
+          policy_version_id?: string | null
+          posted_at?: string
+          quantity: number
+          reason?: string | null
+          source?: string
+          source_ref?: string | null
+        }
+        Update: {
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          entry_type?: string
+          id?: string
+          leave_type_id?: string
+          metadata?: Json
+          occurred_on?: string
+          policy_version_id?: string | null
+          posted_at?: string
+          quantity?: number
+          reason?: string | null
+          source?: string
+          source_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_accrual_ledger_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_accrual_ledger_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_accrual_ledger_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_accrual_ledger_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_approval_workflows: {
         Row: {
           approval_stages: string[]
@@ -487,6 +633,121 @@ export type Database = {
           },
         ]
       }
+      leave_balance_snapshots: {
+        Row: {
+          as_of_date: string
+          balance: number
+          created_at: string
+          employee_id: string
+          id: string
+          leave_type_id: string
+          metadata: Json
+          pending_balance: number
+          policy_version_id: string | null
+        }
+        Insert: {
+          as_of_date: string
+          balance: number
+          created_at?: string
+          employee_id: string
+          id?: string
+          leave_type_id: string
+          metadata?: Json
+          pending_balance?: number
+          policy_version_id?: string | null
+        }
+        Update: {
+          as_of_date?: string
+          balance?: number
+          created_at?: string
+          employee_id?: string
+          id?: string
+          leave_type_id?: string
+          metadata?: Json
+          pending_balance?: number
+          policy_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balance_snapshots_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balance_snapshots_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balance_snapshots_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_calendar_rules: {
+        Row: {
+          affects_working_days: boolean
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          id: string
+          label: string
+          metadata: Json
+          policy_set_id: string
+          rule_type: string
+          starts_on: string
+          updated_at: string
+        }
+        Insert: {
+          affects_working_days?: boolean
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          label: string
+          metadata?: Json
+          policy_set_id: string
+          rule_type: string
+          starts_on: string
+          updated_at?: string
+        }
+        Update: {
+          affects_working_days?: boolean
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          label?: string
+          metadata?: Json
+          policy_set_id?: string
+          rule_type?: string
+          starts_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_calendar_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_calendar_rules_policy_set_id_fkey"
+            columns: ["policy_set_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_cancellation_workflows: {
         Row: {
           approval_stages: string[]
@@ -524,6 +785,299 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_delegations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delegate_user_id: string
+          delegator_user_id: string
+          id: string
+          metadata: Json
+          reason: string | null
+          scope: string
+          status: string
+          updated_at: string
+          valid_from: string
+          valid_to: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delegate_user_id: string
+          delegator_user_id: string
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          scope?: string
+          status?: string
+          updated_at?: string
+          valid_from: string
+          valid_to: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delegate_user_id?: string
+          delegator_user_id?: string
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          scope?: string
+          status?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_delegations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_delegations_delegate_user_id_fkey"
+            columns: ["delegate_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_delegations_delegator_user_id_fkey"
+            columns: ["delegator_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_payroll_exports: {
+        Row: {
+          error_message: string | null
+          generated_at: string
+          generated_by: string | null
+          id: string
+          metadata: Json
+          payload: Json
+          period_end: string
+          period_start: string
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json
+          payload?: Json
+          period_end: string
+          period_start: string
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json
+          payload?: Json
+          period_end?: string
+          period_start?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_payroll_exports_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_policy_sets: {
+        Row: {
+          country_code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          legal_entity: string | null
+          metadata: Json
+          name: string
+          policy_key: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          legal_entity?: string | null
+          metadata?: Json
+          name: string
+          policy_key: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          legal_entity?: string | null
+          metadata?: Json
+          name?: string
+          policy_key?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_policy_sets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_policy_versions: {
+        Row: {
+          accrual_rules: Json
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_published: boolean
+          metadata: Json
+          policy_set_id: string
+          rule_pack: Json
+          updated_at: string
+          validation_rules: Json
+          version_no: number
+          workflow_rules: Json
+        }
+        Insert: {
+          accrual_rules?: Json
+          created_at?: string
+          created_by?: string | null
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          policy_set_id: string
+          rule_pack?: Json
+          updated_at?: string
+          validation_rules?: Json
+          version_no: number
+          workflow_rules?: Json
+        }
+        Update: {
+          accrual_rules?: Json
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          policy_set_id?: string
+          rule_pack?: Json
+          updated_at?: string
+          validation_rules?: Json
+          version_no?: number
+          workflow_rules?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_policy_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_policy_versions_policy_set_id_fkey"
+            columns: ["policy_set_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_request_decisions: {
+        Row: {
+          action: string
+          comments: string | null
+          decided_at: string
+          decided_by: string | null
+          decision_reason: string | null
+          from_cancellation_status: string | null
+          from_status: string | null
+          id: string
+          leave_request_id: string
+          metadata: Json
+          stage: string
+          to_cancellation_status: string | null
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          comments?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision_reason?: string | null
+          from_cancellation_status?: string | null
+          from_status?: string | null
+          id?: string
+          leave_request_id: string
+          metadata?: Json
+          stage: string
+          to_cancellation_status?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          comments?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision_reason?: string | null
+          from_cancellation_status?: string | null
+          from_status?: string | null
+          id?: string
+          leave_request_id?: string
+          metadata?: Json
+          stage?: string
+          to_cancellation_status?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_request_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_request_decisions_leave_request_id_fkey"
+            columns: ["leave_request_id"]
+            isOneToOne: false
+            referencedRelation: "leave_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -618,6 +1172,7 @@ export type Database = {
           cancelled_by_role: Database["public"]["Enums"]["app_role"] | null
           created_at: string
           days_count: number
+          decision_trace: Json
           director_approved_at: string | null
           director_approved_by: string | null
           document_required: boolean
@@ -637,10 +1192,12 @@ export type Database = {
           manager_approved_at: string | null
           manager_approved_by: string | null
           manager_comments: string | null
+          policy_version_id: string | null
           reason: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
+          requested_units: number
           start_date: string
           status: string
           updated_at: string
@@ -674,6 +1231,7 @@ export type Database = {
           cancelled_by_role?: Database["public"]["Enums"]["app_role"] | null
           created_at?: string
           days_count: number
+          decision_trace?: Json
           director_approved_at?: string | null
           director_approved_by?: string | null
           document_required?: boolean
@@ -695,10 +1253,12 @@ export type Database = {
           manager_approved_at?: string | null
           manager_approved_by?: string | null
           manager_comments?: string | null
+          policy_version_id?: string | null
           reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
+          requested_units?: number
           start_date: string
           status?: string
           updated_at?: string
@@ -732,6 +1292,7 @@ export type Database = {
           cancelled_by_role?: Database["public"]["Enums"]["app_role"] | null
           created_at?: string
           days_count?: number
+          decision_trace?: Json
           director_approved_at?: string | null
           director_approved_by?: string | null
           document_required?: boolean
@@ -753,10 +1314,12 @@ export type Database = {
           manager_approved_at?: string | null
           manager_approved_by?: string | null
           manager_comments?: string | null
+          policy_version_id?: string | null
           reason?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_reason?: string | null
+          requested_units?: number
           start_date?: string
           status?: string
           updated_at?: string
@@ -812,10 +1375,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leave_requests_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_rejected_by_fkey"
             columns: ["rejected_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_service_levels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          escalation_to_stage: string | null
+          id: string
+          metadata: Json
+          policy_set_id: string
+          target_hours: number
+          updated_at: string
+          workflow_stage: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          escalation_to_stage?: string | null
+          id?: string
+          metadata?: Json
+          policy_set_id: string
+          target_hours: number
+          updated_at?: string
+          workflow_stage: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          escalation_to_stage?: string | null
+          id?: string
+          metadata?: Json
+          policy_set_id?: string
+          target_hours?: number
+          updated_at?: string
+          workflow_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_service_levels_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_service_levels_policy_set_id_fkey"
+            columns: ["policy_set_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
             referencedColumns: ["id"]
           },
         ]
@@ -854,6 +1475,78 @@ export type Database = {
             columns: ["leave_type_id"]
             isOneToOne: true
             referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_type_rules: {
+        Row: {
+          allow_negative_balance: boolean
+          carryover_expiry_month: number | null
+          carryover_max_days: number
+          created_at: string
+          document_after_days: number | null
+          id: string
+          is_enabled: boolean
+          leave_type_id: string
+          max_consecutive_days: number | null
+          metadata: Json
+          min_notice_days: number
+          policy_version_id: string
+          proration_method: string
+          requires_document: boolean
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          allow_negative_balance?: boolean
+          carryover_expiry_month?: number | null
+          carryover_max_days?: number
+          created_at?: string
+          document_after_days?: number | null
+          id?: string
+          is_enabled?: boolean
+          leave_type_id: string
+          max_consecutive_days?: number | null
+          metadata?: Json
+          min_notice_days?: number
+          policy_version_id: string
+          proration_method?: string
+          requires_document?: boolean
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_negative_balance?: boolean
+          carryover_expiry_month?: number | null
+          carryover_max_days?: number
+          created_at?: string
+          document_after_days?: number | null
+          id?: string
+          is_enabled?: boolean
+          leave_type_id?: string
+          max_consecutive_days?: number | null
+          metadata?: Json
+          min_notice_days?: number
+          policy_version_id?: string
+          proration_method?: string
+          requires_document?: boolean
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_type_rules_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_type_rules_policy_version_id_fkey"
+            columns: ["policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -1816,9 +2509,58 @@ export type Database = {
         }
         Returns: string
       }
+      admin_default_capability: {
+        Args: {
+          _capability: Database["public"]["Enums"]["admin_capability"]
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      admin_effective_role_capability: {
+        Args: {
+          _capability: Database["public"]["Enums"]["admin_capability"]
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      admin_get_capability_matrix: {
+        Args: never
+        Returns: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          default_enabled: boolean
+          enabled: boolean
+          overridden: boolean
+          reason: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string
+        }[]
+      }
+      admin_get_my_capabilities: { Args: never; Returns: Json }
+      admin_has_capability: {
+        Args: {
+          _capability: Database["public"]["Enums"]["admin_capability"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       admin_reset_user_password: {
         Args: { _new_password: string; _target_user_id: string }
         Returns: undefined
+      }
+      admin_set_role_capability: {
+        Args: {
+          _capability: Database["public"]["Enums"]["admin_capability"]
+          _enabled: boolean
+          _reason?: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: {
+          capability: Database["public"]["Enums"]["admin_capability"]
+          enabled: boolean
+          overridden: boolean
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
       }
       amend_leave_request: {
         Args: {
@@ -1856,6 +2598,7 @@ export type Database = {
           cancelled_by_role: Database["public"]["Enums"]["app_role"] | null
           created_at: string
           days_count: number
+          decision_trace: Json
           director_approved_at: string | null
           director_approved_by: string | null
           document_required: boolean
@@ -1875,10 +2618,12 @@ export type Database = {
           manager_approved_at: string | null
           manager_approved_by: string | null
           manager_comments: string | null
+          policy_version_id: string | null
           reason: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_reason: string | null
+          requested_units: number
           start_date: string
           status: string
           updated_at: string
@@ -1901,6 +2646,28 @@ export type Database = {
         }
         Returns: Json
       }
+      can_access_leave_employee: {
+        Args: { _actor_id: string; _employee_id: string }
+        Returns: boolean
+      }
+      can_access_leave_request: {
+        Args: {
+          _actor_id: string
+          _approval_route_snapshot: string[]
+          _employee_id: string
+          _status: string
+        }
+        Returns: boolean
+      }
+      can_insert_leave_request_decision: {
+        Args: {
+          _actor_id: string
+          _from_status: string
+          _leave_request_id: string
+        }
+        Returns: boolean
+      }
+      can_manage_leave_policy: { Args: { _user_id: string }; Returns: boolean }
       delete_user_notifications: {
         Args: { _older_than_days?: number; _read_only?: boolean }
         Returns: number
@@ -1974,11 +2741,129 @@ export type Database = {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
       }
+      leave_cancel_request_v2: {
+        Args: { _comments?: string; _reason?: string; _request_id: string }
+        Returns: Json
+      }
+      leave_close_period: {
+        Args: {
+          _dry_run?: boolean
+          _notes?: string
+          _period_end: string
+          _period_start: string
+        }
+        Returns: Json
+      }
+      leave_compute_balance_snapshot: {
+        Args: { _as_of?: string; _employee_id: string; _leave_type_id: string }
+        Returns: {
+          available: number
+          consumed: number
+          entitled: number
+          pending: number
+          source: string
+        }[]
+      }
+      leave_decide_cancellation_request_v2: {
+        Args: {
+          _action: string
+          _comments?: string
+          _decision_reason?: string
+          _expected_cancellation_status?: string
+          _request_id: string
+        }
+        Returns: Json
+      }
+      leave_decide_request: {
+        Args: {
+          _action: string
+          _comments?: string
+          _decision_reason?: string
+          _expected_status?: string
+          _request_id: string
+        }
+        Returns: Json
+      }
+      leave_export_payroll_inputs: {
+        Args: { _dry_run?: boolean; _period_end: string; _period_start: string }
+        Returns: Json
+      }
+      leave_get_active_approval_delegator: {
+        Args: {
+          _as_of?: string
+          _delegate_user_id: string
+          _required_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      leave_get_active_policy_version: {
+        Args: { _as_of?: string }
+        Returns: string
+      }
+      leave_get_my_balance_v2: {
+        Args: { _as_of?: string }
+        Returns: {
+          as_of_date: string
+          available: number
+          consumed: number
+          entitled: number
+          leave_type_id: string
+          leave_type_name: string
+          pending: number
+          source: string
+        }[]
+      }
+      leave_get_request_v2: { Args: { _request_id: string }; Returns: Json }
+      leave_next_required_stage_for_status: {
+        Args: { _approval_route_snapshot: string[]; _status: string }
+        Returns: string
+      }
+      leave_preview_request: {
+        Args: {
+          _days_count?: number
+          _employee_id: string
+          _end_date: string
+          _leave_type_id: string
+          _reason?: string
+          _request_id?: string
+          _start_date: string
+        }
+        Returns: Json
+      }
+      leave_run_accrual_cycle: {
+        Args: { _as_of?: string; _dry_run?: boolean; _employee_id?: string }
+        Returns: Json
+      }
+      leave_run_sla_escalation: {
+        Args: {
+          _as_of?: string
+          _dry_run?: boolean
+          _max_rows?: number
+          _run_tag?: string
+        }
+        Returns: Json
+      }
       leave_stage_recipients: {
         Args: { _employee_id: string; _stage: string }
         Returns: {
           user_id: string
         }[]
+      }
+      leave_stage_required_role: {
+        Args: { _stage: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      leave_submit_request_v2: {
+        Args: {
+          _days_count?: number
+          _document_url?: string
+          _end_date: string
+          _idempotency_key?: string
+          _leave_type_id: string
+          _reason?: string
+          _start_date: string
+        }
+        Returns: Json
       }
       mark_user_notifications_read: {
         Args: { _notification_ids?: string[] }
@@ -2338,6 +3223,20 @@ export type Database = {
       }
     }
     Enums: {
+      admin_capability:
+        | "access_admin_console"
+        | "view_admin_dashboard"
+        | "view_admin_quick_actions"
+        | "view_admin_audit_log"
+        | "manage_employee_directory"
+        | "create_employee"
+        | "reset_employee_passwords"
+        | "manage_departments"
+        | "manage_roles"
+        | "manage_leave_policies"
+        | "manage_announcements"
+        | "manage_admin_settings"
+        | "view_sensitive_employee_identifiers"
       app_role:
         | "admin"
         | "hr"
@@ -2476,6 +3375,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_capability: [
+        "access_admin_console",
+        "view_admin_dashboard",
+        "view_admin_quick_actions",
+        "view_admin_audit_log",
+        "manage_employee_directory",
+        "create_employee",
+        "reset_employee_passwords",
+        "manage_departments",
+        "manage_roles",
+        "manage_leave_policies",
+        "manage_announcements",
+        "manage_admin_settings",
+        "view_sensitive_employee_identifiers",
+      ],
       app_role: [
         "admin",
         "hr",

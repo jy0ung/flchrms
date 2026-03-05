@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLeaveRequests, useCreateLeaveRequest, useApproveLeaveRequest, useCancelLeaveRequest, useAmendLeaveRequest, useProcessLeaveCancellationRequest, useUploadLeaveDocument } from '@/hooks/useLeaveRequests';
+import { useLeavePreviewRequest } from '@/hooks/useLeaveCoreV2';
 import { useLeaveRequestDetailsDialog } from '@/hooks/useLeaveRequestDetailsDialog';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
@@ -9,13 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Info, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { LeaveRequest, LeaveStatus } from '@/types/hrms';
+import { LeavePreviewResult, LeaveRequest, LeaveStatus } from '@/types/hrms';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
 import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
+import { useLeaveDelegatedApprovalAccess } from '@/hooks/useLeaveDelegations';
 import { LeaveRequestWizard } from '@/components/leave/LeaveRequestWizard';
 import { LeaveDetailsDialog } from '@/components/leave/LeaveDetailsDialog';
 import { LeaveCancellationDialogs } from '@/components/leave/LeaveCancellationDialogs';
+import { LeaveDelegationsSection } from '@/components/leave/LeaveDelegationsSection';
+import { LeavePeriodOperationsSection } from '@/components/leave/LeavePeriodOperationsSection';
+import { LeaveSlaMonitorSection } from '@/components/leave/LeaveSlaMonitorSection';
 import { LeaveActionDialog, type LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { LeaveAmendDialog } from '@/components/leave/LeaveAmendDialog';
 import { LeaveRequestWorkspace, type LeaveViewOption } from '@/components/leave/LeaveRequestWorkspace';
@@ -40,6 +45,8 @@ export default function Leave() {
   const { data: requests, isLoading, isError, refetch } = useLeaveRequests();
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances, refetch: refetchBalances } = useLeaveBalance();
+  const { data: delegatedApprovalAccess } = useLeaveDelegatedApprovalAccess();
+  const previewRequest = useLeavePreviewRequest();
   const createRequest = useCreateLeaveRequest();
   const approveRequest = useApproveLeaveRequest();
   const cancelRequest = useCancelLeaveRequest();
@@ -102,6 +109,27 @@ export default function Leave() {
         setOpen(false);
         refetchBalances();
       },
+    });
+  };
+
+  const handlePreview = async (data: {
+    leave_type_id: string;
+    start_date: string;
+    end_date: string;
+    days_count: number;
+    reason?: string;
+  }): Promise<LeavePreviewResult> => {
+    if (!user?.id) {
+      throw new Error('Authentication required.');
+    }
+
+    return previewRequest.mutateAsync({
+      employeeId: user.id,
+      leaveTypeId: data.leave_type_id,
+      startDate: data.start_date,
+      endDate: data.end_date,
+      daysCount: data.days_count,
+      reason: data.reason,
     });
   };
 
@@ -274,7 +302,14 @@ export default function Leave() {
       approvalRouteSnapshot: request.approval_route_snapshot,
     });
 
-    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
+    if (canRoleHandleLeaveApprovalStage(role, nextApprovalStage)) return true;
+
+    if (!nextApprovalStage) return false;
+    if (!delegatedApprovalAccess?.hasAny) return false;
+
+    if (nextApprovalStage === 'manager') return delegatedApprovalAccess.manager;
+    if (nextApprovalStage === 'general_manager') return delegatedApprovalAccess.generalManager;
+    return delegatedApprovalAccess.director;
   };
 
   const canAmend = (request: LeaveRequest) => {
@@ -412,8 +447,13 @@ export default function Leave() {
       approvalRouteSnapshot: request.approval_route_snapshot,
     });
 
-    return canRoleHandleLeaveApprovalStage(role, nextApprovalStage);
-  }, [isCancellationPending, isHistoricalRequest, role]);
+    if (canRoleHandleLeaveApprovalStage(role, nextApprovalStage)) return true;
+
+    if (!nextApprovalStage || !delegatedApprovalAccess?.hasAny) return false;
+    if (nextApprovalStage === 'manager') return delegatedApprovalAccess.manager;
+    if (nextApprovalStage === 'general_manager') return delegatedApprovalAccess.generalManager;
+    return delegatedApprovalAccess.director;
+  }, [delegatedApprovalAccess, isCancellationPending, isHistoricalRequest, role]);
 
   const teamRequests = useMemo(() =>
     requests?.filter((request) =>
@@ -442,7 +482,9 @@ export default function Leave() {
     [teamRequests, isHistoricalRequest]
   );
 
-  const canViewTeamRequests = canViewTeamLeaveRequestsPermission(role);
+  const canViewTeamRequests =
+    canViewTeamLeaveRequestsPermission(role) || Boolean(delegatedApprovalAccess?.hasAny);
+  const canRunLeaveOps = role === 'admin' || role === 'hr' || role === 'director';
   const defaultWorkspaceView: LeaveViewOption =
     canViewTeamRequests && myRequests.length === 0 && teamRequests.length > 0
       ? 'TEAM_CURRENT'
@@ -542,9 +584,11 @@ export default function Leave() {
             leaveTypes={leaveTypes}
             balances={balances}
             onSubmit={handleSubmit}
+            onPreview={handlePreview}
             onUploadDocument={handleUploadDocument}
             onCancel={() => setOpen(false)}
-            isPending={createRequest.isPending}
+            isPending={createRequest.isPending || previewRequest.isPending}
+            isPreviewPending={previewRequest.isPending}
           />
         }
         showCloseButton
@@ -560,6 +604,9 @@ export default function Leave() {
       />
 
       <LeaveBalanceSection balances={visibleBalances} />
+      {canViewTeamRequests ? <LeaveDelegationsSection /> : null}
+      {canViewTeamRequests ? <LeaveSlaMonitorSection /> : null}
+      {canRunLeaveOps ? <LeavePeriodOperationsSection /> : null}
 
       {/* Loading state */}
       {isLoading && (

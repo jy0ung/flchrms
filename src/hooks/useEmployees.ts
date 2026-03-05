@@ -5,6 +5,83 @@ import { Profile, Department } from '@/types/hrms';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
 
+type CreateEmployeeFailureCategory =
+  | 'duplicate_email'
+  | 'validation_error'
+  | 'unauthorized'
+  | 'missing_reference'
+  | 'unknown';
+
+interface RpcLikeError {
+  code?: string;
+  message?: string;
+}
+
+interface CreateEmployeeFailure {
+  category: CreateEmployeeFailureCategory;
+  code: string | null;
+  message: string;
+}
+
+function classifyCreateEmployeeFailure(error: unknown): CreateEmployeeFailure {
+  const rpcError = (error ?? {}) as RpcLikeError;
+  const errorCode = typeof rpcError.code === 'string' ? rpcError.code : null;
+  const rawMessage = sanitizeErrorMessage(error as Error);
+
+  if (errorCode === '23505') {
+    return {
+      category: 'duplicate_email',
+      code: errorCode,
+      message: 'An account with this email already exists.',
+    };
+  }
+
+  if (errorCode === '22023') {
+    return {
+      category: 'validation_error',
+      code: errorCode,
+      message: rawMessage,
+    };
+  }
+
+  if (errorCode === '42501') {
+    return {
+      category: 'unauthorized',
+      code: errorCode,
+      message: 'You do not have permission to create employees.',
+    };
+  }
+
+  if (errorCode === 'P0002') {
+    return {
+      category: 'missing_reference',
+      code: errorCode,
+      message: rawMessage,
+    };
+  }
+
+  return {
+    category: 'unknown',
+    code: errorCode,
+    message: rawMessage,
+  };
+}
+
+function emitCreateEmployeeFailureTelemetry(failure: CreateEmployeeFailure) {
+  const payload = {
+    event: 'admin_create_employee_failed',
+    category: failure.category,
+    code: failure.code,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hrms:admin_create_employee_failed', { detail: payload }));
+  }
+
+  console.info('[telemetry]', payload);
+}
+
 type ProfileUpdateInput = Partial<Profile> & { username?: string | null };
 
 // Shape returned by the get_employee_directory_profiles RPC (not in generated types)
@@ -279,7 +356,9 @@ export function useCreateEmployee() {
       toast.success('Employee created successfully. They can sign in with the temporary password.');
     },
     onError: (error: Error) => {
-      toast.error('Failed to create employee', { description: sanitizeErrorMessage(error) });
+      const failure = classifyCreateEmployeeFailure(error);
+      emitCreateEmployeeFailureTelemetry(failure);
+      toast.error('Failed to create employee', { description: failure.message });
     },
   });
 }

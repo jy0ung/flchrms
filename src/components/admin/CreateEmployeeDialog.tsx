@@ -25,6 +25,43 @@ interface CreateEmployeeDialogProps {
   employees?: (Profile & { department: Department | null })[];
 }
 
+type CreateEmployeeValidationErrors = {
+  email?: string;
+  first_name?: string;
+  password?: string;
+  confirmPassword?: string;
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function getValidationErrors(form: AdminCreateEmployeeForm): CreateEmployeeValidationErrors {
+  const errors: CreateEmployeeValidationErrors = {};
+
+  if (!form.email.trim()) {
+    errors.email = 'Email is required.';
+  } else if (!EMAIL_REGEX.test(form.email.trim())) {
+    errors.email = 'Enter a valid email address.';
+  }
+
+  if (!form.first_name.trim()) {
+    errors.first_name = 'First name is required.';
+  }
+
+  if (!form.password) {
+    errors.password = 'Temporary password is required.';
+  } else if (form.password.length < 6) {
+    errors.password = 'Temporary password must be at least 6 characters.';
+  }
+
+  if (!form.confirmPassword) {
+    errors.confirmPassword = 'Please confirm the temporary password.';
+  } else if (form.password !== form.confirmPassword) {
+    errors.confirmPassword = 'Passwords do not match.';
+  }
+
+  return errors;
+}
+
 export function CreateEmployeeDialog({
   open,
   onOpenChange,
@@ -36,12 +73,29 @@ export function CreateEmployeeDialog({
   employees,
 }: CreateEmployeeDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const validationErrors = getValidationErrors(form);
+  const hasValidationErrors = Object.keys(validationErrors).length > 0;
+
+  const showFieldError = (field: keyof CreateEmployeeValidationErrors) =>
+    submitAttempted || Boolean(touched[field]);
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) {
       setShowPassword(false);
+      setSubmitAttempted(false);
+      setTouched({});
     }
     onOpenChange(nextOpen);
+  };
+
+  const handleSubmit = () => {
+    setSubmitAttempted(true);
+    if (hasValidationErrors) {
+      return;
+    }
+    onSubmit();
   };
 
   return (
@@ -62,9 +116,14 @@ export function CreateEmployeeDialog({
                   type="email"
                   value={form.email}
                   onChange={(e) => onFormChange({ ...form, email: e.target.value })}
+                  onBlur={() => setTouched((previous) => ({ ...previous, email: true }))}
                   placeholder="employee@company.com"
                   autoComplete="off"
+                  aria-invalid={showFieldError('email') && !!validationErrors.email}
                 />
+                {showFieldError('email') && validationErrors.email && (
+                  <p className="text-xs text-destructive">{validationErrors.email}</p>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -75,9 +134,11 @@ export function CreateEmployeeDialog({
                       type={showPassword ? 'text' : 'password'}
                       value={form.password}
                       onChange={(e) => onFormChange({ ...form, password: e.target.value })}
+                      onBlur={() => setTouched((previous) => ({ ...previous, password: true }))}
                       placeholder="••••••••"
                       autoComplete="new-password"
                       minLength={6}
+                      aria-invalid={showFieldError('password') && !!validationErrors.password}
                     />
                     <Button
                       type="button"
@@ -90,6 +151,9 @@ export function CreateEmployeeDialog({
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {showFieldError('password') && validationErrors.password && (
+                    <p className="text-xs text-destructive">{validationErrors.password}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="create-confirm-password">Confirm Password <span className="text-destructive">*</span></Label>
@@ -98,10 +162,15 @@ export function CreateEmployeeDialog({
                     type={showPassword ? 'text' : 'password'}
                     value={form.confirmPassword}
                     onChange={(e) => onFormChange({ ...form, confirmPassword: e.target.value })}
+                    onBlur={() => setTouched((previous) => ({ ...previous, confirmPassword: true }))}
                     placeholder="••••••••"
                     autoComplete="new-password"
                     minLength={6}
+                    aria-invalid={showFieldError('confirmPassword') && !!validationErrors.confirmPassword}
                   />
+                  {showFieldError('confirmPassword') && validationErrors.confirmPassword && (
+                    <p className="text-xs text-destructive">{validationErrors.confirmPassword}</p>
+                  )}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -119,8 +188,13 @@ export function CreateEmployeeDialog({
                     id="create-first-name"
                     value={form.first_name}
                     onChange={(e) => onFormChange({ ...form, first_name: e.target.value })}
+                    onBlur={() => setTouched((previous) => ({ ...previous, first_name: true }))}
                     placeholder="John"
+                    aria-invalid={showFieldError('first_name') && !!validationErrors.first_name}
                   />
+                  {showFieldError('first_name') && validationErrors.first_name && (
+                    <p className="text-xs text-destructive">{validationErrors.first_name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="create-last-name">Last Name</Label>
@@ -222,7 +296,7 @@ export function CreateEmployeeDialog({
           <Button className="w-full sm:w-auto" variant="outline" onClick={() => handleClose(false)} disabled={isPending}>
             Cancel
           </Button>
-          <Button className="w-full sm:w-auto" onClick={onSubmit} disabled={isPending}>
+          <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={isPending}>
             {isPending ? 'Creating...' : 'Create Employee'}
           </Button>
         </>

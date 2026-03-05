@@ -8,7 +8,7 @@
 
 ## 2. Public Schema Inventory
 
-### 2.1 Tables (27)
+### 2.1 Tables (29)
 
 #### Identity and organization
 - `profiles`
@@ -50,9 +50,12 @@
 - `notification_delivery_queue`
 - `notification_email_worker_runs`
 - `workflow_config_events`
+- `admin_role_capability_overrides`
+- `admin_role_capability_audit`
 
 ### 2.2 Enums
 - `app_role`: `admin`, `hr`, `manager`, `employee`, `general_manager`, `director`
+- `admin_capability`: admin-module capability keys used for effective permission checks
 - `deduction_type`: `fixed`, `percentage`
 - `document_category`: `contract`, `certificate`, `official`, `other`
 - `payroll_status`: `draft`, `processing`, `completed`, `cancelled`
@@ -69,6 +72,9 @@
 - `get_employee_directory_profiles`
 - `admin_create_employee`
 - `admin_reset_user_password`
+- `admin_get_my_capabilities`
+- `admin_get_capability_matrix`
+- `admin_set_role_capability`
 - `get_calendar_visible_leaves`
 - `get_dashboard_stats`
 - `get_executive_stats`
@@ -84,7 +90,8 @@
 - `notification_admin_discard_email_queue_item`
 
 Authorization note:
-- `admin_create_employee` is restricted to `admin`, `hr`, and `director`.
+- `admin_create_employee` is capability-gated (`create_employee`) and defaults to allow `admin`, `hr`, `director`, and `general_manager`.
+- `admin_reset_user_password` is capability-gated (`reset_employee_passwords`).
 
 ### 3.2 Additional typed functions available in generated schema
 Examples include:
@@ -106,6 +113,7 @@ Examples include:
 2. RLS policies
 - SQL regression suite validates authenticated-only policy targeting on key tables
 - Role-specific policy behavior validated for leave, documents, notifications, and workflow tables
+- Admin-module mutating policies are capability-aware (`manage_roles`, `manage_departments`, `manage_leave_policies`, `manage_announcements`, `manage_admin_settings`, `manage_employee_directory`)
 
 3. Definer function boundaries
 - Sensitive operations run through SECURITY DEFINER RPCs with constrained grants

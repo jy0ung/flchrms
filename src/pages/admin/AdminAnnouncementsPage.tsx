@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Megaphone } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAnnouncements, useCreateAnnouncement } from '@/hooks/useAnnouncements';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
 
@@ -81,6 +84,8 @@ const emptyForm: AnnouncementForm = { title: '', content: '', priority: 'normal'
 
 export default function AdminAnnouncementsPage() {
   usePageTitle('Admin · Announcements');
+  const { role } = useAuth();
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: announcements, isLoading } = useAnnouncements();
   const createMutation = useCreateAnnouncement();
   const updateMutation = useUpdateAnnouncement();
@@ -141,6 +146,19 @@ export default function AdminAnnouncementsPage() {
     ),
     [announcements],
   );
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageAnnouncements) {
+    return (
+      <AdminAccessDenied
+        title="Announcement management is disabled"
+        description="Your account does not have the capability to manage announcements."
+      />
+    );
+  }
 
   const formFields = (
     <div className="space-y-4">

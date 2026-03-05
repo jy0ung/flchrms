@@ -11,20 +11,22 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/system';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
 import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 
 export default function AdminDashboardPage() {
   usePageTitle('Admin Dashboard');
   const { role } = useAuth();
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles } = useUserRoles();
@@ -121,6 +123,19 @@ export default function AdminDashboardPage() {
       bg: 'bg-rose-50 dark:bg-rose-950/50',
     },
   ];
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canViewAdminDashboard) {
+    return (
+      <AdminAccessDenied
+        title="Dashboard view is disabled"
+        description="Your account does not have the capability to view the admin dashboard."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

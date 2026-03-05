@@ -75,8 +75,11 @@ export interface LeaveRequest {
   start_date: string;
   end_date: string;
   days_count: number;
+  requested_units?: number | null;
   reason: string | null;
   status: LeaveStatus;
+  policy_version_id?: string | null;
+  decision_trace?: Record<string, unknown> | null;
   approval_route_snapshot: LeaveApprovalStage[] | null;
   manager_approved_by: string | null;
   manager_approved_at: string | null;
@@ -145,6 +148,81 @@ export interface LeaveCancellationWorkflow {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type LeaveCapability =
+  | 'preview_request'
+  | 'submit_request_v2'
+  | 'decide_request'
+  | 'cancel_request_v2'
+  | 'run_accrual_cycle'
+  | 'close_period'
+  | 'export_payroll_inputs';
+
+export interface LeavePolicyDecision {
+  id: string;
+  leave_request_id: string;
+  stage: string;
+  action:
+    | 'submit'
+    | 'approve'
+    | 'reject'
+    | 'request_document'
+    | 'cancel_request'
+    | 'cancel_approve'
+    | 'cancel_reject'
+    | 'override';
+  decided_by: string | null;
+  decided_at: string;
+  decision_reason: string | null;
+  comments: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  from_cancellation_status: string | null;
+  to_cancellation_status: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface LeaveBalanceLedgerEntry {
+  id: string;
+  employee_id: string;
+  leave_type_id: string;
+  policy_version_id: string | null;
+  entry_type: 'grant' | 'accrue' | 'consume' | 'expire' | 'adjust' | 'encash' | 'reverse';
+  occurred_on: string;
+  posted_at: string;
+  quantity: number;
+  reason: string | null;
+  source: string;
+  source_ref: string | null;
+  balance_after: number | null;
+  metadata: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface LeavePreviewResult {
+  can_submit: boolean;
+  employee_id: string;
+  leave_type_id: string;
+  leave_type_name: string | null;
+  start_date: string;
+  end_date: string;
+  requested_units: number;
+  policy_version_id: string | null;
+  rule_unit: 'day' | 'half_day' | 'hour';
+  requires_document: boolean;
+  allow_negative_balance: boolean;
+  max_consecutive_days: number | null;
+  min_notice_days: number;
+  entitled_balance: number;
+  consumed_balance: number;
+  pending_balance: number;
+  available_balance: number;
+  balance_source: string;
+  hard_errors: string[];
+  soft_warnings: string[];
+  reason: string | null;
 }
 
 export interface Attendance {

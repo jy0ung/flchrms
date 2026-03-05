@@ -25,6 +25,8 @@ const RESERVED_USERNAMES = new Set([
   'me',
 ]);
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function normalizeUsernameAlias(value: string) {
   return value
     .trim()
@@ -232,13 +234,21 @@ export function useAdminEmployeeManagement({
 
   const handleCreateEmployee = async () => {
     const { email, password, confirmPassword, first_name, last_name } = createEmployeeForm;
+    const trimmedEmail = email.trim();
+    const trimmedFirstName = first_name.trim();
+    const trimmedLastName = last_name.trim();
 
-    if (!email.trim()) {
+    if (!trimmedEmail) {
       toast.error('Email is required.');
       return;
     }
 
-    if (!first_name.trim()) {
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    if (!trimmedFirstName) {
       toast.error('First name is required.');
       return;
     }
@@ -254,10 +264,10 @@ export function useAdminEmployeeManagement({
     }
 
     await createEmployee.mutateAsync({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
-      first_name: first_name.trim(),
-      last_name: last_name.trim(),
+      first_name: trimmedFirstName,
+      last_name: trimmedLastName,
       phone: createEmployeeForm.phone || null,
       job_title: createEmployeeForm.job_title || null,
       department_id: createEmployeeForm.department_id === 'none' ? null : createEmployeeForm.department_id || null,

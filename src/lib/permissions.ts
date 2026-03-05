@@ -10,7 +10,16 @@ export const EMPLOYEE_DIRECTORY_ALLOWED_ROLES: AppRole[] = [
   'director',
 ];
 
-export const ADMIN_PAGE_ALLOWED_ROLES: AppRole[] = ['admin', 'hr', 'director'];
+export const AUTHENTICATED_APP_ROLES: AppRole[] = [
+  'employee',
+  'manager',
+  'general_manager',
+  'director',
+  'hr',
+  'admin',
+];
+
+export const ADMIN_PAGE_ALLOWED_ROLES: AppRole[] = ['admin', 'hr', 'director', 'general_manager'];
 
 export const MANAGER_AND_ABOVE_ROLES: AppRole[] = [
   'manager',

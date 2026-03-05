@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { canAccessAdminPage } from '@/lib/permissions';
+import { getAdminCapabilities } from '@/lib/admin-permissions';
 import { Loader2 } from 'lucide-react';
 import { InteractionModeProvider } from '@/components/system';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
+import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 
 const adminRouteLabels: Record<string, string> = {
   admin: 'Admin',
@@ -33,8 +34,10 @@ const adminRouteLabels: Record<string, string> = {
 export function AdminLayout() {
   const { user, role, isLoading } = useAuth();
   const location = useLocation();
+  const { capabilityMap, isLoading: capabilityLoading } = useMyAdminCapabilities(role);
+  const capabilities = getAdminCapabilities(role, capabilityMap);
 
-  if (isLoading) {
+  if (isLoading || capabilityLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -46,7 +49,7 @@ export function AdminLayout() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!canAccessAdminPage(role)) {
+  if (!capabilities.canAccessAdminPage) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -54,7 +57,7 @@ export function AdminLayout() {
 
   return (
     <SidebarProvider>
-      <AdminSidebar />
+      <AdminSidebar capabilityMap={capabilityMap} />
       <SidebarInset>
         {/* Admin Top Bar */}
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background px-4">

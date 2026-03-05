@@ -24,6 +24,7 @@ const Documents = lazy(() => import("./pages/Documents"));
 const TeamCalendar = lazy(() => import("./pages/TeamCalendar"));
 const Payroll = lazy(() => import("./pages/Payroll"));
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminEntryRedirect } from "@/components/admin/AdminEntryRedirect";
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
 const AdminEmployeesPage = lazy(() => import("./pages/admin/AdminEmployeesPage"));
 const AdminDepartmentsPage = lazy(() => import("./pages/admin/AdminDepartmentsPage"));
@@ -36,7 +37,7 @@ const AdminQuickActionsPage = lazy(() => import("./pages/admin/AdminQuickActions
 const EmployeeProfile = lazy(() => import("./pages/EmployeeProfile"));
 import NotFound from "./pages/NotFound";
 import {
-  ADMIN_PAGE_ALLOWED_ROLES,
+  AUTHENTICATED_APP_ROLES,
   EMPLOYEE_DIRECTORY_ALLOWED_ROLES,
   DOCUMENT_MANAGER_ROLES,
   PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
@@ -107,9 +108,9 @@ const App = () => (
                   </Route>
                 </Route>
                 {/* Admin panel — dedicated layout with its own sidebar */}
-                <Route element={<ProtectedRoute allowedRoles={ADMIN_PAGE_ALLOWED_ROLES} />}>
+                <Route element={<ProtectedRoute allowedRoles={AUTHENTICATED_APP_ROLES} />}>
                   <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="/admin" element={<AdminEntryRedirect />} />
                     <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                     <Route path="/admin/employees" element={<AdminEmployeesPage />} />
                     <Route path="/admin/departments" element={<AdminDepartmentsPage />} />

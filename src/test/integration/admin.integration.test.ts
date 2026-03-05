@@ -18,6 +18,8 @@ import { describe, it, expect, afterAll } from 'vitest';
 import {
   getAdminClient,
   getTestUser,
+  createAnonClient,
+  TEST_PASSWORD,
   cleanupClients,
   offsetDate,
   ADMIN_USER_ID,
@@ -68,7 +70,6 @@ describe('Admin Integration', () => {
       const { client } = await getAdminClient();
       const { userId: targetId } = await getTestUser('admin-target');
 
-      // Admin update scope is restricted to username alias only (NOT job_title, etc.)
       const uniqueUsername = `admin-test-${Date.now().toString(36)}`;
       const { error } = await client
         .from('profiles')
@@ -82,6 +83,32 @@ describe('Admin Integration', () => {
         .eq('id', targetId)
         .single();
       expect(data!.username).toBe(uniqueUsername);
+    });
+
+    it('admin can update non-username profile fields when manage_employee_directory is enabled', async () => {
+      const { client } = await getAdminClient();
+      const { userId: targetId } = await getTestUser('admin-target-profile-fields');
+      const nextPhone = `+1-555-${Date.now().toString().slice(-6)}`;
+      const nextJobTitle = `Admin Audit ${Date.now().toString(36)}`;
+
+      const { error } = await client
+        .from('profiles')
+        .update({
+          phone: nextPhone,
+          job_title: nextJobTitle,
+        })
+        .eq('id', targetId);
+      expect(error).toBeNull();
+
+      const { data: updated, error: readError } = await client
+        .from('profiles')
+        .select('phone, job_title')
+        .eq('id', targetId)
+        .single();
+
+      expect(readError).toBeNull();
+      expect(updated!.phone).toBe(nextPhone);
+      expect(updated!.job_title).toBe(nextJobTitle);
     });
 
     it('admin can read all user_roles', async () => {
@@ -444,7 +471,8 @@ describe('Admin Integration', () => {
   });
 
   // ── Admin RPC: admin_create_employee ────────────────────────────────
-  // admin_create_employee is now gated to Admin, HR, and Director roles.
+  // admin_create_employee is capability-gated and defaults to allow
+  // Admin, HR, Director, and General Manager roles.
   describe('admin_create_employee RPC', () => {
     const createRpcPayload = (email: string) => ({
       _email: email,
@@ -479,6 +507,35 @@ describe('Admin Integration', () => {
 
       expect(error).toBeNull();
       expect(typeof data).toBe('string');
+    });
+
+    it('admin can create employee with optional profile fields', async () => {
+      const { client } = await getAdminClient();
+      const uniqueEmail = `rpc-emp-admin-optional-${Date.now().toString(36)}@flchrms.test`;
+      const phone = `+1-555-${Date.now().toString().slice(-6)}`;
+      const jobTitle = `Optional Field Audit ${Date.now().toString(36)}`;
+
+      const { data, error } = await client.rpc(
+        'admin_create_employee',
+        {
+          ...createRpcPayload(uniqueEmail),
+          _phone: phone,
+          _job_title: jobTitle,
+        },
+      );
+
+      expect(error).toBeNull();
+      expect(typeof data).toBe('string');
+
+      const { data: profile, error: profileError } = await client
+        .from('profiles')
+        .select('phone, job_title')
+        .eq('id', data as string)
+        .single();
+
+      expect(profileError).toBeNull();
+      expect(profile!.phone).toBe(phone);
+      expect(profile!.job_title).toBe(jobTitle);
     });
 
     it('hr can call admin_create_employee', async () => {
@@ -537,7 +594,7 @@ describe('Admin Integration', () => {
       expect(error).toBeTruthy();
     });
 
-    it('general manager cannot call admin_create_employee', async () => {
+    it('general manager can call admin_create_employee when capability defaults are active', async () => {
       const { client: adminClient } = await getAdminClient();
       const gmUser = await getTestUser('admin-gm-rpc');
       const { error: roleError } = await adminClient
@@ -546,13 +603,14 @@ describe('Admin Integration', () => {
         .eq('user_id', gmUser.userId);
       expect(roleError).toBeNull();
 
-      const { error } = await gmUser.client.rpc('admin_create_employee', {
-        _email: `should-fail-gm-${Date.now().toString(36)}@flchrms.test`,
-        _first_name: 'Fail',
-        _last_name: 'GM',
+      const { data, error } = await gmUser.client.rpc('admin_create_employee', {
+        _email: `rpc-emp-gm-${Date.now().toString(36)}@flchrms.test`,
+        _first_name: 'General',
+        _last_name: 'Manager',
         _password: 'Test1234!',
       });
-      expect(error).toBeTruthy();
+      expect(error).toBeNull();
+      expect(typeof data).toBe('string');
     });
 
     it('employee cannot update user_roles', async () => {
@@ -573,6 +631,38 @@ describe('Admin Integration', () => {
         .eq('id', '00000000-0000-0000-0000-000000000000');
       // Should return error or no-op (RLS blocks)
       expect(error !== null || true).toBe(true);
+    });
+  });
+
+  describe('admin_reset_user_password RPC', () => {
+    it('admin can reset password and invalidate prior credentials', async () => {
+      const { client: adminClient } = await getAdminClient();
+      const target = await getTestUser(`admin-reset-target-${Date.now().toString(36)}`);
+      const newPassword = `Reset!${Date.now().toString(36)}123`;
+
+      const { error } = await adminClient.rpc('admin_reset_user_password', {
+        _target_user_id: target.userId,
+        _new_password: newPassword,
+      });
+      expect(error).toBeNull();
+
+      const oldPasswordClient = createAnonClient();
+      const oldPasswordAttempt = await oldPasswordClient.auth.signInWithPassword({
+        email: target.email,
+        password: TEST_PASSWORD,
+      });
+      expect(oldPasswordAttempt.error).toBeTruthy();
+
+      const newPasswordClient = createAnonClient();
+      const newPasswordAttempt = await newPasswordClient.auth.signInWithPassword({
+        email: target.email,
+        password: newPassword,
+      });
+      expect(newPasswordAttempt.error).toBeNull();
+      expect(newPasswordAttempt.data.user?.id).toBe(target.userId);
+
+      await oldPasswordClient.auth.signOut().catch(() => {});
+      await newPasswordClient.auth.signOut().catch(() => {});
     });
   });
 });

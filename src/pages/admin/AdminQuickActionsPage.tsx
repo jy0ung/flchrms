@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import type { ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UserPlus,
@@ -17,21 +17,24 @@ import { useAdminDepartmentManagement } from '@/hooks/admin/useAdminDepartmentMa
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAdminCapabilities } from '@/lib/admin-permissions';
+import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreateEmployeeDialog } from '@/components/admin/CreateEmployeeDialog';
 import { AdminDepartmentDialogs } from '@/components/admin/AdminDepartmentDialogs';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 
 interface QuickAction {
   id: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   description: string;
   color: string;
   bg: string;
+  capability: AdminCapabilityKey;
   action: () => void;
 }
 
@@ -39,7 +42,7 @@ export default function AdminQuickActionsPage() {
   usePageTitle('Admin · Quick Actions');
   const navigate = useNavigate();
   const { role } = useAuth();
-  const capabilities = getAdminCapabilities(role);
+  const { capabilityMap, capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles } = useUserRoles();
@@ -74,6 +77,19 @@ export default function AdminQuickActionsPage() {
     createLeaveTypePending, updateLeaveTypePending, deleteLeaveTypePending,
   } = useAdminLeaveTypeManagement();
 
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canViewAdminQuickActions) {
+    return (
+      <AdminAccessDenied
+        title="Quick actions are disabled"
+        description="Your account does not have the capability to view admin quick actions."
+      />
+    );
+  }
+
   const handleExportCSV = () => {
     const data = employees ?? [];
     if (data.length === 0) {
@@ -105,6 +121,7 @@ export default function AdminQuickActionsPage() {
       description: 'Add a new employee to the system with profile and credentials.',
       color: 'text-blue-600',
       bg: 'bg-blue-50 dark:bg-blue-950/50',
+      capability: 'create_employee',
       action: openCreateEmployeeDialog,
     },
     {
@@ -114,6 +131,7 @@ export default function AdminQuickActionsPage() {
       description: 'Add a new organizational department.',
       color: 'text-violet-600',
       bg: 'bg-violet-50 dark:bg-violet-950/50',
+      capability: 'manage_departments',
       action: () => setCreateDeptDialogOpen(true),
     },
     {
@@ -123,6 +141,7 @@ export default function AdminQuickActionsPage() {
       description: 'Define a new leave policy with entitlement and rules.',
       color: 'text-cyan-600',
       bg: 'bg-cyan-50 dark:bg-cyan-950/50',
+      capability: 'manage_leave_policies',
       action: handleCreateLeaveType,
     },
     {
@@ -132,6 +151,7 @@ export default function AdminQuickActionsPage() {
       description: 'Publish a company-wide announcement to all employees.',
       color: 'text-amber-600',
       bg: 'bg-amber-50 dark:bg-amber-950/50',
+      capability: 'manage_announcements',
       action: () => navigate('/admin/announcements'),
     },
     {
@@ -141,6 +161,7 @@ export default function AdminQuickActionsPage() {
       description: 'Download a CSV file of all employee records.',
       color: 'text-green-600',
       bg: 'bg-green-50 dark:bg-green-950/50',
+      capability: 'manage_employee_directory',
       action: handleExportCSV,
     },
     {
@@ -150,15 +171,17 @@ export default function AdminQuickActionsPage() {
       description: 'Navigate to role assignment with authority-tier safeguards.',
       color: 'text-rose-600',
       bg: 'bg-rose-50 dark:bg-rose-950/50',
+      capability: 'manage_roles',
       action: () => navigate('/admin/roles'),
     },
     {
       id: 'reset-password',
       icon: KeyRound,
       title: 'Reset Password',
-      description: 'Navigate to employees to reset a user\'s password.',
+      description: "Navigate to employees to reset a user's password.",
       color: 'text-orange-600',
       bg: 'bg-orange-50 dark:bg-orange-950/50',
+      capability: 'reset_employee_passwords',
       action: () => navigate('/admin/employees'),
     },
     {
@@ -168,9 +191,12 @@ export default function AdminQuickActionsPage() {
       description: 'Configure system-wide settings and preferences.',
       color: 'text-slate-600',
       bg: 'bg-slate-100 dark:bg-slate-900/50',
+      capability: 'manage_admin_settings',
       action: () => navigate('/admin/settings'),
     },
   ];
+
+  const visibleQuickActions = quickActions.filter((action) => capabilityMap[action.capability]);
 
   return (
     <div className="space-y-6">
@@ -182,7 +208,7 @@ export default function AdminQuickActionsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {quickActions.map((action) => (
+        {visibleQuickActions.map((action) => (
           <Card
             key={action.id}
             className="border-border shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-primary/20 active:scale-[0.98]"
@@ -201,7 +227,6 @@ export default function AdminQuickActionsPage() {
         ))}
       </div>
 
-      {/* Dialogs */}
       <CreateEmployeeDialog
         open={createEmployeeDialogOpen}
         onOpenChange={setCreateEmployeeDialogOpen}

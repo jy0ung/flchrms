@@ -27,13 +27,14 @@ describe('permissions', () => {
       'general_manager',
       'director',
     ]);
-    expect(ADMIN_PAGE_ALLOWED_ROLES).toEqual(['admin', 'hr', 'director']);
+    expect(ADMIN_PAGE_ALLOWED_ROLES).toEqual(['admin', 'hr', 'director', 'general_manager']);
   });
 
   it('matches admin-page access rules', () => {
     expect(canAccessAdminPage('admin')).toBe(true);
     expect(canAccessAdminPage('hr')).toBe(true);
     expect(canAccessAdminPage('director')).toBe(true);
+    expect(canAccessAdminPage('general_manager')).toBe(true);
     expect(canAccessAdminPage('manager')).toBe(false);
     expect(canAccessAdminPage('employee')).toBe(false);
     expect(canAccessAdminPage(null)).toBe(false);

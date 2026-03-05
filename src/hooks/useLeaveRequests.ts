@@ -10,17 +10,76 @@ import {
   normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
 
+type RpcErrorLike = {
+  message?: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+};
+
+type RpcResult<T> = {
+  data: T | null;
+  error: RpcErrorLike | null;
+};
+
+type UntypedRpcClient = {
+  rpc: <T = unknown>(fn: string, params?: Record<string, unknown>) => Promise<RpcResult<T>>;
+};
+
+const rpcClient = supabase as unknown as UntypedRpcClient;
+
+function getRpcErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message;
+  }
+  return '';
+}
+
+function getRpcErrorCode(error: unknown): string {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const value = (error as { code?: unknown }).code;
+    if (typeof value === 'string') return value;
+  }
+  return '';
+}
+
+function isMissingRpcError(error: unknown, functionName: string): boolean {
+  const message = getRpcErrorMessage(error);
+  const hasMissingFunctionSignature =
+    /could not find the function|function .* does not exist|42883|pgrst/i.test(message) &&
+    new RegExp(functionName, 'i').test(message);
+
+  if (hasMissingFunctionSignature) return true;
+
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string' && code === '42883') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function getLeaveApprovalErrorDescription(error: unknown): string {
   const raw =
     error instanceof Error
       ? error.message
       : typeof error === 'string'
         ? error
-        : '';
+        : getRpcErrorMessage(error);
 
   if (
     /Could not find the function\s+public\.approve_leave_request/i.test(raw) ||
+    /Could not find the function\s+public\.leave_decide_request/i.test(raw) ||
     (/approve_leave_request/i.test(raw) && /function/i.test(raw)) ||
+    (/leave_decide_request/i.test(raw) && /function/i.test(raw)) ||
     /PGRST\d{3}/i.test(raw)
   ) {
     return 'Leave approval service is unavailable. Apply latest Supabase migrations and refresh the app.';
@@ -28,6 +87,54 @@ function getLeaveApprovalErrorDescription(error: unknown): string {
 
   if (/permission denied/i.test(raw) && /(function|approve_leave_request|leave_requests|user_roles)/i.test(raw)) {
     return 'Leave approval is blocked by database permissions. Verify execute grant on approve_leave_request and leave policies.';
+  }
+
+  return sanitizeErrorMessage(error);
+}
+
+function getLeaveCancellationErrorDescription(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : getRpcErrorMessage(error);
+  const code = getRpcErrorCode(error);
+
+  if (
+    /Could not find the function\s+public\.leave_cancel_request_v2/i.test(raw) ||
+    /Could not find the function\s+public\.leave_decide_cancellation_request_v2/i.test(raw) ||
+    (/leave_cancel_request_v2/i.test(raw) && /function/i.test(raw)) ||
+    (/leave_decide_cancellation_request_v2/i.test(raw) && /function/i.test(raw)) ||
+    /PGRST\d{3}/i.test(raw)
+  ) {
+    return 'Leave cancellation service is unavailable. Apply latest Supabase migrations and refresh the app.';
+  }
+
+  if (/STALE_CANCELLATION_STATUS/i.test(raw)) {
+    return 'Cancellation status changed while you were acting. Refresh and try again.';
+  }
+
+  if (/STAGE_MISMATCH/i.test(raw)) {
+    return 'This cancellation request moved to a different approval stage. Refresh and retry.';
+  }
+
+  if (
+    code === '42501' &&
+    (/cancellation stage/i.test(raw) || /not authorized/i.test(raw) || /privilege/i.test(raw))
+  ) {
+    return 'You are not allowed to process this cancellation at the current stage.';
+  }
+
+  if (
+    code === 'P0001' &&
+    (
+      /already resolved/i.test(raw) ||
+      /not been submitted/i.test(raw) ||
+      /non-final-approved/i.test(raw)
+    )
+  ) {
+    return 'This cancellation request can no longer be processed.';
   }
 
   return sanitizeErrorMessage(error);
@@ -75,7 +182,44 @@ export function useCreateLeaveRequest() {
         throw new Error(validation.error.errors[0]?.message ?? 'Invalid leave request data');
       }
 
-      const { data, error } = await supabase
+      const { data: v2Data, error: v2Error } = await rpcClient.rpc<{
+        request_id: string;
+      }>('leave_submit_request_v2', {
+        _leave_type_id: request.leave_type_id,
+        _start_date: request.start_date,
+        _end_date: request.end_date,
+        _days_count: request.days_count,
+        _reason: request.reason ?? null,
+        _document_url: request.document_url ?? null,
+        _idempotency_key: null,
+      });
+
+      if (!v2Error) {
+        if (!v2Data?.request_id) {
+          throw new Error('leave_submit_request_v2 returned an invalid response.');
+        }
+
+        const { data: insertedRequest, error: selectError } = await supabase
+          .from('leave_requests')
+          .select('*')
+          .eq('id', v2Data.request_id)
+          .single();
+
+        if (selectError) throw selectError;
+        return insertedRequest;
+      }
+
+      if (!isMissingRpcError(v2Error, 'leave_submit_request_v2')) {
+        throw v2Error;
+      }
+
+      if (!Number.isInteger(request.days_count)) {
+        throw new Error(
+          'Half-day leave requires leave-core v2 migration. Apply latest Supabase migrations and retry.',
+        );
+      }
+
+      const { data: legacyData, error: legacyError } = await supabase
         .from('leave_requests')
         .insert({
           leave_type_id: request.leave_type_id,
@@ -88,9 +232,9 @@ export function useCreateLeaveRequest() {
         })
         .select()
         .single();
-      
-      if (error) throw error;
-      return data;
+
+      if (legacyError) throw legacyError;
+      return legacyData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
@@ -127,10 +271,24 @@ export function useApproveLeaveRequest() {
         throw new Error('Only authenticated approvers can process leave requests.');
       }
 
-      // Use server-side RPC for atomic approval (prevents TOCTOU race conditions).
-      // The RPC handles: row locking, status verification, workflow resolution,
-      // role-based stage matching, and the final update — all in one transaction.
-      const { data, error } = await supabase.rpc('approve_leave_request', {
+      const { data: v2Data, error: v2Error } = await rpcClient.rpc<unknown>('leave_decide_request', {
+        _request_id: requestId,
+        _action: action,
+        _decision_reason: rejectionReason ?? null,
+        _comments: managerComments ?? null,
+        _expected_status: currentStatus ?? null,
+      });
+
+      if (!v2Error) {
+        return v2Data;
+      }
+
+      if (!isMissingRpcError(v2Error, 'leave_decide_request')) {
+        throw v2Error;
+      }
+
+      // Legacy fallback (keeps existing production flows operational).
+      const { data: legacyData, error: legacyError } = await supabase.rpc('approve_leave_request', {
         _request_id: requestId,
         _action: action,
         _rejection_reason: rejectionReason ?? null,
@@ -139,8 +297,8 @@ export function useApproveLeaveRequest() {
         _expected_status: currentStatus ?? null,
       });
 
-      if (error) throw error;
-      return data;
+      if (legacyError) throw legacyError;
+      return legacyData;
     },
     onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' | 'request_document' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
@@ -209,13 +367,29 @@ export function useCancelLeaveRequest() {
       requestId: string;
       reason?: string;
     }) => {
-      const { data, error } = await supabase.rpc('request_leave_cancellation', {
+      const { data: v2Data, error: v2Error } = await rpcClient.rpc<{
+        result?: string;
+      }>('leave_cancel_request_v2', {
+        _request_id: requestId,
+        _reason: reason || null,
+        _comments: null,
+      });
+
+      if (!v2Error) {
+        return (v2Data?.result || 'requested') as string;
+      }
+
+      if (!isMissingRpcError(v2Error, 'leave_cancel_request_v2')) {
+        throw v2Error;
+      }
+
+      const { data: legacyData, error: legacyError } = await supabase.rpc('request_leave_cancellation', {
         _request_id: requestId,
         _reason: reason || null,
       });
-      
-      if (error) throw error;
-      return (data || 'requested') as string;
+
+      if (legacyError) throw legacyError;
+      return (legacyData || 'requested') as string;
     },
     onSuccess: (result: string) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
@@ -231,7 +405,7 @@ export function useCancelLeaveRequest() {
       toast.success('Leave cancellation request submitted');
     },
     onError: (error: Error) => {
-      toast.error('Failed to cancel leave request', { description: sanitizeErrorMessage(error) });
+      toast.error('Failed to cancel leave request', { description: getLeaveCancellationErrorDescription(error) });
     },
   });
 }
@@ -283,6 +457,25 @@ export function useProcessLeaveCancellationRequest() {
       const activeCancellationStatuses = ['pending', 'manager_approved', 'gm_approved', 'director_approved'];
       if (!activeCancellationStatuses.includes(existingRequest.cancellation_status)) {
         throw new Error('This cancellation request is already resolved.');
+      }
+
+      const { data: v2Data, error: v2Error } = await rpcClient.rpc<unknown>(
+        'leave_decide_cancellation_request_v2',
+        {
+          _request_id: requestId,
+          _action: action,
+          _decision_reason: action === 'reject' ? (rejectionReason ?? null) : null,
+          _comments: comments ?? null,
+          _expected_cancellation_status: existingRequest.cancellation_status,
+        },
+      );
+
+      if (!v2Error) {
+        return v2Data;
+      }
+
+      if (!isMissingRpcError(v2Error, 'leave_decide_cancellation_request_v2')) {
+        throw v2Error;
       }
 
       let requesterRole: AppRole = 'employee';
@@ -359,7 +552,7 @@ export function useProcessLeaveCancellationRequest() {
       }
     },
     onError: (error: Error) => {
-      toast.error('Failed to process cancellation request', { description: sanitizeErrorMessage(error) });
+      toast.error('Failed to process cancellation request', { description: getLeaveCancellationErrorDescription(error) });
     },
   });
 }

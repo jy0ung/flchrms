@@ -13,8 +13,8 @@ This is the target E2E matrix for the next phase after installing Playwright.
 
 ## Priority Flows
 
-1. `director` can open `/admin` and see HR Admin sidebar link.
-2. `admin` can open `/admin` and defaults to `Role Management` tab.
+1. `director` can open `/admin` only when `access_admin_console=true` and sees only capability-allowed admin pages.
+2. `admin` can open `/admin` and is redirected to the first capability-allowed admin page.
 3. `admin` can open profile/account dialog for an employee but only sees username alias controls.
 4. `admin` can reset employee password from HR Admin.
 5. `admin` cannot approve/reject leave requests in Leave Management.
@@ -29,6 +29,9 @@ This is the target E2E matrix for the next phase after installing Playwright.
 14. `manager`/`general_manager`/`director` cancellation approval path respects configured cancellation workflow stages.
 15. `hr`/`admin` can view leave details timeline but cannot approve/reject cancellation requests.
 16. `manager`/`general_manager`/`director` can open leave details and see approval + cancellation timeline events.
+17. `general_manager` can create employee from Admin Employees page when `create_employee=true`.
+18. `general_manager` cannot create employee when `create_employee=false` override is applied.
+19. `admin` can edit capability matrix; non-admin roles can only view read-only/fallback matrix.
 
 ## Test Data Prerequisites
 

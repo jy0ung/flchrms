@@ -1,4 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import type { ComponentType } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingContext } from '@/contexts/BrandingContext';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,40 +30,52 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
+import type { AdminCapabilityKey, AdminCapabilityMap } from '@/lib/admin-capabilities';
 
-const adminNavGroups = [
+type AdminNavItem = {
+  name: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  capability: AdminCapabilityKey;
+};
+
+const adminNavGroups: Array<{ label: string; items: AdminNavItem[] }> = [
   {
     label: 'Overview',
     items: [
-      { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-      { name: 'Quick Actions', href: '/admin/quick-actions', icon: Zap },
+      { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, capability: 'view_admin_dashboard' },
+      { name: 'Quick Actions', href: '/admin/quick-actions', icon: Zap, capability: 'view_admin_quick_actions' },
     ],
   },
   {
     label: 'Management',
     items: [
-      { name: 'Employees', href: '/admin/employees', icon: Users },
-      { name: 'Departments', href: '/admin/departments', icon: Building2 },
-      { name: 'Roles', href: '/admin/roles', icon: Shield },
-      { name: 'Leave Policies', href: '/admin/leave-policies', icon: FileText },
+      { name: 'Employees', href: '/admin/employees', icon: Users, capability: 'manage_employee_directory' },
+      { name: 'Departments', href: '/admin/departments', icon: Building2, capability: 'manage_departments' },
+      { name: 'Roles', href: '/admin/roles', icon: Shield, capability: 'manage_roles' },
+      { name: 'Leave Policies', href: '/admin/leave-policies', icon: FileText, capability: 'manage_leave_policies' },
     ],
   },
   {
     label: 'Content',
     items: [
-      { name: 'Announcements', href: '/admin/announcements', icon: Megaphone },
+      { name: 'Announcements', href: '/admin/announcements', icon: Megaphone, capability: 'manage_announcements' },
     ],
   },
   {
     label: 'System',
     items: [
-      { name: 'Audit Log', href: '/admin/audit-log', icon: History },
-      { name: 'Settings', href: '/admin/settings', icon: Settings },
+      { name: 'Audit Log', href: '/admin/audit-log', icon: History, capability: 'view_admin_audit_log' },
+      { name: 'Settings', href: '/admin/settings', icon: Settings, capability: 'manage_admin_settings' },
     ],
   },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  capabilityMap: AdminCapabilityMap;
+}
+
+export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { profile, role } = useAuth();
@@ -89,6 +101,13 @@ export function AdminSidebar() {
     ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
     : 'U';
 
+  const visibleGroups = adminNavGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => capabilityMap[item.capability]),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
@@ -110,43 +129,48 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {adminNavGroups.map((group, groupIdx) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
-              {group.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const isActive = pathname === item.href ||
-                    (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
-                  return (
-                    <SidebarMenuItem key={item.name}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        tooltip={item.name}
-                      >
-                        <NavLink to={item.href}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.name}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-            {groupIdx < adminNavGroups.length - 1 && (
-              <SidebarSeparator className="mt-2" />
-            )}
-          </SidebarGroup>
-        ))}
+        {visibleGroups.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-sidebar-foreground/70">
+            No admin sections are enabled for this account.
+          </div>
+        ) : (
+          visibleGroups.map((group, groupIdx) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const isActive = pathname === item.href ||
+                      (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+                    return (
+                      <SidebarMenuItem key={item.name}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.name}
+                        >
+                          <NavLink to={item.href}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.name}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+              {groupIdx < visibleGroups.length - 1 && (
+                <SidebarSeparator className="mt-2" />
+              )}
+            </SidebarGroup>
+          ))
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="flex flex-col gap-2 px-2 py-2">
-          {/* User info */}
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
               {initials}
@@ -160,7 +184,6 @@ export function AdminSidebar() {
               </span>
             </div>
           </div>
-          {/* Back to App */}
           <Button
             variant="outline"
             size="sm"

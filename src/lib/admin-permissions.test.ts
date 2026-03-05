@@ -6,12 +6,17 @@ describe('admin-permissions', () => {
     const caps = getAdminCapabilities('admin');
 
     expect(caps.canAccessAdminPage).toBe(true);
+    expect(caps.canViewAdminDashboard).toBe(true);
+    expect(caps.canViewAdminQuickActions).toBe(true);
+    expect(caps.canViewAdminAuditLog).toBe(true);
     expect(caps.canManageRoles).toBe(true);
     expect(caps.canResetEmployeePasswords).toBe(true);
     expect(caps.canManageEmployeeProfiles).toBe(true);
     expect(caps.canCreateEmployee).toBe(true);
     expect(caps.canManageDepartments).toBe(true);
     expect(caps.canManageLeaveTypes).toBe(true);
+    expect(caps.canManageAnnouncements).toBe(true);
+    expect(caps.canManageAdminSettings).toBe(true);
     expect(caps.canOpenAccountProfileEditor).toBe(true);
     expect(caps.isAdminLimitedProfileEditor).toBe(false);
     expect(caps.canViewSensitiveEmployeeIdentifiers).toBe(true);
@@ -27,6 +32,8 @@ describe('admin-permissions', () => {
     expect(caps.canManageLeaveTypes).toBe(true);
     expect(caps.canManageRoles).toBe(false);
     expect(caps.canResetEmployeePasswords).toBe(true);
+    expect(caps.canManageAnnouncements).toBe(true);
+    expect(caps.canManageAdminSettings).toBe(true);
     expect(caps.isAdminLimitedProfileEditor).toBe(false);
     expect(caps.canViewSensitiveEmployeeIdentifiers).toBe(true);
   });
@@ -41,23 +48,43 @@ describe('admin-permissions', () => {
     expect(caps.canManageLeaveTypes).toBe(true);
     expect(caps.canManageRoles).toBe(true);
     expect(caps.canResetEmployeePasswords).toBe(false);
+    expect(caps.canManageAnnouncements).toBe(true);
+    expect(caps.canManageAdminSettings).toBe(false);
     expect(caps.isAdminLimitedProfileEditor).toBe(false);
     expect(caps.canViewSensitiveEmployeeIdentifiers).toBe(true);
+  });
+
+  it('returns general manager scoped admin capabilities', () => {
+    const caps = getAdminCapabilities('general_manager');
+
+    expect(caps.canAccessAdminPage).toBe(true);
+    expect(caps.canViewAdminDashboard).toBe(true);
+    expect(caps.canViewAdminQuickActions).toBe(true);
+    expect(caps.canManageEmployeeProfiles).toBe(true);
+    expect(caps.canCreateEmployee).toBe(true);
+    expect(caps.canViewSensitiveEmployeeIdentifiers).toBe(true);
+
+    expect(caps.canManageRoles).toBe(false);
+    expect(caps.canManageDepartments).toBe(false);
+    expect(caps.canManageLeaveTypes).toBe(false);
+    expect(caps.canManageAnnouncements).toBe(false);
+    expect(caps.canViewAdminAuditLog).toBe(false);
+    expect(caps.canManageAdminSettings).toBe(false);
   });
 
   it('blocks non-admin-page roles', () => {
     expect(getAdminCapabilities('manager').canAccessAdminPage).toBe(false);
     expect(getAdminCapabilities('employee').canAccessAdminPage).toBe(false);
     expect(getAdminCapabilities(null).canAccessAdminPage).toBe(false);
-    // Employee and manager cannot create employees
     expect(getAdminCapabilities('employee').canCreateEmployee).toBe(false);
     expect(getAdminCapabilities('manager').canCreateEmployee).toBe(false);
   });
 
   it('returns expected role summaries', () => {
-    expect(getRolePermissionSummary('admin')).toContain('Full system administration');
-    expect(getRolePermissionSummary('hr')).toContain('Employee management');
-    expect(getRolePermissionSummary('director')).toContain('Unrestricted business access');
+    expect(getRolePermissionSummary('admin')).toContain('capability governance');
+    expect(getRolePermissionSummary('hr')).toContain('Employee operations');
+    expect(getRolePermissionSummary('director')).toContain('role governance');
+    expect(getRolePermissionSummary('general_manager')).toContain('Limited admin console access');
     expect(getRolePermissionSummary('employee')).toContain('Self-service');
   });
 });

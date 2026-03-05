@@ -18,9 +18,9 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingContext } from '@/contexts/BrandingContext';
+import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { cn } from '@/lib/utils';
 import {
-  canAccessAdminPage,
   canViewEmployeeDirectory,
   hasRole,
   MANAGER_AND_ABOVE_ROLES,
@@ -66,7 +66,7 @@ const developmentNavigation: SidebarNavItem[] = [
 
 const employeeNavigation: SidebarNavItem[] = [{ name: 'Employees', href: '/employees', icon: Users }];
 
-const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin/dashboard', icon: Shield, danger: true }];
+const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin', icon: Shield, danger: true }];
 
 function SidebarNavItem({
   item,
@@ -157,6 +157,7 @@ function SidebarContent({
 }) {
   const { role } = useAuth();
   const { branding } = useBrandingContext();
+  const { capabilityMap } = useMyAdminCapabilities(role);
   const { unreadCount } = useUserNotifications(10);
 
   const mainWithBadge = mainNavigation.map((item) =>
@@ -183,7 +184,7 @@ function SidebarContent({
     return true;
   });
 
-  const scopedAdmin = canAccessAdminPage(role) ? adminNavigation : [];
+  const scopedAdmin = capabilityMap.access_admin_console ? adminNavigation : [];
 
   return (
     <div className="flex h-full flex-col">

@@ -3,18 +3,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminEmployeeManagement } from '@/hooks/admin/useAdminEmployeeManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { EmployeesTabSection } from '@/components/admin/EmployeesTabSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
+import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { CreateEmployeeDialog } from '@/components/admin/CreateEmployeeDialog';
-import { getAdminCapabilities } from '@/lib/admin-permissions';
-import { AppRole } from '@/types/hrms';
 
 export default function AdminEmployeesPage() {
   usePageTitle('Admin · Employees');
-  const { user, role } = useAuth();
-  const capabilities = getAdminCapabilities(role);
+  const { role } = useAuth();
+  const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const { data: departments } = useDepartments();
   const { data: userRoles } = useUserRoles();
@@ -27,9 +27,12 @@ export default function AdminEmployeesPage() {
   } = useAdminPageViewModel({ role, employees, departments, userRoles });
 
   const {
-    canManageEmployeeProfiles, canCreateEmployee,
-    canOpenAccountProfileEditor, canResetEmployeePasswords,
-    isAdminLimitedProfileEditor, canViewSensitiveEmployeeIdentifiers,
+    canManageEmployeeProfiles,
+    canCreateEmployee,
+    canOpenAccountProfileEditor,
+    canResetEmployeePasswords,
+    isAdminLimitedProfileEditor,
+    canViewSensitiveEmployeeIdentifiers,
   } = capabilities;
 
   const {
@@ -76,6 +79,19 @@ export default function AdminEmployeesPage() {
     link.click();
     URL.revokeObjectURL(link.href);
   }, [employees, filteredEmployees]);
+
+  if (capabilitiesLoading) {
+    return null;
+  }
+
+  if (!capabilities.canManageEmployeeProfiles) {
+    return (
+      <AdminAccessDenied
+        title="Employee management is disabled"
+        description="Your account does not have the capability to manage employee records."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

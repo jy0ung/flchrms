@@ -17,7 +17,12 @@ export const createLeaveRequestSchema = z
     leave_type_id: uuid,
     start_date: isoDateString,
     end_date: isoDateString,
-    days_count: z.number().int().positive('Must be at least 1 day'),
+    days_count: z
+      .number()
+      .positive('Must be greater than 0')
+      .refine((value) => Number.isInteger(value * 2), {
+        message: 'Must be in 0.5-day increments',
+      }),
     reason: z.string().max(2000).optional(),
     document_url: z.string().min(1).optional().or(z.literal('')),
   })

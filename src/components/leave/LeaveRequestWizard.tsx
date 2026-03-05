@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { LeaveType } from '@/types/hrms';
+import type { LeavePreviewResult, LeaveType } from '@/types/hrms';
 import type { LeaveBalance } from '@/hooks/useLeaveBalance';
 import { validateDocumentFile } from '@/lib/validations';
 
@@ -28,9 +28,11 @@ interface LeaveRequestWizardProps {
   leaveTypes: LeaveType[] | undefined;
   balances: LeaveBalance[] | undefined;
   onSubmit: (data: WizardFormData) => void;
+  onPreview: (data: Omit<WizardFormData, 'document_url'> & { reason?: string }) => Promise<LeavePreviewResult>;
   onUploadDocument: (file: File) => Promise<string>;
   onCancel: () => void;
   isPending: boolean;
+  isPreviewPending: boolean;
 }
 
 type WizardStep = 1 | 2 | 3 | 4;
@@ -200,6 +202,7 @@ function StepLeaveType({
             <button
               key={type.id}
               type="button"
+              data-testid={`leave-type-card-${type.id}`}
               onClick={() => onSelect(type.id)}
               disabled={isExhausted}
               className={cn(
@@ -339,6 +342,7 @@ function StepDates({
               <Label className="text-xs">Start Date</Label>
               <Input
                 type="date"
+                data-testid="leave-start-date-input"
                 value={startDate}
                 onChange={(e) => onStartDateChange(e.target.value)}
                 min={format(new Date(), 'yyyy-MM-dd')}
@@ -349,6 +353,7 @@ function StepDates({
               <Label className="text-xs">End Date</Label>
               <Input
                 type="date"
+                data-testid="leave-end-date-input"
                 value={endDate}
                 onChange={(e) => onEndDateChange(e.target.value)}
                 min={startDate}
@@ -511,6 +516,7 @@ function StepReview({
   daysCount,
   reason,
   documentFile,
+  previewResult,
 }: {
   selectedType: LeaveType | undefined;
   balance: LeaveBalance | undefined;
@@ -519,6 +525,7 @@ function StepReview({
   daysCount: number;
   reason: string;
   documentFile: File | null;
+  previewResult: LeavePreviewResult | null;
 }) {
   return (
     <div className="space-y-4">
@@ -588,6 +595,62 @@ function StepReview({
           </div>
         )}
       </div>
+
+      <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
+        <div data-testid="leave-policy-preview-panel" className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Policy Preview</p>
+          {previewResult ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+                <div className="flex justify-between sm:justify-start sm:gap-2">
+                  <span className="text-muted-foreground">Requested units</span>
+                  <span className="font-medium">{previewResult.requested_units}</span>
+                </div>
+                <div className="flex justify-between sm:justify-start sm:gap-2">
+                  <span className="text-muted-foreground">Available balance</span>
+                  <span
+                    className={cn(
+                      'font-medium',
+                      previewResult.available_balance < previewResult.requested_units &&
+                        'text-destructive',
+                    )}
+                  >
+                    {previewResult.available_balance}
+                  </span>
+                </div>
+                <div className="flex justify-between sm:justify-start sm:gap-2">
+                  <span className="text-muted-foreground">Pending balance</span>
+                  <span className="font-medium">{previewResult.pending_balance}</span>
+                </div>
+                <div className="flex justify-between sm:justify-start sm:gap-2">
+                  <span className="text-muted-foreground">Rule unit</span>
+                  <span className="font-medium">{previewResult.rule_unit}</span>
+                </div>
+              </div>
+              {previewResult.soft_warnings.length > 0 && (
+                <Alert className="py-2">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <AlertDescription className="text-xs">
+                    {previewResult.soft_warnings.join(' ')}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {previewResult.hard_errors.length > 0 && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <AlertDescription className="text-xs">
+                    {previewResult.hard_errors.join(' ')}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Preview runs automatically before submit.
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -597,9 +660,11 @@ export function LeaveRequestWizard({
   leaveTypes,
   balances,
   onSubmit,
+  onPreview,
   onUploadDocument,
   onCancel,
   isPending,
+  isPreviewPending,
 }: LeaveRequestWizardProps) {
   const [step, setStep] = useState<WizardStep>(1);
   const [selectedTypeId, setSelectedTypeId] = useState('');
@@ -608,6 +673,7 @@ export function LeaveRequestWizard({
   const [reason, setReason] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [previewResult, setPreviewResult] = useState<LeavePreviewResult | null>(null);
 
   const selectedType = useMemo(
     () => leaveTypes?.find((t) => t.id === selectedTypeId),
@@ -623,6 +689,40 @@ export function LeaveRequestWizard({
     if (!startDate || !endDate) return 0;
     return differenceInDays(new Date(endDate), new Date(startDate)) + 1;
   }, [startDate, endDate]);
+
+  const resetPreviewState = useCallback(() => {
+    setPreviewResult(null);
+  }, []);
+
+  const runPreview = useCallback(async () => {
+    setValidationError(null);
+
+    if (!selectedTypeId || !startDate || !endDate || daysCount <= 0) {
+      return null;
+    }
+
+    try {
+      const preview = await onPreview({
+        leave_type_id: selectedTypeId,
+        start_date: startDate,
+        end_date: endDate,
+        days_count: daysCount,
+        reason: reason || undefined,
+      });
+
+      setPreviewResult(preview);
+
+      if (!preview.can_submit || preview.hard_errors.length > 0) {
+        setValidationError(preview.hard_errors[0] || 'Leave request failed policy validation.');
+      }
+
+      return preview;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to run policy preview.';
+      setValidationError(message);
+      return null;
+    }
+  }, [daysCount, endDate, onPreview, reason, selectedTypeId, startDate]);
 
   const canAdvance = useCallback((): boolean => {
     setValidationError(null);
@@ -665,13 +765,6 @@ export function LeaveRequestWizard({
             return false;
           }
         }
-        // Balance check
-        if (selectedBalance && daysCount > selectedBalance.days_remaining) {
-          setValidationError(
-            `Insufficient balance. You have ${selectedBalance.days_remaining} day(s) remaining.`,
-          );
-          return false;
-        }
         return true;
 
       case 3:
@@ -699,10 +792,17 @@ export function LeaveRequestWizard({
     }
   }, [step, selectedTypeId, startDate, endDate, daysCount, selectedType, selectedBalance, documentFile]);
 
-  const handleNext = () => {
-    if (canAdvance()) {
-      setStep((s) => Math.min(s + 1, 4) as WizardStep);
+  const handleNext = async () => {
+    if (!canAdvance()) return;
+
+    if (step === 3) {
+      const preview = await runPreview();
+      if (!preview || !preview.can_submit || preview.hard_errors.length > 0) {
+        return;
+      }
     }
+
+    setStep((s) => Math.min(s + 1, 4) as WizardStep);
   };
 
   const handleBack = () => {
@@ -712,6 +812,16 @@ export function LeaveRequestWizard({
 
   const handleSubmit = async () => {
     if (!canAdvance()) return;
+
+    const preview = await runPreview();
+    if (!preview || !preview.can_submit || preview.hard_errors.length > 0) {
+      return;
+    }
+
+    if (preview.requires_document && !documentFile) {
+      setValidationError('This request requires a supporting document by policy.');
+      return;
+    }
 
     let documentUrl: string | undefined;
     if (documentFile) {
@@ -727,7 +837,7 @@ export function LeaveRequestWizard({
       leave_type_id: selectedTypeId,
       start_date: startDate,
       end_date: endDate,
-      days_count: daysCount,
+      days_count: preview.requested_units || daysCount,
       reason: reason || undefined,
       document_url: documentUrl,
     });
@@ -747,7 +857,6 @@ export function LeaveRequestWizard({
           <AlertDescription className="text-xs">{validationError}</AlertDescription>
         </Alert>
       )}
-
       {/* Step content */}
       <div className="min-h-[280px]">
         {step === 1 && (
@@ -758,6 +867,7 @@ export function LeaveRequestWizard({
             onSelect={(id) => {
               setSelectedTypeId(id);
               setValidationError(null);
+              resetPreviewState();
             }}
           />
         )}
@@ -765,8 +875,14 @@ export function LeaveRequestWizard({
           <StepDates
             startDate={startDate}
             endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
+            onStartDateChange={(date) => {
+              setStartDate(date);
+              resetPreviewState();
+            }}
+            onEndDateChange={(date) => {
+              setEndDate(date);
+              resetPreviewState();
+            }}
             selectedType={selectedType}
             balance={selectedBalance}
           />
@@ -774,9 +890,15 @@ export function LeaveRequestWizard({
         {step === 3 && (
           <StepDetails
             reason={reason}
-            onReasonChange={setReason}
+            onReasonChange={(nextReason) => {
+              setReason(nextReason);
+              resetPreviewState();
+            }}
             documentFile={documentFile}
-            onDocumentFileChange={setDocumentFile}
+            onDocumentFileChange={(file) => {
+              setDocumentFile(file);
+              resetPreviewState();
+            }}
             selectedType={selectedType}
           />
         )}
@@ -789,6 +911,7 @@ export function LeaveRequestWizard({
             daysCount={daysCount}
             reason={reason}
             documentFile={documentFile}
+            previewResult={previewResult}
           />
         )}
       </div>
@@ -797,28 +920,37 @@ export function LeaveRequestWizard({
       <div className="flex items-center justify-between border-t border-border pt-4">
         <div>
           {step > 1 ? (
-            <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending}>
+            <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending || isPreviewPending}>
               <ChevronLeft className="mr-1 h-4 w-4" />
               Back
             </Button>
           ) : (
-            <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending}>
+            <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending || isPreviewPending}>
               Cancel
             </Button>
           )}
         </div>
         <div>
           {step < 4 ? (
-            <Button type="button" onClick={handleNext}>
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="button" onClick={handleSubmit} disabled={isPending}>
-              {isPending ? (
+            <Button type="button" data-testid="leave-wizard-next" onClick={() => void handleNext()} disabled={isPending || isPreviewPending}>
+              {isPreviewPending && step === 3 ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting…
+                  Validating…
+                </>
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button type="button" data-testid="leave-wizard-submit" onClick={() => void handleSubmit()} disabled={isPending || isPreviewPending}>
+              {isPending || isPreviewPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isPreviewPending ? 'Validating…' : 'Submitting…'}
                 </>
               ) : (
                 <>

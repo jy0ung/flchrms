@@ -38,7 +38,7 @@ The product is a React SPA backed by Supabase (Postgres, Auth, Storage, RPC).
 Role assignment changes in Admin are guarded by tier comparison (`actor tier > target tier`).
 
 ### 2.3 Key capability rules
-- Admin page access: `admin`, `hr`, `director`
+- Admin page access: capability-based (`access_admin_console`), default-enabled for `admin`, `hr`, `director`, `general_manager`
 - Employee directory access: `admin`, `hr`, `manager`, `general_manager`, `director`
 - Payroll management: `hr`, `director`
 - Document management: `hr`, `director`
@@ -46,7 +46,7 @@ Role assignment changes in Admin are guarded by tier comparison (`actor tier > t
 - Department event management: `manager`, `general_manager`, `hr`, `director`, `admin`
 - Performance review conductor actions: all except `employee`
 - Team leave visibility: all except `employee`
-- Sensitive employee identifiers/contact fields are masked for `admin`
+- Sensitive employee identifiers are capability-gated (`view_sensitive_employee_identifiers`)
 
 ## 3. Route and Access Specification
 
@@ -65,7 +65,7 @@ Role assignment changes in Admin are guarded by tier comparison (`actor tier > t
 | `/calendar` | Yes | `manager`, `general_manager`, `hr`, `admin`, `director` |
 | `/documents` | Yes | `hr`, `director` |
 | `/employees` | Yes | `admin`, `hr`, `manager`, `general_manager`, `director` |
-| `/admin` | Yes | `admin`, `hr`, `director` |
+| `/admin` | Yes | Capability gate (`access_admin_console`) |
 
 Unknown routes resolve to NotFound.
 
@@ -211,7 +211,7 @@ Implemented behavior:
   - Notification Queue
 - Employees tab supports:
   - filter/search
-  - create employee (`admin`, `hr`, `director`)
+  - create employee (capability-gated, default-enabled for `admin`, `hr`, `director`, `general_manager`)
   - edit profile/alias
   - reset password
   - archive/restore
@@ -219,6 +219,12 @@ Implemented behavior:
   - batch update dialog
 - Departments tab supports CRUD with safety checks.
 - Roles tab supports role assignment changes with authority-tier restrictions.
+- Roles tab includes admin capability matrix editor with:
+  - per-role/per-capability overrides
+  - per-cell save and bulk save
+  - reset role to defaults
+  - audit reason capture
+  - admin safety locks (`access_admin_console`, `manage_roles` for `admin`)
 - Leave policies support leave type CRUD.
 - Workflow builders support department-scoped approval/cancellation routes for requester profile `employee`.
 - Admin stats cards are customizable and persisted by user/role.

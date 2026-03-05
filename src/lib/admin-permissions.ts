@@ -1,62 +1,80 @@
 import type { AppRole } from '@/types/hrms';
 import {
-  canAccessAdminPage,
-  isAdmin,
-  isDirector,
-  isHr,
-} from '@/lib/permissions';
+  type AdminCapabilityMap,
+  getDefaultAdminCapabilityMap,
+} from '@/lib/admin-capabilities';
 
 export type AdminCapabilities = {
   canAccessAdminPage: boolean;
+  canViewAdminDashboard: boolean;
+  canViewAdminQuickActions: boolean;
+  canViewAdminAuditLog: boolean;
   canManageEmployeeProfiles: boolean;
   canCreateEmployee: boolean;
   canManageDepartments: boolean;
   canManageLeaveTypes: boolean;
+  canManageAnnouncements: boolean;
   canManageRoles: boolean;
   canResetEmployeePasswords: boolean;
+  canManageAdminSettings: boolean;
   canOpenAccountProfileEditor: boolean;
   isAdminLimitedProfileEditor: boolean;
   canViewSensitiveEmployeeIdentifiers: boolean;
 };
 
-export function getAdminCapabilities(role: AppRole | null | undefined): AdminCapabilities {
-  const canManageEmployeeProfiles = isAdmin(role) || isHr(role) || isDirector(role);
-  const canCreateEmployee = isAdmin(role) || isHr(role) || isDirector(role);
-  const canManageDepartments = isAdmin(role) || isHr(role) || isDirector(role);
-  const canManageLeaveTypes = isAdmin(role) || isHr(role) || isDirector(role);
-  const canManageRoles = isAdmin(role) || isDirector(role);
-  const canResetEmployeePasswords = isAdmin(role) || isHr(role);
-  const isAdminLimitedProfileEditor = false; // Admin gets full profile editor
+function resolveCapabilityMap(
+  role: AppRole | null | undefined,
+  effectiveCapabilities?: AdminCapabilityMap | null,
+): AdminCapabilityMap {
+  if (effectiveCapabilities) {
+    return effectiveCapabilities;
+  }
+
+  return getDefaultAdminCapabilityMap(role);
+}
+
+export function getAdminCapabilities(
+  role: AppRole | null | undefined,
+  effectiveCapabilities?: AdminCapabilityMap | null,
+): AdminCapabilities {
+  const capabilityMap = resolveCapabilityMap(role, effectiveCapabilities);
+
+  const canManageEmployeeProfiles = capabilityMap.manage_employee_directory;
 
   return {
-    canAccessAdminPage: canAccessAdminPage(role),
+    canAccessAdminPage: capabilityMap.access_admin_console,
+    canViewAdminDashboard: capabilityMap.view_admin_dashboard,
+    canViewAdminQuickActions: capabilityMap.view_admin_quick_actions,
+    canViewAdminAuditLog: capabilityMap.view_admin_audit_log,
     canManageEmployeeProfiles,
-    canCreateEmployee,
-    canManageDepartments,
-    canManageLeaveTypes,
-    canManageRoles,
-    canResetEmployeePasswords,
+    canCreateEmployee: capabilityMap.create_employee,
+    canManageDepartments: capabilityMap.manage_departments,
+    canManageLeaveTypes: capabilityMap.manage_leave_policies,
+    canManageAnnouncements: capabilityMap.manage_announcements,
+    canManageRoles: capabilityMap.manage_roles,
+    canResetEmployeePasswords: capabilityMap.reset_employee_passwords,
+    canManageAdminSettings: capabilityMap.manage_admin_settings,
     canOpenAccountProfileEditor: canManageEmployeeProfiles,
-    isAdminLimitedProfileEditor,
-    canViewSensitiveEmployeeIdentifiers: true,
+    isAdminLimitedProfileEditor: false,
+    canViewSensitiveEmployeeIdentifiers: capabilityMap.view_sensitive_employee_identifiers,
   };
 }
 
 export function getRolePermissionSummary(role: AppRole): string {
   if (role === 'admin') {
-    return 'Full system administration, employee management, and app configuration (no payroll/salary)';
+    return 'Full system administration and capability governance.';
   }
   if (role === 'hr') {
-    return 'Employee management, policies, leave monitoring (view-only leave status)';
+    return 'Employee operations, leave policies, announcements, and admin dashboard controls.';
   }
   if (role === 'director') {
-    return 'Unrestricted business access and final leave approvals';
+    return 'High-trust business operations and role governance with limited security controls.';
   }
   if (role === 'general_manager') {
-    return 'GM level leave approvals, team oversight';
+    return 'Limited admin console access for dashboard, employee directory, and employee creation.';
   }
   if (role === 'manager') {
-    return 'Team oversight, leave approval, performance reviews';
+    return 'Team oversight, leave approvals, and performance workflows.';
   }
-  return 'Self-service, own data access';
+  return 'Self-service access to own profile and workflows.';
 }
