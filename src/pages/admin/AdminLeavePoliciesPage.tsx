@@ -44,7 +44,7 @@ export default function AdminLeavePoliciesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Leave Policies</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure leave types, approval workflows, and notification rules.
+          Configure leave types, approval workflows, notification rules, and policy analytics simulations.
         </p>
       </div>
 

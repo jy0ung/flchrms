@@ -11,7 +11,12 @@ export const ADMIN_ROLE_COLORS: Record<AppRole, string> = {
 
 export type AdminTabKey = 'employees' | 'departments' | 'roles' | 'leave-policies';
 
-export type LeavePolicySubTabKey = 'leave-types' | 'workflow-builders' | 'workflow-audit' | 'notification-queue';
+export type LeavePolicySubTabKey =
+  | 'leave-types'
+  | 'workflow-builders'
+  | 'workflow-audit'
+  | 'notification-queue'
+  | 'analytics-simulation';
 
 export function getDefaultAdminTabForRole(role: AppRole | null | undefined): AdminTabKey {
   return role === 'admin' ? 'roles' : 'employees';

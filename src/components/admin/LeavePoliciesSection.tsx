@@ -1,4 +1,4 @@
-import { Edit, FileText, GitBranch, History, Mail, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, Edit, FileText, GitBranch, History, Mail, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { DataTableShell, StatusBadge } from '@/components/system';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
 import { WorkflowConfigAuditSection } from '@/components/admin/WorkflowConfigAuditSection';
+import { LeavePolicyAnalyticsSection } from '@/components/admin/LeavePolicyAnalyticsSection';
 import type { Department, LeaveType } from '@/types/hrms';
 import type { LeavePolicySubTabKey } from '@/components/admin/admin-ui-constants';
 
@@ -48,7 +49,7 @@ export function LeavePoliciesSection({
 
   return (
     <Tabs defaultValue={'leave-types' satisfies LeavePolicySubTabKey} className="space-y-4">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-4">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-5">
         <TabsTrigger value="leave-types" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <FileText className="w-4 h-4" />
           <span className="truncate">Leave Types</span>
@@ -64,6 +65,10 @@ export function LeavePoliciesSection({
         <TabsTrigger value="notification-queue" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <Mail className="w-4 h-4" />
           <span className="truncate">Notification Queue</span>
+        </TabsTrigger>
+        <TabsTrigger value="analytics-simulation" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <BarChart3 className="w-4 h-4" />
+          <span className="truncate">Analytics</span>
         </TabsTrigger>
       </TabsList>
 
@@ -263,6 +268,10 @@ export function LeavePoliciesSection({
 
       <TabsContent value="notification-queue" className="space-y-4">
         <NotificationQueueOpsSection />
+      </TabsContent>
+
+      <TabsContent value="analytics-simulation" className="space-y-4">
+        <LeavePolicyAnalyticsSection departments={departments} />
       </TabsContent>
     </Tabs>
   );
