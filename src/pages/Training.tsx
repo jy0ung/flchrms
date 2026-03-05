@@ -14,7 +14,7 @@ export default function Training() {
   const enrolledIds = enrollments?.map(e => e.program_id) || [];
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Training & Development"
         description="Training programs and enrollment status."

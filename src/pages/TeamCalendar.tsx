@@ -160,7 +160,7 @@ export default function TeamCalendar() {
   }, [isMobile, calendarDays, calendarEvents]);
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Team Calendar"
         description="View leave schedules, holidays, and department events"

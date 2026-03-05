@@ -14,7 +14,7 @@ export default function Attendance() {
   const clockOut = useClockOut();
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Attendance"
         description="Track your work hours"

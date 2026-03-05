@@ -97,7 +97,7 @@ export function AdminLayout() {
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
           <div key={location.pathname} className="animate-fadeIn p-4 md:p-6 lg:p-8">
-            <div className="mx-auto w-full max-w-[1400px]">
+            <div className="mx-auto w-full max-w-7xl">
               <InteractionModeProvider resetKeys={[user?.id ?? null]}>
                 <Outlet />
               </InteractionModeProvider>

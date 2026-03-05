@@ -56,7 +56,7 @@ export function AppLayout() {
         onMobileOpenChange={setMobileSidebarOpen}
       />
       <div className="flex flex-1 flex-col min-w-0">
-        <TopBar sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
+        <TopBar />
         <main id="main-content" className="flex-1 overflow-auto">
           <div key={location.pathname} className={cn("animate-fadeIn p-4 md:p-6 lg:p-8", isMobile && "pb-20")}> 
             <InteractionModeProvider resetKeys={[user?.id ?? null]}>

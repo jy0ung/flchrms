@@ -53,7 +53,7 @@ export default function Payroll() {
   const isPayslipsTab = activeTab === 'payslips';
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <PageHeader
           title="Payroll"

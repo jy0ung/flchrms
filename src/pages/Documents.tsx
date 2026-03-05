@@ -99,7 +99,7 @@ export default function Documents() {
   };
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Document Management"
         description={

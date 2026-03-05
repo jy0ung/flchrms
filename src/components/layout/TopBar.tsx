@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,13 +49,7 @@ const roleDisplayNames: Record<string, string> = {
   employee: 'Employee',
 };
 
-export function TopBar({
-  sidebarCollapsed,
-  onToggleSidebar,
-}: {
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-}) {
+export function TopBar() {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,7 +76,9 @@ export function TopBar({
                   {isLast ? (
                     <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href={path}>{label}</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                      <Link to={path}>{label}</Link>
+                    </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
               );

@@ -164,7 +164,7 @@ export default function Dashboard() {
   }, [editMode, canEditLayout]);
 
   return (
-    <AppPageContainer spacing="comfortable">
+    <AppPageContainer spacing="comfortable" maxWidth="7xl">
       {/* Hero Greeting + action buttons */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">

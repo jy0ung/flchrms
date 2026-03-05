@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ModalScaffold } from '@/components/system';
+import { ModalScaffold, PageHeader } from '@/components/system';
 import {
   Table,
   TableBody,
@@ -214,18 +214,16 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Announcement Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Create, edit, and manage company-wide announcements.
-          </p>
-        </div>
-        <Button onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Announcement
-        </Button>
-      </div>
+      <PageHeader
+        title="Announcement Management"
+        description="Create, edit, and manage company-wide announcements."
+        actionsSlot={(
+          <Button onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Announcement
+          </Button>
+        )}
+      />
 
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">

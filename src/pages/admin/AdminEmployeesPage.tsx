@@ -10,6 +10,7 @@ import { EmployeesTabSection } from '@/components/admin/EmployeesTabSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { CreateEmployeeDialog } from '@/components/admin/CreateEmployeeDialog';
+import { PageHeader } from '@/components/system';
 
 export default function AdminEmployeesPage() {
   usePageTitle('Admin · Employees');
@@ -95,12 +96,10 @@ export default function AdminEmployeesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Employee Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage employee profiles, access credentials, and organizational records.
-        </p>
-      </div>
+      <PageHeader
+        title="Employee Management"
+        description="Manage employee profiles, access credentials, and organizational records."
+      />
 
       <EmployeesTabSection
         employees={employees}

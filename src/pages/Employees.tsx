@@ -127,7 +127,7 @@ export default function Employees() {
   );
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Employee Directory"
         description={`${employees?.length || 0} employees`}

@@ -547,7 +547,7 @@ export default function Leave() {
   );
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Leave Management"
         description={isEmployee(role) ? 'Your leave requests and balance' : 'Manage leave requests'}

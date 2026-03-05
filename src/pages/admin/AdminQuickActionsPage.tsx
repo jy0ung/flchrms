@@ -25,6 +25,7 @@ import { CreateEmployeeDialog } from '@/components/admin/CreateEmployeeDialog';
 import { AdminDepartmentDialogs } from '@/components/admin/AdminDepartmentDialogs';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 import { toast } from 'sonner';
 
 interface QuickAction {
@@ -200,12 +201,10 @@ export default function AdminQuickActionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Quick Actions</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Common administrative tasks accessible in one click.
-        </p>
-      </div>
+      <PageHeader
+        title="Quick Actions"
+        description="Common administrative tasks accessible in one click."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visibleQuickActions.map((action) => (

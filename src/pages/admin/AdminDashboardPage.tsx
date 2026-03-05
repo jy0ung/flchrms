@@ -17,7 +17,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StatusBadge } from '@/components/system';
+import { PageHeader, StatusBadge } from '@/components/system';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
 import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
@@ -139,13 +139,10 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Organization overview, analytics, and system health at a glance.
-        </p>
-      </div>
+      <PageHeader
+        title="Admin Dashboard"
+        description="Organization overview, analytics, and system health at a glance."
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

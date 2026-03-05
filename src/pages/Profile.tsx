@@ -64,7 +64,7 @@ export default function Profile() {
 
   if (!profile) {
     return (
-      <AppPageContainer>
+      <AppPageContainer maxWidth="6xl">
         <div className="space-y-4">
           <div className="h-8 w-48 bg-muted animate-pulse rounded" />
           <div className="h-32 bg-muted animate-pulse rounded-xl" />

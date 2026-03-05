@@ -56,10 +56,10 @@ export async function openLeavePage(page: Page) {
 
 export async function openAdminPage(page: Page) {
   await page.goto('/admin');
-  const adminHeading = page.getByRole('heading', { name: /HR Admin Dashboard/i });
+  const adminHeading = page.getByRole('heading', { name: /(HR Admin Dashboard|Admin Dashboard)/i });
 
   if (!(await adminHeading.isVisible().catch(() => false))) {
-    const adminLink = page.getByRole('link', { name: /^HR Admin$/ });
+    const adminLink = page.getByRole('link', { name: /^(HR Admin|Admin)$/ });
     await expect(adminLink).toBeVisible({ timeout: 15_000 });
     await adminLink.click();
   }

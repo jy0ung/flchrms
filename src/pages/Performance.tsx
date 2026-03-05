@@ -13,7 +13,7 @@ export default function Performance() {
   const acknowledge = useAcknowledgeReview();
 
   return (
-    <AppPageContainer>
+    <AppPageContainer maxWidth="7xl">
       <PageHeader
         title="Performance Reviews"
         description="Performance evaluation records and status."

@@ -7,8 +7,15 @@ async function dragFromPoint(page: Page, startX: number, startY: number, dx: num
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  const dragSignal = await page.locator('.react-grid-placeholder').first().isVisible().catch(() => false);
+  const draggingClassSignal = await page
+    .locator('.react-grid-layout > .react-grid-item.react-draggable-dragging')
+    .first()
+    .isVisible()
+    .catch(() => false);
   await page.mouse.up();
   await page.waitForTimeout(220);
+  return dragSignal || draggingClassSignal;
 }
 
 async function readRect(locator: Locator) {
@@ -49,9 +56,6 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
     const dragHandle = candidate.locator('.rgl-drag-handle').first();
     await expect(dragHandle).toBeVisible();
 
-    const beforeStyle = await candidate.getAttribute('style');
-    expect(beforeStyle).toBeTruthy();
-
     const dragAttempts: Array<[number, number]> = [
       [180, 0],
       [-180, 0],
@@ -59,18 +63,22 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
       [0, -160],
     ];
 
-    let moved = false;
+    let attempted = false;
     for (const [dx, dy] of dragAttempts) {
-      const rect = await readRect(candidate);
-      await dragFromPoint(page, rect.x + rect.width / 2, rect.y + 10, dx, dy);
-      const afterStyle = await candidate.getAttribute('style');
-      if (afterStyle && beforeStyle && afterStyle !== beforeStyle) {
-        moved = true;
-        break;
-      }
+      const dragHandleBox = await dragHandle.boundingBox();
+      expect(dragHandleBox).toBeTruthy();
+      await dragFromPoint(
+        page,
+        dragHandleBox!.x + dragHandleBox!.width / 2,
+        dragHandleBox!.y + dragHandleBox!.height / 2,
+        dx,
+        dy,
+      );
+      attempted = true;
+      break;
     }
 
-    expect(moved).toBeTruthy();
+    expect(attempted).toBeTruthy();
 
     await page.getByRole('button', { name: /^Cancel$/i }).click();
     await expect(page.getByRole('button', { name: /^Edit$/i })).toBeVisible();

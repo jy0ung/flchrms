@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
 
@@ -271,21 +272,19 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">System Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure application-wide settings, branding, and preferences.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset}>Reset Defaults</Button>
-          <Button onClick={handleSave} disabled={!dirty}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Settings
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="System Settings"
+        description="Configure application-wide settings, branding, and preferences."
+        actionsSlot={(
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button variant="outline" onClick={handleReset}>Reset Defaults</Button>
+            <Button onClick={handleSave} disabled={!dirty}>
+              <Save className="mr-2 h-4 w-4" />
+              Save Settings
+            </Button>
+          </div>
+        )}
+      />
 
       {/* ── Branding Section ─────────────────────────────────────────────── */}
       <Card className="border-border shadow-sm">

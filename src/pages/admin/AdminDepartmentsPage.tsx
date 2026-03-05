@@ -8,6 +8,7 @@ import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
 import { DepartmentsTabSection } from '@/components/admin/DepartmentsTabSection';
 import { AdminDepartmentDialogs } from '@/components/admin/AdminDepartmentDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 
 export default function AdminDepartmentsPage() {
   usePageTitle('Admin · Departments');
@@ -47,12 +48,10 @@ export default function AdminDepartmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Department Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Create, edit, and organize departments across the organization.
-        </p>
-      </div>
+      <PageHeader
+        title="Department Management"
+        description="Create, edit, and organize departments across the organization."
+      />
 
       <DepartmentsTabSection
         departments={departments}

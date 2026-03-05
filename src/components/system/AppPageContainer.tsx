@@ -26,7 +26,7 @@ const maxWidthClasses: Record<NonNullable<AppPageContainerProps["maxWidth"]>, st
  */
 export function AppPageContainer({
   spacing = "comfortable",
-  maxWidth = "none",
+  maxWidth = "7xl",
   className,
   children,
   ...props

@@ -7,6 +7,7 @@ import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeMana
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
@@ -41,12 +42,10 @@ export default function AdminLeavePoliciesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Leave Policies</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Configure leave types, approval workflows, notification rules, and policy analytics simulations.
-        </p>
-      </div>
+      <PageHeader
+        title="Leave Policies"
+        description="Configure leave types, approval workflows, notification rules, and policy analytics simulations."
+      />
 
       <LeavePoliciesSection
         leaveTypes={leaveTypes}

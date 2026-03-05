@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 
 interface AuditEntry {
   id: string;
@@ -170,12 +171,10 @@ export default function AdminAuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Recent system activity across workflows, leave requests, and profile changes.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit Log"
+        description="Recent system activity across workflows, leave requests, and profile changes."
+      />
 
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">

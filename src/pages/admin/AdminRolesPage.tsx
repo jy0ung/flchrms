@@ -9,6 +9,7 @@ import { RolesTabSection } from '@/components/admin/RolesTabSection';
 import { AdminCapabilityMatrixSection } from '@/components/admin/AdminCapabilityMatrixSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { PageHeader } from '@/components/system';
 import { AppRole } from '@/types/hrms';
 
 export default function AdminRolesPage() {
@@ -52,12 +53,10 @@ export default function AdminRolesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Role Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Assign and manage user roles with authority-tier safeguards.
-        </p>
-      </div>
+      <PageHeader
+        title="Role Management"
+        description="Assign and manage user roles with authority-tier safeguards."
+      />
 
       <RolesTabSection
         rolesLoading={rolesLoading}
