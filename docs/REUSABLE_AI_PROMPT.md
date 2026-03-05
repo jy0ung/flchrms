@@ -1,9 +1,3 @@
-# FLC-HRMS — Reusable AI Session Prompt
-
-> **Copy-paste this prompt at the start of any new AI coding session** to provide full context about the FLCHRMS codebase. Append your specific task/question after the separator at the bottom.
-
----
-
 ## 1. Project Identity
 
 | Field | Value |
@@ -59,13 +53,10 @@ npx supabase gen types typescript \
 cd /home/hrms_admin/projects/flchrms
 VITE_SUPABASE_URL="https://bmdmdppcbdklfbwksvtu.supabase.co" \
 VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtZG1kcHBjYmRrbGZid2tzdnR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMjk1NzYsImV4cCI6MjA4NzkwNTU3Nn0.Q8WG37liQZHCa_XnAW_sfYqRX1E3c0bbud-dco833j0" \
-npm run build
+npx vite build
 
 # Deploy
 sudo rm -rf /var/www/flchrms/* && sudo cp -r dist/* /var/www/flchrms/
-
-# Post-deploy safety check
-sudo bash scripts/verify-dist-network-endpoints.sh /var/www/flchrms
 ```
 
 ## 5. RBAC Model
@@ -234,7 +225,6 @@ supabase/
 
 ## YOUR TASK
 
-> *Replace this section with your specific request. Examples:*
-> - "Add a document management feature where HR can upload and categorize employee documents"
-> - "Fix the leave balance calculation — it's showing incorrect remaining days"
-> - "Redesign the attendance page to show a weekly calendar view"
+Fix the login error when i used correct credentials.
+Username : jamri.saidi
+Pwd : flitadmin@123
