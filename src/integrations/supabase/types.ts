@@ -3100,6 +3100,19 @@ export type Database = {
         }
         Returns: Json
       }
+      leave_simulate_accrual_scenario: {
+        Args: { _as_of?: string; _scenario?: Json; _scope?: Json }
+        Returns: Json
+      }
+      leave_simulate_policy_change: {
+        Args: {
+          _as_of?: string
+          _horizon_months?: number
+          _policy_changes?: Json
+          _scope?: Json
+        }
+        Returns: Json
+      }
       leave_stage_recipients: {
         Args: { _employee_id: string; _stage: string }
         Returns: {

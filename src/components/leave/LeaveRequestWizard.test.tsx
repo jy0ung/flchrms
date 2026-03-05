@@ -54,9 +54,33 @@ const defaultProps = () => ({
     }),
   ],
   onSubmit: vi.fn(),
+  onPreview: vi.fn(async (data: { leave_type_id: string; start_date: string; end_date: string; days_count: number; reason?: string }) => ({
+    can_submit: true,
+    employee_id: 'emp-test',
+    leave_type_id: data.leave_type_id,
+    leave_type_name: data.leave_type_id === 'lt-sick' ? 'Sick Leave' : 'Annual Leave',
+    start_date: data.start_date,
+    end_date: data.end_date,
+    requested_units: data.days_count,
+    policy_version_id: 'pv-test',
+    rule_unit: 'day' as const,
+    requires_document: data.leave_type_id === 'lt-sick',
+    allow_negative_balance: false,
+    max_consecutive_days: null,
+    min_notice_days: 0,
+    entitled_balance: 14,
+    consumed_balance: 4,
+    pending_balance: 0,
+    available_balance: 10,
+    balance_source: 'legacy_leave_requests',
+    hard_errors: [],
+    soft_warnings: [],
+    reason: null,
+  })),
   onUploadDocument: vi.fn().mockResolvedValue('https://storage.example.com/doc.pdf'),
   onCancel: vi.fn(),
   isPending: false,
+  isPreviewPending: false,
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -95,9 +119,12 @@ function goToStep3(container: HTMLElement, leaveTypeName = 'Annual Leave') {
 }
 
 /** Navigate from step 1 to step 4 */
-function goToStep4(container: HTMLElement) {
+async function goToStep4(container: HTMLElement) {
   goToStep3(container);
   clickNext();
+  await waitFor(() => {
+    expect(screen.getByText('Review Your Request')).toBeInTheDocument();
+  });
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -206,9 +233,8 @@ describe('LeaveRequestWizard', () => {
       goToStep2();
       setDates(container, '2026-06-01', '2026-06-15');
       clickNext();
-      expect(screen.getByText(/insufficient balance/i)).toBeInTheDocument();
-      // Should stay on step 2 — heading still visible
-      expect(container.querySelector('h3')?.textContent).toBe('Select Dates');
+      expect(screen.queryByText(/insufficient balance/i)).not.toBeInTheDocument();
+      expect(container.querySelector('h3')?.textContent).toBe('Additional Details');
     });
   });
 
@@ -231,11 +257,13 @@ describe('LeaveRequestWizard', () => {
       expect(screen.getByText(/click or drag to upload/i)).toBeInTheDocument();
     });
 
-    it('advances to review step without document for non-required types', () => {
+    it('advances to review step without document for non-required types', async () => {
       const { container } = render(<LeaveRequestWizard {...defaultProps()} />);
       goToStep3(container);
       clickNext();
-      expect(screen.getByText('Review Your Request')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Review Your Request')).toBeInTheDocument();
+      });
     });
 
     it('blocks advance when document is required but not uploaded', () => {
@@ -289,24 +317,24 @@ describe('LeaveRequestWizard', () => {
   });
 
   describe('Step 4: Review & Submit', () => {
-    it('shows review summary with all details', () => {
+    it('shows review summary with all details', async () => {
       const { container } = render(<LeaveRequestWizard {...defaultProps()} />);
-      goToStep4(container);
+      await goToStep4(container);
       expect(screen.getByText('Review Your Request')).toBeInTheDocument();
       expect(screen.getByText('Annual Leave')).toBeInTheDocument();
       expect(screen.getByText(/3 calendar day/i)).toBeInTheDocument();
     });
 
-    it('shows Submit Request button on step 4', () => {
+    it('shows Submit Request button on step 4', async () => {
       const { container } = render(<LeaveRequestWizard {...defaultProps()} />);
-      goToStep4(container);
+      await goToStep4(container);
       expect(screen.getByRole('button', { name: /submit request/i })).toBeInTheDocument();
     });
 
     it('calls onSubmit with correct payload on submit', async () => {
       const props = defaultProps();
       const { container } = render(<LeaveRequestWizard {...props} />);
-      goToStep4(container);
+      await goToStep4(container);
 
       fireEvent.click(screen.getByRole('button', { name: /submit request/i }));
 
@@ -322,19 +350,19 @@ describe('LeaveRequestWizard', () => {
       });
     });
 
-    it('shows "Submitting…" text when isPending is true', () => {
+    it('shows "Submitting…" text when isPending is true', async () => {
       const props = defaultProps();
-      props.isPending = true;
-      const { container } = render(<LeaveRequestWizard {...props} />);
-      goToStep4(container);
+      const { container, rerender } = render(<LeaveRequestWizard {...props} />);
+      await goToStep4(container);
+      rerender(<LeaveRequestWizard {...props} isPending />);
       // The button should show "Submitting…" and be disabled
       const submitBtn = screen.getByRole('button', { name: /submitting/i });
       expect(submitBtn).toBeDisabled();
     });
 
-    it('allows navigating back from review to edit', () => {
+    it('allows navigating back from review to edit', async () => {
       const { container } = render(<LeaveRequestWizard {...defaultProps()} />);
-      goToStep4(container);
+      await goToStep4(container);
       fireEvent.click(screen.getByRole('button', { name: /back/i }));
       expect(screen.getByText('Additional Details')).toBeInTheDocument();
     });

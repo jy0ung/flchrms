@@ -159,7 +159,9 @@ export type LeaveCapability =
   | 'close_period'
   | 'export_payroll_inputs'
   | 'generate_liability_snapshot'
-  | 'run_forecast';
+  | 'run_forecast'
+  | 'simulate_policy_change'
+  | 'simulate_accrual_scenario';
 
 export interface LeavePolicyDecision {
   id: string;
@@ -288,6 +290,57 @@ export interface LeaveForecastResult {
   currency_code: string;
   scope: Record<string, unknown>;
   run_tag: string | null;
+}
+
+export interface LeavePolicyChangeSimulationMonth {
+  month_start: string;
+  baseline_days: number;
+  simulated_days: number;
+  delta_days: number;
+  baseline_amount: number;
+  simulated_amount: number;
+  delta_amount: number;
+  currency_code: string;
+}
+
+export interface LeavePolicyChangeSimulationResult {
+  as_of: string;
+  horizon_months: number;
+  dry_run: boolean;
+  policy_version_id: string;
+  employees: number;
+  baseline_total_days: number;
+  simulated_total_days: number;
+  delta_total_days: number;
+  baseline_total_amount: number;
+  simulated_total_amount: number;
+  delta_total_amount: number;
+  currency_code: string;
+  assumptions: Record<string, unknown>;
+  monthly_delta: LeavePolicyChangeSimulationMonth[];
+  scope: Record<string, unknown>;
+}
+
+export interface LeaveAccrualScenarioByType {
+  leave_type_id: string;
+  leave_type_name: string;
+  employee_count: number;
+  baseline_units: number;
+  simulated_units: number;
+  delta_units: number;
+}
+
+export interface LeaveAccrualScenarioSimulationResult {
+  as_of: string;
+  dry_run: boolean;
+  policy_version_id: string;
+  employees: number;
+  scenario: Record<string, unknown>;
+  baseline_total_units: number;
+  simulated_total_units: number;
+  delta_total_units: number;
+  by_leave_type: LeaveAccrualScenarioByType[];
+  scope: Record<string, unknown>;
 }
 
 export interface Attendance {

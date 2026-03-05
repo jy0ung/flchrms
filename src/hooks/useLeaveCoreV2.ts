@@ -3,8 +3,10 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
 import type {
+  LeaveAccrualScenarioSimulationResult,
   LeaveForecastResult,
   LeaveLiabilitySnapshotResult,
+  LeavePolicyChangeSimulationResult,
   LeavePolicyDecision,
   LeavePreviewResult,
 } from '@/types/hrms';
@@ -91,6 +93,73 @@ function normalizeForecastResult(data: unknown): LeaveForecastResult {
     currency_code: String(payload.currency_code ?? 'MYR'),
     scope: (payload.scope as Record<string, unknown> | null) ?? {},
     run_tag: payload.run_tag ? String(payload.run_tag) : null,
+  };
+}
+
+function normalizePolicyChangeSimulationResult(data: unknown): LeavePolicyChangeSimulationResult {
+  const payload = (data ?? {}) as Record<string, unknown>;
+  const monthly = Array.isArray(payload.monthly_delta)
+    ? payload.monthly_delta.map((entry) => {
+        const row = (entry ?? {}) as Record<string, unknown>;
+        return {
+          month_start: String(row.month_start ?? ''),
+          baseline_days: Number(row.baseline_days ?? 0),
+          simulated_days: Number(row.simulated_days ?? 0),
+          delta_days: Number(row.delta_days ?? 0),
+          baseline_amount: Number(row.baseline_amount ?? 0),
+          simulated_amount: Number(row.simulated_amount ?? 0),
+          delta_amount: Number(row.delta_amount ?? 0),
+          currency_code: String(row.currency_code ?? 'MYR'),
+        };
+      })
+    : [];
+
+  return {
+    as_of: String(payload.as_of ?? ''),
+    horizon_months: Number(payload.horizon_months ?? 0),
+    dry_run: Boolean(payload.dry_run),
+    policy_version_id: String(payload.policy_version_id ?? ''),
+    employees: Number(payload.employees ?? 0),
+    baseline_total_days: Number(payload.baseline_total_days ?? 0),
+    simulated_total_days: Number(payload.simulated_total_days ?? 0),
+    delta_total_days: Number(payload.delta_total_days ?? 0),
+    baseline_total_amount: Number(payload.baseline_total_amount ?? 0),
+    simulated_total_amount: Number(payload.simulated_total_amount ?? 0),
+    delta_total_amount: Number(payload.delta_total_amount ?? 0),
+    currency_code: String(payload.currency_code ?? 'MYR'),
+    assumptions: (payload.assumptions as Record<string, unknown> | null) ?? {},
+    monthly_delta: monthly,
+    scope: (payload.scope as Record<string, unknown> | null) ?? {},
+  };
+}
+
+function normalizeAccrualScenarioSimulationResult(data: unknown): LeaveAccrualScenarioSimulationResult {
+  const payload = (data ?? {}) as Record<string, unknown>;
+  const byType = Array.isArray(payload.by_leave_type)
+    ? payload.by_leave_type.map((entry) => {
+        const row = (entry ?? {}) as Record<string, unknown>;
+        return {
+          leave_type_id: String(row.leave_type_id ?? ''),
+          leave_type_name: String(row.leave_type_name ?? ''),
+          employee_count: Number(row.employee_count ?? 0),
+          baseline_units: Number(row.baseline_units ?? 0),
+          simulated_units: Number(row.simulated_units ?? 0),
+          delta_units: Number(row.delta_units ?? 0),
+        };
+      })
+    : [];
+
+  return {
+    as_of: String(payload.as_of ?? ''),
+    dry_run: Boolean(payload.dry_run),
+    policy_version_id: String(payload.policy_version_id ?? ''),
+    employees: Number(payload.employees ?? 0),
+    scenario: (payload.scenario as Record<string, unknown> | null) ?? {},
+    baseline_total_units: Number(payload.baseline_total_units ?? 0),
+    simulated_total_units: Number(payload.simulated_total_units ?? 0),
+    delta_total_units: Number(payload.delta_total_units ?? 0),
+    by_leave_type: byType,
+    scope: (payload.scope as Record<string, unknown> | null) ?? {},
   };
 }
 
@@ -298,6 +367,56 @@ export function useRunLeaveForecast() {
     },
     onError: (error) => {
       toast.error('Failed to run leave forecast', {
+        description: sanitizeErrorMessage(error),
+      });
+    },
+  });
+}
+
+export function useSimulateLeavePolicyChange() {
+  return useMutation({
+    mutationFn: async (input?: {
+      asOf?: string;
+      horizonMonths?: number;
+      scope?: Record<string, unknown>;
+      policyChanges?: Record<string, unknown>;
+    }) => {
+      const { data, error } = await rpcClient.rpc<unknown>('leave_simulate_policy_change', {
+        _as_of: input?.asOf ?? null,
+        _horizon_months: input?.horizonMonths ?? 6,
+        _scope: input?.scope ?? {},
+        _policy_changes: input?.policyChanges ?? {},
+      });
+
+      if (error) throw error;
+      return normalizePolicyChangeSimulationResult(data);
+    },
+    onError: (error) => {
+      toast.error('Failed to simulate leave policy change', {
+        description: sanitizeErrorMessage(error),
+      });
+    },
+  });
+}
+
+export function useSimulateLeaveAccrualScenario() {
+  return useMutation({
+    mutationFn: async (input?: {
+      asOf?: string;
+      scope?: Record<string, unknown>;
+      scenario?: Record<string, unknown>;
+    }) => {
+      const { data, error } = await rpcClient.rpc<unknown>('leave_simulate_accrual_scenario', {
+        _as_of: input?.asOf ?? null,
+        _scope: input?.scope ?? {},
+        _scenario: input?.scenario ?? {},
+      });
+
+      if (error) throw error;
+      return normalizeAccrualScenarioSimulationResult(data);
+    },
+    onError: (error) => {
+      toast.error('Failed to simulate accrual scenario', {
         description: sanitizeErrorMessage(error),
       });
     },
