@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { type LeaveRequest } from '@/types/hrms';
 import { canViewLeaveSupportingDocument } from '@/lib/permissions';
+import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 import { ModalScaffold, ModalSection, StatusBadge } from '@/components/system';
 
 type TimelineDisplayEvent = {
@@ -75,6 +76,8 @@ export function LeaveDetailsDialog({
 
   const statusDisplay = getStatusDisplay(request);
   const cancellationBadge = getCancellationBadge(request);
+  const employeeName = getLeaveRequestEmployeeName(request);
+  const employeeEmail = getLeaveRequestEmployeeEmail(request);
 
   return (
     <ModalScaffold
@@ -89,8 +92,8 @@ export function LeaveDetailsDialog({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <ModalSection title="Request Summary" className="space-y-2 shadow-sm">
               <div className="text-sm space-y-1">
-                <p><span className="text-muted-foreground">Employee:</span> {request.employee?.first_name} {request.employee?.last_name}</p>
-                <p><span className="text-muted-foreground">Email:</span> {request.employee?.email || '—'}</p>
+                <p><span className="text-muted-foreground">Employee:</span> {employeeName}</p>
+                <p><span className="text-muted-foreground">Email:</span> {employeeEmail}</p>
                 <p><span className="text-muted-foreground">Leave Type:</span> {request.leave_type?.name || '—'}</p>
                 <p><span className="text-muted-foreground">Dates:</span> {format(new Date(request.start_date), 'MMM d, yyyy')} - {format(new Date(request.end_date), 'MMM d, yyyy')}</p>
                 <p><span className="text-muted-foreground">Duration:</span> {request.days_count} day(s)</p>

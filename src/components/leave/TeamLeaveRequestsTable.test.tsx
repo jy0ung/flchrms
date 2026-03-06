@@ -234,4 +234,30 @@ describe('TeamLeaveRequestsTable', () => {
 
     expect(screen.queryByRole('button', { name: /Request Doc/i })).not.toBeInTheDocument();
   });
+
+  it('falls back to requester identifiers when the joined employee profile is unavailable', () => {
+    render(
+      <TeamLeaveRequestsTable
+        requests={[
+          makeLeaveRequest({
+            employee: undefined,
+            employee_id: 'delegate-visible-requester',
+          }),
+        ]}
+        emptyMessage="No requests"
+        role="manager"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={() => null}
+        shouldShowLeaveDetailsButton={() => true}
+        canApproveCancellation={() => false}
+        canApprove={() => false}
+        onOpenDetails={vi.fn()}
+        onCancellationReview={vi.fn()}
+        onAction={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText('delegate-visible-requester').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
 });

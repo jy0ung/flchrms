@@ -195,6 +195,14 @@ describe('Leave Delegated Approval Integration', () => {
         expect(visibleError).toBeNull();
         expect(visibleToDelegate?.id).toBe(requestId);
 
+        const { data: delegateVisibleRequester, error: delegateProfileError } = await delegate.client
+          .from('profiles')
+          .select('id, email')
+          .eq('id', requester.userId)
+          .maybeSingle();
+        expect(delegateProfileError).toBeNull();
+        expect(delegateVisibleRequester?.id).toBe(requester.userId);
+
         const { data: approvalData, error: approvalError } = await delegate.client.rpc('leave_decide_request', {
           _request_id: requestId,
           _action: 'approve',
@@ -214,6 +222,14 @@ describe('Leave Delegated Approval Integration', () => {
         expect(approvalPayload.manager_approved_by).toBe(delegate.userId);
         expect(approvalPayload.final_approved_by).toBe(delegate.userId);
         expect(approvalPayload.final_approved_by_role).toBe('manager');
+
+        const { data: requesterVisibleApprover, error: requesterProfileError } = await requester.client
+          .from('profiles')
+          .select('id, email')
+          .eq('id', delegate.userId)
+          .maybeSingle();
+        expect(requesterProfileError).toBeNull();
+        expect(requesterVisibleApprover?.id).toBe(delegate.userId);
       } finally {
         if (delegationId) {
           await delegator.client

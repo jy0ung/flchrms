@@ -209,7 +209,7 @@ function StepLeaveType({
       <div>
         <h3 className="text-sm font-medium">Select Leave Type</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Choose the type of leave you want to request.
+          Choose the type of leave you want to request. Final availability is validated after you pick dates.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -224,13 +224,12 @@ function StepLeaveType({
               type="button"
               data-testid={`leave-type-card-${type.id}`}
               onClick={() => onSelect(type.id)}
-              disabled={isExhausted}
               className={cn(
                 'relative flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
                 isSelected
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                   : isExhausted
-                    ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
+                    ? 'border-amber-500/30 bg-amber-500/5 hover:border-primary/30 hover:bg-muted/30 cursor-pointer'
                     : 'border-border hover:border-primary/30 hover:bg-muted/30 cursor-pointer',
               )}
             >
@@ -256,6 +255,11 @@ function StepLeaveType({
                         ? 'Unlimited'
                         : `${balance.days_remaining}/${balance.days_allowed} days`}
                     </span>
+                  )}
+                  {isExhausted && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      Current balance exhausted
+                    </Badge>
                   )}
                   {type.min_days > 0 && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">

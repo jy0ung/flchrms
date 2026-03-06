@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LeaveRequest } from '@/types/hrms';
+import { getLeaveRequestDialogDescription } from '@/lib/leave-request-display';
 import { ModalScaffold, ModalSection } from '@/components/system';
 
 type CancellationDialogMode = 'pending_cancel' | 'request_approved_cancel';
@@ -61,7 +62,7 @@ export function LeaveCancellationDialogs({
             ? 'Request Leave Cancellation'
             : 'Cancel Pending Leave Request'
         }
-        description={`${requestDialogRequest?.employee?.first_name ?? ''} ${requestDialogRequest?.employee?.last_name ?? ''} - ${requestDialogRequest?.leave_type?.name ?? ''}`.trim()}
+        description={getLeaveRequestDialogDescription(requestDialogRequest)}
         body={
           <div className="space-y-4">
             {requestDialogMode === 'request_approved_cancel' ? (
@@ -116,7 +117,7 @@ export function LeaveCancellationDialogs({
         onOpenChange={onReviewDialogOpenChange}
         maxWidth="xl"
         title={reviewAction === 'approve' ? 'Approve Leave Cancellation' : 'Reject Leave Cancellation'}
-        description={`${reviewDialogRequest?.employee?.first_name ?? ''} ${reviewDialogRequest?.employee?.last_name ?? ''} - ${reviewDialogRequest?.leave_type?.name ?? ''}`.trim()}
+        description={getLeaveRequestDialogDescription(reviewDialogRequest)}
         body={
           <div className="space-y-4">
             {reviewAction === 'reject' && (

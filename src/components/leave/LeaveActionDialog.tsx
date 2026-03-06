@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { LeaveRequest } from '@/types/hrms';
+import { getLeaveRequestDialogDescription } from '@/lib/leave-request-display';
 import { ModalScaffold, ModalSection } from '@/components/system';
 
 export type LeaveActionDialogAction = 'approve' | 'reject' | 'request_document';
@@ -43,7 +44,7 @@ export function LeaveActionDialog({
             ? 'Reject Leave Request'
             : 'Request Supporting Document'
       }
-      description={`${request?.employee?.first_name ?? ''} ${request?.employee?.last_name ?? ''} - ${request?.leave_type?.name ?? ''}`.trim()}
+      description={getLeaveRequestDialogDescription(request)}
       body={
         <div className="space-y-4">
           {actionType === 'reject' && (

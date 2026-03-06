@@ -228,9 +228,11 @@ export function LeaveRequestWorkspace({
                   emptyMessage={emptyMessage}
                   getStatusDisplay={getStatusDisplay}
                   getCancellationBadge={getCancellationBadge}
+                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
                   canAmend={canAmend}
                   canCancelPendingRequest={canCancelPendingRequest}
                   canRequestCancellation={canRequestCancellation}
+                  onOpenDetails={onOpenDetails}
                   onAmend={onAmend}
                   onCancel={onCancel}
                 />

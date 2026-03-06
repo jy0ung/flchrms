@@ -6,6 +6,7 @@ import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { canRequestLeaveSupportingDocument, canViewLeaveSupportingDocument } from '@/lib/permissions';
+import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 import { StatusBadge } from '@/components/system';
 
 type LeaveStatusDisplay = {
@@ -62,15 +63,15 @@ export function TeamLeaveRequestsTable({
               {requests.map((request) => {
                 const status = getStatusDisplay(request);
                 const cancellationBadge = getCancellationBadge(request);
+                const employeeName = getLeaveRequestEmployeeName(request);
+                const employeeEmail = getLeaveRequestEmployeeEmail(request);
 
                 return (
                   <div key={request.id} className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm">
-                          {request.employee?.first_name} {request.employee?.last_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">{request.employee?.email}</p>
+                        <p className="font-semibold text-sm">{employeeName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{employeeEmail}</p>
                       </div>
                       <StatusBadge status={status.status} labelOverride={status.label} className="shrink-0" />
                     </div>
@@ -239,12 +240,14 @@ export function TeamLeaveRequestsTable({
                 {requests.map((request) => {
                   const status = getStatusDisplay(request);
                   const cancellationBadge = getCancellationBadge(request);
+                  const employeeName = getLeaveRequestEmployeeName(request);
+                  const employeeEmail = getLeaveRequestEmployeeEmail(request);
 
                   return (
                     <tr key={request.id} className="border-t border-border table-row-hover align-top">
                       <td className="p-4">
-                        <p className="font-medium">{request.employee?.first_name} {request.employee?.last_name}</p>
-                        <p className="text-sm text-muted-foreground">{request.employee?.email}</p>
+                        <p className="font-medium">{employeeName}</p>
+                        <p className="text-sm text-muted-foreground">{employeeEmail}</p>
                       </td>
                       <td className="p-4">
                         <div>

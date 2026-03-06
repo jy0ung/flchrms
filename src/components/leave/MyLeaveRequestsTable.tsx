@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { AlertCircle, FileText, MessageSquare, Upload, XCircle } from 'lucide-react';
+import { AlertCircle, Eye, FileText, MessageSquare, Upload, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
@@ -21,9 +21,11 @@ interface MyLeaveRequestsTableProps {
   emptyMessage: string;
   getStatusDisplay: (request: LeaveRequest) => LeaveStatusDisplay;
   getCancellationBadge: (request: LeaveRequest) => LeaveCancellationBadge;
+  shouldShowLeaveDetailsButton: (request: LeaveRequest) => boolean;
   canAmend: (request: LeaveRequest) => boolean;
   canCancelPendingRequest: (request: LeaveRequest) => boolean;
   canRequestCancellation: (request: LeaveRequest) => boolean;
+  onOpenDetails: (request: LeaveRequest) => void;
   onAmend: (request: LeaveRequest) => void;
   onCancel: (request: LeaveRequest) => void;
 }
@@ -33,9 +35,11 @@ export function MyLeaveRequestsTable({
   emptyMessage,
   getStatusDisplay,
   getCancellationBadge,
+  shouldShowLeaveDetailsButton,
   canAmend,
   canCancelPendingRequest,
   canRequestCancellation,
+  onOpenDetails,
   onAmend,
   onCancel,
 }: MyLeaveRequestsTableProps) {
@@ -131,6 +135,12 @@ export function MyLeaveRequestsTable({
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-1">
+                      {shouldShowLeaveDetailsButton(request) && (
+                        <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                          <Eye className="w-4 h-4 mr-1" />
+                          Details
+                        </Button>
+                      )}
                       {request.document_url && <DocumentViewButton documentPath={request.document_url} />}
                       {canAmend(request) && (
                         <Button size="sm" variant="outline" className="rounded-full" onClick={() => onAmend(request)}>
@@ -234,6 +244,12 @@ export function MyLeaveRequestsTable({
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
+                          {shouldShowLeaveDetailsButton(request) && (
+                            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                              <Eye className="w-4 h-4 mr-1" />
+                              Details
+                            </Button>
+                          )}
                           {request.document_url && (
                             <DocumentViewButton documentPath={request.document_url} />
                           )}

@@ -184,11 +184,12 @@ describe('LeaveRequestWizard', () => {
       expect(screen.getByText('7d notice')).toBeInTheDocument();
     });
 
-    it('disables exhausted leave types', () => {
+    it('keeps exhausted leave types selectable until policy preview runs', () => {
       const balances = [makeBalance({ days_remaining: 0 })];
       render(<LeaveRequestWizard {...defaultProps()} balances={balances} />);
       const annualButton = screen.getByText('Annual Leave').closest('button');
-      expect(annualButton).toBeDisabled();
+      expect(annualButton).not.toBeDisabled();
+      expect(screen.getByText('Current balance exhausted')).toBeInTheDocument();
     });
 
     it('calls onCancel when Cancel button is clicked on step 1', () => {

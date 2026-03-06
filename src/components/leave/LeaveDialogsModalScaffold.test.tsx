@@ -104,6 +104,28 @@ describe('Leave dialogs modal scaffold integration', () => {
     expect(screen.getByRole('button', { name: /Request Document/i })).toBeInTheDocument();
   });
 
+  it('uses stable fallback request labels when employee profile data is unavailable', () => {
+    render(
+      <LeaveActionDialog
+        open
+        onOpenChange={vi.fn()}
+        request={makeLeaveRequest({
+          employee: undefined,
+          employee_id: 'delegate-visible-requester',
+        })}
+        actionType="approve"
+        rejectionReason=""
+        onRejectionReasonChange={vi.fn()}
+        managerComments=""
+        onManagerCommentsChange={vi.fn()}
+        onSubmit={vi.fn()}
+        isPending={false}
+      />,
+    );
+
+    expect(screen.getByText(/delegate-visible-requester - Annual Leave/i)).toBeInTheDocument();
+  });
+
   it('renders cancellation request/review dialogs with modal scaffold headings and sections', () => {
     render(
       <LeaveCancellationDialogs
