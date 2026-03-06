@@ -60,7 +60,7 @@ export function TopBar() {
     : 'U';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background px-4">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 backdrop-blur-sm px-4">
       {/* Breadcrumbs (hidden on mobile — sidebar hamburger takes that space) */}
       <div className="hidden md:flex flex-1 items-center gap-3 min-w-0">
         <Breadcrumb>
@@ -89,7 +89,7 @@ export function TopBar() {
 
       {/* Mobile: just show page title */}
       <div className="md:hidden flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">
+        <p className="text-sm font-semibold truncate">
           {routeLabels[pathSegments[0]] || 'HRMS'}
         </p>
       </div>

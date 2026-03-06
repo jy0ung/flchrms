@@ -29,7 +29,6 @@ import {
 } from '@/lib/permissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserNotifications } from '@/hooks/useNotifications';
@@ -85,15 +84,15 @@ function SidebarNavItem({
       to={item.href}
       onClick={onNavigate}
       className={cn(
-        'group flex items-center gap-3 rounded-md px-2 py-2 min-h-11 text-sm font-medium transition-colors',
+        'group flex items-center gap-3 rounded-lg px-2.5 py-2 min-h-10 text-sm font-medium transition-all duration-150',
         collapsed && 'justify-center px-0',
         item.danger
           ? isActive
             ? 'bg-destructive/15 text-destructive'
             : 'text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive'
           : isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
       )}
     >
       <item.icon className="h-4 w-4 shrink-0" />
@@ -131,14 +130,21 @@ function SidebarNavGroup({
   items,
   collapsed,
   onNavigate,
+  label,
 }: {
   items: SidebarNavItem[];
   collapsed: boolean;
   onNavigate?: () => void;
+  label?: string;
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
+      {label && !collapsed && (
+        <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+          {label}
+        </p>
+      )}
       {items.map((item) => (
         <SidebarNavItem key={item.name} item={item} collapsed={collapsed} onNavigate={onNavigate} />
       ))}
@@ -191,16 +197,16 @@ function SidebarContent({
       {/* Logo */}
       <div className={cn('flex items-center h-14 shrink-0 border-b border-sidebar-border', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
         {branding.logo_url ? (
-          <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-7 rounded-md object-cover" />
+          <img src={branding.logo_url} alt={branding.company_name} className="h-7 w-7 rounded-lg object-cover" />
         ) : (
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-sm">
+            <span className="text-[11px] font-bold text-primary-foreground">
               {branding.company_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
             </span>
           </div>
         )}
         {!collapsed && (
-          <span className="text-sm font-semibold text-sidebar-accent-foreground truncate">
+          <span className="text-sm font-semibold text-sidebar-accent-foreground truncate tracking-tight">
             {branding.company_tagline || 'HRMS'}
           </span>
         )}
@@ -218,19 +224,13 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav aria-label="Main navigation" className={cn('flex-1 overflow-y-auto scrollbar-thin py-3', collapsed ? 'px-2' : 'px-3')}>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <SidebarNavGroup items={mainWithBadge} collapsed={collapsed} onNavigate={onNavigate} />
-          <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} />
-          <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} />
-          <Separator className="bg-sidebar-border" />
-          <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} />
+          <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} label="Operations" />
+          <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} label="Resources" />
+          <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} label="Development" />
           {scopedAdmin.length > 0 && (
-            <>
-              <Separator className="bg-sidebar-border" />
-              <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} />
-            </>
+            <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label="System" />
           )}
         </div>
       </nav>

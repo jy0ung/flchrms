@@ -1,10 +1,11 @@
 /**
- * Time-aware greeting with action summary line.
- * Replaces the inline greeting in Dashboard.tsx.
+ * Enterprise-grade dashboard hero greeting.
+ * Clean, professional header with contextual action indicators.
  */
 import { memo, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Bell, CalendarClock, CheckCircle2, Sparkles } from 'lucide-react';
+import { Bell, CalendarClock, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserNotifications } from '@/hooks/useNotifications';
@@ -12,34 +13,37 @@ import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { AppRole } from '@/types/hrms';
 import { formatRoleLabel, getScopeLabel } from './dashboard-config';
+import { cn } from '@/lib/utils';
 
-function getTimeGreeting(): { greeting: string; emoji: string; message: string } {
+function getTimeGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 6) return { greeting: 'Good night', emoji: '🌙', message: 'Burning the midnight oil — stay sharp.' };
-  if (hour < 12) return { greeting: 'Good morning', emoji: '☀️', message: 'Start the day with focus and energy.' };
-  if (hour < 17) return { greeting: 'Good afternoon', emoji: '🌤️', message: 'Stay productive — you are doing great.' };
-  if (hour < 21) return { greeting: 'Good evening', emoji: '🌆', message: 'Wrapping up? Review your progress today.' };
-  return { greeting: 'Good night', emoji: '🌙', message: 'Rest well — tomorrow is another day.' };
+  if (hour < 6) return 'Good evening';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 21) return 'Good evening';
+  return 'Good evening';
 }
 
 function DashboardGreetingInner({ role }: { role: AppRole }) {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const { unreadCount } = useUserNotifications(5);
   const showManagerActions = canViewManagerDashboardWidgets(role);
   const { data: stats } = useExecutiveStats();
 
-  const { greeting, emoji, message } = useMemo(getTimeGreeting, []);
+  const greeting = useMemo(getTimeGreeting, []);
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
 
-  // Build action summary chips
   const actionChips = useMemo(() => {
-    const chips: Array<{ icon: typeof Bell; label: string; tone: string }> = [];
+    const chips: Array<{ icon: typeof Bell; label: string; tone: string; route: string; count: number }> = [];
 
     if (unreadCount > 0) {
       chips.push({
         icon: Bell,
-        label: `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`,
-        tone: 'text-primary',
+        label: `${unreadCount} notification${unreadCount > 1 ? 's' : ''}`,
+        tone: 'primary',
+        route: '/notifications',
+        count: unreadCount,
       });
     }
 
@@ -47,15 +51,19 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
       if (stats.pendingLeaveRequests > 0) {
         chips.push({
           icon: CalendarClock,
-          label: `${stats.pendingLeaveRequests} pending leave${stats.pendingLeaveRequests > 1 ? 's' : ''}`,
-          tone: 'text-warning',
+          label: `${stats.pendingLeaveRequests} leave request${stats.pendingLeaveRequests > 1 ? 's' : ''}`,
+          tone: 'warning',
+          route: '/leave',
+          count: stats.pendingLeaveRequests,
         });
       }
       if (stats.pendingReviews > 0) {
         chips.push({
           icon: CheckCircle2,
-          label: `${stats.pendingReviews} pending review${stats.pendingReviews > 1 ? 's' : ''}`,
-          tone: 'text-info',
+          label: `${stats.pendingReviews} review${stats.pendingReviews > 1 ? 's' : ''}`,
+          tone: 'info',
+          route: '/performance',
+          count: stats.pendingReviews,
         });
       }
     }
@@ -63,40 +71,58 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
     return chips;
   }, [unreadCount, showManagerActions, stats]);
 
+  const toneMap: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/15',
+    warning: 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/15',
+    info: 'bg-info/10 text-info border-info/20 hover:bg-info/15',
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            <span className="mr-2">{emoji}</span>
+    <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.03] p-5 sm:p-6">
+      {/* Subtle decorative element */}
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/[0.04] blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/[0.03] blur-3xl" />
+
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {today}
+          </p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
             {greeting}, {profile?.first_name || 'there'}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {today} · {formatRoleLabel(role)} · {getScopeLabel(role, null)}
-          </p>
-          <p className="text-sm text-muted-foreground/80 italic">{message}</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-xs font-medium text-primary">
+              {formatRoleLabel(role)}
+            </span>
+            <span className="text-border">•</span>
+            <span className="text-xs">{getScopeLabel(role, null)}</span>
+          </div>
         </div>
 
-        {actionChips.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {actionChips.map((chip) => (
-              <div
+        <div className="flex flex-wrap items-center gap-2">
+          {actionChips.length > 0 ? (
+            actionChips.map((chip) => (
+              <button
                 key={chip.label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium"
+                onClick={() => navigate(chip.route)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors cursor-pointer',
+                  toneMap[chip.tone],
+                )}
               >
-                <chip.icon className={`h-3.5 w-3.5 ${chip.tone}`} />
+                <chip.icon className="h-3.5 w-3.5" />
                 <span>{chip.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {actionChips.length === 0 && (
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/5 px-3 py-1.5 text-xs font-medium text-success">
-            <Sparkles className="h-3.5 w-3.5" />
-            All clear — no pending actions
-          </div>
-        )}
+                <ChevronRight className="h-3 w-3 opacity-50" />
+              </button>
+            ))
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-3 py-2 text-xs font-medium text-success">
+              <Sparkles className="h-3.5 w-3.5" />
+              All caught up
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

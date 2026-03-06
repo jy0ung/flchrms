@@ -12,6 +12,7 @@ import {
   Clock,
   CalendarClock,
   ClipboardList,
+  ArrowUpRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
@@ -43,8 +44,8 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
   return (
     <Card
       className={cn(
-        'relative overflow-hidden border-border shadow-sm transition-all duration-200',
-        clickable && 'cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20 hover:-translate-y-0.5',
+        'group relative overflow-hidden border-border bg-card shadow-sm transition-all duration-200',
+        clickable && 'cursor-pointer hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5',
       )}
       onClick={onClick}
       onKeyDown={(event) => handleKeyActivate(event, onClick)}
@@ -52,50 +53,50 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `Open ${title}` : undefined}
     >
-      {/* Accent top bar */}
-      {accentColor && <div className={cn('h-1 w-full', accentColor)} />}
-
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
-            <p className="mt-1.5 text-2xl font-bold tracking-tight md:text-3xl">{value}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+            <p className="mt-2 text-2xl font-bold tracking-tight lg:text-3xl">{value}</p>
+
+            {subtitle && (
+              <p className="mt-1.5 truncate text-xs text-muted-foreground">{subtitle}</p>
+            )}
+
+            {trend && trendLabel && (
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <div className={cn(
+                  'flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                  trend === 'up' && 'bg-success/10 text-success',
+                  trend === 'down' && 'bg-destructive/10 text-destructive',
+                  trend === 'neutral' && 'bg-muted text-muted-foreground',
+                )}>
+                  <TrendIcon className="h-3 w-3" />
+                  <span>{trendLabel}</span>
+                </div>
+              </div>
+            )}
           </div>
           {Icon && (
-            <div className={cn('rounded-lg p-2', accentColor ? `${accentColor}/10` : 'bg-muted')}>
-              <Icon className={cn('h-5 w-5', accentColor ? accentColor.replace('bg-', 'text-') : 'text-muted-foreground')} />
+            <div className={cn(
+              'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+              accentColor
+                ? `${accentColor}/10`
+                : 'bg-muted',
+            )}>
+              <Icon className={cn(
+                'h-5 w-5',
+                accentColor ? accentColor.replace('bg-', 'text-') : 'text-muted-foreground',
+              )} />
             </div>
           )}
         </div>
 
-        {subtitle && (
-          <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p>
-        )}
-
-        {trend && trendLabel && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs">
-            <TrendIcon
-              className={cn(
-                'h-3 w-3',
-                trend === 'up' && 'text-success',
-                trend === 'down' && 'text-destructive',
-                trend === 'neutral' && 'text-muted-foreground',
-              )}
-            />
-            <span
-              className={cn(
-                trend === 'up' && 'text-success',
-                trend === 'down' && 'text-destructive',
-                trend === 'neutral' && 'text-muted-foreground',
-              )}
-            >
-              {trendLabel}
-            </span>
-          </div>
-        )}
-
         {clickable && (
-          <p className="mt-2 text-xs font-medium text-primary">View details →</p>
+          <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+            <span>View details</span>
+            <ArrowUpRight className="h-3 w-3" />
+          </div>
         )}
       </CardContent>
     </Card>
@@ -115,7 +116,7 @@ function QuickStatsInner() {
     return (
       <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-32 md:h-36 rounded-lg" />
+          <Skeleton key={i} className="h-[140px] rounded-lg" />
         ))}
       </div>
     );

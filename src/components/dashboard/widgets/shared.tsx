@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canViewManagerDashboardWidgets, isManager } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { CardHeaderStandard } from '@/components/system';
 import { QueryErrorState } from '@/components/system';
 import type { LeaveStatus } from '@/types/hrms';
 
@@ -76,42 +75,48 @@ export function DashboardWidgetCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-lg', className)}>
-      <CardHeaderStandard
-        title={
-          Icon ? (
-            <span className="inline-flex items-center gap-2">
-              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {title}
-            </span>
-          ) : (
-            title
-          )
-        }
-        description={description}
-        actions={action}
-        className="p-4 pb-2"
-        titleClassName="text-base md:text-lg"
-        descriptionClassName="text-xs md:text-sm"
-      />
-      <CardContent className="flex-1 min-h-0 overflow-y-auto pt-0">{children}</CardContent>
+    <Card className={cn(
+      'group/widget flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-xl transition-shadow hover:shadow-md',
+      className,
+    )}>
+      <div className="flex items-start justify-between gap-3 px-5 pb-1 pt-5">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            {Icon && (
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/8">
+                <Icon className="h-3.5 w-3.5 text-primary" />
+              </div>
+            )}
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
+          </div>
+          {description && (
+            <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+          )}
+        </div>
+        {action && (
+          <div className="ml-auto flex shrink-0 items-center gap-2 pt-0.5">
+            {action}
+          </div>
+        )}
+      </div>
+      <CardContent className="flex-1 min-h-0 overflow-hidden px-5 pb-5 pt-3">{children}</CardContent>
     </Card>
   );
 }
 
 export function MetricChip({ label, value, tone = 'default' }: { label: string; value: string | number; tone?: 'default' | 'success' | 'warning' | 'danger' | 'info' }) {
   const toneClass = {
-    default: 'border-border bg-muted text-foreground',
-    success: 'border-success/20 bg-success/10 text-success',
-    warning: 'border-warning/20 bg-warning/10 text-warning',
-    danger: 'border-destructive/20 bg-destructive/10 text-destructive',
-    info: 'border-primary/20 bg-primary/10 text-primary',
+    default: 'border-border bg-muted/60 text-foreground',
+    success: 'border-success/15 bg-success/8 text-success',
+    warning: 'border-warning/15 bg-warning/8 text-warning',
+    danger: 'border-destructive/15 bg-destructive/8 text-destructive',
+    info: 'border-primary/15 bg-primary/8 text-primary',
   }[tone];
 
   return (
-    <div className={cn('rounded-lg border px-3 py-2', toneClass)}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-base font-semibold leading-none">{value}</p>
+    <div className={cn('rounded-lg border px-3 py-2.5', toneClass)}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-lg font-bold leading-none">{value}</p>
     </div>
   );
 }
@@ -144,7 +149,7 @@ export class DashboardWidgetErrorBoundary extends Component<WidgetErrorBoundaryP
   render() {
     if (this.state.hasError) {
       return (
-        <Card className="flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-lg">
+        <Card className="flex h-full flex-col overflow-hidden border border-border bg-card shadow-sm rounded-xl">
           <CardContent className="flex-1 flex items-center justify-center p-6">
             <QueryErrorState
               label={this.props.widgetLabel ?? 'widget'}
