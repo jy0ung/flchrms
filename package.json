@@ -33,6 +33,7 @@
     "db:bootstrap:verify:local:defaults": "bash scripts/db-bootstrap-verify-local.sh --apply-bootstrap-defaults",
     "db:bootstrap:platform:apply:local": "bash scripts/apply-bootstrap-platform-local.sh",
     "db:bootstrap:defaults:apply:local": "bash scripts/apply-bootstrap-defaults-local.sh",
+    "db:seed:local": "bash scripts/apply-seed-local.sh",
     "db:build:default-schema:compat": "bash scripts/build-default-schema-compat.sh",
     "db:snapshot:public": "bash scripts/export-public-schema-snapshot.sh",
     "types:supabase:gen:local": "bash scripts/generate-supabase-types-local.sh",

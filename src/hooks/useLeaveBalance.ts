@@ -100,9 +100,14 @@ function inferCycleBounds(asOfDate?: string | null) {
   };
 }
 
-export function useLeaveBalance(employeeId?: string, asOfDate?: string) {
+interface UseLeaveBalanceOptions {
+  enabled?: boolean;
+}
+
+export function useLeaveBalance(employeeId?: string, asOfDate?: string, options?: UseLeaveBalanceOptions) {
   const { user } = useAuth();
   const targetId = employeeId || user?.id;
+  const queryEnabled = options?.enabled ?? !!targetId;
 
   return useQuery({
     queryKey: ['leave-balance', targetId, asOfDate ?? null],
@@ -172,7 +177,7 @@ export function useLeaveBalance(employeeId?: string, asOfDate?: string) {
 
       throw balancesError;
     },
-    enabled: !!targetId,
+    enabled: queryEnabled && !!targetId,
     staleTime: 30000, // Cache for 30 seconds
   });
 }

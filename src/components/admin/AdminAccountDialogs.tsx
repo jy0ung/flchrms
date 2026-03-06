@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+
+import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
+import type {
+  AdminEditProfileForm,
+  AdminResetPasswordForm,
+} from '@/components/admin/admin-form-types';
+import { ModalScaffold, ModalSection } from '@/components/system';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,16 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ModalScaffold, ModalSection } from '@/components/system';
-import { getRoleAuthorityTier } from '@/components/admin/admin-authority';
+import type { EmployeeEditAccessMode } from '@/modules/employees/types';
 import type { AppRole, Department, EmployeeStatus, Profile } from '@/types/hrms';
-import type { AdminEditProfileForm, AdminResetPasswordForm } from '@/components/admin/admin-form-types';
 
 interface AdminAccountDialogsProps {
   selectedEmployee: Profile | null;
   departments?: Department[];
   employees?: (Profile & { department: Department | null })[];
   isAdminLimitedProfileEditor: boolean;
+  editAccessMode?: EmployeeEditAccessMode;
   editProfileDialogOpen: boolean;
   onEditProfileDialogOpenChange: (open: boolean) => void;
   editForm: AdminEditProfileForm;
@@ -45,11 +51,62 @@ interface AdminAccountDialogsProps {
   deleteRolePending: boolean;
 }
 
+function ReadonlyField({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input value={value || ''} disabled className="bg-muted" />
+    </div>
+  );
+}
+
+function getEditDialogCopy(
+  editAccessMode: EmployeeEditAccessMode,
+  selectedEmployee: Profile | null,
+) {
+  const fullName = `${selectedEmployee?.first_name ?? ''} ${selectedEmployee?.last_name ?? ''}`.trim();
+
+  if (editAccessMode === 'alias_only') {
+    return {
+      title: 'Manage Account Access',
+      description: `Admin can update the username alias only for ${fullName}.`,
+      sectionTitle: 'Account Access',
+      submitLabel: 'Save Username Alias',
+    };
+  }
+
+  if (editAccessMode === 'manager_limited') {
+    return {
+      title: 'Update Employee Contact',
+      description: `Managers can update phone and job title for ${fullName}. Other fields remain read only.`,
+      sectionTitle: 'Limited Edit Access',
+      submitLabel: 'Save Contact Changes',
+    };
+  }
+
+  if (editAccessMode === 'none') {
+    return {
+      title: 'Employee Profile',
+      description: `${fullName} is view only in this workspace.`,
+      sectionTitle: 'Profile Information',
+      submitLabel: 'Save Changes',
+    };
+  }
+
+  return {
+    title: 'Edit Employee Profile',
+    description: `Update profile information for ${fullName}`,
+    sectionTitle: 'Profile Information',
+    submitLabel: 'Save Changes',
+  };
+}
+
 export function AdminAccountDialogs({
   selectedEmployee,
   departments,
   employees,
   isAdminLimitedProfileEditor,
+  editAccessMode,
   editProfileDialogOpen,
   onEditProfileDialogOpenChange,
   editForm,
@@ -80,6 +137,13 @@ export function AdminAccountDialogs({
     }
   }, [editRoleDialogOpen]);
 
+  const effectiveEditAccessMode = editAccessMode ?? (isAdminLimitedProfileEditor ? 'alias_only' : 'full');
+  const isAliasOnly = effectiveEditAccessMode === 'alias_only';
+  const isManagerLimited = effectiveEditAccessMode === 'manager_limited';
+  const isFullEdit = effectiveEditAccessMode === 'full';
+  const canSubmitProfile = effectiveEditAccessMode !== 'none';
+  const editDialogCopy = getEditDialogCopy(effectiveEditAccessMode, selectedEmployee);
+
   const roleChangePreview = useMemo(() => {
     const previousTier = getRoleAuthorityTier(currentAssignedRole);
     const nextTier = getRoleAuthorityTier(selectedRole);
@@ -95,197 +159,224 @@ export function AdminAccountDialogs({
       <ModalScaffold
         open={editProfileDialogOpen}
         onOpenChange={onEditProfileDialogOpenChange}
-        title={isAdminLimitedProfileEditor ? 'Manage Account Access' : 'Edit Employee Profile'}
-        description={
-          isAdminLimitedProfileEditor
-            ? `Admin can update the username alias only for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}.`
-            : `Update profile information for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}`
-        }
+        title={editDialogCopy.title}
+        description={editDialogCopy.description}
         maxWidth="2xl"
-        body={(
+        body={
           <div className="space-y-4">
-          <ModalSection title={isAdminLimitedProfileEditor ? 'Account Access' : 'Profile Information'}>
-          <div className="grid gap-4">
-            {isAdminLimitedProfileEditor ? (
-              <div className="space-y-4">
-                <div className="rounded-lg border bg-muted/50 p-4">
-                  <p className="font-medium">{selectedEmployee?.first_name} {selectedEmployee?.last_name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
-                  {!isAdminLimitedProfileEditor && selectedEmployee?.employee_id ? (
-                    <p className="mt-1 text-xs font-mono text-muted-foreground">{selectedEmployee.employee_id}</p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Admin access is limited to account-level username alias management. HR/Director manage employee profile details.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ModalSection title={editDialogCopy.sectionTitle}>
+              <div className="grid gap-4">
+                {(isAliasOnly || isManagerLimited) ? (
+                  <div className="rounded-lg border bg-muted/50 p-4">
+                    <p className="font-medium">
+                      {selectedEmployee?.first_name} {selectedEmployee?.last_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
+                    {selectedEmployee?.employee_id ? (
+                      <p className="mt-1 text-xs font-mono text-muted-foreground">{selectedEmployee.employee_id}</p>
+                    ) : null}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {isAliasOnly
+                        ? 'This mode is limited to username alias management.'
+                        : 'This mode is limited to phone and job title updates for direct reports.'}
+                    </p>
+                  </div>
+                ) : null}
+
+                {isFullEdit ? (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={editForm.first_name}
+                        onChange={(event) => onEditFormChange({ ...editForm, first_name: event.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={editForm.last_name}
+                        onChange={(event) => onEditFormChange({ ...editForm, last_name: event.target.value })}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={editForm.first_name}
-                    onChange={(e) => onEditFormChange({ ...editForm, first_name: e.target.value })}
-                  />
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={editForm.email} disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">Email cannot be changed from here.</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={editForm.last_name}
-                    onChange={(e) => onEditFormChange({ ...editForm, last_name: e.target.value })}
-                  />
-                </div>
+
+                {isManagerLimited || isFullEdit ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={editForm.phone}
+                      onChange={(event) => onEditFormChange({ ...editForm, phone: event.target.value })}
+                    />
+                  </div>
+                ) : null}
+
+                {(isAliasOnly || isFullEdit) ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username Alias (Optional)</Label>
+                    <Input
+                      id="username"
+                      value={editForm.username}
+                      onChange={(event) => onEditFormChange({ ...editForm, username: event.target.value })}
+                      placeholder="e.g. john.doe"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Employee ID is the recommended login handle. Username alias is optional and will be normalized to lowercase using letters, numbers, dot, underscore, or dash.
+                    </p>
+                  </div>
+                ) : null}
+
+                {isManagerLimited ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="job_title">Job Title</Label>
+                      <Input
+                        id="job_title"
+                        value={editForm.job_title}
+                        onChange={(event) => onEditFormChange({ ...editForm, job_title: event.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <ReadonlyField label="Username Alias" value={editForm.username ? `@${editForm.username}` : 'Not set'} />
+                      <ReadonlyField label="Employee ID" value={editForm.employee_id || 'Not assigned'} />
+                      <ReadonlyField
+                        label="Department"
+                        value={departments?.find((department) => department.id === editForm.department_id)?.name || 'No Department'}
+                      />
+                      <ReadonlyField label="Status" value={editForm.status.replace(/_/g, ' ')} />
+                      <ReadonlyField label="Hire Date" value={editForm.hire_date || 'Not set'} />
+                      <ReadonlyField
+                        label="Manager"
+                        value={employees?.find((employee) => employee.id === editForm.manager_id)?.first_name
+                          ? `${employees?.find((employee) => employee.id === editForm.manager_id)?.first_name} ${employees?.find((employee) => employee.id === editForm.manager_id)?.last_name}`
+                          : 'No manager assigned'}
+                      />
+                    </div>
+                  </>
+                ) : null}
+
+                {isFullEdit ? (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="job_title">Job Title</Label>
+                        <Input
+                          id="job_title"
+                          value={editForm.job_title}
+                          onChange={(event) => onEditFormChange({ ...editForm, job_title: event.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="employee_id">Employee ID</Label>
+                        <Input
+                          id="employee_id"
+                          value={editForm.employee_id}
+                          onChange={(event) => onEditFormChange({ ...editForm, employee_id: event.target.value })}
+                          placeholder="e.g. EMP-001"
+                        />
+                        <p className="text-xs text-muted-foreground">Recommended primary non-email login identifier.</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="department">Department</Label>
+                        <Select
+                          value={editForm.department_id}
+                          onValueChange={(value) => onEditFormChange({ ...editForm, department_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Department</SelectItem>
+                            {departments?.map((department) => (
+                              <SelectItem key={department.id} value={department.id}>
+                                {department.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                          value={editForm.status}
+                          onValueChange={(value) => onEditFormChange({ ...editForm, status: value as EmployeeStatus })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="on_leave">On Leave</SelectItem>
+                            <SelectItem value="terminated">Terminated</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="hire_date">Hire Date</Label>
+                        <Input
+                          id="hire_date"
+                          type="date"
+                          value={editForm.hire_date}
+                          onChange={(event) => onEditFormChange({ ...editForm, hire_date: event.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="manager">Manager</Label>
+                        <Select
+                          value={editForm.manager_id}
+                          onValueChange={(value) => onEditFormChange({ ...editForm, manager_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select manager" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Manager</SelectItem>
+                            {employees
+                              ?.filter((employee) => employee.id !== selectedEmployee?.id)
+                              .map((employee) => (
+                                <SelectItem key={employee.id} value={employee.id}>
+                                  {employee.first_name} {employee.last_name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={editForm.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed from here</p>
-            </div>
-            {!isAdminLimitedProfileEditor && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={editForm.phone}
-                  onChange={(e) => onEditFormChange({ ...editForm, phone: e.target.value })}
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="username">Username Alias (Optional)</Label>
-              <Input
-                id="username"
-                value={editForm.username}
-                onChange={(e) => onEditFormChange({ ...editForm, username: e.target.value })}
-                placeholder="e.g. john.doe"
-                autoCapitalize="none"
-                autoCorrect="off"
-              />
-              <p className="text-xs text-muted-foreground">
-                Employee ID is the recommended login handle. Username alias is optional and will be normalized to lowercase using letters, numbers, dot, underscore, or dash.
-              </p>
-            </div>
-            {!isAdminLimitedProfileEditor && (
-              <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="job_title">Job Title</Label>
-                    <Input
-                      id="job_title"
-                      value={editForm.job_title}
-                      onChange={(e) => onEditFormChange({ ...editForm, job_title: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="employee_id">Employee ID</Label>
-                    <Input
-                      id="employee_id"
-                      value={editForm.employee_id}
-                      onChange={(e) => onEditFormChange({ ...editForm, employee_id: e.target.value })}
-                      placeholder="e.g. EMP-001"
-                    />
-                    <p className="text-xs text-muted-foreground">Recommended primary non-email login identifier.</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select
-                      value={editForm.department_id}
-                      onValueChange={(value) => onEditFormChange({ ...editForm, department_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Department</SelectItem>
-                        {departments?.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={editForm.status}
-                      onValueChange={(value) => onEditFormChange({ ...editForm, status: value as EmployeeStatus })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="on_leave">On Leave</SelectItem>
-                        <SelectItem value="terminated">Terminated</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="hire_date">Hire Date</Label>
-                    <Input
-                      id="hire_date"
-                      type="date"
-                      value={editForm.hire_date}
-                      onChange={(e) => onEditFormChange({ ...editForm, hire_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="manager">Manager</Label>
-                    <Select
-                      value={editForm.manager_id}
-                      onValueChange={(value) => onEditFormChange({ ...editForm, manager_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select manager" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Manager</SelectItem>
-                        {employees
-                          ?.filter((emp) => emp.id !== selectedEmployee?.id)
-                          .map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id}>
-                              {emp.first_name} {emp.last_name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </>
-            )}
+            </ModalSection>
           </div>
-          </ModalSection>
-          </div>
-        )}
-        footer={(
+        }
+        footer={
           <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditProfileDialogOpenChange(false)}>
               Cancel
             </Button>
-            <Button className="w-full sm:w-auto" onClick={onSaveProfile} disabled={saveProfilePending}>
-              {saveProfilePending
-                ? 'Saving...'
-                : isAdminLimitedProfileEditor
-                  ? 'Save Username Alias'
-                  : 'Save Changes'}
-            </Button>
+            {canSubmitProfile ? (
+              <Button className="w-full sm:w-auto" onClick={onSaveProfile} disabled={saveProfilePending}>
+                {saveProfilePending ? 'Saving...' : editDialogCopy.submitLabel}
+              </Button>
+            ) : null}
           </>
-        )}
+        }
       />
 
       <ModalScaffold
@@ -294,63 +385,70 @@ export function AdminAccountDialogs({
         title="Reset User Password"
         description={`Set a new temporary password for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. They will be signed out from existing sessions.`}
         maxWidth="xl"
-        body={(
+        body={
           <ModalSection title="Password Reset">
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/50 p-4">
-              <p className="font-medium">
-                {selectedEmployee?.first_name} {selectedEmployee?.last_name}
-              </p>
-              <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
-              {!isAdminLimitedProfileEditor && selectedEmployee?.employee_id ? (
-                <p className="text-xs text-muted-foreground font-mono mt-1">
-                  {selectedEmployee.employee_id}
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/50 p-4">
+                <p className="font-medium">
+                  {selectedEmployee?.first_name} {selectedEmployee?.last_name}
                 </p>
-              ) : null}
-            </div>
+                <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
+                {!isAliasOnly && selectedEmployee?.employee_id ? (
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">{selectedEmployee.employee_id}</p>
+                ) : null}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reset-password-new">New Temporary Password</Label>
-              <Input
-                id="reset-password-new"
-                type="password"
-                value={resetPasswordForm.newPassword}
-                onChange={(e) => onResetPasswordFormChange({ ...resetPasswordForm, newPassword: e.target.value })}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                minLength={6}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="reset-password-new">New Temporary Password</Label>
+                <Input
+                  id="reset-password-new"
+                  type="password"
+                  value={resetPasswordForm.newPassword}
+                  onChange={(event) => onResetPasswordFormChange({ ...resetPasswordForm, newPassword: event.target.value })}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  minLength={6}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reset-password-confirm">Confirm Password</Label>
-              <Input
-                id="reset-password-confirm"
-                type="password"
-                value={resetPasswordForm.confirmPassword}
-                onChange={(e) => onResetPasswordFormChange({ ...resetPasswordForm, confirmPassword: e.target.value })}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                minLength={6}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="reset-password-confirm">Confirm Password</Label>
+                <Input
+                  id="reset-password-confirm"
+                  type="password"
+                  value={resetPasswordForm.confirmPassword}
+                  onChange={(event) => onResetPasswordFormChange({ ...resetPasswordForm, confirmPassword: event.target.value })}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  minLength={6}
+                />
+              </div>
 
-            <p className="text-xs text-muted-foreground">
-              Username alias changes remain restricted to HR/Admin only and are enforced in the database.
-            </p>
-          </div>
+              <p className="text-xs text-muted-foreground">
+                Password resets remain restricted to the roles allowed by the employee module capability gateway.
+              </p>
+            </div>
           </ModalSection>
-        )}
-        footer={(
+        }
+        footer={
           <>
-            <Button className="w-full sm:w-auto" variant="outline" onClick={() => onResetPasswordDialogOpenChange(false)} disabled={resetPasswordPending}>
+            <Button
+              className="w-full sm:w-auto"
+              variant="outline"
+              onClick={() => onResetPasswordDialogOpenChange(false)}
+              disabled={resetPasswordPending}
+            >
               Cancel
             </Button>
-            <Button className="w-full sm:w-auto" onClick={onResetUserPassword} disabled={resetPasswordPending || !selectedEmployee}>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={onResetUserPassword}
+              disabled={resetPasswordPending || !selectedEmployee}
+            >
               {resetPasswordPending ? 'Resetting...' : 'Reset Password'}
             </Button>
           </>
-        )}
+        }
       />
 
       <ModalScaffold
@@ -360,69 +458,44 @@ export function AdminAccountDialogs({
         description={`Update the system role for ${selectedEmployee?.first_name} ${selectedEmployee?.last_name}. This will affect their permissions immediately.`}
         maxWidth="2xl"
         contentClassName="sm:!left-auto sm:!right-0 sm:!top-0 sm:!h-screen sm:!max-h-screen sm:!w-[760px] sm:!max-w-[760px] sm:!translate-x-0 sm:!translate-y-0 sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l"
-        body={(
+        body={
           <div className="space-y-4">
             <ModalSection title="Selected User" tone="muted">
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-              <Avatar className="w-12 h-12">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {selectedEmployee?.first_name?.[0]}{selectedEmployee?.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{selectedEmployee?.first_name} {selectedEmployee?.last_name}</p>
-                <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
+              <div className="flex items-center gap-4 rounded-lg bg-muted p-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {selectedEmployee?.first_name?.[0]}
+                    {selectedEmployee?.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">
+                    {selectedEmployee?.first_name} {selectedEmployee?.last_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{selectedEmployee?.email}</p>
+                </div>
               </div>
-            </div>
             </ModalSection>
+
             <ModalSection title="Role Assignment">
-            <div className="space-y-2">
-              <Label>Select Role Assignment</Label>
-              <Select value={selectedRole} onValueChange={(value) => onSelectedRoleChange(value as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="employee">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-slate-400" />
-                      Employee - Basic self-service access
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="manager">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-400" />
-                      Manager - Team oversight & approvals
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="general_manager">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
-                      General Manager - GM level approvals
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="director">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-amber-400" />
-                      Director - Unrestricted business access & final leave approvals
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="hr">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-purple-400" />
-                      HR - Employee management, policies & leave monitoring (no leave approvals)
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="admin">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-400" />
-                      Admin - System supervision & role management (no approvals/payroll)
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label>Select Role Assignment</Label>
+                <Select value={selectedRole} onValueChange={(value) => onSelectedRoleChange(value as AppRole)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="employee">Employee - Basic self-service access</SelectItem>
+                    <SelectItem value="manager">Manager - Team oversight and approvals</SelectItem>
+                    <SelectItem value="general_manager">General Manager - GM level approvals</SelectItem>
+                    <SelectItem value="director">Director - Unrestricted business access and final leave approvals</SelectItem>
+                    <SelectItem value="hr">HR - Employee management, policies, and leave monitoring</SelectItem>
+                    <SelectItem value="admin">Admin - System supervision and role management</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </ModalSection>
+
             <ModalSection title="Change Preview" tone="muted">
               <div aria-live="polite" className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -455,20 +528,22 @@ export function AdminAccountDialogs({
                 )}
               </div>
             </ModalSection>
+
             <ModalSection tone="warning" compact>
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <p className="text-sm text-amber-400 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                Role changes take effect immediately. The user may need to refresh their browser to see updated permissions.
-              </p>
-            </div>
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+                <p className="flex items-start gap-2 text-sm text-amber-400">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  Role changes take effect immediately. The user may need to refresh their browser to see updated permissions.
+                </p>
+              </div>
             </ModalSection>
+
             <p className="text-xs text-muted-foreground">
               Removing a role assignment reverts the user to the default `employee` role.
             </p>
           </div>
-        )}
-        footer={(
+        }
+        footer={
           <>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => onEditRoleDialogOpenChange(false)}>
               Cancel
@@ -489,7 +564,7 @@ export function AdminAccountDialogs({
               {updateRolePending ? 'Publishing...' : 'Publish Role Change'}
             </Button>
           </>
-        )}
+        }
       />
     </>
   );

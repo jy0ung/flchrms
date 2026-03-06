@@ -28,9 +28,11 @@ function makeProps(
       manager: undefined,
     },
     departments: [],
+    employees: [],
     isAdminLimitedProfileEditor: false,
     editProfileDialogOpen: false,
     onEditProfileDialogOpenChange: vi.fn(),
+    editAccessMode: 'full',
     editForm: {
       first_name: 'Grace',
       last_name: 'John',
@@ -41,6 +43,8 @@ function makeProps(
       department_id: 'none',
       employee_id: 'TST-EMP-001',
       status: 'active',
+      hire_date: '',
+      manager_id: 'none',
     },
     onEditFormChange: vi.fn(),
     onSaveProfile: vi.fn(),
@@ -77,5 +81,22 @@ describe('AdminAccountDialogs role governance flow', () => {
     fireEvent.click(screen.getByLabelText(/I confirm this role change is governance-impacting/i));
     expect(publishButton).toBeEnabled();
   });
-});
 
+  it('renders manager limited edit mode with only phone and job title editable', () => {
+    render(
+      <AdminAccountDialogs
+        {...makeProps({
+          editProfileDialogOpen: true,
+          editRoleDialogOpen: false,
+          editAccessMode: 'manager_limited',
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/This mode is limited to phone and job title updates for direct reports/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Phone/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Job Title/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/First Name/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save Contact Changes/i })).toBeInTheDocument();
+  });
+});

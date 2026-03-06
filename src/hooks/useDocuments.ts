@@ -27,8 +27,13 @@ export interface Document {
   };
 }
 
-export function useDocuments(employeeId?: string) {
+interface UseDocumentsOptions {
+  enabled?: boolean;
+}
+
+export function useDocuments(employeeId?: string, options?: UseDocumentsOptions) {
   const { user, role } = useAuth();
+  const queryEnabled = options?.enabled ?? !!user;
 
   return useQuery({
     queryKey: ['documents', employeeId, role],
@@ -51,7 +56,7 @@ export function useDocuments(employeeId?: string) {
       if (error) throw error;
       return data as Document[];
     },
-    enabled: !!user,
+    enabled: queryEnabled && !!user,
   });
 }
 
