@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Edit, FileText, GitBranch, History, Mail, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, Edit, FileText, GitBranch, History, Mail, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBu
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
 import { WorkflowConfigAuditSection } from '@/components/admin/WorkflowConfigAuditSection';
 import { LeavePolicyAnalyticsSection } from '@/components/admin/LeavePolicyAnalyticsSection';
+import { LeaveBalanceAdjustmentsSection } from '@/components/admin/LeaveBalanceAdjustmentsSection';
 import { LeaveDisplayCustomizeDialog } from '@/components/leave/LeaveDisplayCustomizeDialog';
 import { LeaveDelegationsSection } from '@/components/leave/LeaveDelegationsSection';
 import { LeavePeriodOperationsSection } from '@/components/leave/LeavePeriodOperationsSection';
@@ -67,7 +68,7 @@ export function LeavePoliciesSection({
 
   return (
     <Tabs defaultValue={'leave-types' satisfies LeavePolicySubTabKey} className="space-y-4">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-6">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-7">
         <TabsTrigger value="leave-types" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <FileText className="w-4 h-4" />
           <span className="truncate">Leave Types</span>
@@ -79,6 +80,10 @@ export function LeavePoliciesSection({
         <TabsTrigger value="workflow-builders" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <GitBranch className="w-4 h-4" />
           <span className="truncate">Workflow Builders</span>
+        </TabsTrigger>
+        <TabsTrigger value="balance-adjustments" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
+          <SlidersHorizontal className="w-4 h-4" />
+          <span className="truncate">Balance Adjustments</span>
         </TabsTrigger>
         <TabsTrigger value="workflow-audit" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
           <History className="w-4 h-4" />
@@ -311,6 +316,13 @@ export function LeavePoliciesSection({
           currentPrefs={leaveDisplayPrefs}
           onSave={updateLeaveDisplayPrefs}
           onReset={resetLeaveDisplayPrefs}
+        />
+      </TabsContent>
+
+      <TabsContent value="balance-adjustments" className="space-y-4">
+        <LeaveBalanceAdjustmentsSection
+          leaveTypes={leaveTypes}
+          canManageLeavePolicies={canManageLeaveTypes}
         />
       </TabsContent>
 

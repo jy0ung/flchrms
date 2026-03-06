@@ -51,6 +51,7 @@ function normalizePreviewResult(data: unknown): LeavePreviewResult {
         ? null
         : Number(payload.max_consecutive_days),
     min_notice_days: Number(payload.min_notice_days ?? 0),
+    is_unlimited: Boolean(payload.is_unlimited),
     entitled_balance: Number(payload.entitled_balance ?? 0),
     consumed_balance: Number(payload.consumed_balance ?? 0),
     pending_balance: Number(payload.pending_balance ?? 0),

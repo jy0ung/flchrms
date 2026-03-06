@@ -14,6 +14,7 @@ export type AdminTabKey = 'employees' | 'departments' | 'roles' | 'leave-policie
 export type LeavePolicySubTabKey =
   | 'leave-types'
   | 'operations'
+  | 'balance-adjustments'
   | 'workflow-builders'
   | 'workflow-audit'
   | 'notification-queue'

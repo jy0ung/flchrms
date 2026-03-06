@@ -633,6 +633,64 @@ export type Database = {
           },
         ]
       }
+      leave_balance_adjustments: {
+        Row: {
+          adjustment_days: number
+          created_at: string
+          created_by: string
+          effective_date: string
+          employee_id: string
+          id: string
+          leave_type_id: string
+          metadata: Json
+          reason: string
+        }
+        Insert: {
+          adjustment_days: number
+          created_at?: string
+          created_by: string
+          effective_date: string
+          employee_id: string
+          id?: string
+          leave_type_id: string
+          metadata?: Json
+          reason: string
+        }
+        Update: {
+          adjustment_days?: number
+          created_at?: string
+          created_by?: string
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          leave_type_id?: string
+          metadata?: Json
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_balance_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balance_adjustments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balance_adjustments_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_balance_snapshots: {
         Row: {
           as_of_date: string
@@ -3022,6 +3080,33 @@ export type Database = {
         Returns: boolean
       }
       can_manage_leave_policy: { Args: { _user_id: string }; Returns: boolean }
+      create_leave_balance_adjustment: {
+        Args: {
+          _adjustment_days: number
+          _effective_date: string
+          _employee_id: string
+          _leave_type_id: string
+          _metadata?: Json
+          _reason: string
+        }
+        Returns: {
+          adjustment_days: number
+          created_at: string
+          created_by: string
+          effective_date: string
+          employee_id: string
+          id: string
+          leave_type_id: string
+          metadata: Json
+          reason: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "leave_balance_adjustments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_user_notifications: {
         Args: { _older_than_days?: number; _read_only?: boolean }
         Returns: number
@@ -3075,7 +3160,46 @@ export type Database = {
           username: string
         }[]
       }
+      get_employee_leave_balances: {
+        Args: { _as_of_date?: string; _employee_id?: string }
+        Returns: {
+          annual_entitlement: number
+          auto_accrued_days: number
+          cycle_end: string
+          cycle_start: string
+          days_pending: number
+          days_remaining: number
+          days_used: number
+          entitled_days: number
+          is_unlimited: boolean
+          leave_type_id: string
+          leave_type_name: string
+          manual_adjustment_days: number
+          source: string
+        }[]
+      }
       get_executive_stats: { Args: { _department_id?: string }; Returns: Json }
+      get_leave_balance_adjustments: {
+        Args: {
+          _employee_id: string
+          _from?: string
+          _leave_type_id?: string
+          _to?: string
+        }
+        Returns: {
+          adjustment_days: number
+          created_at: string
+          created_by: string
+          created_by_name: string
+          effective_date: string
+          employee_id: string
+          id: string
+          leave_type_id: string
+          leave_type_name: string
+          metadata: Json
+          reason: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -3094,6 +3218,14 @@ export type Database = {
       is_manager_of: {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
+      }
+      leave_auto_accrued_whole_month: {
+        Args: {
+          _annual_entitlement: number
+          _as_of?: string
+          _hire_date: string
+        }
+        Returns: number
       }
       leave_cancel_request_v2: {
         Args: { _comments?: string; _reason?: string; _request_id: string }
@@ -3116,6 +3248,35 @@ export type Database = {
           entitled: number
           pending: number
           source: string
+        }[]
+      }
+      leave_compute_employee_balance_row: {
+        Args: {
+          _as_of_date?: string
+          _employee_id: string
+          _leave_type_id: string
+        }
+        Returns: {
+          annual_entitlement: number
+          auto_accrued_days: number
+          cycle_end: string
+          cycle_start: string
+          days_pending: number
+          days_remaining: number
+          days_used: number
+          entitled_days: number
+          is_unlimited: boolean
+          leave_type_id: string
+          leave_type_name: string
+          manual_adjustment_days: number
+          source: string
+        }[]
+      }
+      leave_cycle_bounds: {
+        Args: { _as_of?: string }
+        Returns: {
+          cycle_end: string
+          cycle_start: string
         }[]
       }
       leave_decide_cancellation_request_v2: {
@@ -3272,6 +3433,16 @@ export type Database = {
           _scope?: Json
         }
         Returns: Json
+      }
+      leave_split_units_for_cycle: {
+        Args: {
+          _cycle_end: string
+          _cycle_start: string
+          _end_date: string
+          _requested_units: number
+          _start_date: string
+        }
+        Returns: number
       }
       leave_stage_recipients: {
         Args: { _employee_id: string; _stage: string }

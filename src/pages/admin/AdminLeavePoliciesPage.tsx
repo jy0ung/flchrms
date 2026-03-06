@@ -6,7 +6,6 @@ import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
-import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { PageHeader } from '@/components/system';
 
 export default function AdminLeavePoliciesPage() {
@@ -31,20 +30,15 @@ export default function AdminLeavePoliciesPage() {
     return null;
   }
 
-  if (!capabilities.canManageLeaveTypes) {
-    return (
-      <AdminAccessDenied
-        title="Leave-policy management is disabled"
-        description="Your account does not have the capability to manage leave policies."
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
         title="Leave Policies"
-        description="Configure leave types, approval workflows, notification rules, and policy analytics simulations."
+        description={
+          capabilities.canManageLeaveTypes
+            ? 'Configure leave types, approval workflows, notification rules, policy analytics simulations, and balance adjustments.'
+            : 'Read-only leave policy and balance adjustment visibility. Editing requires leave-policy management capability.'
+        }
       />
 
       <LeavePoliciesSection

@@ -105,10 +105,33 @@ export function LeaveBalanceWidget() {
   const { data: balances, isLoading } = useLeaveBalance();
 
   const summary = useMemo(() => {
-    if (!balances?.length) return { allowed: 0, used: 0, pending: 0, remaining: 0 };
+    if (!balances?.length) return {
+      allowed: 0,
+      used: 0,
+      pending: 0,
+      remaining: 0,
+      hasUnlimited: false,
+    };
     return balances.reduce(
-      (acc: { allowed: number; used: number; pending: number; remaining: number }, b: { days_allowed: number; days_used: number; days_pending: number; days_remaining: number }) => ({ allowed: acc.allowed + b.days_allowed, used: acc.used + b.days_used, pending: acc.pending + b.days_pending, remaining: acc.remaining + b.days_remaining }),
-      { allowed: 0, used: 0, pending: 0, remaining: 0 },
+      (acc: { allowed: number; used: number; pending: number; remaining: number; hasUnlimited: boolean }, b: { days_allowed: number; days_used: number; days_pending: number; days_remaining: number; is_unlimited: boolean }) => {
+        if (b.is_unlimited) {
+          return {
+            ...acc,
+            used: acc.used + b.days_used,
+            pending: acc.pending + b.days_pending,
+            hasUnlimited: true,
+          };
+        }
+
+        return {
+          allowed: acc.allowed + b.days_allowed,
+          used: acc.used + b.days_used,
+          pending: acc.pending + b.days_pending,
+          remaining: acc.remaining + b.days_remaining,
+          hasUnlimited: acc.hasUnlimited,
+        };
+      },
+      { allowed: 0, used: 0, pending: 0, remaining: 0, hasUnlimited: false },
     );
   }, [balances]);
 
@@ -169,13 +192,21 @@ export function LeaveBalanceWidget() {
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <MetricChip label="Remaining" value={summary.remaining} tone={summary.remaining > 0 ? 'success' : 'warning'} />
+            <MetricChip
+              label="Remaining"
+              value={summary.hasUnlimited ? 'Unlimited' : summary.remaining}
+              tone={summary.hasUnlimited || summary.remaining > 0 ? 'success' : 'warning'}
+            />
             <MetricChip label="Pending" value={summary.pending} tone={summary.pending > 0 ? 'warning' : 'default'} />
           </div>
           <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
-            <div className="flex items-center justify-between text-sm"><span className="font-medium">Annual utilization</span><span className="text-muted-foreground">{summary.used}/{summary.allowed || 0} days</span></div>
+            <div className="flex items-center justify-between text-sm"><span className="font-medium">Annual utilization</span><span className="text-muted-foreground">{summary.hasUnlimited ? 'Unlimited balance in scope' : `${summary.used}/${summary.allowed || 0} days`}</span></div>
             <Progress value={utilization} className="h-2.5" />
-            <p className="text-xs text-muted-foreground">{utilization}% of available leave allocation used</p>
+            <p className="text-xs text-muted-foreground">
+              {summary.hasUnlimited
+                ? 'Utilization excludes unlimited leave types.'
+                : `${utilization}% of available leave allocation used`}
+            </p>
           </div>
           {(balances?.length ?? 0) === 0 ? (
             <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No leave balance records available yet.</div>
@@ -185,7 +216,7 @@ export function LeaveBalanceWidget() {
                 <div key={b.leave_type_id} className="rounded-lg border border-border bg-background p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0"><p className="truncate text-sm font-medium">{b.leave_type_name}</p><p className="text-xs text-muted-foreground">{b.days_used} used • {b.days_pending} pending</p></div>
-                    <Badge variant="outline" className="rounded-full px-2.5 py-1">{b.days_remaining} left</Badge>
+                    <Badge variant="outline" className="rounded-full px-2.5 py-1">{b.is_unlimited ? 'Unlimited' : `${b.days_remaining} left`}</Badge>
                   </div>
                 </div>
               ))}

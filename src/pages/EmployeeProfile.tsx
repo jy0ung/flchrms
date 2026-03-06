@@ -201,26 +201,60 @@ function OnboardingSection({
 }
 
 // ── Leave Balance Ring (mini) ────────────────────────────────────────────────
-function MiniBalanceRing({ remaining, total }: { remaining: number; total: number }) {
+function MiniBalanceRing({
+  remaining,
+  total,
+  isUnlimited,
+}: {
+  remaining: number;
+  total: number;
+  isUnlimited: boolean;
+}) {
   const size = 40;
   const sw = 3;
   const r = (size - sw * 2) / 2;
   const c = 2 * Math.PI * r;
   const pct = total > 0 ? Math.max(remaining, 0) / total : 0;
   const offset = c * (1 - pct);
-  const color = remaining <= 0 ? 'text-destructive' : remaining <= 2 ? 'text-orange-500' : 'text-primary';
+  const color = isUnlimited
+    ? 'text-primary'
+    : remaining <= 0
+      ? 'text-destructive'
+      : remaining <= 2
+        ? 'text-orange-500'
+        : 'text-primary';
 
   return (
     <svg width={size} height={size} className="shrink-0" aria-hidden="true">
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={sw} className="text-muted/30" />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={sw}
-        className={color}
-        strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
+      {isUnlimited ? (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={sw}
+          className={color}
+          strokeDasharray="2 3"
+        />
+      ) : (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={sw}
+          className={color}
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      )}
       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className={cn('fill-current font-bold', color)} fontSize="11">
-        {remaining}
+        {isUnlimited ? '∞' : remaining}
       </text>
     </svg>
   );
@@ -383,11 +417,15 @@ export default function EmployeeProfile() {
                   <div className="space-y-2">
                     {balances.slice(0, 5).map((b) => (
                       <div key={b.leave_type_id} className="flex items-center gap-3">
-                        <MiniBalanceRing remaining={b.days_remaining} total={b.days_allowed} />
+                        <MiniBalanceRing
+                          remaining={b.days_remaining}
+                          total={b.days_allowed}
+                          isUnlimited={b.is_unlimited}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{b.leave_type_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {b.days_remaining} of {b.days_allowed} left
+                            {b.is_unlimited ? 'Unlimited' : `${b.days_remaining} of ${b.days_allowed} left`}
                             {b.days_pending > 0 && ` · ${b.days_pending} pending`}
                           </p>
                         </div>
@@ -477,12 +515,16 @@ export default function EmployeeProfile() {
                       key={b.leave_type_id}
                       className="flex items-center gap-3 rounded-lg border border-border p-3"
                     >
-                      <MiniBalanceRing remaining={b.days_remaining} total={b.days_allowed} />
+                      <MiniBalanceRing
+                        remaining={b.days_remaining}
+                        total={b.days_allowed}
+                        isUnlimited={b.is_unlimited}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{b.leave_type_name}</p>
                         <div className="flex items-baseline gap-1 mt-0.5">
                           <span className="text-xs text-muted-foreground">
-                            {b.days_used} used · {b.days_remaining} remaining
+                            {b.days_used} used · {b.is_unlimited ? 'Unlimited' : `${b.days_remaining} remaining`}
                           </span>
                         </div>
                         {b.days_pending > 0 && (

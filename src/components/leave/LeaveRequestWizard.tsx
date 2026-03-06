@@ -95,11 +95,13 @@ function BalanceRing({
   total,
   pending,
   size = 56,
+  isUnlimited = false,
 }: {
   used: number;
   total: number;
   pending: number;
   size?: number;
+  isUnlimited?: boolean;
 }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -109,8 +111,13 @@ function BalanceRing({
   const pendingPct = total > 0 ? pending / total : 0;
   const pendingOffset = circumference * (1 - pendingPct);
 
-  const color =
-    pct <= 0 ? 'text-destructive' : pct <= 0.2 ? 'text-orange-500' : 'text-primary';
+  const color = isUnlimited
+    ? 'text-primary'
+    : pct <= 0
+      ? 'text-destructive'
+      : pct <= 0.2
+        ? 'text-orange-500'
+        : 'text-primary';
 
   return (
     <svg width={size} height={size} className="shrink-0">
@@ -123,7 +130,7 @@ function BalanceRing({
         strokeWidth={4}
         className="text-muted/40"
       />
-      {pending > 0 && (
+      {pending > 0 && !isUnlimited && (
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -138,19 +145,32 @@ function BalanceRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       )}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={4}
-        className={color}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
+      {isUnlimited ? (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={4}
+          className={color}
+          strokeDasharray="3 4"
+        />
+      ) : (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={4}
+          className={color}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      )}
       <text
         x="50%"
         y="50%"
@@ -158,7 +178,7 @@ function BalanceRing({
         dominantBaseline="central"
         className={cn('fill-current text-xs font-bold', color)}
       >
-        {remaining}
+        {isUnlimited ? '∞' : remaining}
       </text>
     </svg>
   );
@@ -196,7 +216,7 @@ function StepLeaveType({
         {leaveTypes.map((type) => {
           const balance = balances?.find((b) => b.leave_type_id === type.id);
           const isSelected = selectedTypeId === type.id;
-          const isExhausted = balance ? balance.days_remaining <= 0 : false;
+          const isExhausted = balance ? !balance.is_unlimited && balance.days_remaining <= 0 : false;
 
           return (
             <button
@@ -219,6 +239,7 @@ function StepLeaveType({
                   used={balance.days_used}
                   total={balance.days_allowed}
                   pending={balance.days_pending}
+                  isUnlimited={balance.is_unlimited}
                 />
               )}
               <div className="flex-1 min-w-0">
@@ -231,7 +252,9 @@ function StepLeaveType({
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   {balance && (
                     <span className="text-xs text-muted-foreground">
-                      {balance.days_remaining}/{balance.days_allowed} days
+                      {balance.is_unlimited
+                        ? 'Unlimited'
+                        : `${balance.days_remaining}/${balance.days_allowed} days`}
                     </span>
                   )}
                   {type.min_days > 0 && (
@@ -310,7 +333,7 @@ function StepDates({
     [onStartDateChange, onEndDateChange],
   );
 
-  const exceedsBalance = balance && daysCount > balance.days_remaining;
+  const exceedsBalance = balance && !balance.is_unlimited && daysCount > balance.days_remaining;
 
   return (
     <div className="space-y-4">
@@ -379,7 +402,7 @@ function StepDates({
                     <Separator className="my-1" />
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Current balance</span>
-                      <span>{balance.days_remaining} days</span>
+                      <span>{balance.is_unlimited ? 'Unlimited' : `${balance.days_remaining} days`}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">After request</span>
@@ -389,7 +412,7 @@ function StepDates({
                           exceedsBalance ? 'text-destructive' : 'text-foreground',
                         )}
                       >
-                        {balance.days_remaining - daysCount} days
+                        {balance.is_unlimited ? 'Unlimited' : `${balance.days_remaining - daysCount} days`}
                       </span>
                     </div>
                   </>
@@ -545,13 +568,16 @@ function StepReview({
               total={balance.days_allowed}
               pending={balance.days_pending}
               size={44}
+              isUnlimited={balance.is_unlimited}
             />
           )}
           <div>
             <p className="text-sm font-semibold">{selectedType?.name}</p>
             <p className="text-xs text-muted-foreground">
               {balance
-                ? `${balance.days_remaining} days remaining → ${balance.days_remaining - daysCount} after this request`
+                ? balance.is_unlimited
+                  ? 'Unlimited balance'
+                  : `${balance.days_remaining} days remaining → ${balance.days_remaining - daysCount} after this request`
                 : 'Balance unavailable'}
             </p>
           </div>
@@ -611,11 +637,12 @@ function StepReview({
                   <span
                     className={cn(
                       'font-medium',
-                      previewResult.available_balance < previewResult.requested_units &&
+                      !previewResult.is_unlimited &&
+                        previewResult.available_balance < previewResult.requested_units &&
                         'text-destructive',
                     )}
                   >
-                    {previewResult.available_balance}
+                    {previewResult.is_unlimited ? 'Unlimited' : previewResult.available_balance}
                   </span>
                 </div>
                 <div className="flex justify-between sm:justify-start sm:gap-2">
@@ -790,7 +817,7 @@ export function LeaveRequestWizard({
       default:
         return false;
     }
-  }, [step, selectedTypeId, startDate, endDate, daysCount, selectedType, selectedBalance, documentFile]);
+  }, [step, selectedTypeId, startDate, endDate, daysCount, selectedType, documentFile]);
 
   const handleNext = async () => {
     if (!canAdvance()) return;

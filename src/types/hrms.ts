@@ -205,6 +205,20 @@ export interface LeaveBalanceLedgerEntry {
   created_at: string;
 }
 
+export interface LeaveBalanceAdjustmentEntry {
+  id: string;
+  employee_id: string;
+  leave_type_id: string;
+  leave_type_name: string;
+  adjustment_days: number;
+  effective_date: string;
+  reason: string;
+  created_by: string;
+  created_by_name: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface LeavePreviewResult {
   can_submit: boolean;
   employee_id: string;
@@ -219,6 +233,7 @@ export interface LeavePreviewResult {
   allow_negative_balance: boolean;
   max_consecutive_days: number | null;
   min_notice_days: number;
+  is_unlimited: boolean;
   entitled_balance: number;
   consumed_balance: number;
   pending_balance: number;

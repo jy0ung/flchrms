@@ -12,6 +12,14 @@ function makeBalance(overrides: Partial<LeaveBalance> = {}): LeaveBalance {
     days_used: 4,
     days_pending: 0,
     days_remaining: 10,
+    annual_entitlement: 14,
+    auto_accrued_days: 14,
+    manual_adjustment_days: 0,
+    entitled_days: 14,
+    is_unlimited: false,
+    cycle_start: '2026-01-01',
+    cycle_end: '2026-12-31',
+    source: 'test',
     ...overrides,
   };
 }

@@ -10,10 +10,12 @@ function ProgressRing({
   remaining,
   total,
   pending,
+  isUnlimited,
 }: {
   remaining: number;
   total: number;
   pending: number;
+  isUnlimited: boolean;
 }) {
   const size = 64;
   const strokeWidth = 5;
@@ -25,11 +27,13 @@ function ProgressRing({
   const pendingOffset = circumference * (1 - pendingPct);
 
   const color =
-    remaining <= 0
-      ? 'text-destructive'
-      : remaining <= 2
-        ? 'text-orange-500'
-        : 'text-primary';
+    isUnlimited
+      ? 'text-primary'
+      : remaining <= 0
+        ? 'text-destructive'
+        : remaining <= 2
+          ? 'text-orange-500'
+          : 'text-primary';
 
   return (
     <svg width={size} height={size} className="shrink-0" aria-hidden="true">
@@ -44,7 +48,7 @@ function ProgressRing({
         className="text-muted/30"
       />
       {/* Pending arc (amber) */}
-      {pending > 0 && (
+      {pending > 0 && !isUnlimited && (
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -60,19 +64,32 @@ function ProgressRing({
         />
       )}
       {/* Remaining arc */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        className={cn(color, 'transition-all duration-500')}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
+      {isUnlimited ? (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className={cn(color, 'transition-all duration-500')}
+          strokeDasharray="3 4"
+        />
+      ) : (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className={cn(color, 'transition-all duration-500')}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      )}
       {/* Center text */}
       <text
         x="50%"
@@ -82,15 +99,16 @@ function ProgressRing({
         className={cn('fill-current font-bold', color)}
         fontSize="16"
       >
-        {remaining}
+        {isUnlimited ? '∞' : remaining}
       </text>
     </svg>
   );
 }
 
 export function LeaveBalanceMetricCard({ balance }: LeaveBalanceMetricCardProps) {
-  const isLow = balance.days_remaining <= 2 && balance.days_remaining > 0;
-  const isExhausted = balance.days_remaining <= 0;
+  const isUnlimited = balance.is_unlimited;
+  const isLow = !isUnlimited && balance.days_remaining <= 2 && balance.days_remaining > 0;
+  const isExhausted = !isUnlimited && balance.days_remaining <= 0;
 
   return (
     <Card
@@ -105,13 +123,14 @@ export function LeaveBalanceMetricCard({ balance }: LeaveBalanceMetricCardProps)
           remaining={balance.days_remaining}
           total={balance.days_allowed}
           pending={balance.days_pending}
+          isUnlimited={isUnlimited}
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium leading-tight line-clamp-2">
             {balance.leave_type_name}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            of {balance.days_allowed} days
+            {isUnlimited ? 'Unlimited leave' : `of ${balance.days_allowed} days`}
           </p>
           {balance.days_pending > 0 && (
             <p className="text-[11px] text-amber-600 mt-0.5">
@@ -123,4 +142,3 @@ export function LeaveBalanceMetricCard({ balance }: LeaveBalanceMetricCardProps)
     </Card>
   );
 }
-

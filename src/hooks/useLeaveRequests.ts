@@ -10,6 +10,8 @@ import {
   normalizeLeaveCancellationApprovalStages,
 } from '@/lib/leave-workflow';
 
+const LEAVE_BALANCE_ADJUSTMENTS_QUERY_KEY = ['leave-balance-adjustments'] as const;
+
 type RpcErrorLike = {
   message?: string;
   code?: string;
@@ -140,6 +142,11 @@ function getLeaveCancellationErrorDescription(error: unknown): string {
   return sanitizeErrorMessage(error);
 }
 
+function invalidateLeaveBalanceQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+  queryClient.invalidateQueries({ queryKey: LEAVE_BALANCE_ADJUSTMENTS_QUERY_KEY });
+}
+
 export function useLeaveRequests() {
   const { role, user } = useAuth();
   
@@ -238,7 +245,7 @@ export function useCreateLeaveRequest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      invalidateLeaveBalanceQueries(queryClient);
       toast.success('Leave request submitted successfully');
     },
     onError: (error: Error) => {
@@ -302,7 +309,7 @@ export function useApproveLeaveRequest() {
     },
     onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' | 'request_document' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      invalidateLeaveBalanceQueries(queryClient);
       if (variables.action === 'approve') {
         toast.success('Leave request approved');
       } else if (variables.action === 'reject') {
@@ -348,6 +355,7 @@ export function useAmendLeaveRequest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      invalidateLeaveBalanceQueries(queryClient);
       toast.success('Leave request amended and resubmitted');
     },
     onError: (error: Error) => {
@@ -393,7 +401,7 @@ export function useCancelLeaveRequest() {
     },
     onSuccess: (result: string) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      invalidateLeaveBalanceQueries(queryClient);
       if (result === 'cancelled') {
         toast.success('Leave request cancelled');
         return;
@@ -544,7 +552,7 @@ export function useProcessLeaveCancellationRequest() {
     },
     onSuccess: (_: unknown, variables: { action: 'approve' | 'reject' }) => {
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['leave-balance'] });
+      invalidateLeaveBalanceQueries(queryClient);
       if (variables.action === 'approve') {
         toast.success('Cancellation request processed');
       } else {
