@@ -16,6 +16,7 @@ APP_DIR="/var/www/flchrms"
 DIST_DIR="${APP_DIR}/dist"
 BACKUP_DIR="${APP_DIR}/dist.backup"
 DEPLOY_USER="www-data"
+BUILD_ENV_FILE=""
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -118,7 +119,20 @@ fi
 
 # 4. Build
 info "Building for production..."
-if npx vite build --mode production 2>&1 | tail -5; then
+if [[ -f "${APP_DIR}/.env.production" ]]; then
+    BUILD_ENV_FILE="${APP_DIR}/.env.production"
+elif [[ -f "${APP_DIR}/.env" ]]; then
+    BUILD_ENV_FILE="${APP_DIR}/.env"
+else
+    fail "No deployment env file found. Expected ${APP_DIR}/.env.production or ${APP_DIR}/.env"
+    exit 1
+fi
+
+if bash "${APP_DIR}/scripts/build-static-bundle.sh" \
+    --env-file "${BUILD_ENV_FILE}" \
+    --target production \
+    --mode production \
+    --dist-dir "${DIST_DIR}" 2>&1 | tail -5; then
     ok "Build complete"
 else
     fail "Build failed!"

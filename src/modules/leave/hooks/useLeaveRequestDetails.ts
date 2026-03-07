@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import type { ActivityTimelineKind } from '@/components/activity/types';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
@@ -35,6 +36,7 @@ export type TimelineDisplayEvent = {
   id: string;
   label: string;
   at: string;
+  kind: ActivityTimelineKind;
   by?: string | null;
   roleLabel?: string | null;
   reason?: string | null;
@@ -115,6 +117,7 @@ const buildDetailTimelineEvent = (event: LeaveRequestEventRow): TimelineDisplayE
     id: event.id,
     label: event.event_type,
     at: event.occurred_at,
+    kind: 'custom',
     by: event.actor_user_id,
     roleLabel: roleLabelFromValue(event.actor_role),
     reason: null,
@@ -123,34 +126,34 @@ const buildDetailTimelineEvent = (event: LeaveRequestEventRow): TimelineDisplayE
 
   switch (event.event_type) {
     case 'leave_created':
-      return { ...base, label: 'Submitted', roleLabel: base.roleLabel || 'Requester' };
+      return { ...base, label: 'Submitted', kind: 'create', roleLabel: base.roleLabel || 'Requester' };
     case 'leave_resubmitted':
-      return { ...base, label: 'Resubmitted', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
+      return { ...base, label: 'Resubmitted', kind: 'update', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
     case 'leave_amended':
-      return { ...base, label: 'Amended', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
+      return { ...base, label: 'Amended', kind: 'update', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'amendment_notes') };
     case 'leave_document_requested':
-      return { ...base, label: 'Document Requested', reason: getEventMetadataString(event, 'manager_comments') };
+      return { ...base, label: 'Document Requested', kind: 'document', reason: getEventMetadataString(event, 'manager_comments') };
     case 'leave_document_attached':
-      return { ...base, label: 'Document Attached', roleLabel: base.roleLabel || 'Requester' };
+      return { ...base, label: 'Document Attached', kind: 'document', roleLabel: base.roleLabel || 'Requester' };
     case 'leave_rejected':
-      return { ...base, label: 'Rejected', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'rejection_reason') };
+      return { ...base, label: 'Rejected', kind: 'rejection', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'rejection_reason') };
     case 'leave_final_approved':
-      return { ...base, label: 'Final Approval', roleLabel: base.roleLabel || roleLabelFromValue(getEventMetadataString(event, 'final_approved_by_role')) || 'Final Approver' };
+      return { ...base, label: 'Final Approval', kind: 'approval', roleLabel: base.roleLabel || roleLabelFromValue(getEventMetadataString(event, 'final_approved_by_role')) || 'Final Approver' };
     case 'leave_status_changed': {
       const toStatusLabel = leaveStatusLabelFromValue(event.to_status);
       const fromStatusLabel = leaveStatusLabelFromValue(event.from_status);
-      return { ...base, label: toStatusLabel ? `Status: ${toStatusLabel}` : 'Status Changed', subtext: fromStatusLabel && toStatusLabel ? `${fromStatusLabel} -> ${toStatusLabel}` : null };
+      return { ...base, label: toStatusLabel ? `Status: ${toStatusLabel}` : 'Status Changed', kind: 'status_change', subtext: fromStatusLabel && toStatusLabel ? `${fromStatusLabel} -> ${toStatusLabel}` : null };
     }
     case 'leave_cancellation_requested':
-      return { ...base, label: 'Cancellation Requested', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
+      return { ...base, label: 'Cancellation Requested', kind: 'approval', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_re_requested':
-      return { ...base, label: 'Cancellation Re-requested', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
+      return { ...base, label: 'Cancellation Re-requested', kind: 'update', roleLabel: base.roleLabel || 'Requester', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_stage_approved':
-      return { ...base, label: cancellationStatusLabelFromValue(event.to_cancellation_status) || 'Cancellation Stage Approved', roleLabel: base.roleLabel || 'Approver' };
+      return { ...base, label: cancellationStatusLabelFromValue(event.to_cancellation_status) || 'Cancellation Stage Approved', kind: 'approval', roleLabel: base.roleLabel || 'Approver' };
     case 'leave_cancellation_approved':
-      return { ...base, label: 'Cancellation Approved', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_reason') };
+      return { ...base, label: 'Cancellation Approved', kind: 'approval', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_reason') };
     case 'leave_cancellation_rejected':
-      return { ...base, label: 'Cancellation Rejected', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_rejection_reason') };
+      return { ...base, label: 'Cancellation Rejected', kind: 'rejection', roleLabel: base.roleLabel || 'Approver', reason: getEventMetadataString(event, 'cancellation_rejection_reason') };
     default:
       return base;
   }

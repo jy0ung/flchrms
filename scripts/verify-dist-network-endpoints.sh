@@ -2,7 +2,36 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DIST_DIR="${1:-${ROOT_DIR}/dist}"
+DIST_DIR="${ROOT_DIR}/dist"
+ALLOW_PRIVATE_NETWORKS=0
+
+usage() {
+  cat <<'EOF'
+Usage: bash scripts/verify-dist-network-endpoints.sh [OPTIONS] [dist-dir]
+
+Options:
+  --allow-private-network-endpoints   Allow RFC1918/private IP API endpoints.
+                                      Localhost endpoints remain forbidden.
+  -h, --help                          Show this help message.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --allow-private-network-endpoints)
+      ALLOW_PRIVATE_NETWORKS=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      DIST_DIR="$1"
+      shift
+      ;;
+  esac
+done
 
 if [[ ! -d "${DIST_DIR}" ]]; then
   echo "Error: dist directory not found: ${DIST_DIR}"
@@ -25,12 +54,17 @@ else
 fi
 
 forbidden_patterns=(
-  "https?://192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
-  "https?://10\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
-  "https?://172\\.(1[6-9]|2[0-9]|3[01])\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
   "https?://127\\.0\\.0\\.1(:[0-9]+)?/api"
   "https?://localhost(:[0-9]+)?/api"
 )
+
+if [[ "${ALLOW_PRIVATE_NETWORKS}" -ne 1 ]]; then
+  forbidden_patterns+=(
+    "https?://192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
+    "https?://10\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
+    "https?://172\\.(1[6-9]|2[0-9]|3[01])\\.[0-9]{1,3}\\.[0-9]{1,3}/api"
+  )
+fi
 
 for pattern in "${forbidden_patterns[@]}"; do
   if "${SCAN_TOOL}" "${SCAN_ARGS[@]}" "${pattern}" "${DIST_DIR}"; then

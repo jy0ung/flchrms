@@ -45,6 +45,7 @@ SKIP_BUILD=0
 SKIP_NGINX=0
 SKIP_FIREWALL=0
 LOCAL_SOURCE=""
+ENV_FILE=""
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
 usage() {
@@ -60,6 +61,7 @@ Options:
   --branch <branch>     Git branch to deploy (default: main)
   --repo <url>          Git repository URL
   --local <path>        Use a local source directory instead of cloning
+  --env-file <path>     Explicit env file for the deployment build (default: .env)
   --skip-build          Skip npm install & build (use existing dist/)
   --skip-nginx          Skip Nginx configuration
   --skip-firewall       Skip UFW configuration
@@ -75,6 +77,7 @@ while [[ $# -gt 0 ]]; do
     --branch)       REPO_BRANCH="$2";  shift 2 ;;
     --repo)         REPO_URL="$2";     shift 2 ;;
     --local)        LOCAL_SOURCE="$2"; shift 2 ;;
+    --env-file)     ENV_FILE="$2";     shift 2 ;;
     --skip-build)   SKIP_BUILD=1;      shift   ;;
     --skip-nginx)   SKIP_NGINX=1;      shift   ;;
     --skip-firewall) SKIP_FIREWALL=1;  shift   ;;
@@ -246,6 +249,8 @@ ENVEOF
   warn "Edit ${DEPLOY_DIR}/.env with your Supabase credentials, then re-run the script."
 fi
 
+BUILD_ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/.env}"
+
 # =============================================================================
 #  STEP 5 — Build the application
 # =============================================================================
@@ -256,14 +261,12 @@ if [[ $SKIP_BUILD -eq 0 ]]; then
   npm ci --no-audit --no-fund 2>&1 | tail -1
   ok "npm dependencies installed."
 
-  # Source .env so VITE_* vars are available to the build
-  set -a
-  # shellcheck disable=SC1091
-  source .env 2>/dev/null || true
-  set +a
-
-  info "Running production build (with dist endpoint verification)…"
-  npm run build 2>&1 | tail -5
+  info "Running locked production build via ${BUILD_ENV_FILE}…"
+  bash "${DEPLOY_DIR}/scripts/build-static-bundle.sh" \
+    --env-file "${BUILD_ENV_FILE}" \
+    --target production \
+    --mode production \
+    --dist-dir "${DEPLOY_DIR}/dist" 2>&1 | tail -5
   ok "Application built successfully."
 else
   info "Step 5/7 — Skipped (--skip-build)."
@@ -434,11 +437,11 @@ else
 fi
 echo -e "  Web root: ${WEB_ROOT}"
 echo -e "  Source:   ${DEPLOY_DIR}"
-echo -e "  Env file: ${DEPLOY_DIR}/.env"
+echo -e "  Env file: ${BUILD_ENV_FILE}"
 echo ""
 echo -e "  ${YELLOW}Next steps:${NC}"
-if grep -q '^VITE_SUPABASE_URL=$' "${DEPLOY_DIR}/.env" 2>/dev/null; then
-  echo -e "  1. Edit ${DEPLOY_DIR}/.env with your Supabase credentials"
+if grep -q '^VITE_SUPABASE_URL=$' "${BUILD_ENV_FILE}" 2>/dev/null; then
+  echo -e "  1. Edit ${BUILD_ENV_FILE} with your Supabase credentials"
   echo -e "  2. Re-run: sudo bash ${DEPLOY_DIR}/scripts/deploy.sh --skip-nginx --skip-firewall"
 else
   echo -e "  • To update:  cd ${DEPLOY_DIR} && git pull && sudo bash scripts/deploy.sh --skip-firewall"

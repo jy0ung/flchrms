@@ -189,7 +189,11 @@ npm ci --ignore-scripts=false 2>&1 | tail -1
 ok "Dependencies installed"
 
 echo "  Building for production..."
-npx vite build --mode production 2>&1 | tail -3
+bash "${DEPLOY_APP_DIR}/scripts/build-static-bundle.sh" \
+    --env-file "${DEPLOY_APP_DIR}/.env.production" \
+    --target production \
+    --mode production \
+    --dist-dir "${DEPLOY_DIST_DIR}" 2>&1 | tail -3
 ok "Build complete → ${DEPLOY_DIST_DIR}"
 
 # Set ownership
