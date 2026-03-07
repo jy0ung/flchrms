@@ -2,8 +2,6 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import type { ComponentType } from 'react';
 import {
   LayoutDashboard,
-  Users,
-  Building2,
   Shield,
   FileText,
   Megaphone,
@@ -48,10 +46,8 @@ const adminNavGroups: Array<{ label: string; items: AdminNavItem[] }> = [
     ],
   },
   {
-    label: 'Management',
+    label: 'Governance',
     items: [
-      { name: 'Employees', href: '/admin/employees', icon: Users, capability: 'manage_employee_directory' },
-      { name: 'Departments', href: '/admin/departments', icon: Building2, capability: 'manage_departments' },
       { name: 'Roles', href: '/admin/roles', icon: Shield, capability: 'manage_roles' },
       { name: 'Leave Policies', href: '/admin/leave-policies', icon: FileText, capability: 'manage_leave_policies' },
     ],

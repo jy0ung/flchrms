@@ -72,19 +72,19 @@ export const ADMIN_CAPABILITY_META: Record<
   },
   manage_employee_directory: {
     label: 'Manage Employee Directory',
-    description: 'Can open employee admin page and edit/manage employee records.',
+    description: 'Can open the employee workspace and edit/manage employee records.',
   },
   create_employee: {
     label: 'Create Employee',
-    description: 'Can register new employee accounts via admin create flow.',
+    description: 'Can register new employee accounts from the employee workspace.',
   },
   reset_employee_passwords: {
     label: 'Reset Employee Passwords',
-    description: 'Can reset employee passwords from admin employee management.',
+    description: 'Can reset employee passwords from the employee workspace.',
   },
   manage_departments: {
     label: 'Manage Departments',
-    description: 'Can create/update/delete departments in admin module.',
+    description: 'Can create/update/delete departments in the department workspace.',
   },
   manage_roles: {
     label: 'Manage Roles',

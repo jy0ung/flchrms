@@ -7,13 +7,13 @@ import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 const ADMIN_LANDING_ORDER: Array<{ path: string; capability: AdminCapabilityKey }> = [
   { path: '/admin/dashboard', capability: 'view_admin_dashboard' },
   { path: '/admin/quick-actions', capability: 'view_admin_quick_actions' },
-  { path: '/admin/employees', capability: 'manage_employee_directory' },
-  { path: '/admin/departments', capability: 'manage_departments' },
   { path: '/admin/roles', capability: 'manage_roles' },
   { path: '/admin/leave-policies', capability: 'manage_leave_policies' },
   { path: '/admin/announcements', capability: 'manage_announcements' },
   { path: '/admin/audit-log', capability: 'view_admin_audit_log' },
   { path: '/admin/settings', capability: 'manage_admin_settings' },
+  { path: '/admin/employees', capability: 'manage_employee_directory' },
+  { path: '/admin/departments', capability: 'manage_departments' },
 ];
 
 export function AdminEntryRedirect() {
