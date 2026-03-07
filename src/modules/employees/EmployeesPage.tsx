@@ -1,19 +1,12 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Building2, ChevronDown, Download, GitBranch, Plus, Upload, UserCircle2, Users } from 'lucide-react';
+import { Building2, Download, GitBranch, Plus, Upload, UserCircle2, Users } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_ROLE_COLORS } from '@/components/admin/admin-ui-constants';
+import { BulkActionBar } from '@/components/bulk-actions/BulkActionBar';
 import { OrgChart } from '@/components/employees/OrgChart';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -27,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDepartments, useEmployees } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { DataTableShell } from '@/components/system';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
@@ -100,7 +94,6 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | 'all'>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'table' | 'org'>('table');
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
@@ -120,6 +113,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     (userId: string): AppRole => userRoleById.get(userId) ?? 'employee',
     [userRoleById],
   );
+  const getEmployeeId = useCallback((employee: DirectoryEmployee) => employee.id, []);
 
   const controller = useEmployeeManagementController({
     getUserRole,
@@ -146,10 +140,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     });
   }, [deferredSearch, departmentFilter, employees, statusFilter]);
 
-  useEffect(() => {
-    const visibleIds = new Set(filteredEmployees.map((employee) => employee.id));
-    setSelectedIds((current) => current.filter((id) => visibleIds.has(id)));
-  }, [filteredEmployees]);
+  const bulkSelection = useBulkSelection(filteredEmployees, getEmployeeId);
 
   const managerNameById = useMemo(
     () =>
@@ -226,9 +217,8 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   }, [employees, filteredEmployees]);
 
   const handleExportSelected = useCallback(() => {
-    const selectedEmployees = (employees ?? []).filter((employee) => selectedIds.includes(employee.id));
-    downloadEmployeesCsv(selectedEmployees, employees ?? []);
-  }, [employees, selectedIds]);
+    downloadEmployeesCsv(bulkSelection.selectedItems, employees ?? []);
+  }, [bulkSelection.selectedItems, employees]);
 
   const stats = useMemo(() => {
     const total = employees?.length ?? 0;
@@ -273,35 +263,11 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         </Button>
       ) : null}
 
-      {pageActions.canBulkActions ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 rounded-full">
-              Bulk Actions
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Employee actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleExportFiltered}>
-              <Download className="mr-2 h-4 w-4" />
-              Export filtered
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleExportSelected}
-              disabled={selectedIds.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export selected
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setBatchUpdateDialogOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Open CSV batch update
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {pageActions.canExportEmployees ? (
+        <Button variant="outline" className="h-9 rounded-full" onClick={handleExportFiltered}>
+          <Download className="mr-2 h-4 w-4" />
+          Export Filtered
+        </Button>
       ) : null}
     </div>
   );
@@ -396,10 +362,32 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         }
       >
         {pageActions.canBulkActions ? (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{filteredEmployees.length} filtered record{filteredEmployees.length === 1 ? '' : 's'}</span>
-            <span aria-hidden="true">.</span>
-            <span>{selectedIds.length} selected</span>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>{filteredEmployees.length} filtered record{filteredEmployees.length === 1 ? '' : 's'}</span>
+              <span aria-hidden="true">.</span>
+              <span>{bulkSelection.selectedCount} selected</span>
+            </div>
+            <BulkActionBar
+              items={filteredEmployees}
+              selectedIds={bulkSelection.selectedIds}
+              getItemId={getEmployeeId}
+              actions={[
+                {
+                  id: 'export-selected',
+                  label: 'Export Selected',
+                  icon: Download,
+                  onExecute: () => handleExportSelected(),
+                },
+                {
+                  id: 'open-csv-batch-update',
+                  label: 'CSV Batch Update',
+                  icon: Upload,
+                  onExecute: () => setBatchUpdateDialogOpen(true),
+                },
+              ]}
+              onClearSelection={bulkSelection.clearSelection}
+            />
           </div>
         ) : null}
       </ModuleLayout.Toolbar>
@@ -440,8 +428,8 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
               <EmployeeTable
                 employees={filteredEmployees}
                 loading={employeesLoading}
-                selectedIds={selectedIds}
-                onSelectedIdsChange={setSelectedIds}
+                selectedIds={bulkSelection.selectedIds}
+                onSelectedIdsChange={bulkSelection.setSelectedIds}
                 onOpenEmployee={handleOpenEmployee}
                 getUserRole={getUserRole}
                 roleColors={ADMIN_ROLE_COLORS}
