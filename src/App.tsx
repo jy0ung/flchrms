@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import Auth from "./pages/Auth";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Employees = lazy(() => import("./pages/Employees"));
+const Departments = lazy(() => import("./pages/Departments"));
 const Leave = lazy(() => import("./pages/Leave"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Attendance = lazy(() => import("./pages/Attendance"));
@@ -85,6 +86,7 @@ const App = () => (
                 <Route element={<AppLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/leave" element={<Leave />} />
+                  <Route path="/departments" element={<Departments />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/attendance" element={<Attendance />} />
                   <Route path="/training" element={<Training />} />

@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   BarChart3,
   Bell,
+  Building2,
   Calendar,
   CalendarDays,
   Clock,
@@ -64,6 +65,7 @@ const developmentNavigation: SidebarNavItem[] = [
 ];
 
 const employeeNavigation: SidebarNavItem[] = [{ name: 'Employees', href: '/employees', icon: Users }];
+const organizationNavigation: SidebarNavItem[] = [{ name: 'Departments', href: '/departments', icon: Building2 }];
 
 const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin', icon: Shield, danger: true }];
 
@@ -191,6 +193,7 @@ function SidebarContent({
   });
 
   const scopedAdmin = capabilityMap.access_admin_console ? adminNavigation : [];
+  const scopedOrganization = capabilityMap.manage_departments ? organizationNavigation : [];
 
   return (
     <div className="flex h-full flex-col">
@@ -228,6 +231,7 @@ function SidebarContent({
           <SidebarNavGroup items={mainWithBadge} collapsed={collapsed} onNavigate={onNavigate} />
           <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} label="Operations" />
           <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} label="Resources" />
+          <SidebarNavGroup items={scopedOrganization} collapsed={collapsed} onNavigate={onNavigate} label="Organization" />
           <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} label="Development" />
           {scopedAdmin.length > 0 && (
             <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label="System" />
