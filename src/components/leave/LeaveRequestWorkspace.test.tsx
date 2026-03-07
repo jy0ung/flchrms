@@ -400,12 +400,12 @@ describe('LeaveRequestWorkspace', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Pending' }));
 
     expect(getVisibleTable('my-requests-table')).toHaveTextContent('pending-cancellation-row');
-    expect(screen.getByText('Status filter: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Status: Pending')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /My History/ }));
 
     expect(screen.getByText('No requests match the selected status filter.')).toBeInTheDocument();
-    expect(screen.getByText('Status filter: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Status: Pending')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /My Current/ }));
     expect(getVisibleTable('my-requests-table')).toHaveTextContent('pending-cancellation-row');

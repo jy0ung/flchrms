@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 import type { DepartmentRecord } from '../types';
 
@@ -74,13 +75,11 @@ export function DepartmentTable({
 
   if (!departments?.length) {
     return (
-      <Card className="border-dashed border-border/80 shadow-sm">
-        <CardContent className="py-14 text-center">
-          <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
-          <p className="text-sm font-medium">No departments match the current search.</p>
-          <p className="mt-1 text-sm text-muted-foreground">Adjust the filters or create a new department.</p>
-        </CardContent>
-      </Card>
+      <WorkspaceStatePanel
+        title="No departments match the current search"
+        description="Adjust the search term or create a new department."
+        icon={Building2}
+      />
     );
   }
 

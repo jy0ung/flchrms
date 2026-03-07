@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import type { LeaveRequest } from '@/types/hrms';
 import { StatusBadge } from '@/components/system';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 type LeaveStatusDisplay = {
   status: string;
@@ -47,7 +48,13 @@ export function MyLeaveRequestsTable({
     <div className="rounded-lg border border-border shadow-sm">
       <div className="p-0">
         {requests.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>
+          <div className="p-4">
+            <WorkspaceStatePanel
+              title="No leave requests in this view"
+              description={emptyMessage}
+              icon={FileText}
+            />
+          </div>
         ) : (
           <>
             <div className="divide-y md:hidden">

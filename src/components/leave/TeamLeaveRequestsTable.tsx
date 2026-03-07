@@ -8,6 +8,7 @@ import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDial
 import { canRequestLeaveSupportingDocument, canViewLeaveSupportingDocument } from '@/lib/permissions';
 import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 import { StatusBadge } from '@/components/system';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 type LeaveStatusDisplay = {
   status: string;
@@ -56,7 +57,13 @@ export function TeamLeaveRequestsTable({
     <div className="rounded-lg border border-border shadow-sm">
       <div className="p-0">
         {requests.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</div>
+          <div className="p-4">
+            <WorkspaceStatePanel
+              title="No team requests in this view"
+              description={emptyMessage}
+              icon={FileText}
+            />
+          </div>
         ) : (
           <>
             <div className="divide-y md:hidden">

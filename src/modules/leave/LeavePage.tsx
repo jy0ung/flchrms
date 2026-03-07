@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Info, Plus } from 'lucide-react';
+import { CalendarDays, Clock3, History, Info, Plus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataTableShell, QueryErrorState } from '@/components/system';
+import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
 import { useAuth } from '@/contexts/AuthContext';
@@ -146,12 +147,83 @@ export function LeavePage({ initialView }: LeavePageProps) {
     </Popover>
   );
 
+  const metricItems = useMemo(() => {
+    const items = [
+      {
+        id: 'my-active-requests',
+        label: 'Active requests',
+        value: myCurrentRequests.length,
+        description: 'Personal requests still in progress or awaiting completion.',
+        icon: Clock3,
+        tone: 'warning' as const,
+      },
+      {
+        id: 'my-request-history',
+        label: 'Request history',
+        value: myHistoryRequests.length,
+        description: 'Resolved or completed requests in your timeline.',
+        icon: History,
+        tone: 'default' as const,
+      },
+    ];
+
+    if (pageActions.canViewTeamRequests) {
+      items.push(
+        {
+          id: 'team-current-requests',
+          label: 'Team inbox',
+          value: teamCurrentRequests.length,
+          description: 'Current team requests visible to you in this workspace.',
+          icon: Users,
+          tone: 'info' as const,
+        },
+        {
+          id: 'team-history-requests',
+          label: 'Team history',
+          value: teamHistoryRequests.length,
+          description: 'Resolved team requests retained for workflow traceability.',
+          icon: History,
+          tone: 'default' as const,
+        },
+      );
+    } else {
+      items.push(
+        {
+          id: 'balance-buckets',
+          label: 'Balance buckets',
+          value: balances?.length ?? 0,
+          description: 'Leave types currently tracking an accrued balance.',
+          icon: CalendarDays,
+          tone: 'success' as const,
+        },
+        {
+          id: 'leave-types',
+          label: 'Leave types',
+          value: leaveTypes?.length ?? 0,
+          description: 'Request categories currently available in the workspace.',
+          icon: CalendarDays,
+          tone: 'info' as const,
+        },
+      );
+    }
+
+    return items;
+  }, [
+    balances?.length,
+    leaveTypes?.length,
+    myCurrentRequests.length,
+    myHistoryRequests.length,
+    pageActions.canViewTeamRequests,
+    teamCurrentRequests.length,
+    teamHistoryRequests.length,
+  ]);
+
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
         eyebrow="Module Workspace"
         title="Leave Management"
-        description={isEmployee(role) ? 'Your leave requests and balances' : 'Manage leave requests and approvals in context.'}
+        description={isEmployee(role) ? 'Your leave requests, balances, and history in one workspace.' : 'Manage leave requests and approvals in context.'}
         actions={pageActions.canCreateRequest ? [
           {
             id: 'request-leave',
@@ -190,6 +262,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <ModuleLayout.Content>
+        <WorkspaceMetricStrip items={metricItems} />
+
         <LeaveBalanceSection balances={balances ?? []} />
 
         {isLoading ? (

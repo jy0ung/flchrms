@@ -4,8 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { QueryErrorState } from '@/components/system';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
@@ -16,22 +15,6 @@ import { DepartmentTable } from './components/DepartmentTable';
 import { useDepartmentManagementController } from './hooks/useDepartmentManagementController';
 import { useDepartmentModuleCapabilities } from './hooks/useDepartmentModuleCapabilities';
 import { coerceDepartmentDrawerTab, type DepartmentsPageProps, type DepartmentRecord } from './types';
-
-function StatCard({ title, value, icon: Icon }: { title: string; value: string; icon: typeof Building2 }) {
-  return (
-    <Card className="border-border shadow-sm">
-      <CardContent className="flex items-center justify-between p-4">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{title}</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-        </div>
-        <div className="rounded-full bg-primary/10 p-3 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOverride }: DepartmentsPageProps) {
   usePageTitle(entryContext === 'admin' ? 'Admin · Departments' : 'Departments');
@@ -164,7 +147,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
       <ModuleLayout.Header
         eyebrow="Module Workspace"
         title="Department Management"
-        description="Create, edit, and review departments in context."
+        description="Create, edit, and review department ownership in context."
         actions={pageActions.canCreateDepartment ? [
           {
             id: 'create-department',
@@ -185,12 +168,6 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
           placeholder: 'Search departments...',
           ariaLabel: 'Search departments',
         }}
-        trailingSlot={pageActions.canCreateDepartment ? (
-          <Button variant="outline" className="h-9 rounded-full" onClick={() => controller.setCreateDeptDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Department
-          </Button>
-        ) : null}
       >
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>{stats.totalDepartments} departments</span>
@@ -202,12 +179,41 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
       </ModuleLayout.Toolbar>
 
       <ModuleLayout.Content>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Departments" value={String(stats.totalDepartments)} icon={Building2} />
-          <StatCard title="Staffed Departments" value={String(stats.staffedDepartments)} icon={FolderTree} />
-          <StatCard title="Assigned Managers" value={String(stats.assignedManagers)} icon={UserSquare2} />
-          <StatCard title="Unassigned Employees" value={String(stats.unassignedEmployees)} icon={Users} />
-        </div>
+        <WorkspaceMetricStrip
+          items={[
+            {
+              id: 'departments-total',
+              label: 'Departments',
+              value: stats.totalDepartments,
+              description: 'Department records currently available in this workspace.',
+              icon: Building2,
+            },
+            {
+              id: 'departments-staffed',
+              label: 'Staffed departments',
+              value: stats.staffedDepartments,
+              description: 'Departments with at least one assigned employee.',
+              icon: FolderTree,
+              tone: 'success',
+            },
+            {
+              id: 'departments-with-manager',
+              label: 'Assigned managers',
+              value: stats.assignedManagers,
+              description: 'Departments with an explicitly assigned manager.',
+              icon: UserSquare2,
+              tone: 'info',
+            },
+            {
+              id: 'employees-unassigned',
+              label: 'Unassigned employees',
+              value: stats.unassignedEmployees,
+              description: 'Employees still waiting for department assignment.',
+              icon: Users,
+              tone: 'warning',
+            },
+          ]}
+        />
 
         <DepartmentTable
           departments={filteredDepartments}

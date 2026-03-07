@@ -1,9 +1,13 @@
 import { format } from 'date-fns';
 import { Building2, CalendarDays, Info, UserSquare2, Users } from 'lucide-react';
 
+import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 
 import type {
@@ -42,20 +46,31 @@ export function DepartmentDetailDrawer({
   onEditDepartment,
   onDeleteDepartment,
 }: DepartmentDetailDrawerProps) {
-  const footer = department && rowPermissions ? (
-    <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-      {rowPermissions.canEditDepartment ? (
-        <Button variant="outline" onClick={() => onEditDepartment(department)}>
-          Edit Department
-        </Button>
-      ) : null}
-      {rowPermissions.canDeleteDepartment ? (
-        <Button variant="destructive" onClick={() => onDeleteDepartment(department)}>
-          Delete Department
-        </Button>
-      ) : null}
-    </div>
-  ) : undefined;
+  const activityItems = department ? [
+    {
+      id: 'department-created',
+      at: department.created_at,
+      title: 'Department created',
+      description: 'Initial department record was created.',
+      kind: 'create' as const,
+    },
+    {
+      id: 'department-membership',
+      at: department.updated_at,
+      title: 'Membership snapshot',
+      description: `${department.memberCount} assigned employee${department.memberCount === 1 ? '' : 's'} currently tracked.`,
+      kind: 'status_change' as const,
+    },
+    ...(department.updated_at !== department.created_at
+      ? [{
+          id: 'department-updated',
+          at: department.updated_at,
+          title: 'Department updated',
+          description: 'Department details or ownership changed.',
+          kind: 'update' as const,
+        }]
+      : []),
+  ] : [];
 
   return (
     <ModuleLayout.DetailDrawer
@@ -63,13 +78,85 @@ export function DepartmentDetailDrawer({
       onOpenChange={onOpenChange}
       title={department?.name ?? 'Department details'}
       description={department?.description ?? 'Overview, membership, and ownership for the selected department.'}
-      footer={footer}
     >
-      {loading ? <p className="text-sm text-muted-foreground">Loading department details...</p> : null}
-      {isUnavailable ? <p className="text-sm text-muted-foreground">This department is not available in the current workspace.</p> : null}
+      {loading ? (
+        <WorkspaceStatePanel
+          title="Loading department details"
+          description="Pulling department ownership, members, and activity for the selected record."
+        />
+      ) : null}
+      {isUnavailable ? (
+        <WorkspaceStatePanel
+          title="Department unavailable"
+          description="This department is not available in the current workspace."
+        />
+      ) : null}
 
       {!loading && !isUnavailable && department ? (
         <Tabs value={tab} onValueChange={(next) => onTabChange(next as DepartmentDrawerTab)} className="space-y-4">
+          <DrawerMetaHeader
+            badges={(
+              <>
+                <Badge variant="outline">{department.memberCount} member{department.memberCount === 1 ? '' : 's'}</Badge>
+                <Badge variant="outline">
+                  {department.manager ? 'Manager assigned' : 'Manager unassigned'}
+                </Badge>
+              </>
+            )}
+            description={department.description || 'No department description yet.'}
+            metaItems={[
+              {
+                id: 'manager',
+                label: 'Manager',
+                value: department.manager
+                  ? `${department.manager.first_name} ${department.manager.last_name}`
+                  : 'Unassigned',
+                icon: UserSquare2,
+              },
+              {
+                id: 'members',
+                label: 'Members',
+                value: `${department.memberCount} assigned`,
+                icon: Users,
+              },
+              {
+                id: 'created',
+                label: 'Created',
+                value: formatTimestamp(department.created_at),
+                icon: CalendarDays,
+              },
+              {
+                id: 'updated',
+                label: 'Last updated',
+                value: formatTimestamp(department.updated_at),
+                icon: CalendarDays,
+              },
+            ]}
+          />
+
+          {rowPermissions ? (
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Workspace actions</p>
+                <p className="text-xs text-muted-foreground">
+                  Department maintenance stays inside the module workspace.
+                </p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {rowPermissions.canEditDepartment ? (
+                  <Button variant="outline" onClick={() => onEditDepartment(department)}>
+                    Edit Department
+                  </Button>
+                ) : null}
+                {rowPermissions.canDeleteDepartment ? (
+                  <Button variant="destructive" onClick={() => onDeleteDepartment(department)}>
+                    Delete Department
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
@@ -155,39 +242,12 @@ export function DepartmentDetailDrawer({
           </TabsContent>
 
           <TabsContent value="activity" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Info className="h-4 w-4" />
-                  Department Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="flex items-start gap-3">
-                  <CalendarDays className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Department created</p>
-                    <p className="text-muted-foreground">{formatTimestamp(department.created_at)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Current membership snapshot</p>
-                    <p className="text-muted-foreground">{department.memberCount} active record{department.memberCount === 1 ? '' : 's'} currently assigned.</p>
-                  </div>
-                </div>
-                {department.updated_at !== department.created_at ? (
-                  <div className="flex items-start gap-3">
-                    <CalendarDays className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Department updated</p>
-                      <p className="text-muted-foreground">{formatTimestamp(department.updated_at)}</p>
-                    </div>
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
+            <ActivityTimeline
+              items={activityItems}
+              title="Department Activity"
+              emptyMessage="No department activity has been recorded yet."
+              formatTimestamp={formatTimestamp}
+            />
           </TabsContent>
         </Tabs>
       ) : null}

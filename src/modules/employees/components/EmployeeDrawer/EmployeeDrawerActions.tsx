@@ -55,8 +55,13 @@ export function EmployeeDrawerActions({
   const editActionHint = getEditActionHint(permissions.editAccessMode);
 
   return (
-    <div className="space-y-3 rounded-xl border border-border/70 bg-muted/20 p-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-medium">Workspace actions</p>
+        <p className="text-xs text-muted-foreground">{editActionHint}</p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         {permissions.editAccessMode !== 'none' ? (
           <Button size="sm" onClick={() => onEditProfile(employee)}>
             <Edit3 className="mr-2 h-4 w-4" />
@@ -99,8 +104,6 @@ export function EmployeeDrawerActions({
           </Link>
         </Button>
       </div>
-
-      <p className="text-xs text-muted-foreground">{editActionHint}</p>
     </div>
   );
 }

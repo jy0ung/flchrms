@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Info } from 'lucide-react';
+import { Clock3, Filter, History, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -8,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import type { AppRole, LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { DataTableShell, SectionToolbar } from '@/components/system';
@@ -33,6 +33,15 @@ type LeaveCancellationBadge = {
   status: string;
   label: string;
 } | null;
+
+type ViewConfig = {
+  label: string;
+  shortLabel: string;
+  title: string;
+  summary: string;
+  icon: typeof Clock3;
+  requests: LeaveRequest[];
+};
 
 interface LeaveRequestWorkspaceProps {
   role: AppRole | null;
@@ -122,27 +131,40 @@ export function LeaveRequestWorkspace({
     availableViews.includes(defaultView) ? defaultView : availableViews[0],
   );
   const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('ALL');
+  const activeFilterLabel = STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter)?.label ?? 'All';
 
   const viewConfig = useMemo(() => {
-    const config: Record<LeaveViewOption, { label: string; title: string; requests: LeaveRequest[] }> = {
+    const config: Record<LeaveViewOption, ViewConfig> = {
       MY_CURRENT: {
         label: `My Current (${myCurrentRequests.length})`,
+        shortLabel: 'My Current',
         title: 'My Current Requests',
+        summary: 'Requests you currently own that are still active or awaiting a final outcome.',
+        icon: Clock3,
         requests: myCurrentRequests,
       },
       MY_HISTORY: {
         label: `My History (${myHistoryRequests.length})`,
+        shortLabel: 'My History',
         title: 'My Request History',
+        summary: 'Resolved or completed requests that remain available for reference.',
+        icon: History,
         requests: myHistoryRequests,
       },
       TEAM_CURRENT: {
         label: `Team Current (${teamCurrentRequests.length})`,
+        shortLabel: 'Team Current',
         title: 'Team Current Requests',
+        summary: 'Current team requests visible to you at this approval stage.',
+        icon: Users,
         requests: teamCurrentRequests,
       },
       TEAM_HISTORY: {
         label: `Team History (${teamHistoryRequests.length})`,
+        shortLabel: 'Team History',
         title: 'Team Request History',
+        summary: 'Resolved team requests retained for traceability and follow-up.',
+        icon: History,
         requests: teamHistoryRequests,
       },
     };
@@ -176,85 +198,112 @@ export function LeaveRequestWorkspace({
 
   return (
     <Tabs value={view} onValueChange={(value) => setView(value as LeaveViewOption)} className="space-y-4">
-      <TabsList className="grid h-auto w-full gap-1 rounded-lg p-1 md:w-auto md:min-w-[560px] md:grid-cols-4">
+      <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
         {availableViews.map((option) => (
-          <TabsTrigger key={option} value={option} className="text-xs sm:text-sm">
+          <TabsTrigger key={option} value={option} className="whitespace-nowrap text-xs sm:text-sm">
             {viewConfig[option].label}
           </TabsTrigger>
         ))}
       </TabsList>
 
-      {availableViews.map((option) => (
-        <TabsContent key={option} value={option} className="space-y-3">
-          <DataTableShell
-            title={viewConfig[option].title}
-            description={`Status filter: ${STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter)?.label ?? 'All'}`}
-            headerActions={(
-              <SectionToolbar
-                variant="inline"
-                density="compact"
-                ariaLabel="Leave request filters"
-                filters={[
-                  {
-                    id: 'leave-status-filter',
-                    label: 'Status',
-                    control: (
-                      <Select
-                        value={statusFilter}
-                        onValueChange={(next) => setStatusFilter(next as StatusFilterOption)}
-                      >
-                        <SelectTrigger className="h-9 rounded-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_FILTER_OPTIONS.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ),
-                    minWidthClassName: 'sm:min-w-[180px]',
-                  },
-                ]}
-                trailingSlot={workflowInfoPopover}
-              />
-            )}
-            content={
-              option === 'MY_CURRENT' || option === 'MY_HISTORY' ? (
-                <MyLeaveRequestsTable
-                  requests={filteredRequests}
-                  emptyMessage={emptyMessage}
-                  getStatusDisplay={getStatusDisplay}
-                  getCancellationBadge={getCancellationBadge}
-                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
-                  canAmend={canAmend}
-                  canCancelPendingRequest={canCancelPendingRequest}
-                  canRequestCancellation={canRequestCancellation}
-                  onOpenDetails={onOpenDetails}
-                  onAmend={onAmend}
-                  onCancel={onCancel}
+      {availableViews.map((option) => {
+        const currentView = viewConfig[option];
+        const ViewIcon = currentView.icon;
+
+        return (
+          <TabsContent key={option} value={option} className="mt-0 space-y-3">
+            <DataTableShell
+              title={currentView.title}
+              description={currentView.summary}
+              headerActions={(
+                <SectionToolbar
+                  variant="inline"
+                  density="compact"
+                  ariaLabel="Leave request filters"
+                  filters={[
+                    {
+                      id: 'leave-status-filter',
+                      label: 'Status',
+                      control: (
+                        <Select
+                          value={statusFilter}
+                          onValueChange={(next) => setStatusFilter(next as StatusFilterOption)}
+                        >
+                          <SelectTrigger className="h-9 rounded-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_FILTER_OPTIONS.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ),
+                      minWidthClassName: 'sm:min-w-[180px]',
+                    },
+                  ]}
+                  trailingSlot={workflowInfoPopover}
                 />
-              ) : (
-                <TeamLeaveRequestsTable
-                  requests={filteredRequests}
-                  emptyMessage={emptyMessage}
-                  role={role}
-                  getStatusDisplay={getStatusDisplay}
-                  getCancellationBadge={getCancellationBadge}
-                  shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
-                  canApproveCancellation={canApproveCancellation}
-                  canApprove={canApprove}
-                  onOpenDetails={onOpenDetails}
-                  onCancellationReview={onCancellationReview}
-                  onAction={onAction}
-                />
-              )
-            }
-          />
-        </TabsContent>
-      ))}
+              )}
+              alertBanner={(
+                <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <ViewIcon className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-medium">{currentView.shortLabel}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {filteredRequests.length} visible request{filteredRequests.length === 1 ? '' : 's'} in this view.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                      {currentView.shortLabel}
+                    </Badge>
+                    <Badge variant="outline" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                      <Filter className="h-3 w-3" />
+                      Status: {activeFilterLabel}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              content={
+                option === 'MY_CURRENT' || option === 'MY_HISTORY' ? (
+                  <MyLeaveRequestsTable
+                    requests={filteredRequests}
+                    emptyMessage={emptyMessage}
+                    getStatusDisplay={getStatusDisplay}
+                    getCancellationBadge={getCancellationBadge}
+                    shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
+                    canAmend={canAmend}
+                    canCancelPendingRequest={canCancelPendingRequest}
+                    canRequestCancellation={canRequestCancellation}
+                    onOpenDetails={onOpenDetails}
+                    onAmend={onAmend}
+                    onCancel={onCancel}
+                  />
+                ) : (
+                  <TeamLeaveRequestsTable
+                    requests={filteredRequests}
+                    emptyMessage={emptyMessage}
+                    role={role}
+                    getStatusDisplay={getStatusDisplay}
+                    getCancellationBadge={getCancellationBadge}
+                    shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
+                    canApproveCancellation={canApproveCancellation}
+                    canApprove={canApprove}
+                    onOpenDetails={onOpenDetails}
+                    onCancellationReview={onCancellationReview}
+                    onAction={onAction}
+                  />
+                )
+              }
+            />
+          </TabsContent>
+        );
+      })}
     </Tabs>
   );
 }

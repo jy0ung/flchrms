@@ -6,7 +6,6 @@ import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_ROLE_COLORS } from '@/components/admin/admin-ui-constants';
 import { BulkActionBar } from '@/components/bulk-actions/BulkActionBar';
 import { OrgChart } from '@/components/employees/OrgChart';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -22,6 +21,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { DataTableShell } from '@/components/system';
+import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
 
@@ -393,24 +393,41 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       </ModuleLayout.Toolbar>
 
       <ModuleLayout.Content>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: 'Total employees', value: stats.total, icon: Users },
-            { label: 'Active', value: stats.active, icon: UserCircle2 },
-            { label: 'On leave', value: stats.onLeave, icon: Users },
-            { label: 'Departments', value: stats.departmentCount, icon: Building2 },
-          ].map((stat) => (
-            <Card key={stat.label} className="border-border/70 shadow-sm">
-              <CardContent className="flex items-center gap-3 p-4">
-                <stat.icon className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-semibold leading-none">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <WorkspaceMetricStrip
+          items={[
+            {
+              id: 'total-employees',
+              label: 'Total employees',
+              value: stats.total,
+              description: 'Visible across the current directory workspace.',
+              icon: Users,
+            },
+            {
+              id: 'active-employees',
+              label: 'Active',
+              value: stats.active,
+              description: 'Employees currently marked active.',
+              icon: UserCircle2,
+              tone: 'success',
+            },
+            {
+              id: 'employees-on-leave',
+              label: 'On leave',
+              value: stats.onLeave,
+              description: 'Employees currently unavailable.',
+              icon: Users,
+              tone: 'warning',
+            },
+            {
+              id: 'covered-departments',
+              label: 'Departments',
+              value: stats.departmentCount,
+              description: 'Distinct departments represented in the directory.',
+              icon: Building2,
+              tone: 'info',
+            },
+          ]}
+        />
 
         {viewType === 'org' ? (
           <DataTableShell

@@ -1,7 +1,11 @@
 import { format } from 'date-fns';
+import { CalendarDays, Clock3, Loader2, UserSquare2 } from 'lucide-react';
 
 import { ModuleLayout } from '@/layouts/ModuleLayout';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { LeaveDrawerTabs } from '@/modules/leave/components/LeaveDrawer/LeaveDrawerTabs';
 import { LeaveWorkflowActions } from '@/modules/leave/components/LeaveDrawer/LeaveWorkflowActions';
@@ -11,7 +15,7 @@ import { CancellationHistoryTab } from '@/modules/leave/components/LeaveDrawer/t
 import { DocumentsTab } from '@/modules/leave/components/LeaveDrawer/tabs/DocumentsTab';
 import { RequestInfoTab } from '@/modules/leave/components/LeaveDrawer/tabs/RequestInfoTab';
 import { useLeaveRequestDetails } from '@/modules/leave/hooks/useLeaveRequestDetails';
-import { getLeaveRequestDrawerTitle } from '@/lib/leave-request-display';
+import { getLeaveRequestDrawerTitle, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 import type {
   LeaveCancellationBadge,
   LeaveDrawerTab,
@@ -91,6 +95,10 @@ export function LeaveDetailDrawer({
   };
 
   const title = getLeaveRequestDrawerTitle(request);
+  const requesterName = request ? getLeaveRequestEmployeeName(request) : '—';
+  const rangeLabel = request
+    ? `${format(new Date(request.start_date), 'PP')} - ${format(new Date(request.end_date), 'PP')}`
+    : '—';
 
   return (
     <ModuleLayout.DetailDrawer
@@ -98,30 +106,76 @@ export function LeaveDetailDrawer({
       onOpenChange={onOpenChange}
       title={title}
       description={statusDisplay ? statusDisplay.label : 'Workflow details for the selected leave request.'}
-      footer={request && rowPermissions ? (
-        <LeaveWorkflowActions
-          request={request}
-          permissions={rowPermissions}
-          onApprove={onApprove}
-          onReject={onReject}
-          onRequestDocument={onRequestDocument}
-          onAmend={onAmend}
-          onCancel={onCancel}
-          onApproveCancellation={onApproveCancellation}
-          onRejectCancellation={onRejectCancellation}
-        />
-      ) : undefined}
     >
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading request details...</p>
+        <WorkspaceStatePanel
+          title="Loading leave request details"
+          description="Pulling workflow history, balances, and document context for the selected request."
+          icon={Loader2}
+          animateIcon
+          appearance="default"
+        />
       ) : null}
 
       {isUnavailable ? (
-        <p className="text-sm text-muted-foreground">This leave request is not available in the current workspace.</p>
+        <WorkspaceStatePanel
+          title="Leave request unavailable"
+          description="This leave request is not available in the current workspace."
+        />
       ) : null}
 
       {!loading && !isUnavailable && request && statusDisplay ? (
         <Tabs value={resolvedTab} onValueChange={(next) => onTabChange(next as LeaveDrawerTab)} className="space-y-4">
+          <DrawerMetaHeader
+            badges={(
+              <>
+                <Badge variant="outline">{statusDisplay.label}</Badge>
+                {cancellationBadge ? <Badge variant="outline">{cancellationBadge.label}</Badge> : null}
+              </>
+            )}
+            description={request.reason || 'No request note provided.'}
+            metaItems={[
+              {
+                id: 'requester',
+                label: 'Requester',
+                value: requesterName,
+                icon: UserSquare2,
+              },
+              {
+                id: 'dates',
+                label: 'Dates',
+                value: rangeLabel,
+                icon: CalendarDays,
+              },
+              {
+                id: 'duration',
+                label: 'Duration',
+                value: `${request.days_count} day${request.days_count === 1 ? '' : 's'}`,
+                icon: Clock3,
+              },
+              {
+                id: 'submitted',
+                label: 'Submitted',
+                value: formatDateTime(request.created_at),
+                icon: CalendarDays,
+              },
+            ]}
+          />
+
+          {rowPermissions ? (
+            <LeaveWorkflowActions
+              request={request}
+              permissions={rowPermissions}
+              onApprove={onApprove}
+              onReject={onReject}
+              onRequestDocument={onRequestDocument}
+              onAmend={onAmend}
+              onCancel={onCancel}
+              onApproveCancellation={onApproveCancellation}
+              onRejectCancellation={onRejectCancellation}
+            />
+          ) : null}
+
           <LeaveDrawerTabs
             showCancellationTab={showCancellationTab}
             showDocumentsTab={showDocumentsTab}

@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/system';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import type { AppRole, Department, Profile } from '@/types/hrms';
 
 export type DirectoryEmployee = Profile & { department: Department | null };
@@ -120,13 +121,11 @@ export function EmployeeTable({
 
   if (!employees?.length) {
     return (
-      <Card className="border-dashed border-border/80 shadow-sm">
-        <CardContent className="py-14 text-center">
-          <UserSquare2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
-          <p className="text-sm font-medium">No employees match the current filters.</p>
-          <p className="mt-1 text-sm text-muted-foreground">Adjust the search or filters to broaden the result set.</p>
-        </CardContent>
-      </Card>
+      <WorkspaceStatePanel
+        title="No employees match the current filters"
+        description="Adjust the search or filters to broaden the result set."
+        icon={UserSquare2}
+      />
     );
   }
 

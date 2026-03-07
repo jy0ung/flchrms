@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, Building2, Mail, Phone } from 'lucide-react';
+import { Building2, Loader2, Mail, Phone, UserSquare2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,9 +14,10 @@ import { useEmployee, useProfileChangeLog, type ProfileChangeLogEntry } from '@/
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/system';
+import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import type { AppRole } from '@/types/hrms';
 
 import type { DirectoryEmployee } from '../EmployeeTable';
@@ -137,6 +138,32 @@ export function EmployeeDetailDrawer({
   const assignedRole = employee ? getUserRole(employee.id) : 'employee';
   const managerName = getManagerName(employee?.manager_id);
   const showSensitiveSection = role === 'admin' || role === 'hr' || role === 'director';
+  const metaItems = employee ? [
+    {
+      id: 'email',
+      label: 'Email',
+      value: employee.email,
+      icon: Mail,
+    },
+    {
+      id: 'phone',
+      label: 'Phone',
+      value: employee.phone || 'Not provided',
+      icon: Phone,
+    },
+    {
+      id: 'department',
+      label: 'Department',
+      value: employee.department?.name || 'Unassigned',
+      icon: Building2,
+    },
+    {
+      id: 'manager',
+      label: 'Manager',
+      value: managerName || 'Unassigned',
+      icon: UserSquare2,
+    },
+  ] : [];
 
   const activityItems = useMemo(() => {
     const profileItems = mapProfileChanges(profileChangeLogQuery.data ?? []);
@@ -170,57 +197,39 @@ export function EmployeeDetailDrawer({
       bodyClassName="pb-4"
     >
       {employeeLoading ? (
-        <div className="space-y-4">
-          <div className="h-28 animate-pulse rounded-xl bg-muted" />
-          <div className="h-10 animate-pulse rounded bg-muted" />
-          <div className="h-64 animate-pulse rounded-xl bg-muted" />
-        </div>
+        <WorkspaceStatePanel
+          title="Loading employee details"
+          description="Pulling profile, role, and contextual workspace data for the selected employee."
+          icon={Loader2}
+          animateIcon
+          appearance="default"
+        />
       ) : !employee || error ? (
-        <Card className="border-dashed border-border/70 shadow-sm">
-          <CardContent className="py-10 text-center">
-            <AlertCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium">Employee record not found.</p>
-            <p className="mt-1 text-sm text-muted-foreground">The selected employee could not be loaded from the directory.</p>
-          </CardContent>
-        </Card>
+        <WorkspaceStatePanel
+          title="Employee record not found"
+          description="The selected employee could not be loaded from the directory."
+        />
       ) : (
         <>
-          <Card className="border-border/70 shadow-sm">
-            <CardContent className="space-y-4 p-4">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarFallback className="bg-primary text-lg font-semibold text-primary-foreground">
-                    {getInitials(employee)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-semibold">
-                      {employee.first_name} {employee.last_name}
-                    </h3>
-                    <StatusBadge status={employee.status} />
-                    <Badge className={`border ${roleColors[assignedRole]}`}>
-                      {formatRoleLabel(assignedRole)}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{employee.job_title || 'No title assigned'}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" /> {employee.email}
-                    </span>
-                    {employee.phone ? (
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {employee.phone}
-                      </span>
-                    ) : null}
-                    <span className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3" /> {employee.department?.name || 'Unassigned'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <DrawerMetaHeader
+            leading={(
+              <Avatar className="h-14 w-14">
+                <AvatarFallback className="bg-primary text-lg font-semibold text-primary-foreground">
+                  {getInitials(employee)}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            badges={(
+              <>
+                <StatusBadge status={employee.status} />
+                <Badge className={`border ${roleColors[assignedRole]}`}>
+                  {formatRoleLabel(assignedRole)}
+                </Badge>
+              </>
+            )}
+            description={employee.job_title || 'No title assigned'}
+            metaItems={metaItems}
+          />
 
           {permissions ? (
             <EmployeeDrawerActions
