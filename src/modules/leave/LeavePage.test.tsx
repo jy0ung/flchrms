@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { LeavePage } from '@/modules/leave/LeavePage';
 
+const openRequestWizard = vi.fn();
+
 const leaveRecord = {
   id: 'leave-1',
   employee_id: 'user-1',
@@ -121,7 +123,7 @@ vi.mock('@/modules/leave/hooks/useLeaveCapabilities', () => ({
 
 vi.mock('@/modules/leave/hooks/useLeaveWorkflowController', () => ({
   useLeaveWorkflowController: () => ({
-    openRequestWizard: vi.fn(),
+    openRequestWizard,
     openAmendDialog: vi.fn(),
     openCancellationDialog: vi.fn(),
     openCancellationReviewDialog: vi.fn(),
@@ -201,8 +203,19 @@ vi.mock('@/components/leave/LeaveBalanceSection', () => ({
 }));
 
 vi.mock('@/components/leave/LeaveRequestWorkspace', () => ({
-  LeaveRequestWorkspace: ({ myCurrentRequests, onOpenDetails }: { myCurrentRequests: typeof leaveRecord[]; onOpenDetails: (request: typeof leaveRecord) => void }) => (
-    <button type="button" onClick={() => onOpenDetails(myCurrentRequests[0])}>open-details</button>
+  LeaveRequestWorkspace: ({
+    myCurrentRequests,
+    onOpenDetails,
+    defaultView,
+  }: {
+    myCurrentRequests: typeof leaveRecord[];
+    onOpenDetails: (request: typeof leaveRecord) => void;
+    defaultView?: string;
+  }) => (
+    <div>
+      <div>{`default-view:${defaultView}`}</div>
+      <button type="button" onClick={() => onOpenDetails(myCurrentRequests[0])}>open-details</button>
+    </div>
   ),
 }));
 
@@ -233,5 +246,18 @@ describe('LeavePage', () => {
 
     expect(screen.getByText('drawer:leave-1:request')).toBeInTheDocument();
     expect(screen.getByText('search:?requestId=leave-1&tab=request')).toBeInTheDocument();
+  });
+
+  it('opens the request wizard from a routed command intent and honors a requested workspace view', () => {
+    render(
+      <MemoryRouter initialEntries={['/leave?command=request&workspaceView=TEAM_CURRENT']}>
+        <LocationProbe />
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    expect(openRequestWizard).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
+    expect(screen.getByText('search:?workspaceView=TEAM_CURRENT')).toBeInTheDocument();
   });
 });

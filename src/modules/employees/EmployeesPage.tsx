@@ -158,6 +158,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
 
   const drawerEmployeeId = searchParams.get('employeeId');
   const drawerTab = coerceEmployeeDrawerTab(searchParams.get('employeeTab'));
+  const commandIntent = searchParams.get('command');
 
   useEffect(() => {
     if (drawerEmployeeId && drawerTab === 'documents' && !pageActions.canOpenDocumentsTab) {
@@ -166,6 +167,22 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       setSearchParams(nextParams, { replace: true });
     }
   }, [drawerEmployeeId, drawerTab, pageActions.canOpenDocumentsTab, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (commandIntent !== 'create') {
+      return;
+    }
+
+    if (pageActions.canCreateEmployee) {
+      controller.openCreateEmployeeDialog();
+    }
+
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams);
+      nextParams.delete('command');
+      return nextParams;
+    }, { replace: true });
+  }, [commandIntent, controller, pageActions.canCreateEmployee, setSearchParams]);
 
   const updateDrawerParams = useCallback(
     (employeeId: string | null, tab: 'profile' | 'employment' | 'leave' | 'documents' | 'activity' = 'profile') => {

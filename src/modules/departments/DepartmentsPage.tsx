@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Building2, FolderTree, Plus, UserSquare2, Users } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -64,6 +64,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
 
   const drawerDepartmentId = searchParams.get('departmentId');
   const drawerTab = coerceDepartmentDrawerTab(searchParams.get('departmentTab'));
+  const commandIntent = searchParams.get('command');
 
   const selectedDepartment = useMemo(
     () => departmentRecords.find((department) => department.id === drawerDepartmentId) ?? null,
@@ -116,6 +117,22 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
       unassignedEmployees,
     };
   }, [departmentRecords, employeesQuery.data]);
+
+  useEffect(() => {
+    if (commandIntent !== 'create') {
+      return;
+    }
+
+    if (pageActions.canCreateDepartment) {
+      controller.setCreateDeptDialogOpen(true);
+    }
+
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('command');
+      return next;
+    }, { replace: true });
+  }, [commandIntent, controller, pageActions.canCreateDepartment, setSearchParams]);
 
   if (capabilitiesLoading && !adminCapabilitiesOverride) {
     return null;

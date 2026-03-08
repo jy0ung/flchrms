@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarDays, Clock3, History, Info, Plus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,12 +20,25 @@ import { LeaveManagementDialogs } from '@/modules/leave/components/LeaveManageme
 import { useLeaveCapabilities } from '@/modules/leave/hooks/useLeaveCapabilities';
 import { useLeaveDrawerState } from '@/modules/leave/hooks/useLeaveDrawerState';
 import { useLeaveWorkflowController } from '@/modules/leave/hooks/useLeaveWorkflowController';
-import type { LeavePageProps } from '@/modules/leave/types';
+import type { LeavePageProps, LeaveWorkspaceView } from '@/modules/leave/types';
+
+function coerceWorkspaceView(value: string | null): LeaveWorkspaceView | null {
+  switch (value) {
+    case 'MY_CURRENT':
+    case 'MY_HISTORY':
+    case 'TEAM_CURRENT':
+    case 'TEAM_HISTORY':
+      return value;
+    default:
+      return null;
+  }
+}
 
 export function LeavePage({ initialView }: LeavePageProps) {
   usePageTitle('Leave');
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { role, user } = useAuth();
   const { data: requests, isLoading, isError, refetch } = useLeaveRequests();
   const { data: leaveTypes } = useLeaveTypes();
@@ -41,6 +54,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
   } = useLeaveCapabilities();
 
   const controller = useLeaveWorkflowController({ getRowPermissions });
+  const commandIntent = searchParams.get('command');
+  const requestedWorkspaceView = coerceWorkspaceView(searchParams.get('workspaceView'));
 
   const myRequests = useMemo(
     () => requests?.filter((request) => request.employee_id === user?.id) || [],
@@ -86,10 +101,27 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const selectedCancellationBadge = drawer.selectedRequest ? getCancellationBadge(drawer.selectedRequest) : null;
   const selectedPermissions = drawer.selectedRequest ? getRowPermissions(drawer.selectedRequest) : null;
 
-  const workspaceDefaultView = initialView ?? defaultWorkspaceView({
-    myRequestCount: myRequests.length,
-    teamRequestCount: teamRequests.length,
-  });
+  const effectiveWorkspaceView =
+    requestedWorkspaceView ?? initialView ?? defaultWorkspaceView({
+      myRequestCount: myRequests.length,
+      teamRequestCount: teamRequests.length,
+    });
+
+  useEffect(() => {
+    if (commandIntent !== 'request') {
+      return;
+    }
+
+    if (pageActions.canCreateRequest) {
+      controller.openRequestWizard();
+    }
+
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams);
+      nextParams.delete('command');
+      return nextParams;
+    }, { replace: true });
+  }, [commandIntent, controller, pageActions.canCreateRequest, setSearchParams]);
 
   const workflowInfoPopover = (
     <Popover>
@@ -284,7 +316,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
             myHistoryRequests={myHistoryRequests}
             teamCurrentRequests={teamCurrentRequests}
             teamHistoryRequests={teamHistoryRequests}
-            defaultView={workspaceDefaultView}
+            defaultView={effectiveWorkspaceView}
             getStatusDisplay={getStatusDisplay}
             getCancellationBadge={getCancellationBadge}
             canAmend={(request) => getRowPermissions(request).canAmend}

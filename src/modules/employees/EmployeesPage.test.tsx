@@ -5,6 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { EmployeesPage } from '@/modules/employees/EmployeesPage';
 
+const openCreateEmployeeDialog = vi.fn();
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'hr-1' }, role: 'hr' }),
 }));
@@ -127,6 +129,17 @@ vi.mock('@/modules/employees/components/EmployeeDrawer/EmployeeDetailDrawer', ()
     open ? <div>{`drawer:${employeeId}:${tab}`}</div> : null,
 }));
 
+vi.mock('@/modules/employees/hooks/useEmployeeManagementController', () => ({
+  useEmployeeManagementController: () => ({
+    openCreateEmployeeDialog,
+    handleEditProfile: vi.fn(),
+    openResetPasswordDialog: vi.fn(),
+    handleEditRole: vi.fn(),
+    handleArchiveEmployee: vi.fn(),
+    handleRestoreEmployee: vi.fn(),
+  }),
+}));
+
 describe('EmployeesPage', () => {
   it('opens the detail drawer with the default profile tab from the table surface', () => {
     render(
@@ -138,5 +151,15 @@ describe('EmployeesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open-employee' }));
 
     expect(screen.getByText('drawer:user-1:profile')).toBeInTheDocument();
+  });
+
+  it('opens the create employee dialog from a routed command intent', () => {
+    render(
+      <MemoryRouter initialEntries={['/employees?command=create']}>
+        <EmployeesPage entryContext="module" />
+      </MemoryRouter>,
+    );
+
+    expect(openCreateEmployeeDialog).toHaveBeenCalledTimes(1);
   });
 });

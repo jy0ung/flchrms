@@ -410,4 +410,65 @@ describe('LeaveRequestWorkspace', () => {
     fireEvent.click(screen.getByRole('tab', { name: /My Current/ }));
     expect(getVisibleTable('my-requests-table')).toHaveTextContent('pending-cancellation-row');
   });
+
+  it('syncs to a routed default view when the parent workspace intent changes', () => {
+    const myCurrent = [makeLeaveRequest({ id: 'my-current-row' })];
+    const teamCurrent = [makeLeaveRequest({ id: 'team-current-row', employee_id: 'user-2' })];
+
+    const { rerender } = render(
+      <LeaveRequestWorkspace
+        role="manager"
+        canViewTeamRequests
+        myCurrentRequests={myCurrent}
+        myHistoryRequests={[]}
+        teamCurrentRequests={teamCurrent}
+        teamHistoryRequests={[]}
+        defaultView="MY_CURRENT"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={getCancellationBadge}
+        canAmend={() => false}
+        canCancelPendingRequest={() => false}
+        canRequestCancellation={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => false}
+        shouldShowLeaveDetailsButton={() => false}
+        onAmend={noop}
+        onCancel={noop}
+        onOpenDetails={noop}
+        onCancellationReview={noop}
+        onAction={noop}
+        workflowInfoPopover={<div>workflow-info</div>}
+      />,
+    );
+
+    expect(getVisibleTable('my-requests-table')).toHaveTextContent('my-current-row');
+
+    rerender(
+      <LeaveRequestWorkspace
+        role="manager"
+        canViewTeamRequests
+        myCurrentRequests={myCurrent}
+        myHistoryRequests={[]}
+        teamCurrentRequests={teamCurrent}
+        teamHistoryRequests={[]}
+        defaultView="TEAM_CURRENT"
+        getStatusDisplay={getStatusDisplay}
+        getCancellationBadge={getCancellationBadge}
+        canAmend={() => false}
+        canCancelPendingRequest={() => false}
+        canRequestCancellation={() => false}
+        canApproveCancellation={() => false}
+        canApprove={() => false}
+        shouldShowLeaveDetailsButton={() => false}
+        onAmend={noop}
+        onCancel={noop}
+        onOpenDetails={noop}
+        onCancellationReview={noop}
+        onAction={noop}
+        workflowInfoPopover={<div>workflow-info</div>}
+      />,
+    );
+
+    expect(getVisibleTable('team-requests-table')).toHaveTextContent('team-current-row');
+  });
 });

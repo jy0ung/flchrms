@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Clock3, Filter, History, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -132,6 +132,11 @@ export function LeaveRequestWorkspace({
   );
   const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('ALL');
   const activeFilterLabel = STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter)?.label ?? 'All';
+
+  useEffect(() => {
+    const nextView = availableViews.includes(defaultView) ? defaultView : availableViews[0];
+    setView((currentView) => (currentView === nextView ? currentView : nextView));
+  }, [availableViews, defaultView]);
 
   const viewConfig = useMemo(() => {
     const config: Record<LeaveViewOption, ViewConfig> = {
