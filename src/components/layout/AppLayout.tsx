@@ -4,11 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { buildAuthRedirectHref } from '@/lib/auth-redirect';
+import { InteractionModeProvider, RouteLoadingState } from '@/components/system';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { MobileBottomNav } from './MobileBottomNav';
-import { Loader2 } from 'lucide-react';
-import { InteractionModeProvider } from '@/components/system';
 
 const SIDEBAR_COLLAPSED_KEY = 'hrms.ui.sidebarCollapsed';
 
@@ -32,9 +31,11 @@ export function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
+      <RouteLoadingState
+        fullScreen
+        title="Loading workspace"
+        description="Checking your session and preparing the application shell."
+      />
     );
   }
 

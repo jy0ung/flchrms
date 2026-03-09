@@ -6,7 +6,7 @@ import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
-import { PageHeader } from '@/components/system';
+import { PageHeader, RouteLoadingState } from '@/components/system';
 
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
@@ -27,7 +27,18 @@ export default function AdminLeavePoliciesPage() {
   } = useAdminLeaveTypeManagement();
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Leave Policies"
+          description="Configure leave types, approval workflows, analytics simulations, and balance adjustments."
+        />
+        <RouteLoadingState
+          title="Loading leave policies"
+          description="Checking leave-policy capabilities and preparing the latest policy data."
+        />
+      </div>
+    );
   }
 
   return (

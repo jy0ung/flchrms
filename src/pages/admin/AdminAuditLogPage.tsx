@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader } from '@/components/system';
+import { PageHeader, RouteLoadingState } from '@/components/system';
 
 interface AuditEntry {
   id: string;
@@ -157,7 +157,18 @@ export default function AdminAuditLogPage() {
   const { entries, isLoading } = useAuditLog();
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Audit Log"
+          description="Recent system activity across workflows, leave requests, and profile changes."
+        />
+        <RouteLoadingState
+          title="Loading audit log"
+          description="Checking audit-log access and preparing the latest governance history."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canViewAdminAuditLog) {

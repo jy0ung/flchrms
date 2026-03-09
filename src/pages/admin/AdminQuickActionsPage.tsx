@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
-import { ActionTile, PageHeader } from '@/components/system';
+import { ActionTile, PageHeader, RouteLoadingState } from '@/components/system';
 import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 interface QuickAction {
@@ -38,7 +38,18 @@ export default function AdminQuickActionsPage() {
   const { capabilityMap, capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={SHELL_LABELS.governanceHub}
+          description="Choose the right operational workspace or governance surface for the task at hand."
+        />
+        <RouteLoadingState
+          title="Loading governance hub"
+          description="Checking available governance actions and workspace routes for your account."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canViewAdminQuickActions) {

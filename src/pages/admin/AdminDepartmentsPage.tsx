@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { DepartmentsPage } from '@/modules/departments';
+import { PageHeader, RouteLoadingState } from '@/components/system';
 
 export default function AdminDepartmentsPage() {
   usePageTitle('Admin · Departments');
@@ -13,7 +14,18 @@ export default function AdminDepartmentsPage() {
   const { capabilities, isLoading } = useAdminPageCapabilities(role);
 
   if (isLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Department Workspace"
+          description="Preparing the department workspace bridge and capability checks."
+        />
+        <RouteLoadingState
+          title="Loading department workspace"
+          description="Checking department-management capabilities and preparing the workspace bridge."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canManageDepartments) {

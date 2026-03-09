@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 
+let mockCapabilityLoading = false;
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     role: 'admin',
@@ -18,7 +20,7 @@ vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
     capabilities: {
       canViewAdminDashboard: true,
     },
-    isLoading: false,
+    isLoading: mockCapabilityLoading,
   }),
 }));
 
@@ -77,11 +79,20 @@ vi.mock('@/components/admin/AdminLeaveTrendChart', () => ({
 
 describe('AdminDashboardPage', () => {
   it('renders the refactored governance summary without duplicated KPI sections', () => {
+    mockCapabilityLoading = false;
     render(<AdminDashboardPage />);
 
     expect(screen.getByText('Active Employees')).toBeInTheDocument();
     expect(screen.getByText('Governance Coverage')).toBeInTheDocument();
     expect(screen.getByText('System Alerts')).toBeInTheDocument();
     expect(screen.queryByText('Governance Status')).not.toBeInTheDocument();
+  });
+
+  it('renders an explicit loading state while governance capabilities are resolving', () => {
+    mockCapabilityLoading = true;
+
+    render(<AdminDashboardPage />);
+
+    expect(screen.getByText('Loading governance overview')).toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import AdminQuickActionsPage from '@/pages/admin/AdminQuickActionsPage';
 import type { AdminCapabilityMap } from '@/lib/admin-capabilities';
 
 const mockNavigate = vi.fn();
+let mockCapabilityLoading = false;
 
 const buildCapabilities = (overrides: Partial<AdminCapabilityMap>): AdminCapabilityMap => ({
   access_admin_console: true,
@@ -44,13 +45,14 @@ vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
     capabilities: {
       canViewAdminQuickActions: true,
     },
-    isLoading: false,
+    isLoading: mockCapabilityLoading,
   }),
 }));
 
 describe('AdminQuickActionsPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
+    mockCapabilityLoading = false;
   });
 
   it('surfaces canonical workspace links instead of direct employee and department CRUD actions', () => {
@@ -80,5 +82,18 @@ describe('AdminQuickActionsPage', () => {
     fireEvent.click(employeeCard);
 
     expect(mockNavigate).toHaveBeenCalledWith('/employees');
+  });
+
+  it('renders an explicit loading state while governance actions are resolving', () => {
+    mockCapabilityLoading = true;
+
+    render(
+      <MemoryRouter>
+        <AdminQuickActionsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Governance Hub')).toBeInTheDocument();
+    expect(screen.getByText('Loading governance hub')).toBeInTheDocument();
   });
 });

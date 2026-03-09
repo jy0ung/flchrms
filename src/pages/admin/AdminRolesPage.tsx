@@ -9,7 +9,7 @@ import { RolesTabSection } from '@/components/admin/RolesTabSection';
 import { AdminCapabilityMatrixSection } from '@/components/admin/AdminCapabilityMatrixSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader } from '@/components/system';
+import { PageHeader, RouteLoadingState } from '@/components/system';
 import { AppRole } from '@/types/hrms';
 
 export default function AdminRolesPage() {
@@ -39,7 +39,18 @@ export default function AdminRolesPage() {
   } = useAdminEmployeeManagement({ getUserRole, isAdminLimitedProfileEditor: capabilities.isAdminLimitedProfileEditor });
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Role Management"
+          description="Assign and manage user roles with authority-tier safeguards."
+        />
+        <RouteLoadingState
+          title="Loading role management"
+          description="Checking role-governance capabilities and preparing the latest assignments."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canManageRoles) {

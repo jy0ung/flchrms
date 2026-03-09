@@ -53,9 +53,9 @@ describe('ProtectedRoute', () => {
     mockIsLoading = true;
     mockUser = null;
     mockRole = null;
-    const { container } = renderProtected(['employee']);
-    // Should show spinner (Loader2 icon with animate-spin)
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    renderProtected(['employee']);
+    expect(screen.getByText('Loading access rules')).toBeInTheDocument();
+    expect(screen.getByText('Checking your account and route permissions.')).toBeInTheDocument();
     mockIsLoading = false;
   });
 

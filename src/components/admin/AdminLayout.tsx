@@ -2,8 +2,7 @@ import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
 import { buildAuthRedirectHref } from '@/lib/auth-redirect';
-import { Loader2 } from 'lucide-react';
-import { InteractionModeProvider } from '@/components/system';
+import { InteractionModeProvider, RouteLoadingState } from '@/components/system';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { Separator } from '@/components/ui/separator';
@@ -28,9 +27,11 @@ export function AdminLayout() {
 
   if (isLoading || capabilityLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
+      <RouteLoadingState
+        fullScreen
+        title="Loading governance workspace"
+        description="Checking your admin capabilities and preparing the governance shell."
+      />
     );
   }
 

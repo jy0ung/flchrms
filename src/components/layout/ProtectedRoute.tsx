@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppRole } from '@/types/hrms';
-import { Loader2 } from 'lucide-react';
 import { buildAuthRedirectHref } from '@/lib/auth-redirect';
+import { RouteLoadingState } from '@/components/system';
 
 interface ProtectedRouteProps {
   allowedRoles: AppRole[];
@@ -15,9 +15,11 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <RouteLoadingState
+        fullScreen
+        title="Loading access rules"
+        description="Checking your account and route permissions."
+      />
     );
   }
 

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader } from '@/components/system';
+import { PageHeader, RouteLoadingState } from '@/components/system';
 import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
 
@@ -258,7 +258,18 @@ export default function AdminSettingsPage() {
   };
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="System Settings"
+          description="Manage branding, notifications, and governance-level application settings."
+        />
+        <RouteLoadingState
+          title="Loading system settings"
+          description="Checking settings capabilities and preparing the latest platform configuration."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canManageAdminSettings) {

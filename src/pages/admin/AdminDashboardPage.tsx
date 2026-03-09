@@ -15,13 +15,12 @@ import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { PageHeader, StatusBadge, SurfaceSection } from '@/components/system';
+import { PageHeader, RouteLoadingState, StatusBadge, SurfaceSection } from '@/components/system';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
 import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
-import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function AdminDashboardPage() {
   usePageTitle('Admin Dashboard');
@@ -115,10 +114,9 @@ export default function AdminDashboardPage() {
           title="Admin Dashboard"
           description="Organization overview, analytics, and governance health."
         />
-        <WorkspaceStatePanel
+        <RouteLoadingState
           title="Loading governance overview"
           description="Checking capabilities and preparing the latest admin analytics."
-          animateIcon
         />
       </div>
     );

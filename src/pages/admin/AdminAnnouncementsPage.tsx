@@ -31,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
+import { RouteLoadingState } from '@/components/system';
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -148,7 +149,18 @@ export default function AdminAnnouncementsPage() {
   );
 
   if (capabilitiesLoading) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Announcement Management"
+          description="Create, edit, and manage company-wide announcements."
+        />
+        <RouteLoadingState
+          title="Loading announcements"
+          description="Checking announcement-management capabilities and preparing the latest entries."
+        />
+      </div>
+    );
   }
 
   if (!capabilities.canManageAnnouncements) {

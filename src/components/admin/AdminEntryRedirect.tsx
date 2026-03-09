@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
+import { RouteLoadingState } from '@/components/system';
 
 const ADMIN_LANDING_ORDER: Array<{ path: string; capability: AdminCapabilityKey }> = [
   { path: '/admin/dashboard', capability: 'view_admin_dashboard' },
@@ -22,9 +22,10 @@ export function AdminEntryRedirect() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[30vh] flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+      <RouteLoadingState
+        title="Loading governance hub"
+        description="Checking available governance destinations for your role."
+      />
     );
   }
 
