@@ -20,6 +20,14 @@ vi.mock('@/hooks/usePageTitle', () => ({
   usePageTitle: vi.fn(),
 }));
 
+vi.mock('@/hooks/usePayroll', () => ({
+  usePayrollPeriods: () => ({ data: [], isLoading: false }),
+  useSalaryStructures: () => ({ data: [], isLoading: false }),
+  useDeductionTypes: () => ({ data: [], isLoading: false }),
+  useMyPayslips: () => ({ data: [], isLoading: false }),
+  useEmployeeSalaryStructure: () => ({ data: null, isLoading: false }),
+}));
+
 // Mock child components to isolate page logic
 vi.mock('@/components/payroll/PayrollManagement', () => ({
   PayrollManagement: () => <div data-testid="payroll-management">PayrollManagement</div>,
@@ -63,7 +71,7 @@ describe('Payroll page', () => {
 
     it('shows employee-facing description', () => {
       render(<Payroll />, { wrapper });
-      expect(screen.getByText(/view your payslips/i)).toBeInTheDocument();
+      expect(screen.getByText(/review your payslips/i)).toBeInTheDocument();
     });
   });
 
@@ -80,7 +88,7 @@ describe('Payroll page', () => {
 
     it('shows management description', () => {
       render(<Payroll />, { wrapper });
-      expect(screen.getByText(/manage salaries/i)).toBeInTheDocument();
+      expect(screen.getByText(/manage payroll runs/i)).toBeInTheDocument();
     });
   });
 

@@ -18,12 +18,14 @@ interface MyPayslipsProps {
   hideAmounts?: boolean;
   onHideAmountsChange?: (value: boolean) => void;
   showVisibilityToggle?: boolean;
+  showSummaryCards?: boolean;
 }
 
 export function MyPayslips({
   hideAmounts: controlledHideAmounts,
   onHideAmountsChange,
   showVisibilityToggle = true,
+  showSummaryCards = true,
 }: MyPayslipsProps = {}) {
   const { user } = useAuth();
   const { data: payslips, isLoading: payslipsLoading } = useMyPayslips();
@@ -107,59 +109,60 @@ export function MyPayslips({
         </Card>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-border shadow-sm">
-          <CardHeaderStandard
-            title="Basic Salary"
-            description={totalAllowances > 0
-              ? hideAmounts
-                ? '+RM ••••• allowances'
-                : `+RM ${totalAllowances.toLocaleString()} allowances`
-              : undefined}
-            className="p-4 pb-2"
-            titleClassName="text-base font-semibold"
-            descriptionClassName="text-xs"
-          />
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">
-              {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
-            </p>
-          </CardContent>
-        </Card>
+      {showSummaryCards ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card className="border-border shadow-sm">
+            <CardHeaderStandard
+              title="Basic Salary"
+              description={totalAllowances > 0
+                ? hideAmounts
+                  ? '+RM ••••• allowances'
+                  : `+RM ${totalAllowances.toLocaleString()} allowances`
+                : undefined}
+              className="p-4 pb-2"
+              titleClassName="text-base font-semibold"
+              descriptionClassName="text-xs"
+            />
+            <CardContent className="px-4 pb-4 pt-0">
+              <p className="text-2xl font-bold">
+                {salary ? formatCurrency(Number(salary.basic_salary)) : '—'}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border shadow-sm">
-          <CardHeaderStandard
-            title="Last Net Pay"
-            description={latestPayslip ? format(new Date(latestPayslip.created_at), 'MMM yyyy') : undefined}
-            className="p-4 pb-2"
-            titleClassName="text-base font-semibold"
-            descriptionClassName="text-xs"
-          />
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">
-              {latestPayslip
-                ? formatCurrency(Number(latestPayslip.net_salary))
-                : '—'}
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="border-border shadow-sm">
+            <CardHeaderStandard
+              title="Last Net Pay"
+              description={latestPayslip ? format(new Date(latestPayslip.created_at), 'MMM yyyy') : undefined}
+              className="p-4 pb-2"
+              titleClassName="text-base font-semibold"
+              descriptionClassName="text-xs"
+            />
+            <CardContent className="px-4 pb-4 pt-0">
+              <p className="text-2xl font-bold">
+                {latestPayslip
+                  ? formatCurrency(Number(latestPayslip.net_salary))
+                  : '—'}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="border-border shadow-sm">
-          <CardHeaderStandard
-            title="YTD Earnings"
-            description={`${new Date().getFullYear()} total`}
-            className="p-4 pb-2"
-            titleClassName="text-base font-semibold"
-            descriptionClassName="text-xs"
-          />
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">
-              {formatCurrency(totalEarningsThisYear)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="border-border shadow-sm">
+            <CardHeaderStandard
+              title="YTD Earnings"
+              description={`${new Date().getFullYear()} total`}
+              className="p-4 pb-2"
+              titleClassName="text-base font-semibold"
+              descriptionClassName="text-xs"
+            />
+            <CardContent className="px-4 pb-4 pt-0">
+              <p className="text-2xl font-bold">
+                {formatCurrency(totalEarningsThisYear)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Payslips List */}
       <Card className="border-border shadow-sm">
