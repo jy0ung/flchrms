@@ -52,9 +52,9 @@ export interface CommandAction {
 export const COMMAND_GROUP_ORDER: CommandGroupId[] = ['workspaces', 'actions', 'admin'];
 
 export const COMMAND_GROUP_LABELS: Record<CommandGroupId, string> = {
-  workspaces: 'Workspaces',
+  workspaces: 'Work',
   actions: 'Actions',
-  admin: 'Admin',
+  admin: 'Governance',
 };
 
 function addCommand(
@@ -144,21 +144,21 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
   });
   addCommand(commands, context.canViewEmployeeDirectory, {
     id: 'open-employees',
-    label: 'Open Employee Workspace',
+    label: 'Open Employees',
     description: 'Navigate to the employee directory workspace.',
     group: 'workspaces',
     href: '/employees',
     icon: Users,
-    keywords: ['employees', 'directory', 'people'],
+    keywords: ['employees', 'directory', 'people', 'staff'],
   });
   addCommand(commands, context.canManageDepartments, {
     id: 'open-departments',
-    label: 'Open Department Workspace',
+    label: 'Open Departments',
     description: 'Navigate to department ownership and structure.',
     group: 'workspaces',
     href: '/departments',
     icon: Building2,
-    keywords: ['departments', 'organization'],
+    keywords: ['departments', 'organization', 'teams', 'people structure'],
   });
   addCommand(commands, context.canAccessCalendar, {
     id: 'open-calendar',
@@ -189,12 +189,12 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
   });
   addCommand(commands, context.canAccessAdminConsole, {
     id: 'open-admin',
-    label: 'Open Admin Console',
-    description: 'Navigate to the admin shell.',
+    label: 'Open Governance Console',
+    description: 'Navigate to governance, policy, and system controls.',
     group: 'workspaces',
     href: '/admin',
     icon: Shield,
-    keywords: ['admin', 'system', 'console'],
+    keywords: ['admin', 'governance', 'system', 'console'],
   });
 
   addCommand(commands, context.canCreateLeaveRequest, {
@@ -236,12 +236,12 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
 
   addCommand(commands, context.canViewAdminQuickActions, {
     id: 'open-admin-quick-actions',
-    label: 'Open Admin Quick Actions',
+    label: 'Open Governance Hub',
     description: 'Open the admin routing hub for governance tasks.',
     group: 'admin',
     href: '/admin/quick-actions',
     icon: Shield,
-    keywords: ['admin quick actions', 'admin routing'],
+    keywords: ['admin quick actions', 'admin routing', 'governance hub'],
   });
   addCommand(commands, context.canManageRoles, {
     id: 'open-role-management',

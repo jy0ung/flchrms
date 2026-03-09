@@ -63,6 +63,7 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();
     expect(screen.getByText('Roles')).toBeInTheDocument();
     expect(screen.getByText('Leave Policies')).toBeInTheDocument();
+    expect(screen.getByText('Communication')).toBeInTheDocument();
     expect(screen.queryByText('Employees')).not.toBeInTheDocument();
     expect(screen.queryByText('Departments')).not.toBeInTheDocument();
   });

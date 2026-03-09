@@ -18,7 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
 import { PageHeader } from '@/components/system';
-import { WorkspaceTransitionNotice } from '@/components/workspace/WorkspaceTransitionNotice';
 
 interface QuickAction {
   id: string;
@@ -129,31 +128,21 @@ export default function AdminQuickActionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Quick Actions"
-        description="Jump to the canonical workspace or admin control surface for the task you need."
+        description="Choose the right operational workspace or governance surface for the task at hand."
       />
-
-      {workspaceActions.length > 0 ? (
-        <WorkspaceTransitionNotice
-          title="Operational work now happens in canonical module workspaces"
-          description="Employees and departments are managed in their module workspaces. Admin quick actions remain a routing hub so operators can jump directly into the correct surface."
-          destination={workspaceActions[0].destination}
-          actionLabel="Go to Primary Workspace"
-          supportingText="Use workspace actions for record operations. Use admin controls for governance, configuration, and audit tasks."
-        />
-      ) : null}
 
       {[
         {
           id: 'workspace-section',
-          title: 'Canonical Workspaces',
-          description: 'Operational surfaces for records, workflows, and contextual updates.',
+          title: 'Operational Workspaces',
+          description: 'Go directly to the modules where records are viewed, updated, and processed.',
           icon: Compass,
           actions: workspaceActions,
         },
         {
           id: 'admin-section',
-          title: 'Admin Controls',
-          description: 'Governance, policy, and system-level surfaces retained in the admin shell.',
+          title: 'Governance Controls',
+          description: 'Use the admin shell for policy, configuration, audit, and system controls.',
           icon: Shield,
           actions: adminActions,
         },

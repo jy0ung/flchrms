@@ -26,14 +26,14 @@ export const ADMIN_WORKSPACE_BRIDGES: Record<AdminWorkspaceBridgeId, AdminWorksp
     capability: 'manage_employee_directory',
     destination: '/employees',
     actionLabel: 'Open Employee Workspace',
-    title: 'Employee management now lives in the employee workspace',
+    title: 'Use the employee workspace for people operations',
     description:
-      'This admin path is still available for compatibility, but the canonical surface for directory work, bulk actions, and profile updates is the employee module.',
+      'This admin route remains available for bookmarks and legacy entry points. Day-to-day directory work, bulk actions, and profile updates happen in the employee workspace.',
     supportingText:
-      'Use this route only when you need a legacy admin bookmark or wrapper-specific access path.',
+      'Stay here only if you intentionally need the admin wrapper.',
     quickActionTitle: 'Open Employee Workspace',
     quickActionDescription:
-      'Open the canonical employee management workspace for records, bulk actions, and profile updates.',
+      'Open the employee workspace for directory work, bulk actions, and profile updates.',
     quickActionColor: 'text-blue-600',
     quickActionBg: 'bg-blue-50 dark:bg-blue-950/50',
     icon: Users,
@@ -43,14 +43,14 @@ export const ADMIN_WORKSPACE_BRIDGES: Record<AdminWorkspaceBridgeId, AdminWorksp
     capability: 'manage_departments',
     destination: '/departments',
     actionLabel: 'Open Department Workspace',
-    title: 'Department management now lives in the department workspace',
+    title: 'Use the department workspace for organization changes',
     description:
-      'This admin path remains available for compatibility, but the canonical surface for staffing and structure changes is the department module.',
+      'This admin route remains available for bookmarks and legacy entry points. Staffing and structure changes happen in the department workspace.',
     supportingText:
-      'Use this route only when you need a legacy admin bookmark or wrapper-specific access path.',
+      'Stay here only if you intentionally need the admin wrapper.',
     quickActionTitle: 'Open Department Workspace',
     quickActionDescription:
-      'Open the canonical department management workspace for structure and staffing changes.',
+      'Open the department workspace for structure and staffing changes.',
     quickActionColor: 'text-violet-600',
     quickActionBg: 'bg-violet-50 dark:bg-violet-950/50',
     icon: Building2,

@@ -26,11 +26,11 @@ export function WorkspaceTransitionNotice({
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
             <Compass className="h-3 w-3" />
-            Compatibility route
+            Admin route
           </Badge>
           <Badge variant="outline" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
             <Info className="h-3 w-3" />
-            Canonical workspace available
+            Workspace available
           </Badge>
         </div>
 

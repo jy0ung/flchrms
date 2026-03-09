@@ -60,7 +60,7 @@ export function CommandPalette() {
         className="hidden sm:inline-flex h-8 w-48 justify-start gap-2 rounded-md border-border bg-muted/40 px-3 text-xs text-muted-foreground hover:bg-muted"
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="flex-1 text-left">Search workspaces…</span>
+        <span className="flex-1 text-left">Search work and tools…</span>
         <kbd className="pointer-events-none hidden select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
           <span className="text-[10px]">⌘</span>K
         </kbd>
@@ -80,9 +80,9 @@ export function CommandPalette() {
         open={open}
         onOpenChange={setOpen}
         title="Workspace command palette"
-        description="Search available workspaces and routed actions based on your current access."
+        description="Search workspaces, routed actions, and governance tools based on your current access."
       >
-        <CommandInput placeholder="Search workspaces and actions…" />
+        <CommandInput placeholder="Search work, actions, and governance…" />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           {groupedActions.map((group, index) => (

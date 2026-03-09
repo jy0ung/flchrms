@@ -53,7 +53,7 @@ const adminNavGroups: Array<{ label: string; items: AdminNavItem[] }> = [
     ],
   },
   {
-    label: 'Content',
+    label: 'Communication',
     items: [
       { name: 'Announcements', href: '/admin/announcements', icon: Megaphone, capability: 'manage_announcements' },
     ],

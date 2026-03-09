@@ -42,30 +42,29 @@ type SidebarNavItem = {
   badge?: number;
 };
 
-const mainNavigation: SidebarNavItem[] = [
+const workNavigation: SidebarNavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Notifications', href: '/notifications', icon: Bell },
-];
-
-const operationsNavigation: SidebarNavItem[] = [
   { name: 'Leave', href: '/leave', icon: Calendar },
   { name: 'Attendance', href: '/attendance', icon: Clock },
+];
+
+const planningNavigation: SidebarNavItem[] = [
   { name: 'Calendar', href: '/calendar', icon: CalendarDays },
-];
-
-const resourcesNavigation: SidebarNavItem[] = [
-  { name: 'Payroll', href: '/payroll', icon: Wallet },
-  { name: 'Documents', href: '/documents', icon: FileText },
-];
-
-const developmentNavigation: SidebarNavItem[] = [
   { name: 'Training', href: '/training', icon: GraduationCap },
   { name: 'Performance', href: '/performance', icon: BarChart3 },
+];
+
+const recordsNavigation: SidebarNavItem[] = [
+  { name: 'Payroll', href: '/payroll', icon: Wallet },
+  { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
 
-const employeeNavigation: SidebarNavItem[] = [{ name: 'Employees', href: '/employees', icon: Users }];
-const organizationNavigation: SidebarNavItem[] = [{ name: 'Departments', href: '/departments', icon: Building2 }];
+const peopleNavigation: SidebarNavItem[] = [
+  { name: 'Employees', href: '/employees', icon: Users },
+  { name: 'Departments', href: '/departments', icon: Building2 },
+];
 
 const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin', icon: Shield, danger: true }];
 
@@ -168,32 +167,28 @@ function SidebarContent({
   const { capabilityMap } = useMyAdminCapabilities(role);
   const { unreadCount } = useUserNotifications(10);
 
-  const mainWithBadge = mainNavigation.map((item) =>
+  const workWithBadge = workNavigation.map((item) =>
     item.href === '/notifications' ? { ...item, badge: unreadCount } : item,
   );
 
-  const scopedResources = canViewEmployeeDirectory(role)
-    ? [...resourcesNavigation, ...employeeNavigation]
-    : resourcesNavigation;
-
   // Filter nav items by role-based permissions
-  const scopedOperations = operationsNavigation.filter((item) => {
+  const scopedPlanning = planningNavigation.filter((item) => {
     if (item.href === '/calendar') return hasRole(role, MANAGER_AND_ABOVE_ROLES);
-    return true;
-  });
-
-  const filteredResources = scopedResources.filter((item) => {
-    if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
-    return true;
-  });
-
-  const scopedDevelopment = developmentNavigation.filter((item) => {
     if (item.href === '/performance') return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
     return true;
   });
 
+  const scopedRecords = recordsNavigation.filter((item) => {
+    if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
+    return true;
+  });
+
   const scopedAdmin = capabilityMap.access_admin_console ? adminNavigation : [];
-  const scopedOrganization = capabilityMap.manage_departments ? organizationNavigation : [];
+  const scopedPeople = peopleNavigation.filter((item) => {
+    if (item.href === '/employees') return canViewEmployeeDirectory(role);
+    if (item.href === '/departments') return capabilityMap.manage_departments;
+    return true;
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -228,13 +223,12 @@ function SidebarContent({
       {/* Navigation */}
       <nav aria-label="Main navigation" className={cn('flex-1 overflow-y-auto scrollbar-thin py-3', collapsed ? 'px-2' : 'px-3')}>
         <div className="space-y-5">
-          <SidebarNavGroup items={mainWithBadge} collapsed={collapsed} onNavigate={onNavigate} />
-          <SidebarNavGroup items={scopedOperations} collapsed={collapsed} onNavigate={onNavigate} label="Operations" />
-          <SidebarNavGroup items={filteredResources} collapsed={collapsed} onNavigate={onNavigate} label="Resources" />
-          <SidebarNavGroup items={scopedOrganization} collapsed={collapsed} onNavigate={onNavigate} label="Organization" />
-          <SidebarNavGroup items={scopedDevelopment} collapsed={collapsed} onNavigate={onNavigate} label="Development" />
+          <SidebarNavGroup items={workWithBadge} collapsed={collapsed} onNavigate={onNavigate} label="Work" />
+          <SidebarNavGroup items={scopedPeople} collapsed={collapsed} onNavigate={onNavigate} label="People" />
+          <SidebarNavGroup items={scopedRecords} collapsed={collapsed} onNavigate={onNavigate} label="Records" />
+          <SidebarNavGroup items={scopedPlanning} collapsed={collapsed} onNavigate={onNavigate} label="Planning" />
           {scopedAdmin.length > 0 && (
-            <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label="System" />
+            <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label="Governance" />
           )}
         </div>
       </nav>

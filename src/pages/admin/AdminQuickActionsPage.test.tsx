@@ -62,8 +62,11 @@ describe('AdminQuickActionsPage', () => {
 
     expect(screen.getByText('Open Employee Workspace')).toBeInTheDocument();
     expect(screen.getByText('Open Department Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Operational Workspaces')).toBeInTheDocument();
+    expect(screen.getByText('Governance Controls')).toBeInTheDocument();
     expect(screen.queryByText('Create Employee')).not.toBeInTheDocument();
     expect(screen.queryByText('Create Department')).not.toBeInTheDocument();
+    expect(screen.queryByText('Operational work now happens in canonical module workspaces')).not.toBeInTheDocument();
   });
 
   it('routes to the canonical employee workspace from quick actions', () => {

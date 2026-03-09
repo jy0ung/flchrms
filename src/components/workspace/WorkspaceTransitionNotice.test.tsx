@@ -17,8 +17,8 @@ describe('WorkspaceTransitionNotice', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Compatibility route')).toBeInTheDocument();
-    expect(screen.getByText('Canonical workspace available')).toBeInTheDocument();
+    expect(screen.getByText('Admin route')).toBeInTheDocument();
+    expect(screen.getByText('Workspace available')).toBeInTheDocument();
     expect(screen.getByText('Employee management now lives in the employee workspace')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Open Employee Workspace/i })).toHaveAttribute('href', '/employees');
   });
