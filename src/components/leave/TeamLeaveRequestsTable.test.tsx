@@ -132,7 +132,7 @@ describe('TeamLeaveRequestsTable', () => {
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: /Details/i })[0]);
-    expect(onOpenDetails).toHaveBeenCalledWith(request);
+    expect(onOpenDetails).toHaveBeenCalledWith(request, expect.any(HTMLElement));
     expect(screen.getAllByText(/View Doc: user-1\/doc\.pdf/).length).toBeGreaterThan(0);
 
     // Admin now has elevated privileges — document view is visible

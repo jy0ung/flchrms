@@ -61,7 +61,7 @@ interface LeaveRequestWorkspaceProps {
   shouldShowLeaveDetailsButton: (request: LeaveRequest) => boolean;
   onAmend: (request: LeaveRequest) => void;
   onCancel: (request: LeaveRequest) => void;
-  onOpenDetails: (request: LeaveRequest) => void;
+  onOpenDetails: (request: LeaveRequest, trigger?: HTMLElement | null) => void;
   onCancellationReview: (request: LeaveRequest, action: 'approve' | 'reject') => void;
   onAction: (request: LeaveRequest, action: LeaveActionDialogAction) => void;
   workflowInfoPopover: React.ReactNode;

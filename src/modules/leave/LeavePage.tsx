@@ -10,6 +10,7 @@ import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { useLeaveRequests } from '@/hooks/useLeaveRequests';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
@@ -37,6 +38,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { role, user } = useAuth();
+  const { rememberTrigger, restoreFocusElement } = useDrawerFocusReturn();
   const { data: requests, isLoading, isError, refetch } = useLeaveRequests();
   const { data: leaveTypes } = useLeaveTypes();
   const { data: balances } = useLeaveBalance();
@@ -127,7 +129,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+          className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
           aria-label="Approval workflow examples"
         >
           <Info className="h-4 w-4" />
@@ -324,7 +326,10 @@ export function LeavePage({ initialView }: LeavePageProps) {
             shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
             onAmend={controller.openAmendDialog}
             onCancel={controller.openCancellationDialog}
-            onOpenDetails={(request) => drawer.openRequest(request.id)}
+            onOpenDetails={(request, trigger) => {
+              rememberTrigger(trigger);
+              drawer.openRequest(request.id);
+            }}
             onCancellationReview={controller.openCancellationReviewDialog}
             onAction={controller.openActionDialog}
             workflowInfoPopover={workflowInfoPopover}
@@ -337,6 +342,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
         onOpenChange={(open) => {
           if (!open) drawer.closeDrawer();
         }}
+        restoreFocusElement={restoreFocusElement}
         request={drawer.selectedRequest}
         loading={isLoading}
         isUnavailable={drawer.isUnavailable}

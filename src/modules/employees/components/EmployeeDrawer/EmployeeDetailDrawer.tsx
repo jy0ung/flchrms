@@ -37,6 +37,7 @@ interface EmployeeDetailDrawerProps {
   onOpenChange: (open: boolean) => void;
   tab: EmployeeDrawerTab;
   onTabChange: (tab: EmployeeDrawerTab) => void;
+  restoreFocusElement?: HTMLElement | null;
   getUserRole: (userId: string) => AppRole;
   roleColors: Record<AppRole, string>;
   getManagerName: (managerId: string | null | undefined) => string | null;
@@ -109,6 +110,7 @@ export function EmployeeDetailDrawer({
   onOpenChange,
   tab,
   onTabChange,
+  restoreFocusElement,
   getUserRole,
   roleColors,
   getManagerName,
@@ -195,6 +197,7 @@ export function EmployeeDetailDrawer({
       description={employee ? employee.job_title || employee.email : 'Employee detail workspace'}
       contentClassName="sm:max-w-2xl"
       bodyClassName="pb-4"
+      restoreFocusElement={restoreFocusElement}
     >
       {employeeLoading ? (
         <WorkspaceStatePanel

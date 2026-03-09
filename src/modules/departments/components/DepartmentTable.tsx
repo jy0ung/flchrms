@@ -1,9 +1,8 @@
-import { type KeyboardEvent } from 'react';
-
 import { format } from 'date-fns';
-import { Building2, Users } from 'lucide-react';
+import { Building2, ChevronRight, Users } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -21,7 +20,7 @@ interface DepartmentTableProps {
   departments?: DepartmentRecord[];
   loading: boolean;
   canViewSensitiveIdentifiers: boolean;
-  onOpenDepartment: (department: DepartmentRecord) => void;
+  onOpenDepartment: (department: DepartmentRecord, trigger?: HTMLElement | null) => void;
 }
 
 function formatDate(value: string) {
@@ -34,13 +33,6 @@ export function DepartmentTable({
   canViewSensitiveIdentifiers,
   onOpenDepartment,
 }: DepartmentTableProps) {
-  const handleRowKeyDown = (event: KeyboardEvent<HTMLElement>, department: DepartmentRecord) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onOpenDepartment(department);
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-4">
@@ -89,12 +81,7 @@ export function DepartmentTable({
         {departments.map((department) => (
           <Card
             key={department.id}
-            className="cursor-pointer border-border shadow-sm transition-colors hover:border-accent/50"
-            onClick={() => onOpenDepartment(department)}
-            onKeyDown={(event) => handleRowKeyDown(event, department)}
-            role="button"
-            tabIndex={0}
-            aria-label={`Open department record for ${department.name}`}
+            className="border-border shadow-sm transition-colors hover:border-accent/50"
           >
             <CardContent className="space-y-4 p-4">
               <div>
@@ -125,6 +112,20 @@ export function DepartmentTable({
               {department.manager && canViewSensitiveIdentifiers ? (
                 <p className="text-xs text-muted-foreground">{department.manager.email}</p>
               ) : null}
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  aria-label={`Open department record for ${department.name}`}
+                  onClick={(event) => onOpenDepartment(department, event.currentTarget)}
+                >
+                  Open record
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -140,19 +141,12 @@ export function DepartmentTable({
                   <TableHead>Manager</TableHead>
                   <TableHead>Members</TableHead>
                   <TableHead>Updated</TableHead>
+                  <TableHead className="w-[124px] text-right">Open</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {departments.map((department) => (
-                  <TableRow
-                    key={department.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => onOpenDepartment(department)}
-                    onKeyDown={(event) => handleRowKeyDown(event, department)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Open department record for ${department.name}`}
-                  >
+                  <TableRow key={department.id} className="hover:bg-muted/30">
                     <TableCell>
                       <div>
                         <p className="font-medium">{department.name}</p>
@@ -180,6 +174,19 @@ export function DepartmentTable({
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(department.updated_at)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full"
+                        aria-label={`Open department record for ${department.name}`}
+                        onClick={(event) => onOpenDepartment(department, event.currentTarget)}
+                      >
+                        Open
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -206,7 +206,7 @@ export function NotificationsBell({
           variant="ghost"
           size="icon"
           className={cn(
-            'relative h-8 w-8',
+            'relative h-10 w-10',
             triggerClassName,
           )}
           aria-label="Open notifications"

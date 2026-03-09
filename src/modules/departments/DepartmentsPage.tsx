@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { QueryErrorState } from '@/components/system';
 import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
+import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
@@ -19,6 +20,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { rememberTrigger, restoreFocusElement } = useDrawerFocusReturn();
 
   const departmentsQuery = useDepartments();
   const employeesQuery = useEmployees();
@@ -94,11 +96,12 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
   );
 
   const handleOpenDepartment = useCallback(
-    (department: DepartmentRecord) => {
+    (department: DepartmentRecord, trigger?: HTMLElement | null) => {
       if (!getRowPermissions({ memberCount: department.memberCount }).canOpenDrawer) return;
+      rememberTrigger(trigger);
       updateDrawerParams(department.id, 'overview');
     },
-    [getRowPermissions, updateDrawerParams],
+    [getRowPermissions, rememberTrigger, updateDrawerParams],
   );
 
   const stats = useMemo(() => {
@@ -242,6 +245,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
         onOpenChange={(open) => {
           if (!open) updateDrawerParams(null);
         }}
+        restoreFocusElement={restoreFocusElement}
         department={selectedDepartment}
         loading={isLoading}
         isUnavailable={isUnavailable}

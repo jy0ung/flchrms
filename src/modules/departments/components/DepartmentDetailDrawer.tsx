@@ -19,6 +19,7 @@ import type {
 interface DepartmentDetailDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  restoreFocusElement?: HTMLElement | null;
   department: DepartmentRecord | null;
   loading: boolean;
   isUnavailable: boolean;
@@ -37,6 +38,7 @@ function formatTimestamp(value: string | null | undefined) {
 export function DepartmentDetailDrawer({
   open,
   onOpenChange,
+  restoreFocusElement,
   department,
   loading,
   isUnavailable,
@@ -78,6 +80,7 @@ export function DepartmentDetailDrawer({
       onOpenChange={onOpenChange}
       title={department?.name ?? 'Department details'}
       description={department?.description ?? 'Overview, membership, and ownership for the selected department.'}
+      restoreFocusElement={restoreFocusElement}
     >
       {loading ? (
         <WorkspaceStatePanel

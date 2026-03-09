@@ -26,7 +26,7 @@ interface MyLeaveRequestsTableProps {
   canAmend: (request: LeaveRequest) => boolean;
   canCancelPendingRequest: (request: LeaveRequest) => boolean;
   canRequestCancellation: (request: LeaveRequest) => boolean;
-  onOpenDetails: (request: LeaveRequest) => void;
+  onOpenDetails: (request: LeaveRequest, trigger?: HTMLElement | null) => void;
   onAmend: (request: LeaveRequest) => void;
   onCancel: (request: LeaveRequest) => void;
 }
@@ -143,7 +143,12 @@ export function MyLeaveRequestsTable({
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {shouldShowLeaveDetailsButton(request) && (
-                        <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full"
+                          onClick={(event) => onOpenDetails(request, event.currentTarget)}
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           Details
                         </Button>
@@ -252,7 +257,12 @@ export function MyLeaveRequestsTable({
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
                           {shouldShowLeaveDetailsButton(request) && (
-                            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="rounded-full"
+                              onClick={(event) => onOpenDetails(request, event.currentTarget)}
+                            >
                               <Eye className="w-4 h-4 mr-1" />
                               Details
                             </Button>

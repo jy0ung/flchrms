@@ -49,6 +49,6 @@ describe('DepartmentTable', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /Open department record for Operations/i })[0]);
 
-    expect(onOpenDepartment).toHaveBeenCalledWith(departments[0]);
+    expect(onOpenDepartment).toHaveBeenCalledWith(departments[0], expect.any(HTMLElement));
   });
 });

@@ -29,7 +29,7 @@ interface TeamLeaveRequestsTableProps {
   shouldShowLeaveDetailsButton: (request: LeaveRequest) => boolean;
   canApproveCancellation: (request: LeaveRequest) => boolean;
   canApprove: (request: LeaveRequest) => boolean;
-  onOpenDetails: (request: LeaveRequest) => void;
+  onOpenDetails: (request: LeaveRequest, trigger?: HTMLElement | null) => void;
   onCancellationReview: (request: LeaveRequest, action: 'approve' | 'reject') => void;
   onAction: (request: LeaveRequest, action: LeaveActionDialogAction) => void;
 }
@@ -163,7 +163,12 @@ export function TeamLeaveRequestsTable({
 
                     <div className="flex flex-wrap gap-2">
                       {shouldShowLeaveDetailsButton(request) && (
-                        <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onOpenDetails(request)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full"
+                          onClick={(event) => onOpenDetails(request, event.currentTarget)}
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           Details
                         </Button>
@@ -332,7 +337,7 @@ export function TeamLeaveRequestsTable({
                               size="sm"
                               variant="ghost"
                               className="rounded-full"
-                              onClick={() => onOpenDetails(request)}
+                              onClick={(event) => onOpenDetails(request, event.currentTarget)}
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Details

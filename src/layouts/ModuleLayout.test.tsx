@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import * as React from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Button } from '@/components/ui/button';
@@ -68,5 +69,37 @@ describe('ModuleLayout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('returns focus to the opener when the drawer closes', async () => {
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Return focus';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    function Harness() {
+      const [open, setOpen] = React.useState(true);
+
+      return (
+        <ModuleLayout.DetailDrawer
+          open={open}
+          onOpenChange={setOpen}
+          title="Employee detail"
+          description="Contextual workspace drawer"
+          restoreFocusElement={trigger}
+        >
+          <div>Drawer body</div>
+        </ModuleLayout.DetailDrawer>
+      );
+    }
+
+    render(
+      <Harness />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+
+    await waitFor(() => expect(trigger).toHaveFocus());
+    trigger.remove();
   });
 });

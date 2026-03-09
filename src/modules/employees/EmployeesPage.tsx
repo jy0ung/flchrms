@@ -20,6 +20,7 @@ import { useDepartments, useEmployees } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { DataTableShell } from '@/components/system';
 import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
@@ -94,6 +95,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   const [viewType, setViewType] = useState<'table' | 'org'>('table');
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
+  const { rememberTrigger, restoreFocusElement } = useDrawerFocusReturn();
 
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const { data: departments } = useDepartments();
@@ -201,10 +203,11 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   );
 
   const handleOpenEmployee = useCallback(
-    (employee: DirectoryEmployee) => {
+    (employee: DirectoryEmployee, trigger?: HTMLElement | null) => {
+      rememberTrigger(trigger);
       updateDrawerParams(employee.id, 'profile');
     },
-    [updateDrawerParams],
+    [rememberTrigger, updateDrawerParams],
   );
 
   const handleDrawerOpenChange = useCallback(
@@ -478,6 +481,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         onOpenChange={handleDrawerOpenChange}
         tab={drawerTab}
         onTabChange={handleDrawerTabChange}
+        restoreFocusElement={restoreFocusElement}
         getUserRole={getUserRole}
         roleColors={ADMIN_ROLE_COLORS}
         getManagerName={getManagerName}

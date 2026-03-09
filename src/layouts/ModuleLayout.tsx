@@ -40,6 +40,7 @@ export interface DetailDrawerProps {
   side?: "left" | "right" | "top" | "bottom";
   contentClassName?: string;
   bodyClassName?: string;
+  restoreFocusElement?: HTMLElement | null;
 }
 
 function ModuleLayoutRoot({
@@ -193,11 +194,27 @@ function DetailDrawer({
   side = "right",
   contentClassName,
   bodyClassName,
+  restoreFocusElement,
 }: DetailDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side={side}
+        onCloseAutoFocus={(event) => {
+          if (!restoreFocusElement || !restoreFocusElement.isConnected) {
+            return;
+          }
+
+          event.preventDefault();
+
+          const focusTarget = restoreFocusElement;
+          if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+            window.requestAnimationFrame(() => focusTarget.focus());
+            return;
+          }
+
+          setTimeout(() => focusTarget.focus(), 0);
+        }}
         className={cn(
           "flex h-full w-full flex-col sm:max-w-xl",
           contentClassName,

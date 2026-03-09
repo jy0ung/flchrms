@@ -27,6 +27,7 @@ import type { LeaveRequest } from '@/types/hrms';
 interface LeaveDetailDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  restoreFocusElement?: HTMLElement | null;
   request: LeaveRequest | null;
   loading: boolean;
   isUnavailable: boolean;
@@ -47,6 +48,7 @@ interface LeaveDetailDrawerProps {
 export function LeaveDetailDrawer({
   open,
   onOpenChange,
+  restoreFocusElement,
   request,
   loading,
   isUnavailable,
@@ -106,6 +108,7 @@ export function LeaveDetailDrawer({
       onOpenChange={onOpenChange}
       title={title}
       description={statusDisplay ? statusDisplay.label : 'Workflow details for the selected leave request.'}
+      restoreFocusElement={restoreFocusElement}
     >
       {loading ? (
         <WorkspaceStatePanel

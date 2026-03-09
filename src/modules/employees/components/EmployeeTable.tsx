@@ -1,8 +1,9 @@
-import { type KeyboardEvent, useMemo } from 'react';
-import { Mail, Shield, UserSquare2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { ChevronRight, Mail, Shield, UserSquare2 } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -24,7 +25,7 @@ interface EmployeeTableProps {
   loading: boolean;
   selectedIds: string[];
   onSelectedIdsChange: (ids: string[]) => void;
-  onOpenEmployee: (employee: DirectoryEmployee) => void;
+  onOpenEmployee: (employee: DirectoryEmployee, trigger?: HTMLElement | null) => void;
   getUserRole: (userId: string) => AppRole;
   roleColors: Record<AppRole, string>;
   canSelectRows: boolean;
@@ -53,13 +54,6 @@ export function EmployeeTable({
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const employeeIds = useMemo(() => (employees ?? []).map((employee) => employee.id), [employees]);
   const allSelected = employeeIds.length > 0 && employeeIds.every((id) => selectedIdSet.has(id));
-
-  const handleRowKeyDown = (event: KeyboardEvent<HTMLElement>, employee: DirectoryEmployee) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onOpenEmployee(employee);
-    }
-  };
 
   const toggleEmployeeSelection = (employeeId: string, checked: boolean) => {
     if (!canSelectRows) {
@@ -135,25 +129,21 @@ export function EmployeeTable({
         {employees.map((employee) => {
           const employeeRole = getUserRole(employee.id);
           const isSelected = selectedIdSet.has(employee.id);
+          const employeeName = `${employee.first_name} ${employee.last_name}`;
 
           return (
             <Card
               key={employee.id}
-              className="cursor-pointer border-border shadow-sm transition-colors hover:border-accent/50"
-              onClick={() => onOpenEmployee(employee)}
-              onKeyDown={(event) => handleRowKeyDown(event, employee)}
-              role="button"
-              tabIndex={0}
-              aria-label={`Open employee record for ${employee.first_name} ${employee.last_name}`}
+              className="border-border shadow-sm transition-colors hover:border-accent/50"
             >
               <CardContent className="space-y-4 p-4">
                 <div className="flex items-start gap-3">
                   {canSelectRows ? (
-                    <div className="pt-1" onClick={(event) => event.stopPropagation()}>
+                    <div className="pt-1">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={(checked) => toggleEmployeeSelection(employee.id, checked === true)}
-                        aria-label={`Select ${employee.first_name} ${employee.last_name}`}
+                        aria-label={`Select ${employeeName}`}
                       />
                     </div>
                   ) : null}
@@ -174,6 +164,20 @@ export function EmployeeTable({
                       <Mail className="h-3 w-3" /> {employee.email}
                     </p>
                   </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    aria-label={`Open employee record for ${employeeName}`}
+                    onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
+                  >
+                    Open record
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -224,29 +228,23 @@ export function EmployeeTable({
                   <TableHead>Role</TableHead>
                   <TableHead>Identifier</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-[124px] text-right">Open</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {employees.map((employee) => {
                   const employeeRole = getUserRole(employee.id);
                   const isSelected = selectedIdSet.has(employee.id);
+                  const employeeName = `${employee.first_name} ${employee.last_name}`;
 
                   return (
-                    <TableRow
-                      key={employee.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => onOpenEmployee(employee)}
-                      onKeyDown={(event) => handleRowKeyDown(event, employee)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Open employee record for ${employee.first_name} ${employee.last_name}`}
-                    >
+                    <TableRow key={employee.id} className="hover:bg-muted/30">
                       {canSelectRows ? (
-                        <TableCell onClick={(event) => event.stopPropagation()}>
+                        <TableCell>
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={(checked) => toggleEmployeeSelection(employee.id, checked === true)}
-                            aria-label={`Select ${employee.first_name} ${employee.last_name}`}
+                            aria-label={`Select ${employeeName}`}
                           />
                         </TableCell>
                       ) : null}
@@ -258,9 +256,7 @@ export function EmployeeTable({
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <p className="font-medium">
-                              {employee.first_name} {employee.last_name}
-                            </p>
+                            <p className="font-medium">{employeeName}</p>
                             <p className="truncate text-sm text-muted-foreground">{employee.email}</p>
                             <p className="truncate text-xs text-muted-foreground">{employee.job_title || 'No title assigned'}</p>
                           </div>
@@ -285,6 +281,19 @@ export function EmployeeTable({
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={employee.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full"
+                          aria-label={`Open employee record for ${employeeName}`}
+                          onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
+                        >
+                          Open
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
