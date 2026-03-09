@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
+import { buildAuthRedirectHref } from '@/lib/auth-redirect';
 import { Loader2 } from 'lucide-react';
 import { InteractionModeProvider } from '@/components/system';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -46,7 +47,13 @@ export function AdminLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate
+        to={buildAuthRedirectHref(location)}
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
   if (!capabilities.canAccessAdminPage) {

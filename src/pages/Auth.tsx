@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModalScaffold } from '@/components/system';
 import { AuthCard, type AuthFlowStage } from '@/components/auth/AuthCard';
 import { LoginForm, type LoginFormPayload, type LoginFormSubmitResult } from '@/components/auth/LoginForm';
+import { resolvePostAuthTarget } from '@/lib/auth-redirect';
 
 function hasRecoveryParams() {
   if (typeof window === 'undefined') return false;
@@ -23,7 +24,12 @@ function hasRecoveryParams() {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, signUp, user } = useAuth();
+  const postAuthTarget = resolvePostAuthTarget({
+    state: location.state,
+    search: location.search,
+  });
 
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
@@ -54,7 +60,7 @@ export default function Auth() {
   }, []);
 
   if (user && !isRecoveryMode) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={postAuthTarget} replace />;
   }
 
   const handleCredentialsSubmit = async (
@@ -65,7 +71,7 @@ export default function Auth() {
 
       if (!error) {
         toast.success('Welcome back!');
-        navigate('/dashboard');
+        navigate(postAuthTarget, { replace: true });
       }
 
       return { error };

@@ -1,7 +1,8 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppRole } from '@/types/hrms';
 import { Loader2 } from 'lucide-react';
+import { buildAuthRedirectHref } from '@/lib/auth-redirect';
 
 interface ProtectedRouteProps {
   allowedRoles: AppRole[];
@@ -10,6 +11,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
   const { role, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -20,7 +22,13 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate
+        to={buildAuthRedirectHref(location)}
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
   if (!role || !allowedRoles.includes(role)) {

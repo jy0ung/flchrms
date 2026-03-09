@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { buildAuthRedirectHref } from '@/lib/auth-redirect';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -38,7 +39,13 @@ export function AppLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate
+        to={buildAuthRedirectHref(location)}
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
   return (

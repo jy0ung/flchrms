@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import type { AppRole } from '@/types/hrms';
@@ -19,6 +19,17 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 function renderProtected(allowedRoles: AppRole[], startPath = '/protected') {
+  const AuthPage = () => {
+    const location = useLocation();
+
+    return (
+      <div data-testid="auth-page">
+        Auth Page
+        <span data-testid="auth-location">{`${location.pathname}${location.search}`}</span>
+      </div>
+    );
+  };
+
   return render(
     <MemoryRouter initialEntries={[startPath]}>
       <Routes>
@@ -30,7 +41,7 @@ function renderProtected(allowedRoles: AppRole[], startPath = '/protected') {
             </ProtectedRoute>
           }
         />
-        <Route path="/auth" element={<div data-testid="auth-page">Auth Page</div>} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/dashboard" element={<div data-testid="dashboard-page">Dashboard</div>} />
       </Routes>
     </MemoryRouter>,
@@ -51,8 +62,11 @@ describe('ProtectedRoute', () => {
   it('redirects to /auth when no user', () => {
     mockUser = null;
     mockRole = null;
-    renderProtected(['employee']);
+    renderProtected(['employee'], '/protected?view=team');
     expect(screen.getByTestId('auth-page')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-location')).toHaveTextContent(
+      '/auth?redirect=%2Fprotected%3Fview%3Dteam',
+    );
   });
 
   it('redirects to /dashboard when user has wrong role', () => {
