@@ -71,9 +71,14 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
 
     await row!.getByRole('button', { name: /Details/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Leave Request Details')).toBeVisible();
-    await expect(page.getByText('Approval Timeline')).toBeVisible();
-    await expect(page.getByText('Cancellation Timeline')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Approval', exact: true })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Cancellation', exact: true })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Approval', exact: true }).click();
+    await expect(page.getByText('Approval History')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Cancellation', exact: true }).click();
+    await expect(page.getByText('Cancellation History')).toBeVisible();
   });
 
   test('HR can view leave details but cannot approve/reject cancellation', async ({ page }) => {
@@ -111,7 +116,9 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
 
     await row!.getByRole('button', { name: /Details/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Leave Request Details')).toBeVisible();
-    await expect(page.getByText('Approval Timeline')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Approval', exact: true })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Approval', exact: true }).click();
+    await expect(page.getByText('Approval History')).toBeVisible();
   });
 });

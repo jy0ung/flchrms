@@ -111,7 +111,7 @@ import { Button } from "@/components/ui/button";
 <ModalScaffold
   open={open}
   onOpenChange={setOpen}
-  title="Leave Request Details"
+  title="Request Workflow Details"
   description="Submitted on Feb 26, 2026"
   statusBadge={<StatusBadge status="pending" />}
   headerMeta={<div className="flex gap-2">{metaChips}</div>}
@@ -179,4 +179,3 @@ import { Button } from "@/components/ui/button";
 - APIs are documented and reviewable
 - No module behavior changes
 - No schema/API changes
-
