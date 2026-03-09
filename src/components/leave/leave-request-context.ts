@@ -32,3 +32,19 @@ export function getLeaveRequestAttentionLabel(input: {
   if (request.cancellation_reason) return 'Cancellation requested';
   return null;
 }
+
+export function getLeaveWorkflowSupportNotes(request: LeaveRequest): string[] {
+  const notes: string[] = [];
+
+  if (request.document_required && !request.document_url && request.status === 'pending') {
+    notes.push('Supporting document requested');
+  } else if (request.document_url) {
+    notes.push('Supporting document attached');
+  }
+
+  if (request.amended_at) {
+    notes.push('Updated after amendment');
+  }
+
+  return notes;
+}

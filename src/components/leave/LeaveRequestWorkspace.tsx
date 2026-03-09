@@ -43,6 +43,11 @@ type ViewConfig = {
   requests: LeaveRequest[];
 };
 
+type EmptyStateConfig = {
+  title: string;
+  description: string;
+};
+
 interface LeaveRequestWorkspaceProps {
   role: AppRole | null;
   canViewTeamRequests: boolean;
@@ -178,22 +183,43 @@ export function LeaveRequestWorkspace({
     [view, viewConfig, statusFilter],
   );
 
-  const emptyMessage = useMemo(() => {
+  const emptyState = useMemo<EmptyStateConfig>(() => {
     if (statusFilter !== 'ALL') {
-      return 'No requests match the selected status filter.';
+      return {
+        title: 'No requests for this status',
+        description:
+          view === 'TEAM_CURRENT' || view === 'TEAM_HISTORY'
+            ? 'Try another status filter or clear it to review the full queue.'
+            : 'Try another status filter or clear it to return to your full request list.',
+      };
     }
 
     switch (view) {
       case 'MY_HISTORY':
-        return 'No leave history yet.';
+        return {
+          title: 'No leave history yet',
+          description: 'Completed, cancelled, and rejected requests will appear here once you have prior leave activity.',
+        };
       case 'MY_CURRENT':
-        return 'No active leave requests right now.';
+        return {
+          title: 'No active leave requests',
+          description: 'Start a leave request when you need time away, or return here to track upcoming submissions.',
+        };
       case 'TEAM_HISTORY':
-        return 'No leave approval history yet.';
+        return {
+          title: 'No resolved team decisions',
+          description: 'Approved, rejected, and completed team requests will appear here for reference.',
+        };
       case 'TEAM_CURRENT':
-        return 'No active team leave requests available.';
+        return {
+          title: 'Approval queue clear',
+          description: 'There are no team requests waiting for review right now.',
+        };
       default:
-        return 'No leave requests found.';
+        return {
+          title: 'No leave requests found',
+          description: 'Try another view or filter to surface a different request set.',
+        };
     }
   }, [statusFilter, view]);
 
@@ -278,7 +304,8 @@ export function LeaveRequestWorkspace({
                 option === 'MY_CURRENT' || option === 'MY_HISTORY' ? (
                   <MyLeaveRequestsTable
                     requests={filteredRequests}
-                    emptyMessage={emptyMessage}
+                    emptyTitle={emptyState.title}
+                    emptyMessage={emptyState.description}
                     getStatusDisplay={getStatusDisplay}
                     getCancellationBadge={getCancellationBadge}
                     shouldShowLeaveDetailsButton={shouldShowLeaveDetailsButton}
@@ -292,7 +319,8 @@ export function LeaveRequestWorkspace({
                 ) : (
                   <TeamLeaveRequestsTable
                     requests={filteredRequests}
-                    emptyMessage={emptyMessage}
+                    emptyTitle={emptyState.title}
+                    emptyMessage={emptyState.description}
                     role={role}
                     getStatusDisplay={getStatusDisplay}
                     getCancellationBadge={getCancellationBadge}

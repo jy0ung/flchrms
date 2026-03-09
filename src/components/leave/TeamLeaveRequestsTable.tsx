@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
-import { getLeaveRequestAttentionLabel } from '@/components/leave/leave-request-context';
+import {
+  getLeaveRequestAttentionLabel,
+  getLeaveWorkflowSupportNotes,
+} from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { canRequestLeaveSupportingDocument, canViewLeaveSupportingDocument } from '@/lib/permissions';
@@ -24,6 +27,7 @@ type LeaveCancellationBadge = {
 
 interface TeamLeaveRequestsTableProps {
   requests: LeaveRequest[];
+  emptyTitle: string;
   emptyMessage: string;
   role: import('@/lib/permissions').MaybeRole;
   getStatusDisplay: (request: LeaveRequest) => LeaveStatusDisplay;
@@ -38,6 +42,7 @@ interface TeamLeaveRequestsTableProps {
 
 export function TeamLeaveRequestsTable({
   requests,
+  emptyTitle,
   emptyMessage,
   role,
   getStatusDisplay,
@@ -61,7 +66,7 @@ export function TeamLeaveRequestsTable({
         {requests.length === 0 ? (
           <div className="p-4">
             <WorkspaceStatePanel
-              title="No team requests in this view"
+              title={emptyTitle}
               description={emptyMessage}
               icon={FileText}
             />
@@ -72,6 +77,7 @@ export function TeamLeaveRequestsTable({
               {requests.map((request) => {
                 const status = getStatusDisplay(request);
                 const cancellationBadge = getCancellationBadge(request);
+                const workflowNotes = getLeaveWorkflowSupportNotes(request);
                 const employeeName = getLeaveRequestEmployeeName(request);
                 const employeeEmail = getLeaveRequestEmployeeEmail(request);
                 const attentionLabel = getLeaveRequestAttentionLabel({
@@ -97,29 +103,16 @@ export function TeamLeaveRequestsTable({
                         {request.leave_type?.requires_document && (
                           <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
                         )}
-                        {request.amended_at && (
-                          <StatusBadge status="amended" className="text-[11px]" />
-                        )}
                       </div>
                       <p className="text-sm">
                         {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                       </p>
                       <p className="text-xs text-muted-foreground">{request.days_count} days</p>
-                      <div className="flex flex-wrap gap-1">
-                        {request.document_required && !request.document_url && request.status === 'pending' && (
-                          <StatusBadge status="document_requested" className="text-[11px]" />
-                        )}
-                        {request.document_url && (
-                          <StatusBadge status="document_attached" className="text-[11px]" />
-                        )}
-                        {cancellationBadge && (
-                          <StatusBadge
-                            status={cancellationBadge.status}
-                            labelOverride={cancellationBadge.label}
-                            className="text-[11px]"
-                          />
-                        )}
-                      </div>
+                      {cancellationBadge || workflowNotes.length > 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {[cancellationBadge?.label, ...workflowNotes].filter(Boolean).join(' • ')}
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="rounded-md bg-muted/20 p-2">
@@ -220,6 +213,7 @@ export function TeamLeaveRequestsTable({
                 {requests.map((request) => {
                   const status = getStatusDisplay(request);
                   const cancellationBadge = getCancellationBadge(request);
+                  const workflowNotes = getLeaveWorkflowSupportNotes(request);
                   const employeeName = getLeaveRequestEmployeeName(request);
                   const employeeEmail = getLeaveRequestEmployeeEmail(request);
                   const attentionLabel = getLeaveRequestAttentionLabel({
@@ -250,23 +244,22 @@ export function TeamLeaveRequestsTable({
                         </div>
                       </td>
                       <td className="p-4">
-                        <StatusBadge status={status.status} labelOverride={status.label} />
-                        {request.document_required && !request.document_url && request.status === 'pending' && (
-                          <StatusBadge status="document_requested" className="mt-1" />
-                        )}
-                        {request.document_url && (
-                          <StatusBadge status="document_attached" className="mt-1" />
-                        )}
-                        {request.amended_at && (
-                          <StatusBadge status="amended" className="mt-1 text-xs" />
-                        )}
-                        {cancellationBadge && (
-                          <StatusBadge
-                            status={cancellationBadge.status}
-                            labelOverride={cancellationBadge.label}
-                            className="mt-1"
-                          />
-                        )}
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            <StatusBadge status={status.status} labelOverride={status.label} />
+                            {cancellationBadge ? (
+                              <StatusBadge
+                                status={cancellationBadge.status}
+                                labelOverride={cancellationBadge.label}
+                              />
+                            ) : null}
+                          </div>
+                          {workflowNotes.length > 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              {workflowNotes.join(' • ')}
+                            </p>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="p-4 max-w-sm">
                         <LeaveRequestContextSummary

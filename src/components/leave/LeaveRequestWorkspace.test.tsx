@@ -404,7 +404,9 @@ describe('LeaveRequestWorkspace', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /My History/ }));
 
-    expect(screen.getByText('No requests match the selected status filter.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Try another status filter or clear it to return to your full request list.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Status: Pending')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /My Current/ }));

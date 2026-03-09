@@ -2,7 +2,10 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
-import { getLeaveRequestAttentionLabel } from '@/components/leave/leave-request-context';
+import {
+  getLeaveRequestAttentionLabel,
+  getLeaveWorkflowSupportNotes,
+} from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
 
 function makeLeaveRequest(overrides: Partial<LeaveRequest> = {}): LeaveRequest {
@@ -108,5 +111,25 @@ describe('LeaveRequestContextSummary', () => {
     expect(getLeaveRequestAttentionLabel({ request, canApprove: true })).toBe('Approval decision required');
     expect(getLeaveRequestAttentionLabel({ request, canRequestDocument: true })).toBe('Document follow-up available');
     expect(getLeaveRequestAttentionLabel({ request: amendmentRequest, canAmend: true })).toBe('Action needed: amend request');
+  });
+
+  it('builds compact workflow support notes for the list surfaces', () => {
+    const request = makeLeaveRequest({
+      document_required: true,
+      amended_at: '2026-02-15T00:00:00Z',
+    });
+
+    expect(getLeaveWorkflowSupportNotes(request)).toEqual([
+      'Supporting document requested',
+      'Updated after amendment',
+    ]);
+
+    expect(
+      getLeaveWorkflowSupportNotes(
+        makeLeaveRequest({
+          document_url: 'user-1/doc.pdf',
+        }),
+      ),
+    ).toEqual(['Supporting document attached']);
   });
 });

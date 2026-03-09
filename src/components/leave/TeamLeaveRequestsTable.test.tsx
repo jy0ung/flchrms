@@ -86,8 +86,7 @@ function makeLeaveRequest(overrides: Partial<LeaveRequest> = {}): LeaveRequest {
 
 describe('TeamLeaveRequestsTable', () => {
   const getStatusDisplay = () => ({
-    color: 'bg-muted',
-    icon: null,
+    status: 'pending',
     label: 'Pending Manager',
   });
 
@@ -95,6 +94,7 @@ describe('TeamLeaveRequestsTable', () => {
     render(
       <TeamLeaveRequestsTable
         requests={[]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No team leave requests"
         role="manager"
         getStatusDisplay={getStatusDisplay}
@@ -118,6 +118,7 @@ describe('TeamLeaveRequestsTable', () => {
     const { rerender } = render(
       <TeamLeaveRequestsTable
         requests={[request]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="manager"
         getStatusDisplay={getStatusDisplay}
@@ -139,6 +140,7 @@ describe('TeamLeaveRequestsTable', () => {
     rerender(
       <TeamLeaveRequestsTable
         requests={[request]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="admin"
         getStatusDisplay={getStatusDisplay}
@@ -159,6 +161,7 @@ describe('TeamLeaveRequestsTable', () => {
     render(
       <TeamLeaveRequestsTable
         requests={[makeLeaveRequest({ cancellation_status: 'pending', cancellation_reason: 'Trip changed' })]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="director"
         getStatusDisplay={getStatusDisplay}
@@ -184,6 +187,7 @@ describe('TeamLeaveRequestsTable', () => {
     const { rerender } = render(
       <TeamLeaveRequestsTable
         requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="manager"
         getStatusDisplay={getStatusDisplay}
@@ -203,6 +207,7 @@ describe('TeamLeaveRequestsTable', () => {
     rerender(
       <TeamLeaveRequestsTable
         requests={[makeLeaveRequest({ status: 'manager_approved' })]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="manager"
         getStatusDisplay={getStatusDisplay}
@@ -221,6 +226,7 @@ describe('TeamLeaveRequestsTable', () => {
     rerender(
       <TeamLeaveRequestsTable
         requests={[makeLeaveRequest({ status: 'pending' })]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="general_manager"
         getStatusDisplay={getStatusDisplay}
@@ -246,6 +252,7 @@ describe('TeamLeaveRequestsTable', () => {
             employee_id: 'delegate-visible-requester',
           }),
         ]}
+        emptyTitle="Approval queue clear"
         emptyMessage="No requests"
         role="manager"
         getStatusDisplay={getStatusDisplay}

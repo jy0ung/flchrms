@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
-import { getLeaveRequestAttentionLabel } from '@/components/leave/leave-request-context';
+import {
+  getLeaveRequestAttentionLabel,
+  getLeaveWorkflowSupportNotes,
+} from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
 import { StatusBadge } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
@@ -21,6 +24,7 @@ type LeaveCancellationBadge = {
 
 interface MyLeaveRequestsTableProps {
   requests: LeaveRequest[];
+  emptyTitle: string;
   emptyMessage: string;
   getStatusDisplay: (request: LeaveRequest) => LeaveStatusDisplay;
   getCancellationBadge: (request: LeaveRequest) => LeaveCancellationBadge;
@@ -35,6 +39,7 @@ interface MyLeaveRequestsTableProps {
 
 export function MyLeaveRequestsTable({
   requests,
+  emptyTitle,
   emptyMessage,
   getStatusDisplay,
   getCancellationBadge,
@@ -52,7 +57,7 @@ export function MyLeaveRequestsTable({
         {requests.length === 0 ? (
           <div className="p-4">
             <WorkspaceStatePanel
-              title="No leave requests in this view"
+              title={emptyTitle}
               description={emptyMessage}
               icon={FileText}
             />
@@ -63,6 +68,7 @@ export function MyLeaveRequestsTable({
               {requests.map((request) => {
                 const status = getStatusDisplay(request);
                 const cancellationBadge = getCancellationBadge(request);
+                const workflowNotes = getLeaveWorkflowSupportNotes(request);
                 const attentionLabel = getLeaveRequestAttentionLabel({
                   request,
                   canAmend: canAmend(request),
@@ -79,19 +85,6 @@ export function MyLeaveRequestsTable({
                           {request.leave_type?.requires_document && (
                             <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
                           )}
-                          {request.document_required && !request.document_url && request.status === 'pending' && (
-                            <StatusBadge status="document_requested" className="text-[11px]" />
-                          )}
-                          {request.document_url && (
-                            <StatusBadge status="document_attached" className="text-[11px]" />
-                          )}
-                          {cancellationBadge && (
-                            <StatusBadge
-                              status={cancellationBadge.status}
-                              labelOverride={cancellationBadge.label}
-                              className="text-[11px]"
-                            />
-                          )}
                         </div>
                       </div>
                       <StatusBadge status={status.status} labelOverride={status.label} className="shrink-0" />
@@ -104,6 +97,11 @@ export function MyLeaveRequestsTable({
                           {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                         </p>
                         <p className="text-xs text-muted-foreground">{request.days_count} days</p>
+                        {cancellationBadge || workflowNotes.length > 0 ? (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {[cancellationBadge?.label, ...workflowNotes].filter(Boolean).join(' • ')}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="rounded-md bg-muted/20 p-2">
                         <LeaveRequestContextSummary
@@ -163,6 +161,7 @@ export function MyLeaveRequestsTable({
                 {requests.map((request) => {
                   const status = getStatusDisplay(request);
                   const cancellationBadge = getCancellationBadge(request);
+                  const workflowNotes = getLeaveWorkflowSupportNotes(request);
                   const attentionLabel = getLeaveRequestAttentionLabel({
                     request,
                     canAmend: canAmend(request),
@@ -187,20 +186,22 @@ export function MyLeaveRequestsTable({
                         </div>
                       </td>
                       <td className="p-4">
-                        <StatusBadge status={status.status} labelOverride={status.label} />
-                        {request.document_required && !request.document_url && request.status === 'pending' && (
-                          <StatusBadge status="document_requested" className="mt-1" />
-                        )}
-                        {request.document_url && (
-                          <StatusBadge status="document_attached" className="mt-1" />
-                        )}
-                        {cancellationBadge && (
-                          <StatusBadge
-                            status={cancellationBadge.status}
-                            labelOverride={cancellationBadge.label}
-                            className="mt-1"
-                          />
-                        )}
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            <StatusBadge status={status.status} labelOverride={status.label} />
+                            {cancellationBadge ? (
+                              <StatusBadge
+                                status={cancellationBadge.status}
+                                labelOverride={cancellationBadge.label}
+                              />
+                            ) : null}
+                          </div>
+                          {workflowNotes.length > 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              {workflowNotes.join(' • ')}
+                            </p>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="p-4 max-w-sm">
                         <LeaveRequestContextSummary
