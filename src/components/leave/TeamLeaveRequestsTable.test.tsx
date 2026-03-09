@@ -175,6 +175,7 @@ describe('TeamLeaveRequestsTable', () => {
     expect(screen.getAllByRole('button', { name: /Approve Cancel/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /Reject Cancel/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Cancellation Pending/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cancellation decision required/i).length).toBeGreaterThan(0);
   });
 
   it('shows request document action only for manager on pending stage', () => {
@@ -197,6 +198,7 @@ describe('TeamLeaveRequestsTable', () => {
     );
 
     expect(screen.getAllByRole('button', { name: /Request Doc/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Approval decision required/i).length).toBeGreaterThan(0);
 
     rerender(
       <TeamLeaveRequestsTable

@@ -1,8 +1,10 @@
 import { format } from 'date-fns';
-import { AlertCircle, Eye, FileText, MessageSquare, Upload, XCircle } from 'lucide-react';
+import { Eye, FileText, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
+import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
+import { getLeaveRequestAttentionLabel } from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
 import { StatusBadge } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
@@ -61,6 +63,12 @@ export function MyLeaveRequestsTable({
               {requests.map((request) => {
                 const status = getStatusDisplay(request);
                 const cancellationBadge = getCancellationBadge(request);
+                const attentionLabel = getLeaveRequestAttentionLabel({
+                  request,
+                  canAmend: canAmend(request),
+                  canCancelPending: canCancelPendingRequest(request),
+                  canRequestCancellation: canRequestCancellation(request),
+                });
 
                 return (
                   <div key={request.id} className="p-4 space-y-3">
@@ -97,47 +105,12 @@ export function MyLeaveRequestsTable({
                         </p>
                         <p className="text-xs text-muted-foreground">{request.days_count} days</p>
                       </div>
-                      <div className="rounded-md bg-muted/40 px-3 py-2">
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Notes</p>
-                        <div className="space-y-1 text-xs">
-                          {request.reason && (
-                            <p className="truncate" title={request.reason}>
-                              <MessageSquare className="w-3 h-3 inline mr-1" />
-                              {request.reason}
-                            </p>
-                          )}
-                          {request.rejection_reason && (
-                            <p className="truncate text-red-500" title={request.rejection_reason}>
-                              <XCircle className="w-3 h-3 inline mr-1" />
-                              {request.rejection_reason}
-                            </p>
-                          )}
-                          {request.manager_comments && (
-                            <p className="truncate text-blue-500" title={request.manager_comments}>
-                              <MessageSquare className="w-3 h-3 inline mr-1" />
-                              {request.manager_comments}
-                            </p>
-                          )}
-                          {request.cancellation_reason && (
-                            <p className="truncate text-amber-600" title={request.cancellation_reason}>
-                              <AlertCircle className="w-3 h-3 inline mr-1" />
-                              Cancel req: {request.cancellation_reason}
-                            </p>
-                          )}
-                          {request.cancellation_rejection_reason && (
-                            <p className="truncate text-red-500" title={request.cancellation_rejection_reason}>
-                              <XCircle className="w-3 h-3 inline mr-1" />
-                              Cancel reject: {request.cancellation_rejection_reason}
-                            </p>
-                          )}
-                          {!request.reason &&
-                            !request.rejection_reason &&
-                            !request.manager_comments &&
-                            !request.cancellation_reason &&
-                            !request.cancellation_rejection_reason && (
-                              <p className="text-muted-foreground">No notes</p>
-                            )}
-                        </div>
+                      <div className="rounded-md bg-muted/20 p-2">
+                        <LeaveRequestContextSummary
+                          request={request}
+                          mode="compact"
+                          attentionLabel={attentionLabel}
+                        />
                       </div>
                     </div>
 
@@ -191,6 +164,12 @@ export function MyLeaveRequestsTable({
                 {requests.map((request) => {
                   const status = getStatusDisplay(request);
                   const cancellationBadge = getCancellationBadge(request);
+                  const attentionLabel = getLeaveRequestAttentionLabel({
+                    request,
+                    canAmend: canAmend(request),
+                    canCancelPending: canCancelPendingRequest(request),
+                    canRequestCancellation: canRequestCancellation(request),
+                  });
 
                   return (
                     <tr key={request.id} className="border-t border-border table-row-hover align-top">
@@ -222,37 +201,12 @@ export function MyLeaveRequestsTable({
                           />
                         )}
                       </td>
-                      <td className="p-4 max-w-xs">
-                        {request.reason && (
-                          <p className="text-sm text-muted-foreground truncate" title={request.reason}>
-                            <MessageSquare className="w-3 h-3 inline mr-1" />
-                            {request.reason}
-                          </p>
-                        )}
-                        {request.rejection_reason && (
-                          <p className="text-sm text-red-500 truncate" title={request.rejection_reason}>
-                            <XCircle className="w-3 h-3 inline mr-1" />
-                            {request.rejection_reason}
-                          </p>
-                        )}
-                        {request.manager_comments && (
-                          <p className="text-sm text-blue-500 truncate" title={request.manager_comments}>
-                            <MessageSquare className="w-3 h-3 inline mr-1" />
-                            {request.manager_comments}
-                          </p>
-                        )}
-                        {request.cancellation_reason && (
-                          <p className="text-sm text-amber-600 truncate" title={request.cancellation_reason}>
-                            <AlertCircle className="w-3 h-3 inline mr-1" />
-                            Cancel req: {request.cancellation_reason}
-                          </p>
-                        )}
-                        {request.cancellation_rejection_reason && (
-                          <p className="text-sm text-red-500 truncate" title={request.cancellation_rejection_reason}>
-                            <XCircle className="w-3 h-3 inline mr-1" />
-                            Cancel reject: {request.cancellation_rejection_reason}
-                          </p>
-                        )}
+                      <td className="p-4 max-w-sm">
+                        <LeaveRequestContextSummary
+                          request={request}
+                          mode="compact"
+                          attentionLabel={attentionLabel}
+                        />
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">

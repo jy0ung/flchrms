@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/system';
+import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import type { LeaveRequest } from '@/types/hrms';
 import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 
@@ -33,6 +34,13 @@ export function RequestInfoTab({
 }: RequestInfoTabProps) {
   const employeeName = getLeaveRequestEmployeeName(request);
   const employeeEmail = getLeaveRequestEmployeeEmail(request);
+  const documentState = request.document_url
+    ? 'Attached'
+    : request.document_required
+      ? 'Requested from requester'
+      : request.leave_type?.requires_document
+        ? 'Required if requested'
+        : 'Not required';
 
   return (
     <div className="space-y-4">
@@ -54,7 +62,7 @@ export function RequestInfoTab({
 
         <Card className="border-border/80 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Status & Routing</CardTitle>
+            <CardTitle className="text-sm">Workflow Snapshot</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex flex-wrap gap-2">
@@ -71,6 +79,10 @@ export function RequestInfoTab({
               ) : null}
             </div>
             <p>
+              <span className="text-muted-foreground">Current state:</span>{' '}
+              {statusDisplay.label}
+            </p>
+            <p>
               <span className="text-muted-foreground">Approval Route:</span>{' '}
               {(request.approval_route_snapshot || []).map(formatWorkflowStageLabel).join(' -> ') || '—'}
             </p>
@@ -80,15 +92,23 @@ export function RequestInfoTab({
                 {request.cancellation_route_snapshot.map(formatWorkflowStageLabel).join(' -> ')}
               </p>
             ) : null}
-            {request.reason ? (
-              <p><span className="text-muted-foreground">Reason:</span> {request.reason}</p>
-            ) : null}
-            {request.manager_comments ? (
-              <p><span className="text-muted-foreground">Approver Comments:</span> {request.manager_comments}</p>
-            ) : null}
-            {request.amendment_notes ? (
-              <p><span className="text-muted-foreground">Amendment Notes:</span> {request.amendment_notes}</p>
-            ) : null}
+            <p>
+              <span className="text-muted-foreground">Supporting document:</span>{' '}
+              {documentState}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Latest update:</span>{' '}
+              {formatDateTime(request.updated_at)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-sm md:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Request Notes & Workflow Context</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <LeaveRequestContextSummary request={request} mode="full" />
           </CardContent>
         </Card>
       </div>
