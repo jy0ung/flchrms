@@ -15,11 +15,8 @@ import { useLeaveRequests } from '@/hooks/useLeaveRequests';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { isEmployee } from '@/lib/permissions';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
-import { LeaveDetailDrawer } from '@/modules/leave/components/LeaveDrawer/LeaveDetailDrawer';
-import { LeaveManagementDialogs } from '@/modules/leave/components/LeaveManagementDialogs';
-import { useLeaveCapabilities } from '@/modules/leave/hooks/useLeaveCapabilities';
-import { useLeaveDrawerState } from '@/modules/leave/hooks/useLeaveDrawerState';
-import { useLeaveWorkflowController } from '@/modules/leave/hooks/useLeaveWorkflowController';
+import { LeaveDetailDrawer, LeaveManagementDialogs } from './components';
+import { useLeaveCapabilities, useLeaveDrawerState, useLeaveWorkflowController } from './hooks';
 import type { LeavePageProps, LeaveWorkspaceView } from '@/modules/leave/types';
 
 function coerceWorkspaceView(value: string | null): LeaveWorkspaceView | null {

@@ -25,11 +25,8 @@ import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStri
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
 
-import { EmployeeDetailDrawer } from './components/EmployeeDrawer/EmployeeDetailDrawer';
-import { EmployeeManagementDialogs } from './components/EmployeeManagementDialogs';
-import { EmployeeTable, type DirectoryEmployee } from './components/EmployeeTable';
-import { useEmployeeManagementController } from './hooks/useEmployeeManagementController';
-import { useEmployeeModuleCapabilities } from './hooks/useEmployeeModuleCapabilities';
+import { EmployeeDetailDrawer, EmployeeManagementDialogs, EmployeeTable, type DirectoryEmployee } from './components';
+import { useEmployeeManagementController, useEmployeeModuleCapabilities } from './hooks';
 import { coerceEmployeeDrawerTab, type EmployeesPageProps } from './types';
 
 function formatRoleLabel(role: AppRole | null | undefined) {

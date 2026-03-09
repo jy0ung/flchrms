@@ -1,87 +1,118 @@
-# Admin Module Architecture (Phase 6)
+# Admin Shell Architecture
 
-This document describes the current `HR Admin` page structure after the Phase 6 refactor.
+This document describes the current admin shell after the contextual workspace migration and Phase 8 cleanup.
 
-## Goals
+## Current Role of Admin
 
-- Keep `src/pages/Admin.tsx` as a thin orchestration layer.
-- Separate domain actions/state from presentational components.
-- Centralize permission logic to reduce RBAC drift.
-- Make future tab/dialog changes lower risk.
+The admin shell is no longer the primary CRUD surface for employees or departments.
 
-## Current Structure
+It now focuses on:
 
-### Page Orchestration
+- governance
+- role management
+- leave policy configuration
+- audit visibility
+- announcements
+- system settings
+- routing operators into canonical module workspaces
 
-- `src/pages/Admin.tsx`
-  - wires data queries (`employees`, `departments`, `userRoles`, `leaveTypes`)
-  - applies admin capability gating
-  - composes tab sections and dialogs
-  - passes handlers/state from domain hooks into UI components
+## Canonical Operational Workspaces
 
-### Domain Hooks (state + actions)
+Operational record work now belongs in module-owned pages:
 
-- `src/hooks/admin/useAdminPageViewModel.ts`
-  - filter state (`search`, `status`, `department`)
-  - deferred search filtering for employee/department lists
-  - role lookup map (`getUserRole`)
-  - dashboard stats counts
-  - default admin tab selection
+- employees: `src/modules/employees/EmployeesPage.tsx`
+- departments: `src/modules/departments/DepartmentsPage.tsx`
+- leave: `src/modules/leave/LeavePage.tsx`
+
+Admin compatibility routes still exist for bookmarked or wrapper-specific entry paths:
+
+- `src/pages/admin/AdminEmployeesPage.tsx`
+- `src/pages/admin/AdminDepartmentsPage.tsx`
+
+Those routes are thin bridges over the canonical module pages.
+
+## Admin Shell Pages
+
+- `src/pages/admin/AdminDashboardPage.tsx`
+  - governance-oriented dashboard and analytics
+
+- `src/pages/admin/AdminQuickActionsPage.tsx`
+  - routing hub into canonical workspaces and remaining admin controls
+
+- `src/pages/admin/AdminRolesPage.tsx`
+  - role assignment and capability management
+
+- `src/pages/admin/AdminLeavePoliciesPage.tsx`
+  - leave types, workflows, and policy configuration
+
+- `src/pages/admin/AdminAnnouncementsPage.tsx`
+  - announcement management
+
+- `src/pages/admin/AdminAuditLogPage.tsx`
+  - audit and change visibility
+
+- `src/pages/admin/AdminSettingsPage.tsx`
+  - admin-level platform settings
+
+## Compatibility Bridge Layer
+
+Shared bridge metadata and presentation are centralized in:
+
+- `src/components/admin/admin-workspace-bridges.ts`
+- `src/components/admin/AdminWorkspaceBridge.tsx`
+- `src/components/workspace/WorkspaceTransitionNotice.tsx`
+
+This keeps the employee and department compatibility routes aligned with the same copy, destination, and action labeling used by admin quick actions.
+
+## Domain Hooks Still Owned by Admin
+
+- `src/hooks/admin/useAdminCapabilities.ts`
+  - capability loading and page-level gating
 
 - `src/hooks/admin/useAdminEmployeeManagement.ts`
-  - profile edit dialog state
-  - role edit dialog state
-  - password reset dialog state
-  - profile/role/password actions
-  - archive/restore actions
-
-- `src/hooks/admin/useAdminDepartmentManagement.ts`
-  - create/edit/delete department dialog state
-  - department CRUD handlers
+  - retained for role-management flows that still need employee account dialogs
 
 - `src/hooks/admin/useAdminLeaveTypeManagement.ts`
-  - create/edit/delete leave type dialog state
-  - leave type CRUD handlers
+  - leave-type CRUD orchestration for leave policy pages
 
-### Tab Sections (presentational)
+- `src/hooks/admin/useAdminPageViewModel.ts`
+  - role page filtering and derived admin view state
 
-- `src/components/admin/EmployeesTabSection.tsx`
-- `src/components/admin/DepartmentsTabSection.tsx`
-- `src/components/admin/RolesTabSection.tsx`
-- `src/components/admin/LeavePoliciesSection.tsx`
-- `src/components/admin/LeaveWorkflowBuildersSection.tsx`
+## Reused Dialog Components
 
-### Dialog Components (presentational)
+Some admin-era dialogs remain valid and are reused by canonical modules:
 
 - `src/components/admin/AdminAccountDialogs.tsx`
+- `src/components/admin/CreateEmployeeDialog.tsx`
+- `src/components/admin/BatchUpdateDialog.tsx`
 - `src/components/admin/AdminDepartmentDialogs.tsx`
 - `src/components/admin/AdminLeaveTypeDialogs.tsx`
 
-### Page Shell Components
-
-- `src/components/admin/AdminPageHeader.tsx`
-- `src/components/admin/AdminStatsCards.tsx`
-- `src/components/admin/AdminTabsShell.tsx`
+These are not dead code. They remain part of the active UI surface through module-owned wrappers.
 
 ## Permissions
 
-- Admin page capabilities:
-  - `src/lib/admin-permissions.ts`
-- App-wide role checks (cross-module):
+- admin capability matrix:
+  - `src/lib/admin-capabilities.ts`
+  - `src/hooks/admin/useAdminCapabilities.ts`
+
+- app-wide role and workflow rules:
   - `src/lib/permissions.ts`
+  - `src/lib/admin-permissions.ts`
 
-Use `src/lib/permissions.ts` for shared role checks across modules (`Dashboard`, `Leave`, `Payroll`, `Documents`, `Calendar`, etc.).
-Use `src/lib/admin-permissions.ts` for the Admin page’s capability matrix.
+Use shared permission helpers instead of embedding new role checks directly in admin pages.
 
-## Shared Admin Types/Constants
+## Cleanup Notes
 
-- Form state types:
-  - `src/components/admin/admin-form-types.ts`
-- Admin UI constants:
-  - `src/components/admin/admin-ui-constants.ts`
+The following centralized-admin artifacts have been removed because the app no longer routes through them:
 
-## Refactor Guidance
+- employee and department admin tab sections
+- obsolete compatibility wrappers around canonical module pages
+- the old leave request details modal path replaced by module drawers
 
-- Prefer adding new Admin feature behavior to a domain hook first, then pass props into section/dialog components.
-- Avoid reintroducing direct role checks in page/components when a named helper can live in `src/lib/permissions.ts`.
-- Keep `Admin.tsx` focused on composition; avoid embedding large dialog JSX or mutation logic back into the page.
+## Guidance
+
+- Keep admin pages thin and capability-gated.
+- Prefer sending users into canonical modules for operational work.
+- Add shared admin routing or governance behavior to the bridge/config layer first when it applies to more than one page.
+- Do not reintroduce centralized CRUD ownership into the admin shell.

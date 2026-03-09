@@ -9,11 +9,8 @@ import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 
-import { DepartmentDetailDrawer } from './components/DepartmentDetailDrawer';
-import { DepartmentManagementDialogs } from './components/DepartmentManagementDialogs';
-import { DepartmentTable } from './components/DepartmentTable';
-import { useDepartmentManagementController } from './hooks/useDepartmentManagementController';
-import { useDepartmentModuleCapabilities } from './hooks/useDepartmentModuleCapabilities';
+import { DepartmentDetailDrawer, DepartmentManagementDialogs, DepartmentTable } from './components';
+import { useDepartmentManagementController, useDepartmentModuleCapabilities } from './hooks';
 import { coerceDepartmentDrawerTab, type DepartmentsPageProps, type DepartmentRecord } from './types';
 
 export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOverride }: DepartmentsPageProps) {

@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2,
   Compass,
   FileText,
   History,
@@ -17,6 +16,7 @@ import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
 import { PageHeader } from '@/components/system';
 import { WorkspaceTransitionNotice } from '@/components/workspace/WorkspaceTransitionNotice';
 
@@ -53,28 +53,17 @@ export default function AdminQuickActionsPage() {
   }
 
   const quickActions: QuickAction[] = [
-    {
-      id: 'employee-workspace',
-      icon: Users,
-      title: 'Open Employee Workspace',
-      description: 'Open the canonical employee management workspace for records, bulk actions, and profile updates.',
-      color: 'text-blue-600',
-      bg: 'bg-blue-50 dark:bg-blue-950/50',
-      capability: 'manage_employee_directory',
-      destination: '/employees',
-      surface: 'Workspace',
-    },
-    {
-      id: 'department-workspace',
-      icon: Building2,
-      title: 'Open Department Workspace',
-      description: 'Open the canonical department management workspace for structure and staffing changes.',
-      color: 'text-violet-600',
-      bg: 'bg-violet-50 dark:bg-violet-950/50',
-      capability: 'manage_departments',
-      destination: '/departments',
-      surface: 'Workspace',
-    },
+    ...ADMIN_WORKSPACE_BRIDGE_LIST.map((bridge) => ({
+      id: bridge.id,
+      icon: bridge.icon,
+      title: bridge.quickActionTitle,
+      description: bridge.quickActionDescription,
+      color: bridge.quickActionColor,
+      bg: bridge.quickActionBg,
+      capability: bridge.capability,
+      destination: bridge.destination,
+      surface: 'Workspace' as const,
+    })),
     {
       id: 'manage-roles',
       icon: Shield,
