@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Info, Plus } from 'lucide-react';
+import { CalendarDays, ClipboardCheck, Info, Plus, WalletCards } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DataTableShell, QueryErrorState } from '@/components/system';
 import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +17,7 @@ import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { useLeaveRequests } from '@/hooks/useLeaveRequests';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { isEmployee } from '@/lib/permissions';
+import { isCancellationPending } from '@/lib/leave-utils';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { LeaveDetailDrawer, LeaveManagementDialogs } from './components';
 import { useLeaveCapabilities, useLeaveDrawerState, useLeaveWorkflowController } from './hooks';
@@ -99,12 +102,17 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const selectedStatusDisplay = drawer.selectedRequest ? getStatusDisplay(drawer.selectedRequest) : null;
   const selectedCancellationBadge = drawer.selectedRequest ? getCancellationBadge(drawer.selectedRequest) : null;
   const selectedPermissions = drawer.selectedRequest ? getRowPermissions(drawer.selectedRequest) : null;
+  const canViewTeamRequests = pageActions.canViewTeamRequests;
 
   const effectiveWorkspaceView =
-    requestedWorkspaceView ?? initialView ?? defaultWorkspaceView({
-      myRequestCount: myRequests.length,
-      teamRequestCount: teamRequests.length,
-    });
+    requestedWorkspaceView ??
+    initialView ??
+    (canViewTeamRequests
+      ? 'TEAM_CURRENT'
+      : defaultWorkspaceView({
+          myRequestCount: myRequests.length,
+          teamRequestCount: teamRequests.length,
+        }));
 
   useEffect(() => {
     if (commandIntent !== 'request') {
@@ -179,7 +187,36 @@ export function LeavePage({ initialView }: LeavePageProps) {
   );
 
   const metricItems = useMemo(() => {
-    const items = [
+    if (canViewTeamRequests) {
+      const cancellationReviews = teamCurrentRequests.filter((request) =>
+        isCancellationPending(request),
+      ).length;
+
+      return [
+        {
+          id: 'team-inbox',
+          label: 'Approval inbox',
+          value: teamCurrentRequests.length,
+          helper: 'Requests that currently need your review or delegated action.',
+        },
+        {
+          id: 'cancellation-reviews',
+          label: 'Cancellation reviews',
+          value: cancellationReviews,
+          helper: 'Requests waiting on a cancellation decision.',
+        },
+        {
+          id: 'my-active-requests',
+          label: 'My active requests',
+          value: myCurrentRequests.length,
+          helper: 'Your own in-flight requests kept nearby for quick reference.',
+        },
+      ];
+    }
+
+    const pendingDecisions = myCurrentRequests.filter((request) => !request.final_approved_at).length;
+
+    return [
       {
         id: 'my-active-requests',
         label: 'Active requests',
@@ -187,62 +224,80 @@ export function LeavePage({ initialView }: LeavePageProps) {
         helper: 'Personal requests still in progress or awaiting completion.',
       },
       {
-        id: 'my-request-history',
+        id: 'awaiting-decision',
+        label: 'Awaiting decision',
+        value: pendingDecisions,
+        helper: 'Requests still moving through the approval route.',
+      },
+      {
+        id: 'balance-buckets',
+        label: 'Balance buckets',
+        value: balances?.length ?? 0,
+        helper: 'Leave types currently tracking an accrued balance.',
+      },
+      {
+        id: 'request-history',
         label: 'Request history',
         value: myHistoryRequests.length,
-        helper: 'Resolved or completed requests in your timeline.',
+        helper: 'Resolved or completed requests kept for reference.',
       },
     ];
-
-    if (pageActions.canViewTeamRequests) {
-      items.push(
-        {
-          id: 'team-current-requests',
-          label: 'Team inbox',
-          value: teamCurrentRequests.length,
-          helper: 'Current team requests visible to you in this workspace.',
-        },
-        {
-          id: 'team-history-requests',
-          label: 'Team history',
-          value: teamHistoryRequests.length,
-          helper: 'Resolved team requests retained for workflow traceability.',
-        },
-      );
-    } else {
-      items.push(
-        {
-          id: 'balance-buckets',
-          label: 'Balance buckets',
-          value: balances?.length ?? 0,
-          helper: 'Leave types currently tracking an accrued balance.',
-        },
-        {
-          id: 'leave-types',
-          label: 'Leave types',
-          value: leaveTypes?.length ?? 0,
-          helper: 'Request categories currently available in the workspace.',
-        },
-      );
-    }
-
-    return items;
   }, [
     balances?.length,
-    leaveTypes?.length,
-    myCurrentRequests.length,
+    canViewTeamRequests,
+    myCurrentRequests,
     myHistoryRequests.length,
-    pageActions.canViewTeamRequests,
-    teamCurrentRequests.length,
-    teamHistoryRequests.length,
+    teamCurrentRequests,
   ]);
+
+  const workflowContextTitle = canViewTeamRequests ? 'Approval inbox' : 'My request workspace';
+  const workflowContextDescription = canViewTeamRequests
+    ? 'Work the queue first. Personal balances stay available as a secondary reference while you approve or reject requests.'
+    : 'Track your requests, balances, and supporting documents from a single personal workspace.';
+
+  const personalReferencePanel = (
+    <Card className="border-border/70 shadow-sm">
+      <CardHeader className="space-y-1 pb-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <WalletCards className="h-4 w-4 text-muted-foreground" />
+          Personal balance reference
+        </div>
+        <CardTitle className="text-base">My leave balances</CardTitle>
+        <CardDescription>
+          Keep your own entitlement nearby while you review or track requests.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {balances?.length ? (
+          <LeaveBalanceSection
+            balances={balances}
+            maxPrimaryCards={canViewTeamRequests ? 2 : 4}
+            defaultCollapsedSecondary={canViewTeamRequests}
+          />
+        ) : (
+          <WorkspaceStatePanel
+            title="No balances available"
+            description="Leave balance buckets will appear here once they are available for your account."
+            icon={WalletCards}
+            appearance="subtle"
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
         eyebrow="Module Workspace"
         title="Leave Management"
-        description={isEmployee(role) ? 'Your leave requests, balances, and history in one workspace.' : 'Manage leave requests and approvals in context.'}
+        description={
+          canViewTeamRequests
+            ? 'Review team requests, work approval queues, and keep your own leave reference close by.'
+            : isEmployee(role)
+              ? 'Your leave requests, balances, and history in one workspace.'
+              : 'Manage leave requests and approvals in context.'
+        }
         actions={pageActions.canCreateRequest ? [
           {
             id: 'request-leave',
@@ -257,7 +312,6 @@ export function LeavePage({ initialView }: LeavePageProps) {
       <ModuleLayout.Toolbar
         density="compact"
         ariaLabel="Leave workspace controls"
-        leadingSlot={workflowInfoPopover}
         trailingSlot={pageActions.canOpenTeamCalendarLink ? (
           <Button variant="outline" className="h-9 rounded-full" onClick={() => navigate('/calendar')}>
             <CalendarDays className="mr-2 h-4 w-4" />
@@ -284,35 +338,59 @@ export function LeavePage({ initialView }: LeavePageProps) {
             )}
           />
         ) : (
-          <LeaveRequestWorkspace
-            role={role}
-            canViewTeamRequests={pageActions.canViewTeamRequests}
-            myCurrentRequests={myCurrentRequests}
-            myHistoryRequests={myHistoryRequests}
-            teamCurrentRequests={teamCurrentRequests}
-            teamHistoryRequests={teamHistoryRequests}
-            defaultView={effectiveWorkspaceView}
-            getStatusDisplay={getStatusDisplay}
-            getCancellationBadge={getCancellationBadge}
-            canAmend={(request) => getRowPermissions(request).canAmend}
-            canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
-            canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
-            canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
-            canApprove={(request) => getRowPermissions(request).canApprove}
-            shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
-            onAmend={controller.openAmendDialog}
-            onCancel={controller.openCancellationDialog}
-            onOpenDetails={(request, trigger) => {
-              rememberTrigger(trigger);
-              drawer.openRequest(request.id);
-            }}
-            onCancellationReview={controller.openCancellationReviewDialog}
-            onAction={controller.openActionDialog}
-            workflowInfoPopover={workflowInfoPopover}
-          />
-        )}
+          <div className={canViewTeamRequests ? 'grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]' : 'space-y-6'}>
+            <div className="space-y-6">
+              {!canViewTeamRequests ? personalReferencePanel : null}
 
-        <LeaveBalanceSection balances={balances ?? []} />
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader className="space-y-1 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                    {workflowContextTitle}
+                  </div>
+                  <CardTitle className="text-base">
+                    {canViewTeamRequests ? 'Leave approval queue' : 'Leave request tracker'}
+                  </CardTitle>
+                  <CardDescription>{workflowContextDescription}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <LeaveRequestWorkspace
+                    role={role}
+                    canViewTeamRequests={pageActions.canViewTeamRequests}
+                    myCurrentRequests={myCurrentRequests}
+                    myHistoryRequests={myHistoryRequests}
+                    teamCurrentRequests={teamCurrentRequests}
+                    teamHistoryRequests={teamHistoryRequests}
+                    defaultView={effectiveWorkspaceView}
+                    getStatusDisplay={getStatusDisplay}
+                    getCancellationBadge={getCancellationBadge}
+                    canAmend={(request) => getRowPermissions(request).canAmend}
+                    canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
+                    canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
+                    canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
+                    canApprove={(request) => getRowPermissions(request).canApprove}
+                    shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
+                    onAmend={controller.openAmendDialog}
+                    onCancel={controller.openCancellationDialog}
+                    onOpenDetails={(request, trigger) => {
+                      rememberTrigger(trigger);
+                      drawer.openRequest(request.id);
+                    }}
+                    onCancellationReview={controller.openCancellationReviewDialog}
+                    onAction={controller.openActionDialog}
+                    workflowInfoPopover={workflowInfoPopover}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {canViewTeamRequests ? (
+              <aside className="space-y-4">
+                {personalReferencePanel}
+              </aside>
+            ) : null}
+          </div>
+        )}
       </ModuleLayout.Content>
 
       <LeaveDetailDrawer

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -142,29 +143,29 @@ export function LeaveRequestWorkspace({
       MY_CURRENT: {
         label: `My Current (${myCurrentRequests.length})`,
         shortLabel: 'My Current',
-        title: 'My Current Requests',
-        summary: 'Requests you currently own that are still active or awaiting a final outcome.',
+        title: 'My Active Requests',
+        summary: 'Track active requests, amendments, documents, and approval progress from one list.',
         requests: myCurrentRequests,
       },
       MY_HISTORY: {
         label: `My History (${myHistoryRequests.length})`,
         shortLabel: 'My History',
         title: 'My Request History',
-        summary: 'Resolved or completed requests that remain available for reference.',
+        summary: 'Resolved requests and completed leave entries kept for reference.',
         requests: myHistoryRequests,
       },
       TEAM_CURRENT: {
         label: `Team Current (${teamCurrentRequests.length})`,
         shortLabel: 'Team Current',
-        title: 'Team Current Requests',
-        summary: 'Current team requests visible to you at this approval stage.',
+        title: 'Approval Inbox',
+        summary: 'Requests currently waiting on your review, delegated action, or document follow-up.',
         requests: teamCurrentRequests,
       },
       TEAM_HISTORY: {
         label: `Team History (${teamHistoryRequests.length})`,
         shortLabel: 'Team History',
-        title: 'Team Request History',
-        summary: 'Resolved team requests retained for traceability and follow-up.',
+        title: 'Resolved Team Requests',
+        summary: 'Completed team decisions retained for traceability, follow-up, and audit context.',
         requests: teamHistoryRequests,
       },
     };
@@ -228,6 +229,16 @@ export function LeaveRequestWorkspace({
                   </Badge>
                 </>
               )}
+              actions={statusFilter !== 'ALL' ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-8 rounded-full px-3 text-xs text-muted-foreground"
+                  onClick={() => setStatusFilter('ALL')}
+                >
+                  Clear filter
+                </Button>
+              ) : undefined}
             />
 
             <DataTableShell
