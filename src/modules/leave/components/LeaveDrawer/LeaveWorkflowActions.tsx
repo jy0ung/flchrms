@@ -28,10 +28,11 @@ export function LeaveWorkflowActions({
   onApproveCancellation,
   onRejectCancellation,
 }: LeaveWorkflowActionsProps) {
+  const isCancellationDecision = permissions.canApproveCancellation;
+  const isApprovalDecision = !isCancellationDecision && (permissions.canApprove || permissions.canReject);
   const hasDecisionActions =
-    permissions.canApprove ||
-    permissions.canReject ||
-    permissions.canApproveCancellation;
+    isApprovalDecision ||
+    isCancellationDecision;
   const hasActions =
     hasDecisionActions ||
     permissions.canRequestDocument ||
@@ -48,12 +49,18 @@ export function LeaveWorkflowActions({
     <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium">
-          {hasDecisionActions ? 'Decision actions' : 'Available actions'}
+          {isCancellationDecision
+            ? 'Cancellation decision required'
+            : isApprovalDecision
+              ? 'Approval decision required'
+              : 'Requester actions'}
         </p>
         <p className="text-xs text-muted-foreground">
-          {hasDecisionActions
-            ? 'Approve, reject, or request more information without leaving the current request.'
-            : 'Available actions reflect the current approval stage and your role in the workflow.'}
+          {isCancellationDecision
+            ? 'Resolve the cancellation request here without leaving the workflow context.'
+            : isApprovalDecision
+              ? 'Approve, reject, or ask for supporting documents from the current request.'
+              : 'These actions are available for the requester at the current stage.'}
         </p>
       </div>
 

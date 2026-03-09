@@ -206,14 +206,13 @@ export function TeamLeaveRequestsTable({
             </div>
 
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[1120px]">
+              <table className="w-full min-w-[980px]">
                 <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium text-muted-foreground">Employee</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Details</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Request</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Workflow</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Context</th>
                   <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
@@ -237,16 +236,18 @@ export function TeamLeaveRequestsTable({
                         <p className="text-sm text-muted-foreground">{employeeEmail}</p>
                       </td>
                       <td className="p-4">
-                        <div>
-                          {request.leave_type?.name}
+                        <div className="space-y-1">
+                          <div>
+                            <span className="font-medium">{request.leave_type?.name}</span>
                           {request.leave_type?.requires_document && (
                             <Badge variant="outline" className="ml-2 text-xs">Doc Required</Badge>
                           )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{request.days_count} days</p>
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <p>{format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}</p>
-                        <p className="text-sm text-muted-foreground">{request.days_count} days</p>
                       </td>
                       <td className="p-4">
                         <StatusBadge status={status.status} labelOverride={status.label} />
