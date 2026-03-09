@@ -18,6 +18,7 @@ import {
 } from '@/hooks/usePayroll';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { canManagePayroll as canManagePayrollPermission } from '@/lib/permissions';
+import { ContextChip } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import type { PayrollPageProps, PayrollWorkspaceTab } from './types';
 
@@ -170,7 +171,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
               ? 'Manage payroll runs, salary structures, deduction rules, and published payslips.'
               : 'Review your payslips, salary information, and current payroll records.'
           }
-          metaSlot={<button type="button" disabled className="cursor-default rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">Active view: {activeTabLabel}</button>}
+          metaSlot={<ContextChip>Active view: {activeTabLabel}</ContextChip>}
           actionsSlot={
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
               {isPayslipsTab ? (

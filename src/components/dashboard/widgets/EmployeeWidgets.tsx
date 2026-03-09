@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/system';
+import { ContextChip, StatusBadge } from '@/components/system';
 
 import {
   DashboardWidgetCard,
@@ -84,10 +84,10 @@ export function AttendanceTodayWidget() {
               Clock Out
             </Button>
           ) : (
-            <Button variant="outline" className="h-10 w-full rounded-lg sm:w-auto" disabled>
-              <CheckCircle2 className="mr-2 h-4 w-4 text-success" />
+            <ContextChip tone="success" className="h-10 w-full justify-center sm:w-auto">
+              <CheckCircle2 className="h-4 w-4 text-success" />
               Completed Today
-            </Button>
+            </ContextChip>
           )}
         </div>
       </div>

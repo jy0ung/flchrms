@@ -22,7 +22,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
-import { DataTableShell, RecordSurfaceHeader } from '@/components/system';
+import { ContextChip, DataTableShell, RecordSurfaceHeader } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
@@ -313,13 +313,13 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         description="Contextual employee management is now anchored in the employee module."
         metaSlot={
           <>
-            <Button variant="outline" size="sm" className="rounded-full px-3 text-xs capitalize" disabled>
+            <ContextChip className="capitalize">
               Viewer role: {formatRoleLabel(role)}
-            </Button>
+            </ContextChip>
             {entryContext === 'admin' ? (
-              <Button variant="outline" size="sm" className="rounded-full px-3 text-xs" disabled>
+              <ContextChip>
                 Admin wrapper
-              </Button>
+              </ContextChip>
             ) : null}
           </>
         }

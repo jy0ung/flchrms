@@ -72,6 +72,7 @@ describe('Payroll page', () => {
     it('shows employee-facing description', () => {
       render(<Payroll />, { wrapper });
       expect(screen.getByText(/review your payslips/i)).toBeInTheDocument();
+      expect(screen.getByText(/active view: my payslips/i)).toBeInTheDocument();
     });
   });
 
