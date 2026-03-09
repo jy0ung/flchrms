@@ -13,11 +13,9 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAuth } from '@/contexts/AuthContext';
 import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
-import { PageHeader } from '@/components/system';
+import { ActionTile, PageHeader } from '@/components/system';
 
 interface QuickAction {
   id: string;
@@ -158,26 +156,16 @@ export default function AdminQuickActionsPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {section.actions.map((action) => (
-              <Card
+              <ActionTile
                 key={action.id}
-                className="cursor-pointer border-border shadow-sm transition-all hover:border-primary/20 hover:shadow-md active:scale-[0.98]"
                 onClick={() => navigate(action.destination)}
-              >
-                <CardContent className="p-5">
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${action.bg}`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 text-[10px] uppercase tracking-wide">
-                      {action.surface}
-                    </Badge>
-                  </div>
-                  <h3 className="text-sm font-semibold">{action.title}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {action.description}
-                  </p>
-                </CardContent>
-              </Card>
+                title={action.title}
+                description={action.description}
+                icon={action.icon}
+                iconClassName={action.color}
+                iconSurfaceClassName={action.bg}
+                badgeLabel={action.surface}
+              />
             ))}
           </div>
         </section>

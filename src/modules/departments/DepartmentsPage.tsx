@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { Badge } from '@/components/ui/badge';
 import { QueryErrorState, RecordSurfaceHeader } from '@/components/system';
-import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -189,7 +189,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
       />
 
       <ModuleLayout.Content>
-        <WorkspaceSummaryBar
+        <SummaryRail
           items={[
             {
               id: 'departments-total',

@@ -18,7 +18,7 @@ import {
 } from '@/hooks/usePayroll';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { canManagePayroll as canManagePayrollPermission } from '@/lib/permissions';
-import { WorkspaceSummaryBar, type WorkspaceSummaryItem } from '@/components/workspace/WorkspaceSummaryBar';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import type { PayrollPageProps, PayrollWorkspaceTab } from './types';
 
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
@@ -60,7 +60,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
     }
   }, [activeTab, canManagePayroll]);
 
-  const summaryItems = useMemo<WorkspaceSummaryItem[]>(() => {
+  const summaryItems = useMemo<SummaryRailItem[]>(() => {
     if (canManagePayroll) {
       const draftPeriods =
         payrollPeriods?.filter((period) => period.status === 'draft').length ?? 0;
@@ -229,7 +229,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
         </ModuleLayout.Toolbar>
 
         <ModuleLayout.Content>
-          <WorkspaceSummaryBar items={summaryItems} />
+          <SummaryRail items={summaryItems} />
 
           {canManagePayroll ? (
             <>

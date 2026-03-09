@@ -23,7 +23,7 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { DataTableShell, RecordSurfaceHeader } from '@/components/system';
-import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
 
@@ -421,7 +421,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       </ModuleLayout.Toolbar>
 
       <ModuleLayout.Content>
-        <WorkspaceSummaryBar
+        <SummaryRail
           items={[
             {
               id: 'total-employees',

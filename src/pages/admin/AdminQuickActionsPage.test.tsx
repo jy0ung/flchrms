@@ -76,10 +76,8 @@ describe('AdminQuickActionsPage', () => {
       </MemoryRouter>,
     );
 
-    const employeeCard = screen.getByText('Open Employee Workspace').closest('.cursor-pointer');
-    expect(employeeCard).not.toBeNull();
-
-    fireEvent.click(employeeCard!);
+    const employeeCard = screen.getByRole('button', { name: /Open Employee Workspace/i });
+    fireEvent.click(employeeCard);
 
     expect(mockNavigate).toHaveBeenCalledWith('/employees');
   });

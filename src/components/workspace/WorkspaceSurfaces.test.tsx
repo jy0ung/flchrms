@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
@@ -58,6 +59,26 @@ describe('workspace UX primitives', () => {
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('18')).toBeInTheDocument();
     expect(screen.getByText('Records requiring day-to-day attention.')).toBeInTheDocument();
+  });
+
+  it('renders the canonical summary rail with optional icons', () => {
+    render(
+      <SummaryRail
+        items={[
+          {
+            id: 'departments',
+            label: 'Departments',
+            value: 7,
+            helper: 'Departments currently represented in this workspace.',
+            icon: Building2,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Departments')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('Departments currently represented in this workspace.')).toBeInTheDocument();
   });
 
   it('renders record surface metadata and actions', () => {

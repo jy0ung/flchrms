@@ -4,6 +4,7 @@ export * from "./AppPageContainer";
 export * from "./CardHeaderStandard";
 export * from "./SectionToolbar";
 export * from "./RecordSurfaceHeader";
+export * from "./ActionTile";
 export * from "./MobileFilterSheet";
 export * from "./DataTableShell";
 export * from "./SurfaceSection";

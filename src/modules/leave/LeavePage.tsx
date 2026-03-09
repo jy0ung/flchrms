@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DataTableShell, QueryErrorState } from '@/components/system';
-import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
@@ -319,7 +319,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <ModuleLayout.Content>
-        <WorkspaceSummaryBar items={metricItems} />
+        <SummaryRail items={metricItems} />
 
         {isLoading ? (
           <DataTableShell
