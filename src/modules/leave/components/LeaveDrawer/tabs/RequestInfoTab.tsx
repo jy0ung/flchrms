@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/system';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import type { LeaveRequest } from '@/types/hrms';
 import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
+import type { LeaveWorkflowPresentation } from '@/components/leave/leave-request-context';
 
 import type {
   LeaveCancellationBadge,
@@ -16,6 +17,7 @@ interface RequestInfoTabProps {
   request: LeaveRequest;
   statusDisplay: LeaveRequestStatusDisplay;
   cancellationBadge: LeaveCancellationBadge;
+  workflowPresentation: LeaveWorkflowPresentation | null;
   formatDateTime: (value: string | null | undefined) => string;
 }
 
@@ -29,18 +31,14 @@ function formatWorkflowStageLabel(stage: string) {
 export function RequestInfoTab({
   request,
   statusDisplay,
-  cancellationBadge,
+  workflowPresentation,
   formatDateTime,
 }: RequestInfoTabProps) {
   const employeeName = getLeaveRequestEmployeeName(request);
   const employeeEmail = getLeaveRequestEmployeeEmail(request);
-  const documentState = request.document_url
-    ? 'Attached'
-    : request.document_required
-      ? 'Requested from requester'
-      : request.leave_type?.requires_document
-        ? 'Required if requested'
-        : 'Not required';
+  const documentState = request.leave_type?.requires_document
+    ? 'Required for this leave type'
+    : 'Not required by policy';
 
   return (
     <div className="space-y-4">
@@ -66,22 +64,34 @@ export function RequestInfoTab({
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex flex-wrap gap-2">
-              <StatusBadge status={statusDisplay.status} labelOverride={statusDisplay.label} />
-              {cancellationBadge ? (
+              <StatusBadge
+                status={workflowPresentation?.primaryStatus.status ?? statusDisplay.status}
+                labelOverride={workflowPresentation?.primaryStatus.label ?? statusDisplay.label}
+              />
+              {workflowPresentation?.secondaryStatus ? (
                 <StatusBadge
-                  status={cancellationBadge.status}
-                  labelOverride={cancellationBadge.label}
+                  status={workflowPresentation.secondaryStatus.status}
+                  labelOverride={workflowPresentation.secondaryStatus.label}
                   showIcon
                 />
-              ) : null}
-              {request.leave_type?.requires_document ? (
-                <Badge variant="outline">Doc Required</Badge>
               ) : null}
             </div>
             <p>
               <span className="text-muted-foreground">Current state:</span>{' '}
-              {statusDisplay.label}
+              {workflowPresentation?.primaryStatus.label ?? statusDisplay.label}
             </p>
+            {workflowPresentation?.secondaryStatus ? (
+              <p>
+                <span className="text-muted-foreground">Secondary state:</span>{' '}
+                {workflowPresentation.secondaryStatus.label}
+              </p>
+            ) : null}
+            {workflowPresentation?.supportText ? (
+              <p>
+                <span className="text-muted-foreground">Workflow support:</span>{' '}
+                {workflowPresentation.supportText}
+              </p>
+            ) : null}
             <p>
               <span className="text-muted-foreground">Approval Route:</span>{' '}
               {(request.approval_route_snapshot || []).map(formatWorkflowStageLabel).join(' -> ') || '—'}

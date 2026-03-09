@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import {
   getLeaveRequestAttentionLabel,
+  getLeaveWorkflowPresentation,
   getLeaveWorkflowSupportNotes,
 } from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
@@ -131,5 +132,24 @@ describe('LeaveRequestContextSummary', () => {
         }),
       ),
     ).toEqual(['Supporting document attached']);
+  });
+
+  it('builds a unified workflow presentation with one secondary status and support text', () => {
+    const request = makeLeaveRequest({
+      document_required: true,
+      amended_at: '2026-02-15T00:00:00Z',
+    });
+
+    expect(
+      getLeaveWorkflowPresentation({
+        request,
+        statusDisplay: { status: 'pending', label: 'Pending Manager' },
+        cancellationBadge: { status: 'pending', label: 'Cancellation Pending Manager' },
+      }),
+    ).toEqual({
+      primaryStatus: { status: 'pending', label: 'Pending Manager' },
+      secondaryStatus: { status: 'pending', label: 'Cancellation Pending Manager' },
+      supportText: 'Supporting document requested • Updated after amendment',
+    });
   });
 });

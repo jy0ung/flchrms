@@ -1,5 +1,11 @@
 import type { LeaveRequest } from '@/types/hrms';
 
+export interface LeaveWorkflowPresentation {
+  primaryStatus: { status: string; label: string };
+  secondaryStatus: { status: string; label: string } | null;
+  supportText: string | null;
+}
+
 export function getLeaveRequestAttentionLabel(input: {
   request: LeaveRequest;
   canApprove?: boolean;
@@ -47,4 +53,19 @@ export function getLeaveWorkflowSupportNotes(request: LeaveRequest): string[] {
   }
 
   return notes;
+}
+
+export function getLeaveWorkflowPresentation(input: {
+  request: LeaveRequest;
+  statusDisplay: { status: string; label: string };
+  cancellationBadge: { status: string; label: string } | null;
+}): LeaveWorkflowPresentation {
+  const { request, statusDisplay, cancellationBadge } = input;
+  const workflowNotes = getLeaveWorkflowSupportNotes(request);
+
+  return {
+    primaryStatus: statusDisplay,
+    secondaryStatus: cancellationBadge,
+    supportText: workflowNotes.length > 0 ? workflowNotes.join(' • ') : null,
+  };
 }

@@ -1,11 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LeavePage } from '@/modules/leave/LeavePage';
 
 const openRequestWizard = vi.fn();
+let mockRole: 'employee' | 'manager' = 'employee';
+let mockCanViewTeamRequests = false;
+let mockCanOpenTeamCalendarLink = false;
 
 const leaveRecord = {
   id: 'leave-1',
@@ -75,7 +78,7 @@ const leaveRecord = {
 };
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1' }, role: 'employee' }),
+  useAuth: () => ({ user: { id: 'user-1' }, role: mockRole }),
 }));
 
 vi.mock('@/hooks/usePageTitle', () => ({
@@ -98,11 +101,11 @@ vi.mock('@/modules/leave/hooks/useLeaveCapabilities', () => ({
   useLeaveCapabilities: () => ({
     pageActions: {
       canCreateRequest: true,
-      canViewTeamRequests: false,
-      canOpenTeamCalendarLink: false,
+      canViewTeamRequests: mockCanViewTeamRequests,
+      canOpenTeamCalendarLink: mockCanOpenTeamCalendarLink,
     },
     delegatedApprovalAccess: null,
-    defaultWorkspaceView: () => 'MY_CURRENT',
+    defaultWorkspaceView: () => (mockCanViewTeamRequests ? 'TEAM_CURRENT' : 'MY_CURRENT'),
     getStatusDisplay: () => ({ status: 'pending', label: 'Pending' }),
     getCancellationBadge: () => null,
     getRowPermissions: () => ({
@@ -117,7 +120,7 @@ vi.mock('@/modules/leave/hooks/useLeaveCapabilities', () => ({
       canViewDocument: false,
     }),
     isHistoricalRequest: () => false,
-    canViewRequestAtCurrentApprovalStage: () => false,
+    canViewRequestAtCurrentApprovalStage: () => mockCanViewTeamRequests,
   }),
 }));
 
@@ -177,8 +180,18 @@ vi.mock('@/modules/leave/hooks/useLeaveWorkflowController', () => ({
 
 vi.mock('@/layouts/ModuleLayout', () => {
   const Root = ({ children }: { children: ReactNode }) => <div>{children}</div>;
-  const Header = ({ title }: { title: string }) => <div>{title}</div>;
-  const Toolbar = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+  const Header = ({ title, description }: { title: string; description?: string }) => (
+    <div>
+      <div>{title}</div>
+      {description ? <div>{description}</div> : null}
+    </div>
+  );
+  const Toolbar = ({ children, trailingSlot }: { children?: ReactNode; trailingSlot?: ReactNode }) => (
+    <div>
+      {children}
+      {trailingSlot}
+    </div>
+  );
   const Content = ({ children }: { children: ReactNode }) => <div>{children}</div>;
   const DetailDrawer = ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div>{children}</div> : null;
@@ -207,13 +220,16 @@ vi.mock('@/components/leave/LeaveRequestWorkspace', () => ({
     myCurrentRequests,
     onOpenDetails,
     defaultView,
+    workflowInfoPopover,
   }: {
     myCurrentRequests: typeof leaveRecord[];
     onOpenDetails: (request: typeof leaveRecord) => void;
     defaultView?: string;
+    workflowInfoPopover?: ReactNode;
   }) => (
     <div>
       <div>{`default-view:${defaultView}`}</div>
+      {workflowInfoPopover}
       <button type="button" onClick={() => onOpenDetails(myCurrentRequests[0])}>open-details</button>
     </div>
   ),
@@ -234,6 +250,13 @@ function LocationProbe() {
 }
 
 describe('LeavePage', () => {
+  beforeEach(() => {
+    mockRole = 'employee';
+    mockCanViewTeamRequests = false;
+    mockCanOpenTeamCalendarLink = false;
+    openRequestWizard.mockClear();
+  });
+
   it('opens the leave detail drawer and syncs the query params', () => {
     render(
       <MemoryRouter initialEntries={['/leave']}>
@@ -259,5 +282,30 @@ describe('LeavePage', () => {
     expect(openRequestWizard).toHaveBeenCalledTimes(1);
     expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
     expect(screen.getByText('search:?workspaceView=TEAM_CURRENT')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Approval workflow guide/i })).toBeInTheDocument();
+  });
+
+  it('uses distinct employee and approver copy', () => {
+    const { rerender } = render(
+      <MemoryRouter initialEntries={['/leave']}>
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Your leave requests, balances, and history in one workspace.')).toBeInTheDocument();
+
+    mockRole = 'manager';
+    mockCanViewTeamRequests = true;
+    mockCanOpenTeamCalendarLink = true;
+
+    rerender(
+      <MemoryRouter initialEntries={['/leave']}>
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Review team requests and work approval queues in context.')).toBeInTheDocument();
+    expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open Team Calendar/i })).toBeInTheDocument();
   });
 });

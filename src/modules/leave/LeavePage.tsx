@@ -136,18 +136,18 @@ export function LeavePage({ initialView }: LeavePageProps) {
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
-          aria-label="Approval workflow examples"
+          className="h-8 rounded-full px-2 text-xs text-muted-foreground hover:text-foreground"
+          aria-label="Approval workflow guide"
         >
           <Info className="h-4 w-4" />
+          Approval guide
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[min(90vw,26rem)]" align="start">
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm">Approval Workflow (Configurable)</h4>
+          <h4 className="font-semibold text-sm">Approval Workflow</h4>
           <p className="text-[11px] text-muted-foreground">
-            Examples below. Actual approval routes follow the workflow profile saved by HR/Admin/Director.
+            Typical routing examples. Actual approval order follows the workflow profile configured for the requester.
           </p>
           <div className="space-y-2 text-xs text-muted-foreground">
             <div className="space-y-1">
@@ -205,12 +205,6 @@ export function LeavePage({ initialView }: LeavePageProps) {
           value: cancellationReviews,
           helper: 'Requests waiting on a cancellation decision.',
         },
-        {
-          id: 'my-active-requests',
-          label: 'My active requests',
-          value: myCurrentRequests.length,
-          helper: 'Your own in-flight requests kept nearby for quick reference.',
-        },
       ];
     }
 
@@ -252,8 +246,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
 
   const workflowContextTitle = canViewTeamRequests ? 'Approval inbox' : 'My request workspace';
   const workflowContextDescription = canViewTeamRequests
-    ? 'Work the queue first. Personal balances stay available as a secondary reference while you approve or reject requests.'
-    : 'Track your requests, balances, and supporting documents from a single personal workspace.';
+    ? 'Review queue items first. Personal balances stay nearby as a secondary reference.'
+    : 'Track your requests, balances, and supporting documents from one personal workspace.';
 
   const personalReferencePanel = (
     <Card className="border-border/70 shadow-sm">
@@ -293,7 +287,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
         title="Leave Management"
         description={
           canViewTeamRequests
-            ? 'Review team requests, work approval queues, and keep your own leave reference close by.'
+            ? 'Review team requests and work approval queues in context.'
             : isEmployee(role)
               ? 'Your leave requests, balances, and history in one workspace.'
               : 'Manage leave requests and approvals in context.'

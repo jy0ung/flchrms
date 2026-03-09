@@ -6,7 +6,7 @@ import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import {
   getLeaveRequestAttentionLabel,
-  getLeaveWorkflowSupportNotes,
+  getLeaveWorkflowPresentation,
 } from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
 import { StatusBadge } from '@/components/system';
@@ -68,7 +68,11 @@ export function MyLeaveRequestsTable({
               {requests.map((request) => {
                 const status = getStatusDisplay(request);
                 const cancellationBadge = getCancellationBadge(request);
-                const workflowNotes = getLeaveWorkflowSupportNotes(request);
+                const workflowPresentation = getLeaveWorkflowPresentation({
+                  request,
+                  statusDisplay: status,
+                  cancellationBadge,
+                });
                 const attentionLabel = getLeaveRequestAttentionLabel({
                   request,
                   canAmend: canAmend(request),
@@ -85,9 +89,20 @@ export function MyLeaveRequestsTable({
                           {request.leave_type?.requires_document && (
                             <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
                           )}
+                          {workflowPresentation.secondaryStatus ? (
+                            <StatusBadge
+                              status={workflowPresentation.secondaryStatus.status}
+                              labelOverride={workflowPresentation.secondaryStatus.label}
+                              className="text-[11px]"
+                            />
+                          ) : null}
                         </div>
                       </div>
-                      <StatusBadge status={status.status} labelOverride={status.label} className="shrink-0" />
+                      <StatusBadge
+                        status={workflowPresentation.primaryStatus.status}
+                        labelOverride={workflowPresentation.primaryStatus.label}
+                        className="shrink-0"
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
@@ -97,9 +112,9 @@ export function MyLeaveRequestsTable({
                           {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                         </p>
                         <p className="text-xs text-muted-foreground">{request.days_count} days</p>
-                        {cancellationBadge || workflowNotes.length > 0 ? (
+                        {workflowPresentation.supportText ? (
                           <p className="mt-2 text-xs text-muted-foreground">
-                            {[cancellationBadge?.label, ...workflowNotes].filter(Boolean).join(' • ')}
+                            {workflowPresentation.supportText}
                           </p>
                         ) : null}
                       </div>
@@ -161,7 +176,11 @@ export function MyLeaveRequestsTable({
                 {requests.map((request) => {
                   const status = getStatusDisplay(request);
                   const cancellationBadge = getCancellationBadge(request);
-                  const workflowNotes = getLeaveWorkflowSupportNotes(request);
+                  const workflowPresentation = getLeaveWorkflowPresentation({
+                    request,
+                    statusDisplay: status,
+                    cancellationBadge,
+                  });
                   const attentionLabel = getLeaveRequestAttentionLabel({
                     request,
                     canAmend: canAmend(request),
@@ -188,17 +207,20 @@ export function MyLeaveRequestsTable({
                       <td className="p-4">
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
-                            <StatusBadge status={status.status} labelOverride={status.label} />
-                            {cancellationBadge ? (
+                            <StatusBadge
+                              status={workflowPresentation.primaryStatus.status}
+                              labelOverride={workflowPresentation.primaryStatus.label}
+                            />
+                            {workflowPresentation.secondaryStatus ? (
                               <StatusBadge
-                                status={cancellationBadge.status}
-                                labelOverride={cancellationBadge.label}
+                                status={workflowPresentation.secondaryStatus.status}
+                                labelOverride={workflowPresentation.secondaryStatus.label}
                               />
                             ) : null}
                           </div>
-                          {workflowNotes.length > 0 ? (
+                          {workflowPresentation.supportText ? (
                             <p className="text-xs text-muted-foreground">
-                              {workflowNotes.join(' • ')}
+                              {workflowPresentation.supportText}
                             </p>
                           ) : null}
                         </div>

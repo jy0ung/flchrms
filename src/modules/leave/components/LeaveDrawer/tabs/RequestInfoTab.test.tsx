@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { getLeaveWorkflowPresentation } from '@/components/leave/leave-request-context';
 import { RequestInfoTab } from '@/modules/leave/components/LeaveDrawer/tabs/RequestInfoTab';
 import type { LeaveRequest } from '@/types/hrms';
 
@@ -81,20 +82,29 @@ function makeLeaveRequest(overrides: Partial<LeaveRequest> = {}): LeaveRequest {
 
 describe('RequestInfoTab', () => {
   it('separates workflow snapshot from request notes and context', () => {
+    const request = makeLeaveRequest();
+
     render(
       <RequestInfoTab
-        request={makeLeaveRequest()}
+        request={request}
         statusDisplay={{ status: 'pending', label: 'Pending Manager' }}
-        cancellationBadge={{ status: 'pending', label: 'Cancellation Pending Manager' }}
+        workflowPresentation={getLeaveWorkflowPresentation({
+          request,
+          statusDisplay: { status: 'pending', label: 'Pending Manager' },
+          cancellationBadge: { status: 'pending', label: 'Cancellation Pending Manager' },
+        })}
         formatDateTime={(value) => value ?? '—'}
       />,
     );
 
     expect(screen.getByText('Workflow Snapshot')).toBeInTheDocument();
     expect(screen.getByText('Current state:')).toBeInTheDocument();
+    expect(screen.getByText('Secondary state:')).toBeInTheDocument();
+    expect(screen.getByText('Workflow support:')).toBeInTheDocument();
     expect(screen.getByText('Supporting document:')).toBeInTheDocument();
     expect(screen.getByText('Request Notes & Workflow Context')).toBeInTheDocument();
     expect(screen.getByText('Approver comments')).toBeInTheDocument();
     expect(screen.getByText('Amendment notes')).toBeInTheDocument();
+    expect(screen.queryByText('Doc Required')).not.toBeInTheDocument();
   });
 });

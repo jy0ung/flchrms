@@ -15,6 +15,7 @@ import { CancellationHistoryTab } from '@/modules/leave/components/LeaveDrawer/t
 import { DocumentsTab } from '@/modules/leave/components/LeaveDrawer/tabs/DocumentsTab';
 import { RequestInfoTab } from '@/modules/leave/components/LeaveDrawer/tabs/RequestInfoTab';
 import { useLeaveRequestDetails } from '@/modules/leave/hooks/useLeaveRequestDetails';
+import { getLeaveWorkflowPresentation } from '@/components/leave/leave-request-context';
 import { getLeaveRequestDrawerTitle, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
 import type {
   LeaveCancellationBadge,
@@ -101,6 +102,13 @@ export function LeaveDetailDrawer({
   const rangeLabel = request
     ? `${format(new Date(request.start_date), 'PP')} - ${format(new Date(request.end_date), 'PP')}`
     : '—';
+  const workflowPresentation = request && statusDisplay
+    ? getLeaveWorkflowPresentation({
+        request,
+        statusDisplay,
+        cancellationBadge,
+      })
+    : null;
 
   return (
     <ModuleLayout.DetailDrawer
@@ -132,11 +140,14 @@ export function LeaveDetailDrawer({
           <DrawerMetaHeader
             badges={(
               <>
-                <Badge variant="outline">{statusDisplay.label}</Badge>
-                {cancellationBadge ? <Badge variant="outline">{cancellationBadge.label}</Badge> : null}
+                <Badge variant="outline">{workflowPresentation?.primaryStatus.label ?? statusDisplay.label}</Badge>
+                {workflowPresentation?.secondaryStatus ? (
+                  <Badge variant="outline">{workflowPresentation.secondaryStatus.label}</Badge>
+                ) : null}
               </>
             )}
             description={request.reason || 'No request note provided.'}
+            supportingText={workflowPresentation?.supportText}
             metaItems={[
               {
                 id: 'requester',
@@ -189,6 +200,7 @@ export function LeaveDetailDrawer({
               request={request}
               statusDisplay={statusDisplay}
               cancellationBadge={cancellationBadge}
+              workflowPresentation={workflowPresentation}
               formatDateTime={formatDateTime}
             />
           </TabsContent>
