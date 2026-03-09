@@ -1,9 +1,12 @@
 import { useTrainingPrograms, useMyEnrollments, useEnrollInProgram } from '@/hooks/useTraining';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { BookOpenCheck, GraduationCap, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function Training() {
   usePageTitle('Training');
@@ -12,6 +15,8 @@ export default function Training() {
   const enroll = useEnrollInProgram();
 
   const enrolledIds = enrollments?.map(e => e.program_id) || [];
+  const mandatoryPrograms = programs?.filter((program) => program.is_mandatory).length ?? 0;
+  const activeEnrollments = enrollments?.length ?? 0;
 
   return (
     <AppPageContainer maxWidth="7xl">
@@ -19,6 +24,36 @@ export default function Training() {
         title="Training & Development"
         description="Training programs and enrollment status."
       />
+
+      {!programsLoading || !enrollmentsLoading ? (
+        <SummaryRail
+          items={[
+            {
+              id: 'active-enrollments',
+              label: 'Active Enrollments',
+              value: activeEnrollments,
+              helper: 'Programs currently assigned to you.',
+              icon: BookOpenCheck,
+              tone: activeEnrollments > 0 ? 'info' : 'default',
+            },
+            {
+              id: 'available-programs',
+              label: 'Available Programs',
+              value: programs?.length ?? 0,
+              helper: 'Open learning opportunities in the catalog.',
+              icon: GraduationCap,
+            },
+            {
+              id: 'mandatory-programs',
+              label: 'Mandatory',
+              value: mandatoryPrograms,
+              helper: mandatoryPrograms > 0 ? 'Required training in the current catalog.' : 'No required programs right now.',
+              icon: ShieldCheck,
+              tone: mandatoryPrograms > 0 ? 'warning' : 'default',
+            },
+          ]}
+        />
+      ) : null}
 
       {programsError && (
         <QueryErrorState label="training programs" onRetry={() => refetchPrograms()} />
@@ -54,9 +89,17 @@ export default function Training() {
 
       <DataTableShell
         title="Available Programs"
+        description="Browse the current learning catalog and enroll where eligible."
         headerActions={<Badge variant="outline" className="rounded-full">{programs?.length || 0} programs</Badge>}
+        loading={programsLoading}
         hasData={Boolean(programs?.length)}
-        emptyState={<div className="p-4 text-center text-muted-foreground">No training programs available.</div>}
+        emptyState={
+          <WorkspaceStatePanel
+            title="No training programs available"
+            description="New learning opportunities will appear here when the catalog is updated."
+            icon={GraduationCap}
+          />
+        }
         content={
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {programs?.map((program) => (

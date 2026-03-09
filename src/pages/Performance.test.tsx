@@ -40,6 +40,7 @@ describe('Performance operational status badges', () => {
     render(<Performance />);
 
     expect(screen.getByText(/My Reviews/i)).toBeInTheDocument();
+    expect(screen.getByText(/Awaiting Acknowledgement/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/submitted status/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Acknowledge/i })).toBeInTheDocument();
   });

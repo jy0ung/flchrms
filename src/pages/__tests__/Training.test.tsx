@@ -79,7 +79,7 @@ describe('Training page', () => {
     ];
     mockEnrollments = [];
     render(<Training />, { wrapper });
-    expect(screen.getByText('Mandatory')).toBeInTheDocument();
+    expect(screen.getByLabelText(/mandatory status/i)).toBeInTheDocument();
   });
 
   it('shows "Enrolled" badge instead of Enroll button for enrolled programs', () => {
@@ -136,5 +136,6 @@ describe('Training page', () => {
     mockEnrollments = [];
     render(<Training />, { wrapper });
     expect(screen.getByText('2 programs')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Available Programs' })).toBeInTheDocument();
   });
 });

@@ -4,24 +4,23 @@ import { describe, expect, it } from 'vitest';
 
 import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
-import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
-import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
 import { RecordSurfaceHeader } from '@/components/system/RecordSurfaceHeader';
 
 describe('workspace UX primitives', () => {
-  it('renders metric items with descriptions', () => {
+  it('renders summary items in card mode with descriptions', () => {
     render(
-      <WorkspaceMetricStrip
+      <SummaryRail
         items={[
           {
             id: 'employees',
             label: 'Employees',
             value: 42,
-            description: 'Visible across the workspace.',
+            helper: 'Visible across the workspace.',
             icon: Users,
           },
         ]}
+        variant="cards"
       />,
     );
 
@@ -44,7 +43,7 @@ describe('workspace UX primitives', () => {
 
   it('renders compact summary items for high-signal workspace metrics', () => {
     render(
-      <WorkspaceSummaryBar
+      <SummaryRail
         items={[
           {
             id: 'active',

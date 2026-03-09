@@ -27,11 +27,8 @@ describe('Announcements page', () => {
   it('renders loading skeletons when loading', () => {
     mockIsLoading = true;
     mockAnnouncementsData = undefined;
-    const { container } = render(<Announcements />, { wrapper });
-    // Skeletons use pulse animation classes from Skeleton component
-    expect(container.querySelectorAll('[class*="animate-pulse"], [data-slot="skeleton"]').length).toBeGreaterThanOrEqual(0);
-    // Should show "Loading updates" description
-    expect(screen.getByText(/loading updates/i)).toBeInTheDocument();
+    render(<Announcements />, { wrapper });
+    expect(screen.getByText(/loading announcement feed/i)).toBeInTheDocument();
     mockIsLoading = false;
   });
 
@@ -71,6 +68,7 @@ describe('Announcements page', () => {
     ];
     render(<Announcements />, { wrapper });
     expect(screen.getByText(/1 item —/i)).toBeInTheDocument();
+    expect(screen.getByText('Published')).toBeInTheDocument();
   });
 
   it('pluralises item count correctly', () => {

@@ -41,8 +41,8 @@ describe('Attendance operational status badges', () => {
     render(<Attendance />);
 
     expect(screen.getByText(/Attendance History/i)).toBeInTheDocument();
+    expect(screen.getByText(/Today Status/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Present/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Late/i).length).toBeGreaterThan(0);
   });
 });
-

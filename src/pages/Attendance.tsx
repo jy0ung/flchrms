@@ -1,10 +1,10 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Play, Square } from 'lucide-react';
+import { Calendar, Clock3, Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
+import { AppPageContainer, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function Attendance() {
   usePageTitle('Attendance');
@@ -12,6 +12,10 @@ export default function Attendance() {
   const { data: today } = useTodayAttendance();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
+  const attendanceHistoryCount = history?.length ?? 0;
+  const todayStatus = today?.status ? today.status.replace(/_/g, ' ') : 'Not started';
+  const clockInLabel = today?.clock_in ? format(new Date(today.clock_in), 'h:mm a') : '—';
+  const clockOutLabel = today?.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '—';
 
   return (
     <AppPageContainer maxWidth="7xl">
@@ -40,43 +44,63 @@ export default function Attendance() {
                     disabled: clockOut.isPending,
                     variant: 'destructive',
                   },
-                ]
-              : []
+              ]
+            : []
         }
+      />
+
+      <SummaryRail
+        items={[
+          {
+            id: 'today-status',
+            label: 'Today Status',
+            value: todayStatus,
+            helper: format(new Date(), 'EEEE, MMM d'),
+            icon: Calendar,
+            tone: today ? 'success' : 'default',
+          },
+          {
+            id: 'clock-in',
+            label: 'Clock In',
+            value: clockInLabel,
+            helper: today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.',
+            icon: Play,
+            tone: today?.clock_in ? 'info' : 'default',
+          },
+          {
+            id: 'clock-out',
+            label: 'Clock Out',
+            value: clockOutLabel,
+            helper: today?.clock_out ? 'Work session completed.' : 'Clock-out pending.',
+            icon: Square,
+            tone: today?.clock_out ? 'success' : 'warning',
+          },
+          {
+            id: 'history-count',
+            label: 'History Records',
+            value: attendanceHistoryCount,
+            helper: 'Tracked attendance entries on file.',
+            icon: Clock3,
+          },
+        ]}
       />
 
       {isError && (
         <QueryErrorState label="attendance records" onRetry={() => refetch()} />
       )}
 
-      {today && (
-        <Card className="bg-accent/5 border-accent/20 shadow-sm">
-          <CardHeaderStandard
-            title="Today Attendance Status"
-            description={format(new Date(), 'EEEE, MMM d')}
-            className="p-4 pb-2"
-            actions={<StatusBadge status={today.status} />}
-          />
-          <CardContent className="pt-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">
-                  In: {today.clock_in ? format(new Date(today.clock_in), 'h:mm a') : '-'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Out: {today.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '-'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <DataTableShell
         title="Attendance History"
+        description="Clock-in and clock-out history for your recent workdays."
         loading={isLoading}
         hasData={Boolean(history?.length)}
-        emptyState={<div className="p-4 text-center text-muted-foreground">No attendance records</div>}
+        emptyState={
+          <WorkspaceStatePanel
+            title="No attendance records yet"
+            description="Your work sessions will appear here once attendance has been tracked."
+            icon={Clock3}
+          />
+        }
         mobileList={
           <div className="space-y-3 p-4 md:hidden">
             {history?.map((record) => (

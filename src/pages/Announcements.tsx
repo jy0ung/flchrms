@@ -1,15 +1,24 @@
 import { format } from 'date-fns';
-import { Megaphone } from 'lucide-react';
+import { AlertTriangle, Megaphone, RadioTower } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 import { useAnnouncements } from '@/hooks/useAnnouncements';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AppPageContainer, PageHeader, StatusBadge, SurfaceSection } from '@/components/system';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function Announcements() {
   usePageTitle('Announcements');
   const { data: announcements, isLoading } = useAnnouncements();
   const count = announcements?.length ?? 0;
+  const urgentCount = announcements?.filter((announcement) => announcement.priority === 'urgent').length ?? 0;
+  const latestPublishedAt = announcements?.reduce<string | null>((latest, announcement) => {
+    if (!latest || new Date(announcement.published_at) > new Date(latest)) {
+      return announcement.published_at;
+    }
+    return latest;
+  }, null);
+  const latestPublished = latestPublishedAt ? format(new Date(latestPublishedAt), 'MMM d, yyyy') : 'No updates';
 
   return (
     <AppPageContainer maxWidth="7xl">
@@ -18,32 +27,52 @@ export default function Announcements() {
         description={!isLoading ? `${count} item${count === 1 ? '' : 's'} — Company-wide updates, reminders, and internal notices.` : 'Company-wide updates, reminders, and internal notices.'}
       />
 
+      {!isLoading ? (
+        <SummaryRail
+          items={[
+            {
+              id: 'published',
+              label: 'Published',
+              value: count,
+              helper: 'Company-wide updates currently visible.',
+              icon: RadioTower,
+            },
+            {
+              id: 'urgent',
+              label: 'Urgent',
+              value: urgentCount,
+              helper: urgentCount > 0 ? 'Requires quick attention.' : 'No urgent notices.',
+              icon: AlertTriangle,
+              tone: urgentCount > 0 ? 'warning' : 'default',
+            },
+            {
+              id: 'latest',
+              label: 'Latest Update',
+              value: latestPublished,
+              helper: 'Most recently published announcement.',
+              icon: Megaphone,
+              tone: 'info',
+            },
+          ]}
+        />
+      ) : null}
+
       {isLoading ? (
         <SurfaceSection title="Announcement Feed" description="Loading updates">
-          <div className="space-y-4">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="rounded-lg border border-border bg-background p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <Skeleton className="h-5 w-2/3 rounded-md" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                  <Skeleton className="h-4 w-44 rounded-md" />
-                  <Skeleton className="h-20 rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <WorkspaceStatePanel
+            title="Loading announcement feed"
+            description="Preparing company updates and published notices."
+            icon={Megaphone}
+            animateIcon
+          />
         </SurfaceSection>
       ) : count === 0 ? (
         <SurfaceSection title="Announcement Feed" description="Published announcements will appear here.">
-          <div className="py-10 text-center">
-            <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
-              <Megaphone className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <p className="font-medium">No announcements yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Company updates will appear here when they are published.</p>
-          </div>
+          <WorkspaceStatePanel
+            title="No announcements yet"
+            description="Company updates will appear here once they are published."
+            icon={Megaphone}
+          />
         </SurfaceSection>
       ) : (
         <SurfaceSection title="Announcement Feed" description={`${count} published update${count === 1 ? '' : 's'}.`}>

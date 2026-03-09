@@ -1,16 +1,23 @@
 import { useMyReviews, useAcknowledgeReview } from '@/hooks/usePerformance';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ClipboardCheck, MessageSquareWarning, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { SummaryRail } from '@/components/workspace/SummaryRail';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function Performance() {
   usePageTitle('Performance');
   const { data: reviews, isLoading } = useMyReviews();
   const acknowledge = useAcknowledgeReview();
+  const pendingAcknowledgement = reviews?.filter((review) => review.status === 'submitted').length ?? 0;
+  const ratedReviews = reviews?.filter((review) => typeof review.overall_rating === 'number') ?? [];
+  const averageRating = ratedReviews.length > 0
+    ? (ratedReviews.reduce((total, review) => total + (review.overall_rating ?? 0), 0) / ratedReviews.length).toFixed(1)
+    : '—';
 
   return (
     <AppPageContainer maxWidth="7xl">
@@ -18,6 +25,36 @@ export default function Performance() {
         title="Performance Reviews"
         description="Performance evaluation records and status."
       />
+
+      {!isLoading ? (
+        <SummaryRail
+          items={[
+            {
+              id: 'review-count',
+              label: 'Reviews',
+              value: reviews?.length ?? 0,
+              helper: 'Current and past review cycles on file.',
+              icon: ClipboardCheck,
+            },
+            {
+              id: 'pending-acknowledgement',
+              label: 'Awaiting Acknowledgement',
+              value: pendingAcknowledgement,
+              helper: pendingAcknowledgement > 0 ? 'Reviews that still need your acknowledgement.' : 'No acknowledgement action pending.',
+              icon: MessageSquareWarning,
+              tone: pendingAcknowledgement > 0 ? 'warning' : 'default',
+            },
+            {
+              id: 'average-rating',
+              label: 'Average Rating',
+              value: averageRating,
+              helper: ratedReviews.length > 0 ? 'Average across completed rated reviews.' : 'No ratings available yet.',
+              icon: Star,
+              tone: ratedReviews.length > 0 ? 'info' : 'default',
+            },
+          ]}
+        />
+      ) : null}
 
       <DataTableShell
         title="My Reviews"
@@ -32,9 +69,11 @@ export default function Performance() {
           </div>
         }
         emptyState={
-          <div className="py-12 text-center text-muted-foreground">
-            No performance reviews yet
-          </div>
+          <WorkspaceStatePanel
+            title="No performance reviews yet"
+            description="Review cycles will appear here once they are submitted or assigned."
+            icon={ClipboardCheck}
+          />
         }
         content={
           <div className="grid gap-4">
