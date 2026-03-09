@@ -1,11 +1,12 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Building2, Download, GitBranch, Plus, Upload, UserCircle2, Users } from 'lucide-react';
+import { Download, GitBranch, Plus, Upload, Users } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_ROLE_COLORS } from '@/components/admin/admin-ui-constants';
 import { BulkActionBar } from '@/components/bulk-actions/BulkActionBar';
 import { OrgChart } from '@/components/employees/OrgChart';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -21,8 +22,8 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
-import { DataTableShell } from '@/components/system';
-import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
+import { DataTableShell, RecordSurfaceHeader } from '@/components/system';
+import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
 
@@ -251,6 +252,21 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     };
   }, [employees]);
 
+  const activeFilterLabels = useMemo(() => {
+    const labels: string[] = [];
+
+    if (statusFilter !== 'all') {
+      labels.push(`Status: ${statusFilter.replace(/_/g, ' ')}`);
+    }
+
+    if (departmentFilter !== 'all') {
+      const departmentName = departments?.find((department) => department.id === departmentFilter)?.name ?? 'Unknown department';
+      labels.push(`Department: ${departmentName}`);
+    }
+
+    return labels;
+  }, [departmentFilter, departments, statusFilter]);
+
   if (entryContext === 'admin' && capabilitiesLoading && !adminCapabilitiesOverride) {
     return null;
   }
@@ -378,13 +394,8 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
           </ToggleGroup>
         }
       >
-        {pageActions.canBulkActions ? (
+        {pageActions.canBulkActions && bulkSelection.selectedCount > 0 ? (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>{filteredEmployees.length} filtered record{filteredEmployees.length === 1 ? '' : 's'}</span>
-              <span aria-hidden="true">.</span>
-              <span>{bulkSelection.selectedCount} selected</span>
-            </div>
             <BulkActionBar
               items={filteredEmployees}
               selectedIds={bulkSelection.selectedIds}
@@ -410,54 +421,72 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       </ModuleLayout.Toolbar>
 
       <ModuleLayout.Content>
-        <WorkspaceMetricStrip
+        <WorkspaceSummaryBar
           items={[
             {
               id: 'total-employees',
               label: 'Total employees',
               value: stats.total,
-              description: 'Visible across the current directory workspace.',
-              icon: Users,
+              helper: 'Visible across the current directory workspace.',
             },
             {
               id: 'active-employees',
               label: 'Active',
               value: stats.active,
-              description: 'Employees currently marked active.',
-              icon: UserCircle2,
-              tone: 'success',
+              helper: 'Employees currently marked active.',
             },
             {
               id: 'employees-on-leave',
               label: 'On leave',
               value: stats.onLeave,
-              description: 'Employees currently unavailable.',
-              icon: Users,
-              tone: 'warning',
+              helper: 'Employees currently unavailable.',
             },
             {
               id: 'covered-departments',
               label: 'Departments',
               value: stats.departmentCount,
-              description: 'Distinct departments represented in the directory.',
-              icon: Building2,
-              tone: 'info',
+              helper: 'Distinct departments represented in the directory.',
             },
           ]}
+        />
+
+        <RecordSurfaceHeader
+          title={viewType === 'org' ? 'Organization Chart' : 'Employees'}
+          description={
+            viewType === 'org'
+              ? 'Read-only hierarchy view for the employee directory.'
+              : 'Filtered directory records in the current workspace view.'
+          }
+          meta={(
+            <>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {filteredEmployees.length} result{filteredEmployees.length === 1 ? '' : 's'}
+              </Badge>
+              {pageActions.canBulkActions ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  {bulkSelection.selectedCount} selected
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {viewType === 'org' ? 'Org chart view' : 'Table view'}
+              </Badge>
+              {activeFilterLabels.map((label) => (
+                <Badge key={label} variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  {label}
+                </Badge>
+              ))}
+            </>
+          )}
         />
 
         {viewType === 'org' ? (
           <DataTableShell
             density="compact"
-            title="Organization Chart"
-            description="Read-only hierarchy view for the employee directory."
             content={<OrgChart />}
           />
         ) : (
           <DataTableShell
             density="compact"
-            title="Employees"
-            description={`${filteredEmployees.length} result${filteredEmployees.length === 1 ? '' : 's'} in the current workspace view`}
             content={
               <EmployeeTable
                 employees={filteredEmployees}

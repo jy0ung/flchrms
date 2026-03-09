@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Clock3, History, Info, Plus, Users } from 'lucide-react';
+import { CalendarDays, Info, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataTableShell, QueryErrorState } from '@/components/system';
-import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
+import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
 import { useAuth } from '@/contexts/AuthContext';
@@ -184,17 +184,13 @@ export function LeavePage({ initialView }: LeavePageProps) {
         id: 'my-active-requests',
         label: 'Active requests',
         value: myCurrentRequests.length,
-        description: 'Personal requests still in progress or awaiting completion.',
-        icon: Clock3,
-        tone: 'warning' as const,
+        helper: 'Personal requests still in progress or awaiting completion.',
       },
       {
         id: 'my-request-history',
         label: 'Request history',
         value: myHistoryRequests.length,
-        description: 'Resolved or completed requests in your timeline.',
-        icon: History,
-        tone: 'default' as const,
+        helper: 'Resolved or completed requests in your timeline.',
       },
     ];
 
@@ -204,17 +200,13 @@ export function LeavePage({ initialView }: LeavePageProps) {
           id: 'team-current-requests',
           label: 'Team inbox',
           value: teamCurrentRequests.length,
-          description: 'Current team requests visible to you in this workspace.',
-          icon: Users,
-          tone: 'info' as const,
+          helper: 'Current team requests visible to you in this workspace.',
         },
         {
           id: 'team-history-requests',
           label: 'Team history',
           value: teamHistoryRequests.length,
-          description: 'Resolved team requests retained for workflow traceability.',
-          icon: History,
-          tone: 'default' as const,
+          helper: 'Resolved team requests retained for workflow traceability.',
         },
       );
     } else {
@@ -223,17 +215,13 @@ export function LeavePage({ initialView }: LeavePageProps) {
           id: 'balance-buckets',
           label: 'Balance buckets',
           value: balances?.length ?? 0,
-          description: 'Leave types currently tracking an accrued balance.',
-          icon: CalendarDays,
-          tone: 'success' as const,
+          helper: 'Leave types currently tracking an accrued balance.',
         },
         {
           id: 'leave-types',
           label: 'Leave types',
           value: leaveTypes?.length ?? 0,
-          description: 'Request categories currently available in the workspace.',
-          icon: CalendarDays,
-          tone: 'info' as const,
+          helper: 'Request categories currently available in the workspace.',
         },
       );
     }
@@ -276,26 +264,14 @@ export function LeavePage({ initialView }: LeavePageProps) {
             Open Team Calendar
           </Button>
         ) : null}
-      >
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>{myCurrentRequests.length} active personal request{myCurrentRequests.length === 1 ? '' : 's'}</span>
-          {pageActions.canViewTeamRequests ? (
-            <>
-              <span aria-hidden="true">.</span>
-              <span>{teamCurrentRequests.length} team request{teamCurrentRequests.length === 1 ? '' : 's'} awaiting visibility</span>
-            </>
-          ) : null}
-        </div>
-      </ModuleLayout.Toolbar>
+      />
 
       {isError ? (
         <QueryErrorState label="leave requests" onRetry={() => refetch()} />
       ) : null}
 
       <ModuleLayout.Content>
-        <WorkspaceMetricStrip items={metricItems} />
-
-        <LeaveBalanceSection balances={balances ?? []} />
+        <WorkspaceSummaryBar items={metricItems} />
 
         {isLoading ? (
           <DataTableShell
@@ -335,6 +311,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
             workflowInfoPopover={workflowInfoPopover}
           />
         )}
+
+        <LeaveBalanceSection balances={balances ?? []} />
       </ModuleLayout.Content>
 
       <LeaveDetailDrawer

@@ -95,6 +95,7 @@ vi.mock('@/layouts/ModuleLayout', () => {
 
 vi.mock('@/components/system', () => ({
   QueryErrorState: () => <div>query-error</div>,
+  RecordSurfaceHeader: () => null,
 }));
 
 vi.mock('@/modules/departments/components/DepartmentTable', () => ({

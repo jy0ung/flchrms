@@ -106,6 +106,7 @@ vi.mock('@/layouts/ModuleLayout', () => {
 
 vi.mock('@/components/system', () => ({
   DataTableShell: ({ content }: { content: ReactNode }) => <div>{content}</div>,
+  RecordSurfaceHeader: () => null,
 }));
 
 vi.mock('@/components/employees/OrgChart', () => ({

@@ -3,6 +3,8 @@ export * from "./PageHeader";
 export * from "./AppPageContainer";
 export * from "./CardHeaderStandard";
 export * from "./SectionToolbar";
+export * from "./RecordSurfaceHeader";
+export * from "./MobileFilterSheet";
 export * from "./DataTableShell";
 export * from "./SurfaceSection";
 export * from "./ModalScaffold";

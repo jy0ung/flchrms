@@ -2,7 +2,9 @@ import * as React from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { MobileFilterSheet } from "./MobileFilterSheet";
 
 export interface SectionToolbarSearchConfig {
   value: string;
@@ -28,6 +30,7 @@ export interface SectionToolbarProps extends React.HTMLAttributes<HTMLDivElement
   variant?: "surface" | "inline";
   density?: "comfortable" | "compact";
   stackOnMobile?: boolean;
+  collapseFiltersOnMobile?: boolean;
   sticky?: boolean;
   ariaLabel?: string;
 }
@@ -45,13 +48,17 @@ export function SectionToolbar({
   variant = "surface",
   density = "comfortable",
   stackOnMobile = true,
+  collapseFiltersOnMobile = true,
   sticky = false,
   ariaLabel = "Section toolbar",
   className,
   ...props
 }: SectionToolbarProps) {
+  const isMobile = useIsMobile();
   const verticalGap = density === "compact" ? "gap-2" : "gap-3";
   const horizontalGap = density === "compact" ? "sm:gap-2" : "sm:gap-3";
+  const renderInlineFilters = Boolean(filters?.length) && (!isMobile || !collapseFiltersOnMobile);
+  const mobileFilters = Boolean(filters?.length) && isMobile && collapseFiltersOnMobile;
 
   return (
     <div
@@ -95,9 +102,9 @@ export function SectionToolbar({
           </div>
         ) : null}
 
-        {filters?.length ? (
+        {renderInlineFilters ? (
           <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-2">
-            {filters.map((filter) => (
+            {filters?.map((filter) => (
               <div
                 key={filter.id}
                 className={cn("grid gap-1", filter.minWidthClassName ?? "sm:min-w-[180px]")}
@@ -111,8 +118,9 @@ export function SectionToolbar({
           </div>
         ) : null}
 
-        {(actions || trailingSlot) ? (
+        {(mobileFilters || actions || trailingSlot) ? (
           <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            {mobileFilters ? <MobileFilterSheet filters={filters ?? []} /> : null}
             {trailingSlot}
             {actions}
           </div>

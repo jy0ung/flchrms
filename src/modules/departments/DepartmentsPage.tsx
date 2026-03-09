@@ -1,10 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Building2, FolderTree, Plus, UserSquare2, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { QueryErrorState } from '@/components/system';
-import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
+import { Badge } from '@/components/ui/badge';
+import { QueryErrorState, RecordSurfaceHeader } from '@/components/system';
+import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -185,51 +186,56 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
           placeholder: 'Search departments...',
           ariaLabel: 'Search departments',
         }}
-      >
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>{stats.totalDepartments} departments</span>
-          <span aria-hidden="true">.</span>
-          <span>{stats.staffedDepartments} staffed</span>
-          <span aria-hidden="true">.</span>
-          <span>{stats.unassignedEmployees} unassigned employees</span>
-        </div>
-      </ModuleLayout.Toolbar>
+      />
 
       <ModuleLayout.Content>
-        <WorkspaceMetricStrip
+        <WorkspaceSummaryBar
           items={[
             {
               id: 'departments-total',
               label: 'Departments',
               value: stats.totalDepartments,
-              description: 'Department records currently available in this workspace.',
-              icon: Building2,
+              helper: 'Department records currently available in this workspace.',
             },
             {
               id: 'departments-staffed',
               label: 'Staffed departments',
               value: stats.staffedDepartments,
-              description: 'Departments with at least one assigned employee.',
-              icon: FolderTree,
-              tone: 'success',
+              helper: 'Departments with at least one assigned employee.',
             },
             {
               id: 'departments-with-manager',
               label: 'Assigned managers',
               value: stats.assignedManagers,
-              description: 'Departments with an explicitly assigned manager.',
-              icon: UserSquare2,
-              tone: 'info',
+              helper: 'Departments with an explicitly assigned manager.',
             },
             {
               id: 'employees-unassigned',
               label: 'Unassigned employees',
               value: stats.unassignedEmployees,
-              description: 'Employees still waiting for department assignment.',
-              icon: Users,
-              tone: 'warning',
+              helper: 'Employees still waiting for department assignment.',
             },
           ]}
+        />
+
+        <RecordSurfaceHeader
+          title="Departments"
+          description="Department records in the current workspace view."
+          meta={(
+            <>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {filteredDepartments.length} result{filteredDepartments.length === 1 ? '' : 's'}
+              </Badge>
+              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {stats.assignedManagers} managers assigned
+              </Badge>
+              {search.trim() ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  Search: {search.trim()}
+                </Badge>
+              ) : null}
+            </>
+          )}
         />
 
         <DepartmentTable

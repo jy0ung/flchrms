@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { DrawerMetaHeader } from '@/components/workspace/DrawerMetaHeader';
 import { WorkspaceMetricStrip } from '@/components/workspace/WorkspaceMetricStrip';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
+import { WorkspaceSummaryBar } from '@/components/workspace/WorkspaceSummaryBar';
+import { RecordSurfaceHeader } from '@/components/system/RecordSurfaceHeader';
 
 describe('workspace UX primitives', () => {
   it('renders metric items with descriptions', () => {
@@ -37,6 +39,40 @@ describe('workspace UX primitives', () => {
 
     expect(screen.getByText('No records available')).toBeInTheDocument();
     expect(screen.getByText('Adjust the filters to broaden the result set.')).toBeInTheDocument();
+  });
+
+  it('renders compact summary items for high-signal workspace metrics', () => {
+    render(
+      <WorkspaceSummaryBar
+        items={[
+          {
+            id: 'active',
+            label: 'Active',
+            value: 18,
+            helper: 'Records requiring day-to-day attention.',
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText('Records requiring day-to-day attention.')).toBeInTheDocument();
+  });
+
+  it('renders record surface metadata and actions', () => {
+    render(
+      <RecordSurfaceHeader
+        title="Employees"
+        description="Filtered records in the current workspace view."
+        meta={<span>12 results</span>}
+        actions={<button type="button">Export</button>}
+      />,
+    );
+
+    expect(screen.getByText('Employees')).toBeInTheDocument();
+    expect(screen.getByText('12 results')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
   });
 
   it('renders drawer metadata badges and summary values', () => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock3, Filter, History, Users } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { AppRole, LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
-import { DataTableShell, SectionToolbar } from '@/components/system';
+import { DataTableShell, RecordSurfaceHeader, SectionToolbar } from '@/components/system';
 import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
 import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
 import { isCancellationPending } from '@/lib/leave-utils';
@@ -39,7 +39,6 @@ type ViewConfig = {
   shortLabel: string;
   title: string;
   summary: string;
-  icon: typeof Clock3;
   requests: LeaveRequest[];
 };
 
@@ -145,7 +144,6 @@ export function LeaveRequestWorkspace({
         shortLabel: 'My Current',
         title: 'My Current Requests',
         summary: 'Requests you currently own that are still active or awaiting a final outcome.',
-        icon: Clock3,
         requests: myCurrentRequests,
       },
       MY_HISTORY: {
@@ -153,7 +151,6 @@ export function LeaveRequestWorkspace({
         shortLabel: 'My History',
         title: 'My Request History',
         summary: 'Resolved or completed requests that remain available for reference.',
-        icon: History,
         requests: myHistoryRequests,
       },
       TEAM_CURRENT: {
@@ -161,7 +158,6 @@ export function LeaveRequestWorkspace({
         shortLabel: 'Team Current',
         title: 'Team Current Requests',
         summary: 'Current team requests visible to you at this approval stage.',
-        icon: Users,
         requests: teamCurrentRequests,
       },
       TEAM_HISTORY: {
@@ -169,7 +165,6 @@ export function LeaveRequestWorkspace({
         shortLabel: 'Team History',
         title: 'Team Request History',
         summary: 'Resolved team requests retained for traceability and follow-up.',
-        icon: History,
         requests: teamHistoryRequests,
       },
     };
@@ -213,14 +208,30 @@ export function LeaveRequestWorkspace({
 
       {availableViews.map((option) => {
         const currentView = viewConfig[option];
-        const ViewIcon = currentView.icon;
 
         return (
           <TabsContent key={option} value={option} className="mt-0 space-y-3">
-            <DataTableShell
+            <RecordSurfaceHeader
               title={currentView.title}
               description={currentView.summary}
-              headerActions={(
+              meta={(
+                <>
+                  <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                    {currentView.shortLabel}
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                    {filteredRequests.length} visible
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                    <Filter className="h-3 w-3" />
+                    Status: {activeFilterLabel}
+                  </Badge>
+                </>
+              )}
+            />
+
+            <DataTableShell
+              toolbar={(
                 <SectionToolbar
                   variant="inline"
                   density="compact"
@@ -251,28 +262,6 @@ export function LeaveRequestWorkspace({
                   ]}
                   trailingSlot={workflowInfoPopover}
                 />
-              )}
-              alertBanner={(
-                <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <ViewIcon className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm font-medium">{currentView.shortLabel}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {filteredRequests.length} visible request{filteredRequests.length === 1 ? '' : 's'} in this view.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                      {currentView.shortLabel}
-                    </Badge>
-                    <Badge variant="outline" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                      <Filter className="h-3 w-3" />
-                      Status: {activeFilterLabel}
-                    </Badge>
-                  </div>
-                </div>
               )}
               content={
                 option === 'MY_CURRENT' || option === 'MY_HISTORY' ? (
