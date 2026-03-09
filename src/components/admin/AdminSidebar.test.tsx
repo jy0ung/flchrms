@@ -60,10 +60,11 @@ describe('AdminSidebar', () => {
     );
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
+    expect(screen.getByText('Governance Hub')).toBeInTheDocument();
     expect(screen.getByText('Roles')).toBeInTheDocument();
     expect(screen.getByText('Leave Policies')).toBeInTheDocument();
     expect(screen.getByText('Communication')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Governance' })).toBeInTheDocument();
     expect(screen.queryByText('Employees')).not.toBeInTheDocument();
     expect(screen.queryByText('Departments')).not.toBeInTheDocument();
   });

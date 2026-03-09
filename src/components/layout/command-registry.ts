@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import type { AppRole } from '@/types/hrms';
+import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 export type CommandGroupId = 'workspaces' | 'actions' | 'admin';
 
@@ -54,7 +55,7 @@ export const COMMAND_GROUP_ORDER: CommandGroupId[] = ['workspaces', 'actions', '
 export const COMMAND_GROUP_LABELS: Record<CommandGroupId, string> = {
   workspaces: 'Work',
   actions: 'Actions',
-  admin: 'Governance',
+  admin: SHELL_LABELS.governance,
 };
 
 function addCommand(
@@ -72,7 +73,7 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
 
   addCommand(commands, true, {
     id: 'open-dashboard',
-    label: 'Open Dashboard',
+    label: `Open ${SHELL_LABELS.dashboard}`,
     description: 'Navigate to the operational overview dashboard.',
     group: 'workspaces',
     href: '/dashboard',
@@ -108,7 +109,7 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
   });
   addCommand(commands, true, {
     id: 'open-notifications',
-    label: 'Open Notifications',
+    label: `Open ${SHELL_LABELS.notifications}`,
     description: 'Review alerts and workflow updates.',
     group: 'workspaces',
     href: '/notifications',
@@ -189,12 +190,12 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
   });
   addCommand(commands, context.canAccessAdminConsole, {
     id: 'open-admin',
-    label: 'Open Governance Console',
+    label: `Open ${SHELL_LABELS.governance}`,
     description: 'Navigate to governance, policy, and system controls.',
     group: 'workspaces',
     href: '/admin',
     icon: Shield,
-    keywords: ['admin', 'governance', 'system', 'console'],
+    keywords: ['admin', 'governance', 'system'],
   });
 
   addCommand(commands, context.canCreateLeaveRequest, {
@@ -236,7 +237,7 @@ export function buildCommandActions(context: CommandContext): CommandAction[] {
 
   addCommand(commands, context.canViewAdminQuickActions, {
     id: 'open-admin-quick-actions',
-    label: 'Open Governance Hub',
+    label: `Open ${SHELL_LABELS.governanceHub}`,
     description: 'Open the admin routing hub for governance tasks.',
     group: 'admin',
     href: '/admin/quick-actions',

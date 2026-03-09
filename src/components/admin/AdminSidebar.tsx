@@ -29,6 +29,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import type { AdminCapabilityKey, AdminCapabilityMap } from '@/lib/admin-capabilities';
+import { ROLE_DISPLAY_NAMES, SHELL_LABELS } from '@/lib/navigation-labels';
 
 type AdminNavItem = {
   name: string;
@@ -42,7 +43,7 @@ const adminNavGroups: Array<{ label: string; items: AdminNavItem[] }> = [
     label: 'Overview',
     items: [
       { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, capability: 'view_admin_dashboard' },
-      { name: 'Quick Actions', href: '/admin/quick-actions', icon: Zap, capability: 'view_admin_quick_actions' },
+      { name: SHELL_LABELS.governanceHub, href: '/admin/quick-actions', icon: Zap, capability: 'view_admin_quick_actions' },
     ],
   },
   {
@@ -84,15 +85,6 @@ export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
     .join('')
     .toUpperCase() || 'HR';
 
-  const roleDisplayName: Record<string, string> = {
-    admin: 'Admin',
-    hr: 'HR',
-    director: 'Director',
-    general_manager: 'General Manager',
-    manager: 'Manager',
-    employee: 'Employee',
-  };
-
   const initials = profile
     ? `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase()
     : 'U';
@@ -115,12 +107,12 @@ export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
               <span className="text-xs font-bold text-primary-foreground">{companyInitials}</span>
             </div>
           )}
-          <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold">{branding.company_name}</span>
-            <Badge variant="secondary" className="w-fit text-[10px] px-1.5 py-0">
-              Admin Panel
-            </Badge>
-          </div>
+            <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
+              <span className="text-sm font-semibold">{branding.company_name}</span>
+              <Badge variant="secondary" className="w-fit text-[10px] px-1.5 py-0">
+                {SHELL_LABELS.governance}
+              </Badge>
+            </div>
         </div>
       </SidebarHeader>
 
@@ -176,7 +168,7 @@ export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
                 {profile?.first_name} {profile?.last_name}
               </span>
               <span className="text-[11px] text-sidebar-foreground/50">
-                {role ? roleDisplayName[role] || role : 'Unknown'}
+                {role ? ROLE_DISPLAY_NAMES[role] || role : 'Unknown'}
               </span>
             </div>
           </div>

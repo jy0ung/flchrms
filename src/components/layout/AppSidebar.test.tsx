@@ -50,7 +50,7 @@ describe('AppSidebar', () => {
     expect(screen.getByText('People')).toBeInTheDocument();
     expect(screen.getByText('Records')).toBeInTheDocument();
     expect(screen.getByText('Planning')).toBeInTheDocument();
-    expect(screen.getByText('Governance')).toBeInTheDocument();
+    expect(screen.getByText('Governance', { selector: 'p' })).toBeInTheDocument();
 
     expect(screen.queryByText('Operations')).not.toBeInTheDocument();
     expect(screen.queryByText('Resources')).not.toBeInTheDocument();

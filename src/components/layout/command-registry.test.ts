@@ -55,7 +55,7 @@ describe('buildCommandActions', () => {
     expect(actions.map((action) => action.id)).toContain('create-employee');
     expect(actions.map((action) => action.id)).toContain('create-department');
     expect(actions.map((action) => action.id)).toContain('review-leave-approvals');
-    expect(actions.find((action) => action.id === 'open-admin')?.label).toBe('Open Governance Console');
+    expect(actions.find((action) => action.id === 'open-admin')?.label).toBe('Open Governance');
     expect(actions.find((action) => action.id === 'open-admin-quick-actions')?.label).toBe('Open Governance Hub');
     expect(actions.map((action) => action.id)).toContain('open-role-management');
   });

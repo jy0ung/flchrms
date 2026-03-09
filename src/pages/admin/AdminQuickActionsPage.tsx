@@ -16,6 +16,7 @@ import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
 import { ActionTile, PageHeader } from '@/components/system';
+import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 interface QuickAction {
   id: string;
@@ -26,11 +27,11 @@ interface QuickAction {
   bg: string;
   capability: AdminCapabilityKey;
   destination: string;
-  surface: 'Workspace' | 'Admin';
+  surface: 'Workspace' | 'Governance';
 }
 
 export default function AdminQuickActionsPage() {
-  usePageTitle('Admin · Quick Actions');
+  usePageTitle(`Admin · ${SHELL_LABELS.governanceHub}`);
 
   const navigate = useNavigate();
   const { role } = useAuth();
@@ -70,7 +71,7 @@ export default function AdminQuickActionsPage() {
       bg: 'bg-rose-50 dark:bg-rose-950/50',
       capability: 'manage_roles',
       destination: '/admin/roles',
-      surface: 'Admin',
+      surface: 'Governance',
     },
     {
       id: 'leave-policies',
@@ -81,7 +82,7 @@ export default function AdminQuickActionsPage() {
       bg: 'bg-cyan-50 dark:bg-cyan-950/50',
       capability: 'manage_leave_policies',
       destination: '/admin/leave-policies',
-      surface: 'Admin',
+      surface: 'Governance',
     },
     {
       id: 'announcements',
@@ -92,7 +93,7 @@ export default function AdminQuickActionsPage() {
       bg: 'bg-amber-50 dark:bg-amber-950/50',
       capability: 'manage_announcements',
       destination: '/admin/announcements',
-      surface: 'Admin',
+      surface: 'Governance',
     },
     {
       id: 'audit-log',
@@ -103,7 +104,7 @@ export default function AdminQuickActionsPage() {
       bg: 'bg-emerald-50 dark:bg-emerald-950/50',
       capability: 'view_admin_audit_log',
       destination: '/admin/audit-log',
-      surface: 'Admin',
+      surface: 'Governance',
     },
     {
       id: 'settings',
@@ -114,18 +115,18 @@ export default function AdminQuickActionsPage() {
       bg: 'bg-slate-100 dark:bg-slate-900/50',
       capability: 'manage_admin_settings',
       destination: '/admin/settings',
-      surface: 'Admin',
+      surface: 'Governance',
     },
   ];
 
   const visibleQuickActions = quickActions.filter((action) => capabilityMap[action.capability]);
   const workspaceActions = visibleQuickActions.filter((action) => action.surface === 'Workspace');
-  const adminActions = visibleQuickActions.filter((action) => action.surface === 'Admin');
+  const adminActions = visibleQuickActions.filter((action) => action.surface === 'Governance');
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quick Actions"
+        title={SHELL_LABELS.governanceHub}
         description="Choose the right operational workspace or governance surface for the task at hand."
       />
 

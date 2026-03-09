@@ -9,6 +9,7 @@ import {
 
 import { cn } from '@/lib/utils';
 import { useUserNotifications } from '@/hooks/useNotifications';
+import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 interface BottomNavItem {
   name: string;
@@ -17,10 +18,10 @@ interface BottomNavItem {
 }
 
 const bottomNavItems: BottomNavItem[] = [
-  { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
+  { name: SHELL_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leave', href: '/leave', icon: Calendar },
   { name: 'Payroll', href: '/payroll', icon: Wallet },
-  { name: 'Alerts', href: '/notifications', icon: Bell },
+  { name: SHELL_LABELS.notifications, href: '/notifications', icon: Bell },
 ];
 
 /**

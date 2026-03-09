@@ -18,19 +18,7 @@ import {
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
-
-const adminRouteLabels: Record<string, string> = {
-  admin: 'Admin',
-  dashboard: 'Dashboard',
-  employees: 'Employees',
-  departments: 'Departments',
-  roles: 'Roles',
-  'leave-policies': 'Leave Policies',
-  announcements: 'Announcements',
-  'audit-log': 'Audit Log',
-  settings: 'Settings',
-  'quick-actions': 'Quick Actions',
-};
+import { ROUTE_LABELS } from '@/lib/navigation-labels';
 
 export function AdminLayout() {
   const { user, role, isLoading } = useAuth();
@@ -77,7 +65,7 @@ export function AdminLayout() {
               <BreadcrumbList>
                 {pathSegments.map((segment, index) => {
                   const path = '/' + pathSegments.slice(0, index + 1).join('/');
-                  const label = adminRouteLabels[segment] || segment;
+                  const label = ROUTE_LABELS[segment] || segment;
                   const isLast = index === pathSegments.length - 1;
                   return (
                     <BreadcrumbItem key={path}>

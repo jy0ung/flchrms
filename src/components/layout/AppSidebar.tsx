@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingContext } from '@/contexts/BrandingContext';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { cn } from '@/lib/utils';
+import { SHELL_LABELS } from '@/lib/navigation-labels';
 import {
   canViewEmployeeDirectory,
   hasRole,
@@ -66,7 +67,7 @@ const peopleNavigation: SidebarNavItem[] = [
   { name: 'Departments', href: '/departments', icon: Building2 },
 ];
 
-const adminNavigation: SidebarNavItem[] = [{ name: 'Admin', href: '/admin', icon: Shield, danger: true }];
+const adminNavigation: SidebarNavItem[] = [{ name: SHELL_LABELS.governance, href: '/admin', icon: Shield, danger: true }];
 
 function SidebarNavItem({
   item,
@@ -228,7 +229,7 @@ function SidebarContent({
           <SidebarNavGroup items={scopedRecords} collapsed={collapsed} onNavigate={onNavigate} label="Records" />
           <SidebarNavGroup items={scopedPlanning} collapsed={collapsed} onNavigate={onNavigate} label="Planning" />
           {scopedAdmin.length > 0 && (
-            <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label="Governance" />
+            <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label={SHELL_LABELS.governance} />
           )}
         </div>
       </nav>

@@ -23,31 +23,7 @@ import {
 import { NotificationsBell } from './NotificationsBell';
 import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
-
-const routeLabels: Record<string, string> = {
-  dashboard: 'Dashboard',
-  leave: 'Leave',
-  notifications: 'Notifications',
-  attendance: 'Attendance',
-  training: 'Training',
-  announcements: 'Announcements',
-  profile: 'Profile',
-  performance: 'Performance',
-  calendar: 'Calendar',
-  documents: 'Documents',
-  payroll: 'Payroll',
-  employees: 'Employees',
-  admin: 'Admin',
-};
-
-const roleDisplayNames: Record<string, string> = {
-  admin: 'Admin',
-  hr: 'HR',
-  director: 'Director',
-  general_manager: 'General Manager',
-  manager: 'Manager',
-  employee: 'Employee',
-};
+import { ROLE_DISPLAY_NAMES, ROUTE_LABELS } from '@/lib/navigation-labels';
 
 export function TopBar() {
   const { profile, role, signOut } = useAuth();
@@ -67,7 +43,7 @@ export function TopBar() {
           <BreadcrumbList>
             {pathSegments.map((segment: string, index: number) => {
               const path = '/' + pathSegments.slice(0, index + 1).join('/');
-              const label = routeLabels[segment] || segment;
+              const label = ROUTE_LABELS[segment] || segment;
               const isLast = index === pathSegments.length - 1;
 
               return (
@@ -90,7 +66,7 @@ export function TopBar() {
       {/* Mobile: just show page title */}
       <div className="md:hidden flex-1 min-w-0">
         <p className="text-sm font-semibold truncate">
-          {routeLabels[pathSegments[0]] || 'HRMS'}
+          {ROUTE_LABELS[pathSegments[0]] || 'HRMS'}
         </p>
       </div>
 
@@ -119,7 +95,7 @@ export function TopBar() {
                 {profile?.first_name} {profile?.last_name}
               </p>
               <p className="text-xs text-muted-foreground">
-                {role ? roleDisplayNames[role] || role : 'Employee'}
+                {role ? ROLE_DISPLAY_NAMES[role] || role : 'Employee'}
               </p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
