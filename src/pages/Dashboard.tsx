@@ -16,6 +16,9 @@ import { GRID_COLUMNS, compactLayoutVertically } from '@/lib/dashboard-layout';
 import { useDashboardLayout, mergeRglLayoutIntoState } from '@/hooks/useDashboardLayout';
 import {
   WIDGET_DEFINITIONS,
+  DASHBOARD_SECTION_META,
+  DASHBOARD_SECTION_ORDER,
+  DASHBOARD_SECTION_WIDGETS,
 } from '@/components/dashboard/dashboard-config';
 
 import { AppPageContainer } from '@/components/system';
@@ -24,6 +27,7 @@ import { DashboardWidgetRenderer } from '@/components/dashboard/widgets';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardCustomizePanel } from '@/components/dashboard/DashboardCustomizePanel';
+import { DashboardSection } from '@/components/dashboard/DashboardSection';
 import { cn } from '@/lib/utils';
 
 // ── Grid constants ───────────────────────────────────────────────
@@ -41,6 +45,53 @@ function getGridColumns(width: number): number {
   if (width < 640) return MOBILE_GRID_COLUMNS;
   if (width < 1024) return TABLET_GRID_COLUMNS;
   return GRID_COLUMNS;
+}
+
+function sortWidgetsByPosition(
+  widgets: { id: DashboardWidgetId; x: number; y: number; visible: boolean }[],
+) {
+  return [...widgets].sort((left, right) => {
+    if (left.y !== right.y) return left.y - right.y;
+    if (left.x !== right.x) return left.x - right.x;
+    return left.id.localeCompare(right.id);
+  });
+}
+
+function getSectionDescription(sectionId: (typeof DASHBOARD_SECTION_ORDER)[number], showManagerWidgets: boolean) {
+  if (!showManagerWidgets) {
+    switch (sectionId) {
+      case 'operationalStatus':
+        return 'Your daily attendance, leave, and work status.';
+      case 'supportingInformation':
+        return 'Reference context, updates, and personal follow-up items.';
+      default:
+        return DASHBOARD_SECTION_META[sectionId].description;
+    }
+  }
+
+  switch (sectionId) {
+    case 'alerts':
+      return 'Exceptions and risk signals that need awareness before routine work.';
+    case 'requiredActions':
+      return 'Approvals, reviews, and queue items that need a decision now.';
+    case 'operationalStatus':
+      return 'Live attendance, staffing, and in-flight workflow conditions.';
+    default:
+      return DASHBOARD_SECTION_META[sectionId].description;
+  }
+}
+
+function getSectionGridClass(sectionId: (typeof DASHBOARD_SECTION_ORDER)[number]) {
+  switch (sectionId) {
+    case 'operationalStatus':
+      return 'grid gap-4 lg:grid-cols-2 xl:grid-cols-3';
+    case 'organizationMetrics':
+      return 'grid gap-4 xl:grid-cols-2';
+    case 'supportingInformation':
+      return 'grid gap-4 xl:grid-cols-2';
+    default:
+      return 'grid gap-4';
+  }
 }
 
 // ── RGL layout helpers ───────────────────────────────────────────
@@ -122,8 +173,18 @@ export default function Dashboard() {
 
   // Visible widget IDs for rendering (stable reference)
   const visibleIds = useMemo(
-    () => layoutState.widgets.filter((w) => w.visible).map((w) => w.id),
+    () => sortWidgetsByPosition(layoutState.widgets)
+      .filter((w) => w.visible)
+      .map((w) => w.id),
     [layoutState],
+  );
+
+  const dashboardSections = useMemo(
+    () => DASHBOARD_SECTION_ORDER.map((sectionId) => ({
+      id: sectionId,
+      widgetIds: visibleIds.filter((widgetId) => DASHBOARD_SECTION_WIDGETS[sectionId].includes(widgetId)),
+    })),
+    [visibleIds],
   );
 
   // ── Edit mode actions ──────────────────────────────────────────
@@ -209,11 +270,42 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Stats — managers and above */}
-      {showManagerWidgets && <QuickStats />}
+      {!isLoading && !editMode && (
+        <div className="space-y-7 md:space-y-8">
+          {dashboardSections.map((section) => {
+            const meta = DASHBOARD_SECTION_META[section.id];
+            const shouldRenderQuickStats = section.id === 'organizationMetrics' && showManagerWidgets;
+            const hasContent = shouldRenderQuickStats || section.widgetIds.length > 0;
 
-      {/* Widget grid — react-grid-layout */}
-      {!isLoading && (
+            if (!hasContent) return null;
+
+            return (
+              <DashboardSection
+                key={section.id}
+                title={meta.title}
+                description={getSectionDescription(section.id, showManagerWidgets)}
+                contentClassName="space-y-4"
+              >
+                {shouldRenderQuickStats ? <QuickStats /> : null}
+                {section.widgetIds.length > 0 ? (
+                  <div className={getSectionGridClass(section.id)}>
+                    {section.widgetIds.map((id) => (
+                      <DashboardWidgetRenderer
+                        key={`${section.id}-${id}`}
+                        widgetId={id as DashboardWidgetId}
+                        role={role}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </DashboardSection>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Edit-mode widget grid — react-grid-layout */}
+      {!isLoading && editMode && (
         <div ref={containerRef} className="w-full">
           {mounted && (
             <ReactGridLayout
@@ -237,28 +329,17 @@ export default function Dashboard() {
               }}
               onLayoutChange={onLayoutChange}
               autoSize
-              className={cn(
-                'relative transition-colors duration-200',
-                editMode && 'rounded-lg border-2 border-dashed border-primary/30 bg-muted/20',
-              )}
+              className="relative rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 transition-colors duration-200"
             >
               {visibleIds.map((id) => (
                 <div
                   key={id}
-                  className={cn(
-                    'overflow-hidden rounded-lg',
-                    editMode && 'ring-1 ring-primary/20 shadow-sm',
-                  )}
+                  className="overflow-hidden rounded-lg ring-1 ring-primary/20 shadow-sm"
                 >
-                  {editMode && (
-                    <div className="rgl-drag-handle flex items-center justify-center gap-1 h-6 bg-muted/80 border-b cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
-                      <GripHorizontal className="h-3.5 w-3.5" />
-                    </div>
-                  )}
-                  <div className={cn(
-                    'overflow-hidden',
-                    editMode ? 'h-[calc(100%-24px)]' : 'h-full',
-                  )}>
+                  <div className="rgl-drag-handle flex h-6 cursor-grab items-center justify-center gap-1 border-b bg-muted/80 text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing">
+                    <GripHorizontal className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="h-[calc(100%-24px)] overflow-hidden">
                     <DashboardWidgetRenderer
                       widgetId={id as DashboardWidgetId}
                       role={role}

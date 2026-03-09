@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { QueryErrorState, StatusBadge } from '@/components/system';
+import { QueryErrorState } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip } from './shared';
 import { getCriticalWidgetTitle, getScopeLabel } from '../dashboard-config';
@@ -66,22 +66,22 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
       }
     >
       <div className="grid grid-cols-2 gap-3">
-        <MetricChip label="Pending Leaves" value={stats.pendingLeaveRequests} tone={stats.pendingLeaveRequests > 5 ? 'warning' : 'default'} />
-        <MetricChip label="Pending Reviews" value={stats.pendingReviews} tone={stats.pendingReviews > 0 ? 'warning' : 'default'} />
         <MetricChip label="Training Completion" value={`${stats.trainingCompletionRate}%`} tone={stats.trainingCompletionRate >= 70 ? 'success' : 'warning'} />
-        <MetricChip label="New Hires (Month)" value={stats.newHiresThisMonth} tone="info" />
+        <MetricChip label="New Hires" value={stats.newHiresThisMonth} tone={stats.newHiresThisMonth > 0 ? 'info' : 'default'} />
+        <MetricChip label="Approved Leaves" value={stats.approvedLeavesThisMonth} tone={stats.approvedLeavesThisMonth > 0 ? 'info' : 'default'} />
+        <MetricChip label="Completed Reviews" value={stats.completedReviewsThisMonth} tone={stats.completedReviewsThisMonth > 0 ? 'success' : 'default'} />
       </div>
 
       <Separator className="my-4" />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Approved leaves this month</span>
-          <span className="font-medium">{stats.approvedLeavesThisMonth}</span>
+          <span className="text-muted-foreground">Attendance rate today</span>
+          <span className="font-medium">{stats.attendanceRate}%</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Completed reviews this month</span>
-          <span className="font-medium">{stats.completedReviewsThisMonth}</span>
+          <span className="text-muted-foreground">Monthly attendance average</span>
+          <span className="font-medium">{stats.avgAttendanceThisMonth}%</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Active trainings</span>
@@ -120,18 +120,18 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
       });
     }
 
-    if (stats.pendingLeaveRequests > 0) {
+    if (stats.pendingLeaveRequests > 5) {
       nextAlerts.push({
-        tone: stats.pendingLeaveRequests > 5 ? 'warning' : 'info',
+        tone: stats.pendingLeaveRequests > 10 ? 'warning' : 'info',
         title: 'Leave approvals pending',
         detail: `${stats.pendingLeaveRequests} leave request(s) are waiting for approval action.`,
         route: '/leave',
       });
     }
 
-    if (stats.pendingReviews > 0) {
+    if (stats.pendingReviews > 3) {
       nextAlerts.push({
-        tone: stats.pendingReviews > 5 ? 'warning' : 'info',
+        tone: stats.pendingReviews > 8 ? 'warning' : 'info',
         title: 'Performance reviews pending',
         detail: `${stats.pendingReviews} review(s) remain in draft or incomplete state.`,
         route: '/performance',
@@ -189,57 +189,6 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
       <DashboardWidgetCard title={getCriticalWidgetTitle(role)} description={`Operational risk signals for ${scopeLabel}.`} icon={ShieldAlert}>
         <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
           Critical insight data is temporarily unavailable.
-        </div>
-      </DashboardWidgetCard>
-    );
-  }
-
-  if (role === 'admin') {
-    return (
-      <DashboardWidgetCard
-        title="Executive Snapshot"
-        description={`Operational dashboard for ${scopeLabel}.`}
-        icon={ShieldAlert}
-      >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg border border-warning/25 bg-warning/5 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pending Approvals</p>
-            <p className="mt-2 text-2xl font-bold">{stats.pendingLeaveRequests}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Leave approvals awaiting action</p>
-            <p className="mt-1 text-xs font-medium text-warning">
-              {stats.pendingLeaveRequests > 0 ? `${stats.pendingLeaveRequests} in queue` : 'No pending approvals'}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-info/25 bg-info/5 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Training Progress</p>
-            <p className="mt-2 text-2xl font-bold">{stats.trainingCompletionRate}%</p>
-            <p className="mt-2 text-xs text-muted-foreground">Compliance and program completion</p>
-            <p className="mt-1 text-xs font-medium text-info">+{stats.completedTrainingsThisMonth} completed this month</p>
-          </div>
-
-          <div className="rounded-lg border border-success/25 bg-success/5 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Attendance Rate</p>
-            <p className="mt-2 text-2xl font-bold">{stats.attendanceRate}%</p>
-            <p className="mt-2 text-xs text-muted-foreground">Company average today</p>
-            <p className="mt-1 text-xs font-medium text-success">Monthly avg {stats.avgAttendanceThisMonth}%</p>
-          </div>
-
-          <div className="rounded-lg border border-primary/30 bg-primary p-3 text-primary-foreground">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-foreground/80">Total Workforce</p>
-            <p className="mt-2 text-2xl font-bold">{stats.totalEmployees.toLocaleString()}</p>
-            <p className="mt-2 text-xs text-primary-foreground/80">Organization headcount</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-primary-foreground/10 px-2 py-1.5 text-center">
-                <p className="text-[10px] uppercase tracking-wide text-primary-foreground/80">On Leave</p>
-                <p className="text-sm font-semibold">{stats.onLeaveToday}</p>
-              </div>
-              <div className="rounded-lg bg-primary-foreground/10 px-2 py-1.5 text-center">
-                <p className="text-[10px] uppercase tracking-wide text-primary-foreground/80">Open Reviews</p>
-                <p className="text-sm font-semibold">{stats.pendingReviews}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </DashboardWidgetCard>
     );

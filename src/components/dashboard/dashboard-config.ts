@@ -24,6 +24,19 @@ export interface DashboardWidgetMeta {
   defaultTier: DashboardTier;
 }
 
+export type DashboardSectionId =
+  | 'alerts'
+  | 'requiredActions'
+  | 'operationalStatus'
+  | 'organizationMetrics'
+  | 'supportingInformation';
+
+export interface DashboardSectionMeta {
+  id: DashboardSectionId;
+  title: string;
+  description: string;
+}
+
 export const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
   attendanceToday: {
     id: 'attendanceToday',
@@ -129,6 +142,56 @@ export const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
     defaultHeight: 4,
     defaultTier: 'primary',
   },
+};
+
+export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = [
+  'alerts',
+  'requiredActions',
+  'operationalStatus',
+  'organizationMetrics',
+  'supportingInformation',
+];
+
+export const DASHBOARD_SECTION_META: Record<DashboardSectionId, DashboardSectionMeta> = {
+  alerts: {
+    id: 'alerts',
+    title: 'Alerts',
+    description: 'Exceptions and risk signals that need immediate awareness.',
+  },
+  requiredActions: {
+    id: 'requiredActions',
+    title: 'Required Actions',
+    description: 'Items that require a decision or follow-up now.',
+  },
+  operationalStatus: {
+    id: 'operationalStatus',
+    title: 'Operational Status',
+    description: 'Current attendance, staffing, and live workflow conditions.',
+  },
+  organizationMetrics: {
+    id: 'organizationMetrics',
+    title: 'Organization Metrics',
+    description: 'High-signal workforce metrics and trend summaries.',
+  },
+  supportingInformation: {
+    id: 'supportingInformation',
+    title: 'Supporting Information',
+    description: 'Reference context, updates, and background intelligence.',
+  },
+};
+
+export const DASHBOARD_SECTION_WIDGETS: Record<DashboardSectionId, DashboardWidgetId[]> = {
+  alerts: ['criticalInsights'],
+  requiredActions: ['pendingActions'],
+  operationalStatus: ['attendanceToday', 'leaveBalance', 'teamSnapshot', 'onLeaveToday'],
+  organizationMetrics: ['executiveMetrics', 'charts'],
+  supportingInformation: [
+    'announcements',
+    'trainingSummary',
+    'performanceSummary',
+    'calendarPreview',
+    'recentActivity',
+  ],
 };
 
 export const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?: string }>> = {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -103,6 +103,10 @@ vi.mock('@/hooks/usePerformance', () => ({
     isLoading: false,
     data: [],
   }),
+  useReviewsToConduct: () => ({
+    isLoading: false,
+    data: [],
+  }),
 }));
 
 vi.mock('@/hooks/useExecutiveStats', () => ({
@@ -173,7 +177,7 @@ describe('Dashboard widget rendering', () => {
     expect(screen.getByRole('button', { name: /widgets/i })).toBeInTheDocument();
   });
 
-  it('renders visible widgets in the RGL grid', () => {
+  it('renders visible widgets inside the fixed priority sections', () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -186,9 +190,11 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    const grid = screen.getByTestId('rgl-grid');
-    expect(grid).toBeInTheDocument();
-    expect(grid.children.length).toBe(2);
+    expect(screen.getByRole('heading', { name: 'Operational Status' })).toBeInTheDocument();
+    expect(screen.getByText('Today Attendance')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Supporting Information' })).toBeInTheDocument();
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 
   it('does not render hidden widgets', () => {
@@ -204,18 +210,19 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    const grid = screen.getByTestId('rgl-grid');
-    expect(grid).toBeInTheDocument();
-    expect(grid.children.length).toBe(1);
+    expect(screen.getByText('Today Attendance')).toBeInTheDocument();
+    expect(screen.queryByText('Recent Activity')).not.toBeInTheDocument();
   });
 
-  it('renders the react-grid-layout container', () => {
+  it('renders the decision-first sections for manager views', () => {
     mockRole = 'manager';
     mockLayoutState = {
       version: 2,
       presetVersion: 6,
       role: 'manager',
       widgets: [
+        { id: 'criticalInsights', x: 0, y: 0, w: 8, h: 4, visible: true },
+        { id: 'pendingActions', x: 8, y: 0, w: 4, h: 4, visible: true },
         { id: 'charts', x: 0, y: 0, w: 12, h: 6, visible: true },
         { id: 'teamSnapshot', x: 0, y: 6, w: 8, h: 4, visible: true },
         { id: 'onLeaveToday', x: 8, y: 6, w: 4, h: 4, visible: true },
@@ -223,12 +230,14 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    const grid = screen.getByTestId('rgl-grid');
-    expect(grid).toBeInTheDocument();
-    expect(grid.children.length).toBe(3);
+    expect(screen.getByRole('heading', { name: 'Alerts' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Required Actions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Operational Status' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Organization Metrics' })).toBeInTheDocument();
+    expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 
-  it('provides east/west plus corner resize handles for right-anchored widget resizing', () => {
+  it('enters edit mode and renders the react-grid-layout container', () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -240,6 +249,28 @@ describe('Dashboard widget rendering', () => {
       ],
     };
     renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+
+    const grid = screen.getByTestId('rgl-grid');
+    expect(grid).toBeInTheDocument();
+    expect(grid.children.length).toBe(2);
+  });
+
+  it('provides east/west plus corner resize handles in edit mode', () => {
+    mockRole = 'employee';
+    mockLayoutState = {
+      version: 2,
+      presetVersion: 7,
+      role: 'employee',
+      widgets: [
+        { id: 'attendanceToday', x: 0, y: 0, w: 8, h: 4, visible: true },
+        { id: 'calendarPreview', x: 8, y: 0, w: 4, h: 4, visible: true },
+      ],
+    };
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
 
     expect(capturedResizeConfig).toBeDefined();
     expect(capturedResizeConfig!.handles).toContain('e');

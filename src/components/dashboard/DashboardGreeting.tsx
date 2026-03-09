@@ -4,13 +4,11 @@
  */
 import { memo, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Bell, CalendarClock, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
+import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserNotifications } from '@/hooks/useNotifications';
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
-import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { AppRole } from '@/types/hrms';
 import { formatRoleLabel, getScopeLabel } from './dashboard-config';
 import { cn } from '@/lib/utils';
@@ -28,8 +26,6 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { unreadCount } = useUserNotifications(5);
-  const showManagerActions = canViewManagerDashboardWidgets(role);
-  const { data: stats } = useExecutiveStats();
 
   const greeting = useMemo(getTimeGreeting, []);
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
@@ -47,29 +43,8 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
       });
     }
 
-    if (showManagerActions && stats) {
-      if (stats.pendingLeaveRequests > 0) {
-        chips.push({
-          icon: CalendarClock,
-          label: `${stats.pendingLeaveRequests} leave request${stats.pendingLeaveRequests > 1 ? 's' : ''}`,
-          tone: 'warning',
-          route: '/leave',
-          count: stats.pendingLeaveRequests,
-        });
-      }
-      if (stats.pendingReviews > 0) {
-        chips.push({
-          icon: CheckCircle2,
-          label: `${stats.pendingReviews} review${stats.pendingReviews > 1 ? 's' : ''}`,
-          tone: 'info',
-          route: '/performance',
-          count: stats.pendingReviews,
-        });
-      }
-    }
-
     return chips;
-  }, [unreadCount, showManagerActions, stats]);
+  }, [unreadCount]);
 
   const toneMap: Record<string, string> = {
     primary: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/15',

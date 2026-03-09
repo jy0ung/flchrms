@@ -43,17 +43,16 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('QuickStats accessibility interactions', () => {
-  it('supports keyboard activation for clickable stat cards', () => {
+  it('uses semantic buttons for clickable stats', () => {
     render(
       <MemoryRouter>
         <QuickStats />
       </MemoryRouter>,
     );
 
-    const employeeCard = screen.getByRole('button', { name: /Open Total Employees/i });
-    fireEvent.keyDown(employeeCard, { key: 'Enter' });
+    const employeeCard = screen.getByRole('button', { name: /Open Workforce in Scope/i });
+    fireEvent.click(employeeCard);
 
     expect(navigate).toHaveBeenCalledWith('/employees');
   });
 });
-
