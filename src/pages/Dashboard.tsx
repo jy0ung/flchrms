@@ -26,9 +26,9 @@ import { Button } from '@/components/ui/button';
 import { DashboardWidgetRenderer } from '@/components/dashboard/widgets';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import { DashboardDataProvider } from '@/components/dashboard/DashboardDataProvider';
 import { DashboardCustomizePanel } from '@/components/dashboard/DashboardCustomizePanel';
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
-import { cn } from '@/lib/utils';
 
 // ── Grid constants ───────────────────────────────────────────────
 
@@ -225,144 +225,146 @@ export default function Dashboard() {
   }, [editMode, canEditLayout]);
 
   return (
-    <AppPageContainer spacing="comfortable" maxWidth="7xl">
-      {/* Hero Greeting + action buttons */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <DashboardGreeting role={role} />
+    <DashboardDataProvider>
+      <AppPageContainer spacing="comfortable" maxWidth="7xl">
+        {/* Hero Greeting + action buttons */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <DashboardGreeting role={role} />
+          </div>
+          <div className="flex items-center gap-2 shrink-0 mt-1">
+            {editMode ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                  <X className="h-4 w-4 mr-1" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                  <Save className="h-4 w-4 mr-1" />
+                  {isSaving ? 'Saving…' : 'Save'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={enterEditMode}
+                  disabled={!canEditLayout}
+                  title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setCustomizeOpen(true)}
+                >
+                  <Settings2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Widgets</span>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0 mt-1">
-          {editMode ? (
-            <>
-              <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-1" />
-                {isSaving ? 'Saving…' : 'Save'}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={enterEditMode}
-                disabled={!canEditLayout}
-                title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setCustomizeOpen(true)}
-              >
-                <Settings2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Widgets</span>
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
 
-      {!isLoading && !editMode && (
-        <div className="space-y-7 md:space-y-8">
-          {dashboardSections.map((section) => {
-            const meta = DASHBOARD_SECTION_META[section.id];
-            const shouldRenderQuickStats = section.id === 'organizationMetrics' && showManagerWidgets;
-            const hasContent = shouldRenderQuickStats || section.widgetIds.length > 0;
+        {!isLoading && !editMode && (
+          <div className="space-y-7 md:space-y-8">
+            {dashboardSections.map((section) => {
+              const meta = DASHBOARD_SECTION_META[section.id];
+              const shouldRenderQuickStats = section.id === 'organizationMetrics' && showManagerWidgets;
+              const hasContent = shouldRenderQuickStats || section.widgetIds.length > 0;
 
-            if (!hasContent) return null;
+              if (!hasContent) return null;
 
-            return (
-              <DashboardSection
-                key={section.id}
-                title={meta.title}
-                description={getSectionDescription(section.id, showManagerWidgets)}
-                contentClassName="space-y-4"
+              return (
+                <DashboardSection
+                  key={section.id}
+                  title={meta.title}
+                  description={getSectionDescription(section.id, showManagerWidgets)}
+                  contentClassName="space-y-4"
+                >
+                  {shouldRenderQuickStats ? <QuickStats /> : null}
+                  {section.widgetIds.length > 0 ? (
+                    <div className={getSectionGridClass(section.id)}>
+                      {section.widgetIds.map((id) => (
+                        <DashboardWidgetRenderer
+                          key={`${section.id}-${id}`}
+                          widgetId={id as DashboardWidgetId}
+                          role={role}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </DashboardSection>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Edit-mode widget grid — react-grid-layout */}
+        {!isLoading && editMode && (
+          <div ref={containerRef} className="w-full">
+            {mounted && (
+              <ReactGridLayout
+                width={width}
+                layout={projectedLayout}
+                gridConfig={{
+                  cols: currentCols,
+                  rowHeight: ROW_HEIGHT,
+                  margin: GRID_MARGIN,
+                  containerPadding: [0, 0],
+                  maxRows: Infinity,
+                }}
+                compactor={verticalCompactor}
+                dragConfig={{
+                  enabled: editMode && canEditLayout,
+                  handle: '.rgl-drag-handle',
+                }}
+                resizeConfig={{
+                  enabled: editMode && canEditLayout,
+                  handles: ['e', 'w', 'se', 'sw'],
+                }}
+                onLayoutChange={onLayoutChange}
+                autoSize
+                className="relative rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 transition-colors duration-200"
               >
-                {shouldRenderQuickStats ? <QuickStats /> : null}
-                {section.widgetIds.length > 0 ? (
-                  <div className={getSectionGridClass(section.id)}>
-                    {section.widgetIds.map((id) => (
+                {visibleIds.map((id) => (
+                  <div
+                    key={id}
+                    className="overflow-hidden rounded-lg ring-1 ring-primary/20 shadow-sm"
+                  >
+                    <div className="rgl-drag-handle flex h-6 cursor-grab items-center justify-center gap-1 border-b bg-muted/80 text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing">
+                      <GripHorizontal className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="h-[calc(100%-24px)] overflow-hidden">
                       <DashboardWidgetRenderer
-                        key={`${section.id}-${id}`}
                         widgetId={id as DashboardWidgetId}
                         role={role}
                       />
-                    ))}
+                    </div>
                   </div>
-                ) : null}
-              </DashboardSection>
-            );
-          })}
-        </div>
-      )}
+                ))}
+              </ReactGridLayout>
+            )}
+          </div>
+        )}
 
-      {/* Edit-mode widget grid — react-grid-layout */}
-      {!isLoading && editMode && (
-        <div ref={containerRef} className="w-full">
-          {mounted && (
-            <ReactGridLayout
-              width={width}
-              layout={projectedLayout}
-              gridConfig={{
-                cols: currentCols,
-                rowHeight: ROW_HEIGHT,
-                margin: GRID_MARGIN,
-                containerPadding: [0, 0],
-                maxRows: Infinity,
-              }}
-              compactor={verticalCompactor}
-              dragConfig={{
-                enabled: editMode && canEditLayout,
-                handle: '.rgl-drag-handle',
-              }}
-              resizeConfig={{
-                enabled: editMode && canEditLayout,
-                handles: ['e', 'w', 'se', 'sw'],
-              }}
-              onLayoutChange={onLayoutChange}
-              autoSize
-              className="relative rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 transition-colors duration-200"
-            >
-              {visibleIds.map((id) => (
-                <div
-                  key={id}
-                  className="overflow-hidden rounded-lg ring-1 ring-primary/20 shadow-sm"
-                >
-                  <div className="rgl-drag-handle flex h-6 cursor-grab items-center justify-center gap-1 border-b bg-muted/80 text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing">
-                    <GripHorizontal className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="h-[calc(100%-24px)] overflow-hidden">
-                    <DashboardWidgetRenderer
-                      widgetId={id as DashboardWidgetId}
-                      role={role}
-                    />
-                  </div>
-                </div>
-              ))}
-            </ReactGridLayout>
-          )}
-        </div>
-      )}
-
-      {/* Customize panel (Sheet) */}
-      <DashboardCustomizePanel
-        open={customizeOpen}
-        onOpenChange={setCustomizeOpen}
-        layoutState={layoutState}
-        role={role}
-        onSave={saveLayout}
-        onReset={resetLayout}
-        isSaving={isSaving}
-        isResetting={isResetting}
-      />
-    </AppPageContainer>
+        {/* Customize panel (Sheet) */}
+        <DashboardCustomizePanel
+          open={customizeOpen}
+          onOpenChange={setCustomizeOpen}
+          layoutState={layoutState}
+          role={role}
+          onSave={saveLayout}
+          onReset={resetLayout}
+          isSaving={isSaving}
+          isResetting={isResetting}
+        />
+      </AppPageContainer>
+    </DashboardDataProvider>
   );
 }

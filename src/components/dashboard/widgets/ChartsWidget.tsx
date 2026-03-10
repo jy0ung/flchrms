@@ -8,12 +8,12 @@ import { BarChart3 } from 'lucide-react';
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 import { DashboardWidgetCard } from './shared';
+import { useDashboardData } from '../useDashboardData';
 
 const CHART_CONFIG = {
   present: { label: 'Present', color: 'hsl(var(--success))' },
@@ -35,7 +35,7 @@ const TABS: Array<{ id: ChartTab; label: string }> = [
 
 function ChartsWidgetInner() {
   const { role } = useAuth();
-  const { data: stats, isLoading } = useExecutiveStats();
+  const { executiveStats: stats, executiveStatsLoading: isLoading } = useDashboardData();
   const [activeTab, setActiveTab] = useState<ChartTab>('attendance');
 
   const isManagerOrAbove = canViewManagerDashboardWidgets(role);

@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { ComponentType } from 'react';
+import { useDashboardData } from './useDashboardData';
 
 interface QuickStatProps {
   title: string;
@@ -104,7 +104,7 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
 
 function QuickStatsInner() {
   const { role } = useAuth();
-  const { data: stats, isLoading } = useExecutiveStats();
+  const { executiveStats: stats, executiveStatsLoading: isLoading } = useDashboardData();
   const navigate = useNavigate();
 
   const isManagerOrAbove = canViewManagerDashboardWidgets(role);

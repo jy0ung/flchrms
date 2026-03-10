@@ -6,7 +6,6 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Target } from 'lucide-react';
 
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import type { AppRole } from '@/types/hrms';
 import { cn } from '@/lib/utils';
 
@@ -17,12 +16,18 @@ import { QueryErrorState } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip } from './shared';
 import { getCriticalWidgetTitle, getScopeLabel } from '../dashboard-config';
+import { useDashboardData } from '../useDashboardData';
 
 // ── Executive Metrics ────────────────────────────────────────────
 
 export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
+  const {
+    executiveStats: stats,
+    executiveStatsLoading: isLoading,
+    executiveStatsError: isError,
+    refetchExecutiveStats: refetch,
+  } = useDashboardData();
   const scopeLabel = getScopeLabel(role, stats ?? null);
 
   if (isLoading) {
@@ -96,7 +101,12 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
 
 export function CriticalInsightsWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
+  const {
+    executiveStats: stats,
+    executiveStatsLoading: isLoading,
+    executiveStatsError: isError,
+    refetchExecutiveStats: refetch,
+  } = useDashboardData();
   const scopeLabel = getScopeLabel(role, stats ?? null);
 
   const alerts = useMemo(() => {

@@ -20,6 +20,11 @@ import { RecentActivityWidget } from './RecentActivityWidget';
 import { PendingActionsWidget } from './PendingActionsWidget';
 import { DashboardWidgetErrorBoundary } from './shared';
 
+interface DashboardWidgetRendererProps {
+  widgetId: DashboardWidgetId;
+  role: AppRole;
+}
+
 function WidgetSwitch({ widgetId, role }: { widgetId: DashboardWidgetId; role: AppRole }) {
   switch (widgetId) {
     case 'attendanceToday':
@@ -53,7 +58,7 @@ function WidgetSwitch({ widgetId, role }: { widgetId: DashboardWidgetId; role: A
   }
 }
 
-export function DashboardWidgetRenderer({ widgetId, role }: { widgetId: DashboardWidgetId; role: AppRole }) {
+export function DashboardWidgetRenderer({ widgetId, role }: DashboardWidgetRendererProps) {
   const meta = WIDGET_META[widgetId];
   return (
     <DashboardWidgetErrorBoundary widgetLabel={meta?.label ?? widgetId}>

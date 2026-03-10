@@ -8,10 +8,10 @@ import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserNotifications } from '@/hooks/useNotifications';
 import type { AppRole } from '@/types/hrms';
 import { formatRoleLabel, getScopeLabel } from './dashboard-config';
 import { cn } from '@/lib/utils';
+import { useDashboardData } from './useDashboardData';
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -25,7 +25,7 @@ function getTimeGreeting(): string {
 function DashboardGreetingInner({ role }: { role: AppRole }) {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const { unreadCount } = useUserNotifications(5);
+  const { unreadNotificationCount: unreadCount } = useDashboardData();
 
   const greeting = useMemo(getTimeGreeting, []);
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');

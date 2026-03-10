@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CalendarDays, Users } from 'lucide-react';
 
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import type { AppRole } from '@/types/hrms';
 
 import { Button } from '@/components/ui/button';
@@ -16,12 +15,18 @@ import { QueryErrorState, StatusBadge } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip, useDashboardOnLeaveTodayRoster } from './shared';
 import { clampPercent, formatStatusLabel, getScopeLabel } from '../dashboard-config';
+import { useDashboardData } from '../useDashboardData';
 
 // ── Team Snapshot ────────────────────────────────────────────────
 
 export function TeamSnapshotWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading, isError, refetch } = useExecutiveStats();
+  const {
+    executiveStats: stats,
+    executiveStatsLoading: isLoading,
+    executiveStatsError: isError,
+    refetchExecutiveStats: refetch,
+  } = useDashboardData();
   const scopeLabel = getScopeLabel(role, stats ?? null);
   const title = role === 'manager' ? 'Dept Snapshot' : role === 'admin' ? 'Live Attendance Status' : 'Operational Snapshot';
   const description = role === 'admin'
@@ -110,7 +115,7 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
 export function OnLeaveTodayWidget({ role }: { role: AppRole }) {
   const navigate = useNavigate();
   const { data: roster, isLoading } = useDashboardOnLeaveTodayRoster();
-  const { data: stats } = useExecutiveStats();
+  const { executiveStats: stats } = useDashboardData();
   const scopeLabel = getScopeLabel(role, stats ?? null);
   const isAdminViewer = role === 'admin';
 

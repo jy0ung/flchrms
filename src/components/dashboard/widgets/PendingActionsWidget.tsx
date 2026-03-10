@@ -4,10 +4,8 @@
  */
 import { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import { ListTodo, CalendarClock, ClipboardList } from 'lucide-react';
 
-import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useReviewsToConduct } from '@/hooks/usePerformance';
 import { useAuth } from '@/contexts/AuthContext';
 import { canViewManagerDashboardWidgets, canConductPerformanceReviews } from '@/lib/permissions';
@@ -19,10 +17,11 @@ import { StatusBadge } from '@/components/system';
 import { cn } from '@/lib/utils';
 
 import { DashboardWidgetCard } from './shared';
+import { useDashboardData } from '../useDashboardData';
 
 function PendingActionsWidgetInner({ role }: { role: AppRole }) {
   const navigate = useNavigate();
-  const { data: stats, isLoading: isStatsLoading } = useExecutiveStats();
+  const { executiveStats: stats, executiveStatsLoading: isStatsLoading } = useDashboardData();
   const { role: authRole } = useAuth();
   const canReview = canConductPerformanceReviews(authRole);
   const { data: reviewsToConduct, isLoading: isReviewsLoading } = useReviewsToConduct();

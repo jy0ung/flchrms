@@ -113,6 +113,18 @@ vi.mock('@/hooks/useExecutiveStats', () => ({
   useExecutiveStats: () => ({
     isLoading: false,
     data: null,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useNotifications', () => ({
+  useUserNotifications: () => ({
+    notifications: [],
+    unreadCount: 0,
+    isLoading: false,
+    isRefreshing: false,
+    refetch: vi.fn(),
   }),
 }));
 

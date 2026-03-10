@@ -6,12 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Activity, Bell, CalendarClock, Settings, Shield } from 'lucide-react';
 
-import { useUserNotifications, type UserNotification } from '@/hooks/useNotifications';
+import type { UserNotification } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 import { DashboardWidgetCard } from './shared';
+import { useDashboardData } from '../useDashboardData';
 
 const CATEGORY_META: Record<string, { icon: typeof Bell; color: string }> = {
   leave: { icon: CalendarClock, color: 'text-warning' },
@@ -25,7 +26,11 @@ function getNotificationMeta(category: string) {
 
 function RecentActivityWidgetInner() {
   const navigate = useNavigate();
-  const { notifications, unreadCount, isLoading } = useUserNotifications(8);
+  const {
+    notifications,
+    unreadNotificationCount: unreadCount,
+    notificationsLoading: isLoading,
+  } = useDashboardData();
 
   return (
     <DashboardWidgetCard
