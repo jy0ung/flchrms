@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ interface ActionTileProps {
   badgeLabel?: string;
   onClick?: () => void;
   href?: string;
+  to?: string;
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export function ActionTile({
   badgeLabel,
   onClick,
   href,
+  to,
   className,
 }: ActionTileProps) {
   const tileClassName = cn(
@@ -56,6 +59,14 @@ export function ActionTile({
       </div>
     </>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className={tileClassName}>
+        {content}
+      </Link>
+    );
+  }
 
   if (href) {
     return (

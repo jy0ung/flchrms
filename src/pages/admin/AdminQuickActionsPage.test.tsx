@@ -1,9 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AdminQuickActionsPage from '@/pages/admin/AdminQuickActionsPage';
 import type { AdminCapabilityMap } from '@/lib/admin-capabilities';
 
-const mockNavigate = vi.fn();
 let mockCapabilityLoading = false;
 
 const buildCapabilities = (overrides: Partial<AdminCapabilityMap>): AdminCapabilityMap => ({
@@ -21,14 +20,6 @@ const buildCapabilities = (overrides: Partial<AdminCapabilityMap>): AdminCapabil
   manage_admin_settings: true,
   view_sensitive_employee_identifiers: true,
   ...overrides,
-});
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
 });
 
 vi.mock('@/hooks/usePageTitle', () => ({
@@ -51,7 +42,6 @@ vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
 
 describe('AdminQuickActionsPage', () => {
   beforeEach(() => {
-    mockNavigate.mockReset();
     mockCapabilityLoading = false;
   });
 
@@ -71,17 +61,15 @@ describe('AdminQuickActionsPage', () => {
     expect(screen.queryByText('Operational work now happens in canonical module workspaces')).not.toBeInTheDocument();
   });
 
-  it('routes to the canonical employee workspace from quick actions', () => {
+  it('renders canonical workspace actions as semantic links', () => {
     render(
       <MemoryRouter>
         <AdminQuickActionsPage />
       </MemoryRouter>,
     );
 
-    const employeeCard = screen.getByRole('button', { name: /Open Employee Workspace/i });
-    fireEvent.click(employeeCard);
-
-    expect(mockNavigate).toHaveBeenCalledWith('/employees');
+    const employeeCard = screen.getByRole('link', { name: /Open Employee Workspace/i });
+    expect(employeeCard).toHaveAttribute('href', '/employees');
   });
 
   it('renders an explicit loading state while governance actions are resolving', () => {

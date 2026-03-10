@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -6,19 +6,9 @@ import { DashboardDataProvider } from '@/components/dashboard/DashboardDataProvi
 import type { DashboardDataContextValue } from '@/components/dashboard/dashboard-data-context';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 
-const navigate = vi.fn();
-
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ role: 'manager' }),
 }));
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => navigate,
-  };
-});
 
 const dashboardDataValue: DashboardDataContextValue = {
   executiveStats: {
@@ -50,7 +40,7 @@ const dashboardDataValue: DashboardDataContextValue = {
 };
 
 describe('QuickStats accessibility interactions', () => {
-  it('uses semantic buttons for clickable stats', () => {
+  it('uses semantic links for navigational stats', () => {
     render(
       <MemoryRouter>
         <DashboardDataProvider value={dashboardDataValue}>
@@ -59,9 +49,7 @@ describe('QuickStats accessibility interactions', () => {
       </MemoryRouter>,
     );
 
-    const employeeCard = screen.getByRole('button', { name: /Open Workforce in Scope/i });
-    fireEvent.click(employeeCard);
-
-    expect(navigate).toHaveBeenCalledWith('/employees');
+    const employeeCard = screen.getByRole('link', { name: /Open Workforce in Scope/i });
+    expect(employeeCard).toHaveAttribute('href', '/employees');
   });
 });

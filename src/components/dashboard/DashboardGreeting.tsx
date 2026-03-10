@@ -5,7 +5,7 @@
 import { memo, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Bell, ChevronRight, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import type { AppRole } from '@/types/hrms';
@@ -24,7 +24,6 @@ function getTimeGreeting(): string {
 
 function DashboardGreetingInner({ role }: { role: AppRole }) {
   const { profile } = useAuth();
-  const navigate = useNavigate();
   const { unreadNotificationCount: unreadCount } = useDashboardData();
 
   const greeting = useMemo(getTimeGreeting, []);
@@ -78,9 +77,9 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
         <div className="flex flex-wrap items-center gap-2">
           {actionChips.length > 0 ? (
             actionChips.map((chip) => (
-              <button
+              <Link
                 key={chip.label}
-                onClick={() => navigate(chip.route)}
+                to={chip.route}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors cursor-pointer',
                   toneMap[chip.tone],
@@ -89,7 +88,7 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
                 <chip.icon className="h-3.5 w-3.5" />
                 <span>{chip.label}</span>
                 <ChevronRight className="h-3 w-3 opacity-50" />
-              </button>
+              </Link>
             ))
           ) : (
             <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-3 py-2 text-xs font-medium text-success">

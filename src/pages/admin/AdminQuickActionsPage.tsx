@@ -1,5 +1,4 @@
 import type { ComponentType } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Compass,
   FileText,
@@ -33,7 +32,6 @@ interface QuickAction {
 export default function AdminQuickActionsPage() {
   usePageTitle(`Admin · ${SHELL_LABELS.governanceHub}`);
 
-  const navigate = useNavigate();
   const { role } = useAuth();
   const { capabilityMap, capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
 
@@ -170,7 +168,7 @@ export default function AdminQuickActionsPage() {
             {section.actions.map((action) => (
               <ActionTile
                 key={action.id}
-                onClick={() => navigate(action.destination)}
+                to={action.destination}
                 title={action.title}
                 description={action.description}
                 icon={action.icon}

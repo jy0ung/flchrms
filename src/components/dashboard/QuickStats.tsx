@@ -1,8 +1,8 @@
 import { memo } from 'react';
+import { Link } from 'react-router-dom';
 import { CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   TrendingDown,
@@ -26,11 +26,12 @@ interface QuickStatProps {
   trendLabel?: string;
   onClick?: () => void;
   clickable?: boolean;
+  to?: string;
   icon?: ComponentType<{ className?: string }>;
   accentColor?: string;
 }
 
-function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickable, icon: Icon, accentColor }: QuickStatProps) {
+function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickable, to, icon: Icon, accentColor }: QuickStatProps) {
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
   const surfaceClassName = cn(
     'group relative overflow-hidden border border-border bg-card shadow-sm transition-all duration-200',
@@ -86,6 +87,18 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
     </CardContent>
   );
 
+  if (clickable && to) {
+    return (
+      <Link
+        className={cn(surfaceClassName, 'rounded-xl text-left')}
+        to={to}
+        aria-label={`Open ${title}`}
+      >
+        {content}
+      </Link>
+    );
+  }
+
   if (clickable && onClick) {
     return (
       <button
@@ -105,7 +118,6 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
 function QuickStatsInner() {
   const { role } = useAuth();
   const { executiveStats: stats, executiveStatsLoading: isLoading } = useDashboardData();
-  const navigate = useNavigate();
 
   const isManagerOrAbove = canViewManagerDashboardWidgets(role);
 
@@ -139,7 +151,7 @@ function QuickStatsInner() {
         icon={Users}
         accentColor="bg-primary"
         clickable
-        onClick={() => navigate('/employees')}
+        to="/employees"
       />
       <QuickStat
         title="Attendance Rate"
@@ -150,7 +162,7 @@ function QuickStatsInner() {
         icon={Clock}
         accentColor={stats.attendanceRate >= 80 ? 'bg-success' : stats.attendanceRate >= 60 ? 'bg-warning' : 'bg-destructive'}
         clickable
-        onClick={() => navigate('/attendance')}
+        to="/attendance"
       />
       <QuickStat
         title="On Leave Today"
@@ -159,7 +171,7 @@ function QuickStatsInner() {
         icon={CalendarDays}
         accentColor={stats.onLeaveToday > 0 ? 'bg-info' : 'bg-success'}
         clickable
-        onClick={() => navigate('/calendar')}
+        to="/calendar"
       />
       <QuickStat
         title="Approved Leaves"
@@ -168,7 +180,7 @@ function QuickStatsInner() {
         icon={ClipboardList}
         accentColor={stats.approvedLeavesThisMonth > 0 ? 'bg-info' : 'bg-primary'}
         clickable
-        onClick={() => navigate('/leave')}
+        to="/leave"
       />
     </div>
   );
