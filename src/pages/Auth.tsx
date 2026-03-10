@@ -13,6 +13,7 @@ import { ModalScaffold } from '@/components/system';
 import { AuthCard, type AuthFlowStage } from '@/components/auth/AuthCard';
 import { LoginForm, type LoginFormPayload, type LoginFormSubmitResult } from '@/components/auth/LoginForm';
 import { resolvePostAuthTarget } from '@/lib/auth-redirect';
+import { signOutLocalSession } from '@/lib/auth-signout';
 
 function hasRecoveryParams() {
   if (typeof window === 'undefined') return false;
@@ -177,7 +178,7 @@ export default function Auth() {
     }
 
     toast.success('Password updated successfully. Please sign in again.');
-    await supabase.auth.signOut();
+    await signOutLocalSession();
     clearRecoveryState();
     setIsUpdatingRecoveryPassword(false);
   };
@@ -267,7 +268,7 @@ export default function Auth() {
                         variant="outline"
                         className="w-full"
                         onClick={async () => {
-                          await supabase.auth.signOut();
+                          await signOutLocalSession();
                           clearRecoveryState();
                         }}
                         disabled={isUpdatingRecoveryPassword}

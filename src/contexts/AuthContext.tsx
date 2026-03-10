@@ -5,6 +5,7 @@ import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { AppRole, Profile } from '@/types/hrms';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { toast } from 'sonner';
+import { signOutLocalSession } from '@/lib/auth-signout';
 
 interface AuthContextType {
   user: User | null;
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isBlockedAccountStatus(profileData.status)) {
         // Safety net for restored sessions after HR/Admin changes account status.
-        await supabase.auth.signOut();
+        await signOutLocalSession();
         resetAuthState();
         return false;
       }
@@ -224,13 +225,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (statusError) {
         console.error('Error checking account status after sign-in:', statusError);
-        await supabase.auth.signOut();
+        await signOutLocalSession();
         resetAuthState();
         return { error: new Error('Unable to sign in at the moment') };
       }
 
       if (isBlockedAccountStatus(status)) {
-        await supabase.auth.signOut();
+        await signOutLocalSession();
         resetAuthState();
         return { error: new Error('This account is inactive. Please contact HR/Admin.') };
       }
@@ -257,7 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await signOutLocalSession();
     resetAuthState();
   }, [resetAuthState]);
 
