@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ContextChip, StatusBadge } from '@/components/system';
+import { ContextChip, StatusBadge, TaskEmptyState } from '@/components/system';
 
 import {
   DashboardWidgetCard,
@@ -209,7 +209,12 @@ export function LeaveBalanceWidget() {
             </p>
           </div>
           {(balances?.length ?? 0) === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No leave balance records available yet.</div>
+            <TaskEmptyState
+              title="No leave balances yet"
+              description="Your leave balance records will appear here once leave types are assigned."
+              icon={Calendar}
+              compact
+            />
           ) : (
             <div className="space-y-2">
               {visibleBalances.map((b) => (
@@ -244,7 +249,12 @@ export function AnnouncementsWidget() {
       {isLoading ? (
         <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
       ) : (announcements?.length ?? 0) === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-5 text-sm text-muted-foreground">No announcements available right now.</div>
+        <TaskEmptyState
+          title="No announcements right now"
+          description="Company updates will appear here when they are published."
+          icon={Megaphone}
+          compact
+        />
       ) : (
         <div className="space-y-3">
           {(announcements ?? []).slice(0, 3).map((a: Announcement) => (
@@ -307,7 +317,12 @@ export function TrainingSummaryWidget() {
         {isTrainingOverviewLoading ? (
           <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>
         ) : (trainingOverview?.length ?? 0) === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">No training enrollment data available yet.</div>
+          <TaskEmptyState
+            title="No training enrollment data yet"
+            description="Completion trends will appear here after enrollment activity starts."
+            icon={GraduationCap}
+            compact
+          />
         ) : (
           <div className="space-y-4">
             {(trainingOverview ?? []).map((p) => (
@@ -386,7 +401,14 @@ export function PerformanceSummaryWidget() {
                 </div>
               </>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">No reviews assigned yet.</p>
+              <TaskEmptyState
+                title="No reviews assigned"
+                description="New review cycles will show up here when they are scheduled."
+                icon={ClipboardList}
+                align="start"
+                compact
+                className="mt-2"
+              />
             )}
           </div>
         </div>

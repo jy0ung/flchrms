@@ -9,6 +9,7 @@ import { Activity, Bell, CalendarClock, Settings, Shield } from 'lucide-react';
 import type { UserNotification } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TaskEmptyState } from '@/components/system';
 import { cn } from '@/lib/utils';
 
 import { DashboardWidgetCard } from './shared';
@@ -50,9 +51,12 @@ function RecentActivityWidgetInner() {
           ))}
         </div>
       ) : notifications.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-5 text-center text-sm text-muted-foreground">
-          No recent activity — you're all caught up.
-        </div>
+        <TaskEmptyState
+          title="No recent activity"
+          description="You're all caught up."
+          icon={Activity}
+          compact
+        />
       ) : (
         <div className="relative space-y-0">
           {/* Timeline line */}

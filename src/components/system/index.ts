@@ -6,6 +6,7 @@ export * from "./SectionToolbar";
 export * from "./RecordSurfaceHeader";
 export * from "./ActionTile";
 export * from "./ContextChip";
+export * from "./TaskEmptyState";
 export * from "./MobileFilterSheet";
 export * from "./DataTableShell";
 export * from "./SurfaceSection";

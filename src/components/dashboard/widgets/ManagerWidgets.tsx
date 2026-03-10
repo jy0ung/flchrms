@@ -11,7 +11,7 @@ import type { AppRole } from '@/types/hrms';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { QueryErrorState, StatusBadge } from '@/components/system';
+import { QueryErrorState, StatusBadge, TaskEmptyState } from '@/components/system';
 
 import { DashboardWidgetCard, MetricChip, useDashboardOnLeaveTodayRoster } from './shared';
 import { clampPercent, formatStatusLabel, getScopeLabel } from '../dashboard-config';
@@ -55,9 +55,12 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
   if (!stats) {
     return (
       <DashboardWidgetCard title={title} description={description} icon={Users}>
-        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-          Team metrics are temporarily unavailable.
-        </div>
+        <TaskEmptyState
+          title="Team metrics unavailable"
+          description="Refresh the dashboard or try again in a moment."
+          icon={Users}
+          compact
+        />
       </DashboardWidgetCard>
     );
   }
@@ -137,9 +140,12 @@ export function OnLeaveTodayWidget({ role }: { role: AppRole }) {
           ))}
         </div>
       ) : (roster?.length ?? 0) === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-          No one is on leave today in your current scope.
-        </div>
+        <TaskEmptyState
+          title="No one is on leave today"
+          description="Your current scope has a clear leave roster."
+          icon={CalendarDays}
+          compact
+        />
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
