@@ -39,7 +39,8 @@ function NotificationListItem({
   const isUnread = !notification.read_at;
 
   return (
-    <div
+    <article
+      role="listitem"
       className={cn(
         'rounded-lg border p-3 transition-colors',
         isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background',
@@ -103,7 +104,7 @@ function NotificationListItem({
           )}
         </Button>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -230,7 +231,7 @@ export function NotificationsBell({
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <p className="text-sm font-semibold">Notifications</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground" aria-live="polite">
               {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
             </p>
           </div>
@@ -276,7 +277,7 @@ export function NotificationsBell({
         </div>
         <Separator />
         <ScrollArea className="h-[420px]">
-          <div className="p-3 space-y-2">
+          <div className="space-y-2 p-3" role="list" aria-label="Recent notifications">
             {isLoading && (
               <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

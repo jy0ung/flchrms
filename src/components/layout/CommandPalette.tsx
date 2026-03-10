@@ -72,6 +72,7 @@ export function CommandPalette() {
         size="icon"
         onClick={() => setOpen(true)}
         className="h-11 w-11 sm:hidden"
+        aria-label="Open command palette"
       >
         <Search className="h-4 w-4" />
       </Button>

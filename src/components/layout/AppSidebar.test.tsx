@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 
 import { AppSidebar } from '@/components/layout/AppSidebar';
 
+let mockIsMobile = false;
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     role: 'admin',
@@ -29,7 +31,7 @@ vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
 }));
 
 vi.mock('@/hooks/use-mobile', () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mockIsMobile,
 }));
 
 vi.mock('@/hooks/useNotifications', () => ({
@@ -39,6 +41,10 @@ vi.mock('@/hooks/useNotifications', () => ({
 }));
 
 describe('AppSidebar', () => {
+  beforeEach(() => {
+    mockIsMobile = false;
+  });
+
   it('uses task-oriented group labels for the primary navigation', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -57,5 +63,20 @@ describe('AppSidebar', () => {
     expect(screen.queryByText('Organization')).not.toBeInTheDocument();
     expect(screen.queryByText('Development')).not.toBeInTheDocument();
     expect(screen.queryByText('System')).not.toBeInTheDocument();
+  });
+
+  it('provides an accessible title and description for the mobile navigation sheet', () => {
+    mockIsMobile = true;
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppSidebar collapsed={false} onToggle={vi.fn()} mobileOpen onMobileOpenChange={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Mobile navigation menu')).toBeInTheDocument();
+    expect(
+      screen.getByText('Browse workspaces, records, and governance routes available to your current role.'),
+    ).toBeInTheDocument();
   });
 });

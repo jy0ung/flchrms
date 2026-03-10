@@ -31,7 +31,7 @@ import {
 } from '@/lib/permissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserNotifications } from '@/hooks/useNotifications';
 
@@ -280,6 +280,12 @@ export function AppSidebar({
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Mobile navigation menu</SheetTitle>
+            <SheetDescription>
+              Browse workspaces, records, and governance routes available to your current role.
+            </SheetDescription>
+          </SheetHeader>
           <SidebarContent collapsed={false} onNavigate={() => setIsOpen(false)} />
         </SheetContent>
       </Sheet>
