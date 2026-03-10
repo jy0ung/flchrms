@@ -282,7 +282,7 @@ export function LeaveRequestWorkspace({
                           value={statusFilter}
                           onValueChange={(next) => setStatusFilter(next as StatusFilterOption)}
                         >
-                          <SelectTrigger className="h-9 rounded-full">
+                          <SelectTrigger aria-label="Filter leave requests by status" className="h-9 rounded-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

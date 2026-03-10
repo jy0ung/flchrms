@@ -19,7 +19,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center gap-1 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
       aria-label="Mobile navigation"
     >
       {bottomNavItems.map((item) => {
@@ -32,9 +32,9 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
             key={item.href}
             to={item.href}
             className={cn(
-              'relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 text-[10px] font-medium transition-colors',
+              'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors',
               isActive
-                ? 'text-primary'
+                ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -52,7 +52,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
       <button
         type="button"
         onClick={onOpenSidebar}
-        className="flex flex-col items-center justify-center gap-0.5 px-3 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
         aria-label="More navigation"
       >
         <MoreHorizontal className="h-5 w-5" />

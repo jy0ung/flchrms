@@ -106,17 +106,17 @@ export function DashboardWidgetCard({
 
 export function MetricChip({ label, value, tone = 'default' }: { label: string; value: string | number; tone?: 'default' | 'success' | 'warning' | 'danger' | 'info' }) {
   const toneClass = {
-    default: 'border-border bg-muted/60 text-foreground',
-    success: 'border-success/15 bg-success/8 text-success',
-    warning: 'border-warning/15 bg-warning/8 text-warning',
-    danger: 'border-destructive/15 bg-destructive/8 text-destructive',
-    info: 'border-primary/15 bg-primary/8 text-primary',
+    default: 'border-border bg-muted/60',
+    success: 'border-success/15 bg-success/8',
+    warning: 'border-warning/15 bg-warning/8',
+    danger: 'border-destructive/15 bg-destructive/8',
+    info: 'border-primary/15 bg-primary/8',
   }[tone];
 
   return (
     <div className={cn('rounded-lg border px-3 py-2.5', toneClass)}>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-1.5 text-lg font-bold leading-none">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground/70">{label}</p>
+      <p className="mt-1.5 text-lg font-bold leading-none text-foreground">{value}</p>
     </div>
   );
 }

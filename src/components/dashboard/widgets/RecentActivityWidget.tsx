@@ -102,7 +102,7 @@ function ActivityItem({ notification, isLast }: { notification: UserNotification
         {notification.body && (
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{notification.body}</p>
         )}
-        <p className="mt-0.5 text-[11px] text-muted-foreground/70">{timeAgo}</p>
+        <p className="mt-0.5 text-[11px] text-foreground/70">{timeAgo}</p>
       </div>
     </div>
   );

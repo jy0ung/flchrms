@@ -143,7 +143,7 @@ function SidebarNavGroup({
   return (
     <div className="space-y-1">
       {label && !collapsed && (
-        <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+        <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/80">
           {label}
         </p>
       )}
@@ -214,6 +214,7 @@ function SidebarContent({
             variant="ghost"
             size="icon"
             onClick={onToggle}
+            aria-label="Collapse sidebar"
             className="ml-auto h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <ChevronsLeft className="h-4 w-4" />
@@ -243,6 +244,7 @@ function SidebarContent({
                 variant="ghost"
                 size="icon"
                 onClick={onToggle}
+                aria-label="Expand sidebar"
                 className="w-full h-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <ChevronsLeft className="h-4 w-4 rotate-180" />

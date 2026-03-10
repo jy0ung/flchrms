@@ -342,7 +342,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
             minWidthClassName: 'sm:min-w-[160px]',
             control: (
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as EmployeeStatus | 'all')}>
-                <SelectTrigger className="h-9 rounded-full">
+                <SelectTrigger className="h-9 rounded-full" aria-label="Filter employees by status">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,7 +361,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
             minWidthClassName: 'sm:min-w-[180px]',
             control: (
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="h-9 rounded-full">
+                <SelectTrigger className="h-9 rounded-full" aria-label="Filter employees by department">
                   <SelectValue placeholder="All departments" />
                 </SelectTrigger>
                 <SelectContent>

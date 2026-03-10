@@ -90,8 +90,9 @@ export function SalaryManagement({
         alertBanner={
           employeesWithoutSalary && employeesWithoutSalary.length > 0 ? (
             <div className="rounded-lg border border-warning/40 bg-warning/5 px-4 py-3">
-              <p className="text-sm text-warning">
-                <strong>{employeesWithoutSalary.length}</strong> active employees without salary structure configured
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">{employeesWithoutSalary.length}</span>{' '}
+                active employees do not have a salary structure configured yet.
               </p>
             </div>
           ) : null

@@ -124,7 +124,7 @@ export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
         ) : (
           visibleGroups.map((group, groupIdx) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+              <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-sidebar-foreground/80">
                 {group.label}
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -160,14 +160,14 @@ export function AdminSidebar({ capabilityMap }: AdminSidebarProps) {
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="flex flex-col gap-2 px-2 py-2">
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-accent-foreground">
               {initials}
             </div>
             <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-medium truncate">
                 {profile?.first_name} {profile?.last_name}
               </span>
-              <span className="text-[11px] text-sidebar-foreground/50">
+              <span className="text-[11px] text-sidebar-foreground/80">
                 {role ? ROLE_DISPLAY_NAMES[role] || role : 'Unknown'}
               </span>
             </div>

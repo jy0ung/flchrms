@@ -37,7 +37,7 @@ export function TopBar() {
     : 'U';
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 backdrop-blur-sm px-4">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-sm md:h-14">
       {/* Breadcrumbs (hidden on mobile — sidebar hamburger takes that space) */}
       <div className="hidden md:flex flex-1 items-center gap-3 min-w-0">
         <Breadcrumb>
@@ -84,9 +84,9 @@ export function TopBar() {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full md:h-10 md:w-10">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>

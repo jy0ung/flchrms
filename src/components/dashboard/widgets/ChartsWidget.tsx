@@ -96,7 +96,7 @@ function ChartsWidgetInner() {
           <div>
             <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart accessibilityLayer={false}>
                   <Pie
                     data={attendanceData.length > 0 ? attendanceData : [{ name: 'No Data', value: 1, fill: 'hsl(var(--muted))' }]}
                     cx="50%"
@@ -105,6 +105,7 @@ function ChartsWidgetInner() {
                     outerRadius={70}
                     paddingAngle={2}
                     dataKey="value"
+                    rootTabIndex={-1}
                     label={({ name, value }) => `${name}: ${value}`}
                     labelLine={false}
                   >
@@ -130,7 +131,7 @@ function ChartsWidgetInner() {
           <div>
             <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={leaveData} layout="vertical">
+                <BarChart data={leaveData} layout="vertical" accessibilityLayer={false}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 12 }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -155,7 +156,7 @@ function ChartsWidgetInner() {
           <div>
             <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trainingData}>
+                <AreaChart data={trainingData} accessibilityLayer={false}>
                   <defs>
                     <linearGradient id="trainingGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />

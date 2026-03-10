@@ -71,7 +71,7 @@ export function CommandPalette() {
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
-        className="h-10 w-10 sm:hidden"
+        className="h-11 w-11 sm:hidden"
       >
         <Search className="h-4 w-4" />
       </Button>

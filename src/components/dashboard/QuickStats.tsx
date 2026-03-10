@@ -42,7 +42,7 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
     <CardContent className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/70">{title}</p>
           <p className="mt-2 text-2xl font-bold tracking-tight lg:text-3xl">{value}</p>
 
           {subtitle && (
@@ -52,10 +52,10 @@ function QuickStat({ title, value, subtitle, trend, trendLabel, onClick, clickab
           {trend && trendLabel && (
             <div className="mt-2.5 flex items-center gap-1.5">
               <div className={cn(
-                'flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
-                trend === 'up' && 'bg-success/10 text-success',
-                trend === 'down' && 'bg-destructive/10 text-destructive',
-                trend === 'neutral' && 'bg-muted text-muted-foreground',
+                'flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-foreground',
+                trend === 'up' && 'border-success/20 bg-success/10',
+                trend === 'down' && 'border-destructive/20 bg-destructive/10',
+                trend === 'neutral' && 'border-border bg-muted',
               )}>
                 <TrendIcon className="h-3 w-3" />
                 <span>{trendLabel}</span>

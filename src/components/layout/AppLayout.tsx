@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useState, type MouseEvent } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,6 +29,16 @@ export function AppLayout() {
     });
   };
 
+  const focusMainContent = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const target = document.getElementById('main-content');
+    if (!(target instanceof HTMLElement)) return;
+
+    window.history.replaceState(null, '', '#main-content');
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'start' });
+  };
+
   if (isLoading) {
     return (
       <RouteLoadingState
@@ -53,6 +63,7 @@ export function AppLayout() {
     <div className="relative flex min-h-screen w-full bg-background">
       <a
         href="#main-content"
+        onClick={focusMainContent}
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
       >
         Skip to main content
@@ -65,8 +76,14 @@ export function AppLayout() {
       />
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar />
-        <main id="main-content" className="flex-1 overflow-auto">
-          <div key={location.pathname} className={cn("animate-fadeIn p-4 md:p-6 lg:p-8", isMobile && "pb-20")}> 
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
+          <div
+            key={location.pathname}
+            className={cn(
+              'animate-fadeIn p-4 md:p-6 lg:p-8',
+              isMobile && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
+            )}
+          >
             <InteractionModeProvider resetKeys={[user?.id ?? null]}>
               <Outlet />
             </InteractionModeProvider>

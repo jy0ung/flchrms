@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, type MouseEvent } from 'react';
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
@@ -52,12 +52,29 @@ export function AdminLayout() {
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
+  const focusMainContent = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const target = document.getElementById('admin-main-content');
+    if (!(target instanceof HTMLElement)) return;
+
+    window.history.replaceState(null, '', '#admin-main-content');
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'start' });
+  };
+
   return (
     <SidebarProvider>
+      <a
+        href="#admin-main-content"
+        onClick={focusMainContent}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+      >
+        Skip to governance content
+      </a>
       <AdminSidebar capabilityMap={capabilityMap} />
       <SidebarInset>
         {/* Admin Top Bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background px-4 md:h-14">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-5" />
           
@@ -94,7 +111,11 @@ export function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main
+          id="admin-main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-auto focus:outline-none"
+        >
           <div key={location.pathname} className="animate-fadeIn p-4 md:p-6 lg:p-8">
             <div className="mx-auto w-full max-w-7xl">
               <InteractionModeProvider resetKeys={[user?.id ?? null]}>

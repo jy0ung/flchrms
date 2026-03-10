@@ -107,7 +107,11 @@ export function TeamSnapshotWidget({ role }: { role: AppRole }) {
             size="md"
           />
         </div>
-        <Progress value={clampPercent(stats.attendanceRate)} className="mt-3 h-2.5" />
+        <Progress
+          value={clampPercent(stats.attendanceRate)}
+          aria-label="Attendance rate today"
+          className="mt-3 h-2.5"
+        />
       </div>
     </DashboardWidgetCard>
   );

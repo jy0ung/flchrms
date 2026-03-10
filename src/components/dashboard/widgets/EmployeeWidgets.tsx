@@ -74,8 +74,17 @@ export function AttendanceTodayWidget() {
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
           {!todayAttendance ? (
-            <Button onClick={() => clockIn.mutate()} disabled={isClocking} className="h-10 w-full rounded-lg bg-success hover:bg-success/90 sm:w-auto">
-              {clockIn.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            <Button
+              onClick={() => clockIn.mutate()}
+              disabled={isClocking}
+              variant="outline"
+              className="h-10 w-full rounded-lg border-success/30 text-foreground hover:bg-success/10 hover:text-foreground sm:w-auto"
+            >
+              {clockIn.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin text-success" />
+              ) : (
+                <Play className="mr-2 h-4 w-4 text-success" />
+              )}
               Clock In
             </Button>
           ) : !todayAttendance.clock_out ? (
@@ -201,7 +210,7 @@ export function LeaveBalanceWidget() {
           </div>
           <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-3">
             <div className="flex items-center justify-between text-sm"><span className="font-medium">Annual utilization</span><span className="text-muted-foreground">{summary.hasUnlimited ? 'Unlimited balance in scope' : `${summary.used}/${summary.allowed || 0} days`}</span></div>
-            <Progress value={utilization} className="h-2.5" />
+            <Progress value={utilization} aria-label="Annual leave utilization" className="h-2.5" />
             <p className="text-xs text-muted-foreground">
               {summary.hasUnlimited
                 ? 'Utilization excludes unlimited leave types.'
@@ -328,7 +337,7 @@ export function TrainingSummaryWidget() {
             {(trainingOverview ?? []).map((p) => (
               <div key={p.title} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm"><span className="truncate font-medium">{p.title}</span><span className="text-muted-foreground">{p.completionRate}%</span></div>
-                <Progress value={p.completionRate} className="h-2.5" />
+                <Progress value={p.completionRate} aria-label={`${p.title} completion rate`} className="h-2.5" />
               </div>
             ))}
             <div className="rounded-lg border border-info/20 bg-info/5 p-3">

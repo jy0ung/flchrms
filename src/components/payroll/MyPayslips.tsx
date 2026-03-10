@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { FileText, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, FileText, Eye, EyeOff } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
 import { CardHeaderStandard, StatusBadge, TaskEmptyState } from '@/components/system';
@@ -102,9 +102,17 @@ export function MyPayslips({
       {!salary && (
         <Card className="border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-4">
-            <p className="text-sm text-warning">
-              Your salary structure has not been configured yet. Please contact HR for assistance.
-            </p>
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-background p-2 text-warning" aria-hidden="true">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Salary structure not configured</p>
+                <p className="text-sm text-foreground/80">
+                  Your salary structure has not been configured yet. Please contact HR for assistance.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -46,9 +46,9 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
   }, [unreadCount]);
 
   const toneMap: Record<string, string> = {
-    primary: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/15',
-    warning: 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/15',
-    info: 'bg-info/10 text-info border-info/20 hover:bg-info/15',
+    primary: 'bg-primary/10 text-foreground border-primary/20 hover:bg-primary/15',
+    warning: 'bg-warning/10 text-foreground border-warning/20 hover:bg-warning/15',
+    info: 'bg-info/10 text-foreground border-info/20 hover:bg-info/15',
   };
 
   return (
@@ -66,7 +66,7 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
             {greeting}, {profile?.first_name || 'there'}
           </h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-xs font-medium text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-xs font-medium text-foreground">
               {formatRoleLabel(role)}
             </span>
             <span className="text-border">•</span>
@@ -91,7 +91,7 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
               </Link>
             ))
           ) : (
-            <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-3 py-2 text-xs font-medium text-success">
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-3 py-2 text-xs font-medium text-foreground">
               <Sparkles className="h-3.5 w-3.5" />
               All caught up
             </div>
