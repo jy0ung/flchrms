@@ -8,6 +8,7 @@ import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { AppRole } from '@/types/hrms';
 import { formatRoleLabel, getScopeLabel } from './dashboard-config';
 import { cn } from '@/lib/utils';
@@ -25,9 +26,10 @@ function getTimeGreeting(): string {
 function DashboardGreetingInner({ role }: { role: AppRole }) {
   const { profile } = useAuth();
   const { unreadNotificationCount: unreadCount } = useDashboardData();
+  const isMobile = useIsMobile();
 
   const greeting = useMemo(getTimeGreeting, []);
-  const today = format(new Date(), 'EEEE, MMMM d, yyyy');
+  const today = format(new Date(), isMobile ? 'MMM d' : 'EEEE, MMMM d, yyyy');
 
   const actionChips = useMemo(() => {
     const chips: Array<{ icon: typeof Bell; label: string; tone: string; route: string; count: number }> = [];
@@ -52,25 +54,25 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.03] p-5 sm:p-6">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.03] p-4 sm:p-5 lg:p-6">
       {/* Subtle decorative element */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/[0.04] blur-2xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/[0.03] blur-3xl" />
 
-      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1.5">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {today}
           </p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
             {greeting}, {profile?.first_name || 'there'}
           </h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-xs font-medium text-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-foreground">
               {formatRoleLabel(role)}
             </span>
-            <span className="text-border">•</span>
-            <span className="text-xs">{getScopeLabel(role, null)}</span>
+            <span className="hidden text-border lg:inline">•</span>
+            <span className="hidden text-xs lg:inline">{getScopeLabel(role, null)}</span>
           </div>
         </div>
 
@@ -81,17 +83,17 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
                 key={chip.label}
                 to={chip.route}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors cursor-pointer',
+                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer sm:px-3 sm:py-2',
                   toneMap[chip.tone],
                 )}
               >
                 <chip.icon className="h-3.5 w-3.5" />
-                <span>{chip.label}</span>
+                <span>{isMobile ? `${chip.count} new` : chip.label}</span>
                 <ChevronRight className="h-3 w-3 opacity-50" />
               </Link>
             ))
           ) : (
-            <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-3 py-2 text-xs font-medium text-foreground">
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/8 px-2.5 py-1.5 text-xs font-medium text-foreground sm:px-3 sm:py-2">
               <Sparkles className="h-3.5 w-3.5" />
               All caught up
             </div>

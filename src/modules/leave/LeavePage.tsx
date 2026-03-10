@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ClipboardCheck, Info, Plus, WalletCards } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronUp, ClipboardCheck, Info, Plus, WalletCards } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -103,6 +103,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const selectedCancellationBadge = drawer.selectedRequest ? getCancellationBadge(drawer.selectedRequest) : null;
   const selectedPermissions = drawer.selectedRequest ? getRowPermissions(drawer.selectedRequest) : null;
   const canViewTeamRequests = pageActions.canViewTeamRequests;
+  const [showNarrowBalanceDetails, setShowNarrowBalanceDetails] = useState(false);
 
   const effectiveWorkspaceView =
     requestedWorkspaceView ??
@@ -140,7 +141,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
           aria-label="Approval workflow guide"
         >
           <Info className="h-4 w-4" />
-          Approval guide
+          <span className="hidden lg:inline">Approval guide</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[min(90vw,26rem)]" align="start">
@@ -249,6 +250,15 @@ export function LeavePage({ initialView }: LeavePageProps) {
     ? 'Review queue items first. Personal balances stay nearby as a secondary reference.'
     : 'Track your requests, balances, and supporting documents from one personal workspace.';
 
+  const emptyBalanceState = (
+    <WorkspaceStatePanel
+      title="No balances available"
+      description="Leave balance buckets will appear here once they are available for your account."
+      icon={WalletCards}
+      appearance="subtle"
+    />
+  );
+
   const personalReferencePanel = (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="space-y-1 pb-3">
@@ -262,20 +272,52 @@ export function LeavePage({ initialView }: LeavePageProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        {balances?.length ? (
-          <LeaveBalanceSection
-            balances={balances}
-            maxPrimaryCards={canViewTeamRequests ? 2 : 4}
-            defaultCollapsedSecondary={canViewTeamRequests}
-          />
-        ) : (
-          <WorkspaceStatePanel
-            title="No balances available"
-            description="Leave balance buckets will appear here once they are available for your account."
-            icon={WalletCards}
-            appearance="subtle"
-          />
-        )}
+        <div className="hidden xl:block">
+          {balances?.length ? (
+            <LeaveBalanceSection
+              balances={balances}
+              maxPrimaryCards={canViewTeamRequests ? 2 : 4}
+              defaultCollapsedSecondary={canViewTeamRequests}
+            />
+          ) : emptyBalanceState}
+        </div>
+        <div className="space-y-3 xl:hidden">
+          {balances?.length ? (
+            <>
+              <LeaveBalanceSection
+                balances={balances}
+                maxPrimaryCards={2}
+                defaultCollapsedSecondary
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-8 rounded-full px-3 text-xs text-muted-foreground"
+                onClick={() => setShowNarrowBalanceDetails((current) => !current)}
+                aria-expanded={showNarrowBalanceDetails}
+              >
+                {showNarrowBalanceDetails ? (
+                  <>
+                    <ChevronUp className="mr-2 h-3.5 w-3.5" />
+                    Hide full balance details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 h-3.5 w-3.5" />
+                    Show full balance details
+                  </>
+                )}
+              </Button>
+              {showNarrowBalanceDetails ? (
+                <LeaveBalanceSection
+                  balances={balances}
+                  maxPrimaryCards={4}
+                  defaultCollapsedSecondary={false}
+                />
+              ) : null}
+            </>
+          ) : emptyBalanceState}
+        </div>
       </CardContent>
     </Card>
   );
@@ -309,7 +351,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
         trailingSlot={pageActions.canOpenTeamCalendarLink ? (
           <Button variant="outline" className="h-9 rounded-full" onClick={() => navigate('/calendar')}>
             <CalendarDays className="mr-2 h-4 w-4" />
-            Open Team Calendar
+            <span className="lg:hidden">Calendar</span>
+            <span className="hidden lg:inline">Open Team Calendar</span>
           </Button>
         ) : null}
       />
@@ -319,7 +362,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <ModuleLayout.Content>
-        <SummaryRail items={metricItems} />
+        <SummaryRail items={metricItems} compactBreakpoint="xl" />
 
         {isLoading ? (
           <DataTableShell

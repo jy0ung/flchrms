@@ -32,7 +32,7 @@ export function DashboardSection({
             {title}
           </h2>
           {description ? (
-            <p className="max-w-3xl text-sm text-muted-foreground">{description}</p>
+            <p className="hidden max-w-3xl text-sm text-muted-foreground lg:block">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}

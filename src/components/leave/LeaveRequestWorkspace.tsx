@@ -225,13 +225,14 @@ export function LeaveRequestWorkspace({
 
   return (
     <Tabs value={view} onValueChange={(value) => setView(value as LeaveViewOption)} className="space-y-4">
-      <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
-        {availableViews.map((option) => (
-          <TabsTrigger key={option} value={option} className="whitespace-nowrap text-xs sm:text-sm">
-            {viewConfig[option].label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+        <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
+          {availableViews.map((option) => (
+            <TabsTrigger key={option} value={option} className="whitespace-nowrap text-xs sm:text-sm">
+              <span className="lg:hidden">{viewConfig[option].shortLabel}</span>
+              <span className="hidden lg:inline">{viewConfig[option].label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
       {availableViews.map((option) => {
         const currentView = viewConfig[option];

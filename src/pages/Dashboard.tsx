@@ -236,11 +236,11 @@ export default function Dashboard() {
     <DashboardDataProvider>
       <AppPageContainer spacing="comfortable" maxWidth="7xl">
         {/* Hero Greeting + action buttons */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex-1 min-w-0">
             <DashboardGreeting role={role} />
           </div>
-          <div className="flex items-center gap-2 shrink-0 mt-1">
+          <div className="flex items-center gap-2 self-end lg:mt-1 lg:self-start">
             {editMode ? (
               <>
                 <Button variant="ghost" size="sm" onClick={cancelEdit}>

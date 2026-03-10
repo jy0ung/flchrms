@@ -19,6 +19,7 @@ interface SummaryRailProps {
   items: SummaryRailItem[];
   className?: string;
   variant?: SummaryRailVariant;
+  compactBreakpoint?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const TONE_CLASSES: Record<SummaryRailTone, string> = {
@@ -28,9 +29,23 @@ const TONE_CLASSES: Record<SummaryRailTone, string> = {
   info: 'bg-sky-500/10 text-sky-700',
 };
 
-function SummaryRailCard({ item }: { item: SummaryRailItem }) {
+const HELPER_VISIBILITY_CLASS: Record<NonNullable<SummaryRailProps['compactBreakpoint']>, string> = {
+  sm: 'hidden sm:block',
+  md: 'hidden md:block',
+  lg: 'hidden lg:block',
+  xl: 'hidden xl:block',
+};
+
+function SummaryRailCard({
+  item,
+  compactBreakpoint,
+}: {
+  item: SummaryRailItem;
+  compactBreakpoint?: SummaryRailProps['compactBreakpoint'];
+}) {
   const Icon = item.icon;
   const tone = item.tone ?? 'default';
+  const helperClassName = compactBreakpoint ? HELPER_VISIBILITY_CLASS[compactBreakpoint] : '';
 
   return (
     <Card className="border-border/70 shadow-sm">
@@ -41,7 +56,7 @@ function SummaryRailCard({ item }: { item: SummaryRailItem }) {
           </p>
           <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>
           {item.helper ? (
-            <p className="mt-2 text-sm text-muted-foreground">{item.helper}</p>
+            <p className={cn('mt-2 text-sm text-muted-foreground', helperClassName)}>{item.helper}</p>
           ) : null}
         </div>
 
@@ -55,10 +70,20 @@ function SummaryRailCard({ item }: { item: SummaryRailItem }) {
   );
 }
 
-function SummaryRailContained({ items, className }: { items: SummaryRailItem[]; className?: string }) {
+function SummaryRailContained({
+  items,
+  className,
+  compactBreakpoint,
+}: {
+  items: SummaryRailItem[];
+  className?: string;
+  compactBreakpoint?: SummaryRailProps['compactBreakpoint'];
+}) {
+  const helperClassName = compactBreakpoint ? HELPER_VISIBILITY_CLASS[compactBreakpoint] : '';
+
   return (
     <Card className={cn('border-border/70 shadow-sm', className)}>
-      <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+      <CardContent className={cn('grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4', compactBreakpoint && 'p-3 sm:p-4')}>
         {items.map((item, index) => {
           const Icon = item.icon;
           const tone = item.tone ?? 'default';
@@ -86,7 +111,7 @@ function SummaryRailContained({ items, className }: { items: SummaryRailItem[]; 
                 ) : null}
               </div>
               {item.helper ? (
-                <p className="text-sm text-muted-foreground">{item.helper}</p>
+                <p className={cn('text-sm text-muted-foreground', helperClassName)}>{item.helper}</p>
               ) : null}
             </div>
           );
@@ -100,6 +125,7 @@ export function SummaryRail({
   items,
   className,
   variant = 'contained',
+  compactBreakpoint,
 }: SummaryRailProps) {
   if (items.length === 0) {
     return null;
@@ -109,13 +135,13 @@ export function SummaryRail({
     return (
       <div className={cn('grid gap-4 md:grid-cols-2 xl:grid-cols-4', className)}>
         {items.map((item) => (
-          <SummaryRailCard key={item.id} item={item} />
+          <SummaryRailCard key={item.id} item={item} compactBreakpoint={compactBreakpoint} />
         ))}
       </div>
     );
   }
 
-  return <SummaryRailContained items={items} className={className} />;
+  return <SummaryRailContained items={items} className={className} compactBreakpoint={compactBreakpoint} />;
 }
 
 export type { SummaryRailProps };

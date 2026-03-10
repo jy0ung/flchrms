@@ -33,6 +33,19 @@ const TABS: Array<{ id: ChartTab; label: string }> = [
   { id: 'training', label: 'Training' },
 ];
 
+function getChartSummary(tab: ChartTab, stats: NonNullable<ReturnType<typeof useDashboardData>['executiveStats']>) {
+  switch (tab) {
+    case 'attendance':
+      return `Attendance distribution. Present ${stats.presentToday}, absent ${stats.absentToday}, on leave ${stats.onLeaveToday}.`;
+    case 'leave':
+      return `Leave workflow summary. Pending ${stats.pendingLeaveRequests}, approved this month ${stats.approvedLeavesThisMonth}.`;
+    case 'training':
+      return `Training progress summary. Active ${stats.activeTrainings}, completed this month ${stats.completedTrainingsThisMonth}.`;
+    default:
+      return '';
+  }
+}
+
 function ChartsWidgetInner() {
   const { role } = useAuth();
   const { executiveStats: stats, executiveStatsLoading: isLoading } = useDashboardData();
@@ -94,29 +107,32 @@ function ChartsWidgetInner() {
       <div className="mt-1">
         {activeTab === 'attendance' && (
           <div>
-            <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart accessibilityLayer={false}>
-                  <Pie
-                    data={attendanceData.length > 0 ? attendanceData : [{ name: 'No Data', value: 1, fill: 'hsl(var(--muted))' }]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={2}
-                    dataKey="value"
-                    rootTabIndex={-1}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine={false}
-                  >
-                    {attendanceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <p className="sr-only">{getChartSummary('attendance', stats)}</p>
+            <div aria-hidden="true">
+              <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart accessibilityLayer={false}>
+                    <Pie
+                      data={attendanceData.length > 0 ? attendanceData : [{ name: 'No Data', value: 1, fill: 'hsl(var(--muted))' }]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      paddingAngle={2}
+                      dataKey="value"
+                      rootTabIndex={-1}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      labelLine={false}
+                    >
+                      {attendanceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
             <ChartLegend
               items={[
                 { color: 'bg-success', label: 'Present', value: stats.presentToday },
@@ -129,20 +145,23 @@ function ChartsWidgetInner() {
 
         {activeTab === 'leave' && (
           <div>
-            <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={leaveData} layout="vertical" accessibilityLayer={false}>
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 12 }} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {leaveData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <p className="sr-only">{getChartSummary('leave', stats)}</p>
+            <div aria-hidden="true">
+              <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={leaveData} layout="vertical" accessibilityLayer={false}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 12 }} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {leaveData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
             <ChartLegend
               items={[
                 { color: 'bg-warning', label: 'Pending', value: stats.pendingLeaveRequests },
@@ -154,22 +173,25 @@ function ChartsWidgetInner() {
 
         {activeTab === 'training' && (
           <div>
-            <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trainingData} accessibilityLayer={false}>
-                  <defs>
-                    <linearGradient id="trainingGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis hide />
-                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#trainingGradient)" strokeWidth={2} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <p className="sr-only">{getChartSummary('training', stats)}</p>
+            <div aria-hidden="true">
+              <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trainingData} accessibilityLayer={false}>
+                    <defs>
+                      <linearGradient id="trainingGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis hide />
+                    <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#trainingGradient)" strokeWidth={2} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
             <ChartLegend
               items={[
                 { color: 'bg-info', label: 'Active', value: stats.activeTrainings },
