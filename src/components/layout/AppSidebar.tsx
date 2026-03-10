@@ -21,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingContext } from '@/contexts/BrandingContext';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { cn } from '@/lib/utils';
-import { SHELL_LABELS } from '@/lib/navigation-labels';
+import { ROUTE_LABELS, SHELL_LABELS } from '@/lib/navigation-labels';
 import {
   canViewEmployeeDirectory,
   hasRole,
@@ -44,27 +44,27 @@ type SidebarNavItem = {
 };
 
 const workNavigation: SidebarNavItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Leave', href: '/leave', icon: Calendar },
-  { name: 'Attendance', href: '/attendance', icon: Clock },
+  { name: ROUTE_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
+  { name: ROUTE_LABELS.notifications, href: '/notifications', icon: Bell },
+  { name: ROUTE_LABELS.leave, href: '/leave', icon: Calendar },
+  { name: ROUTE_LABELS.attendance, href: '/attendance', icon: Clock },
 ];
 
 const planningNavigation: SidebarNavItem[] = [
-  { name: 'Calendar', href: '/calendar', icon: CalendarDays },
-  { name: 'Training', href: '/training', icon: GraduationCap },
-  { name: 'Performance', href: '/performance', icon: BarChart3 },
+  { name: ROUTE_LABELS.calendar, href: '/calendar', icon: CalendarDays },
+  { name: ROUTE_LABELS.training, href: '/training', icon: GraduationCap },
+  { name: ROUTE_LABELS.performance, href: '/performance', icon: BarChart3 },
 ];
 
 const recordsNavigation: SidebarNavItem[] = [
-  { name: 'Payroll', href: '/payroll', icon: Wallet },
-  { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Announcements', href: '/announcements', icon: Megaphone },
+  { name: ROUTE_LABELS.payroll, href: '/payroll', icon: Wallet },
+  { name: ROUTE_LABELS.documents, href: '/documents', icon: FileText },
+  { name: ROUTE_LABELS.announcements, href: '/announcements', icon: Megaphone },
 ];
 
 const peopleNavigation: SidebarNavItem[] = [
-  { name: 'Employees', href: '/employees', icon: Users },
-  { name: 'Departments', href: '/departments', icon: Building2 },
+  { name: ROUTE_LABELS.employees, href: '/employees', icon: Users },
+  { name: ROUTE_LABELS.departments, href: '/departments', icon: Building2 },
 ];
 
 const adminNavigation: SidebarNavItem[] = [{ name: SHELL_LABELS.governance, href: '/admin', icon: Shield, danger: true }];

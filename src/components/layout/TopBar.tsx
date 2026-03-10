@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 
@@ -23,7 +24,7 @@ import {
 import { NotificationsBell } from './NotificationsBell';
 import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
-import { ROLE_DISPLAY_NAMES, ROUTE_LABELS } from '@/lib/navigation-labels';
+import { ROLE_DISPLAY_NAMES, getRouteLabel, getTopBarTitle } from '@/lib/navigation-labels';
 
 export function TopBar() {
   const { profile, role, signOut } = useAuth();
@@ -43,20 +44,22 @@ export function TopBar() {
           <BreadcrumbList>
             {pathSegments.map((segment: string, index: number) => {
               const path = '/' + pathSegments.slice(0, index + 1).join('/');
-              const label = ROUTE_LABELS[segment] || segment;
+              const label = getRouteLabel(segment);
               const isLast = index === pathSegments.length - 1;
 
               return (
-                <BreadcrumbItem key={path}>
+                <Fragment key={path}>
                   {index > 0 && <BreadcrumbSeparator />}
-                  {isLast ? (
-                    <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <Link to={path}>{label}</Link>
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
+                  <BreadcrumbItem>
+                    {isLast ? (
+                      <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <Link to={path}>{label}</Link>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </Fragment>
               );
             })}
           </BreadcrumbList>
@@ -66,7 +69,7 @@ export function TopBar() {
       {/* Mobile: just show page title */}
       <div className="md:hidden flex-1 min-w-0">
         <p className="text-sm font-semibold truncate">
-          {ROUTE_LABELS[pathSegments[0]] || 'HRMS'}
+          {getTopBarTitle(location.pathname)}
         </p>
       </div>
 

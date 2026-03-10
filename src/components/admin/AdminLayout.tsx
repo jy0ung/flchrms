@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
@@ -17,7 +18,7 @@ import {
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
-import { ROUTE_LABELS } from '@/lib/navigation-labels';
+import { getRouteLabel } from '@/lib/navigation-labels';
 
 export function AdminLayout() {
   const { user, role, isLoading } = useAuth();
@@ -66,17 +67,19 @@ export function AdminLayout() {
               <BreadcrumbList>
                 {pathSegments.map((segment, index) => {
                   const path = '/' + pathSegments.slice(0, index + 1).join('/');
-                  const label = ROUTE_LABELS[segment] || segment;
+                  const label = getRouteLabel(segment);
                   const isLast = index === pathSegments.length - 1;
                   return (
-                    <BreadcrumbItem key={path}>
+                    <Fragment key={path}>
                       {index > 0 && <BreadcrumbSeparator />}
-                      {isLast ? (
-                        <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink asChild><Link to={path}>{label}</Link></BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
+                      <BreadcrumbItem>
+                        {isLast ? (
+                          <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink asChild><Link to={path}>{label}</Link></BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                    </Fragment>
                   );
                 })}
               </BreadcrumbList>

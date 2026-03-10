@@ -29,7 +29,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import type { AdminCapabilityKey, AdminCapabilityMap } from '@/lib/admin-capabilities';
-import { ROLE_DISPLAY_NAMES, SHELL_LABELS } from '@/lib/navigation-labels';
+import { ROLE_DISPLAY_NAMES, ROUTE_LABELS, SHELL_LABELS } from '@/lib/navigation-labels';
 
 type AdminNavItem = {
   name: string;
@@ -42,28 +42,28 @@ const adminNavGroups: Array<{ label: string; items: AdminNavItem[] }> = [
   {
     label: 'Overview',
     items: [
-      { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, capability: 'view_admin_dashboard' },
+      { name: ROUTE_LABELS.dashboard, href: '/admin/dashboard', icon: LayoutDashboard, capability: 'view_admin_dashboard' },
       { name: SHELL_LABELS.governanceHub, href: '/admin/quick-actions', icon: Zap, capability: 'view_admin_quick_actions' },
     ],
   },
   {
     label: 'Governance',
     items: [
-      { name: 'Roles', href: '/admin/roles', icon: Shield, capability: 'manage_roles' },
-      { name: 'Leave Policies', href: '/admin/leave-policies', icon: FileText, capability: 'manage_leave_policies' },
+      { name: ROUTE_LABELS.roles, href: '/admin/roles', icon: Shield, capability: 'manage_roles' },
+      { name: ROUTE_LABELS['leave-policies'], href: '/admin/leave-policies', icon: FileText, capability: 'manage_leave_policies' },
     ],
   },
   {
     label: 'Communication',
     items: [
-      { name: 'Announcements', href: '/admin/announcements', icon: Megaphone, capability: 'manage_announcements' },
+      { name: ROUTE_LABELS.announcements, href: '/admin/announcements', icon: Megaphone, capability: 'manage_announcements' },
     ],
   },
   {
     label: 'System',
     items: [
-      { name: 'Audit Log', href: '/admin/audit-log', icon: History, capability: 'view_admin_audit_log' },
-      { name: 'Settings', href: '/admin/settings', icon: Settings, capability: 'manage_admin_settings' },
+      { name: ROUTE_LABELS['audit-log'], href: '/admin/audit-log', icon: History, capability: 'view_admin_audit_log' },
+      { name: ROUTE_LABELS.settings, href: '/admin/settings', icon: Settings, capability: 'manage_admin_settings' },
     ],
   },
 ];

@@ -36,6 +36,7 @@ const ROW_HEIGHT = 72;
 const GRID_MARGIN: [number, number] = [12, 12];
 const TABLET_GRID_COLUMNS = 6;
 const MOBILE_GRID_COLUMNS = 1;
+const FEATURED_SUPPORTING_WIDGETS = new Set<DashboardWidgetId>(['announcements', 'recentActivity']);
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -63,7 +64,7 @@ function getSectionDescription(sectionId: (typeof DASHBOARD_SECTION_ORDER)[numbe
       case 'operationalStatus':
         return 'Your daily attendance, leave, and work status.';
       case 'supportingInformation':
-        return 'Reference context, updates, and personal follow-up items.';
+        return 'Updates, personal progress, and schedule context.';
       default:
         return DASHBOARD_SECTION_META[sectionId].description;
     }
@@ -76,6 +77,8 @@ function getSectionDescription(sectionId: (typeof DASHBOARD_SECTION_ORDER)[numbe
       return 'Approvals, reviews, and queue items that need a decision now.';
     case 'operationalStatus':
       return 'Live attendance, staffing, and in-flight workflow conditions.';
+    case 'supportingInformation':
+      return 'Reference updates and background context that support the day-to-day queue.';
     default:
       return DASHBOARD_SECTION_META[sectionId].description;
   }
@@ -87,11 +90,16 @@ function getSectionGridClass(sectionId: (typeof DASHBOARD_SECTION_ORDER)[number]
       return 'grid gap-4 lg:grid-cols-2 xl:grid-cols-3';
     case 'organizationMetrics':
       return 'grid gap-4 xl:grid-cols-2';
-    case 'supportingInformation':
-      return 'grid gap-4 xl:grid-cols-2';
     default:
       return 'grid gap-4';
   }
+}
+
+function splitSupportingWidgets(widgetIds: DashboardWidgetId[]) {
+  return {
+    featured: widgetIds.filter((widgetId) => FEATURED_SUPPORTING_WIDGETS.has(widgetId)),
+    secondary: widgetIds.filter((widgetId) => !FEATURED_SUPPORTING_WIDGETS.has(widgetId)),
+  };
 }
 
 // ── RGL layout helpers ───────────────────────────────────────────
@@ -277,6 +285,10 @@ export default function Dashboard() {
               const meta = DASHBOARD_SECTION_META[section.id];
               const shouldRenderQuickStats = section.id === 'organizationMetrics' && showManagerWidgets;
               const hasContent = shouldRenderQuickStats || section.widgetIds.length > 0;
+              const supportingWidgets =
+                section.id === 'supportingInformation'
+                  ? splitSupportingWidgets(section.widgetIds as DashboardWidgetId[])
+                  : null;
 
               if (!hasContent) return null;
 
@@ -289,15 +301,43 @@ export default function Dashboard() {
                 >
                   {shouldRenderQuickStats ? <QuickStats /> : null}
                   {section.widgetIds.length > 0 ? (
-                    <div className={getSectionGridClass(section.id)}>
-                      {section.widgetIds.map((id) => (
-                        <DashboardWidgetRenderer
-                          key={`${section.id}-${id}`}
-                          widgetId={id as DashboardWidgetId}
-                          role={role}
-                        />
-                      ))}
-                    </div>
+                    section.id === 'supportingInformation' ? (
+                      <div className="space-y-4">
+                        {supportingWidgets && supportingWidgets.featured.length > 0 ? (
+                          <div className="grid gap-4 xl:grid-cols-2">
+                            {supportingWidgets.featured.map((id) => (
+                              <DashboardWidgetRenderer
+                                key={`${section.id}-featured-${id}`}
+                                widgetId={id}
+                                role={role}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {supportingWidgets && supportingWidgets.secondary.length > 0 ? (
+                          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {supportingWidgets.secondary.map((id) => (
+                              <DashboardWidgetRenderer
+                                key={`${section.id}-secondary-${id}`}
+                                widgetId={id}
+                                role={role}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className={getSectionGridClass(section.id)}>
+                        {section.widgetIds.map((id) => (
+                          <DashboardWidgetRenderer
+                            key={`${section.id}-${id}`}
+                            widgetId={id as DashboardWidgetId}
+                            role={role}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : null}
                 </DashboardSection>
               );

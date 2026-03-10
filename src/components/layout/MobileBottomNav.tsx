@@ -1,36 +1,21 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-  Bell,
-  Calendar,
-  LayoutDashboard,
-  MoreHorizontal,
-  Wallet,
-} from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useUserNotifications } from '@/hooks/useNotifications';
 import { SHELL_LABELS } from '@/lib/navigation-labels';
-
-interface BottomNavItem {
-  name: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-}
-
-const bottomNavItems: BottomNavItem[] = [
-  { name: SHELL_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Leave', href: '/leave', icon: Calendar },
-  { name: 'Payroll', href: '/payroll', icon: Wallet },
-  { name: SHELL_LABELS.notifications, href: '/notifications', icon: Bell },
-];
+import { buildBottomNavItems } from './mobile-bottom-nav-config';
 
 /**
  * Fixed bottom navigation bar shown only on mobile (<md).
  * Surfaces the 4 most-used routes + overflow via sidebar hamburger.
  */
 export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }) {
+  const { role } = useAuth();
   const location = useLocation();
   const { unreadCount } = useUserNotifications();
+  const bottomNavItems = buildBottomNavItems(role);
 
   return (
     <nav
@@ -71,7 +56,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
         aria-label="More navigation"
       >
         <MoreHorizontal className="h-5 w-5" />
-        <span>More</span>
+        <span>{SHELL_LABELS.more}</span>
       </button>
     </nav>
   );

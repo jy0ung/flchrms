@@ -209,6 +209,27 @@ describe('Dashboard widget rendering', () => {
     expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 
+  it('keeps supporting information widgets in a compact reference band for employee views', () => {
+    mockRole = 'employee';
+    mockLayoutState = {
+      version: 2,
+      presetVersion: 6,
+      role: 'employee',
+      widgets: [
+        { id: 'announcements', x: 0, y: 0, w: 12, h: 4, visible: true },
+        { id: 'recentActivity', x: 0, y: 4, w: 4, h: 4, visible: true },
+        { id: 'calendarPreview', x: 4, y: 4, w: 4, h: 4, visible: true },
+      ],
+    };
+    renderDashboard();
+
+    expect(screen.getByRole('heading', { name: 'Supporting Information' })).toBeInTheDocument();
+    expect(screen.getByText('Updates, personal progress, and schedule context.')).toBeInTheDocument();
+    expect(screen.getByText('Announcements')).toBeInTheDocument();
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+  });
+
   it('does not render hidden widgets', () => {
     mockRole = 'employee';
     mockLayoutState = {
