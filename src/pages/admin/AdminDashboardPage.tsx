@@ -21,6 +21,7 @@ import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 export default function AdminDashboardPage() {
   usePageTitle('Admin Dashboard');
