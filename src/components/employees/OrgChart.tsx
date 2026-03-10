@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEmployees } from '@/hooks/useEmployees';
 import { buildOrgTree, type OrgNode } from '@/hooks/useEmployeeLifecycle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { TaskEmptyState } from '@/components/system';
 import { cn } from '@/lib/utils';
 
 // ── Node component ───────────────────────────────────────────────────────────
@@ -96,9 +97,10 @@ export function OrgChart() {
 
   if (!employees?.length) {
     return (
-      <div className="py-12 text-center text-sm text-muted-foreground">
-        No employees found to build organization chart.
-      </div>
+      <TaskEmptyState
+        title="No employees available for the organization chart"
+        description="Employee records will appear here once the directory has active profiles with reporting relationships."
+      />
     );
   }
 

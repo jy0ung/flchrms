@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { FileText, Eye, EyeOff } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
-import { CardHeaderStandard, StatusBadge } from '@/components/system';
+import { CardHeaderStandard, StatusBadge, TaskEmptyState } from '@/components/system';
 
 const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
@@ -173,10 +173,11 @@ export function MyPayslips({
         />
         <CardContent>
           {!payslips?.length ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No payslips available yet</p>
-            </div>
+            <TaskEmptyState
+              title="No payslips available yet"
+              description="Published payroll periods will appear here once payslips are generated for your account."
+              icon={FileText}
+            />
           ) : (
             <div className="space-y-3">
               {payslips.map(payslip => (

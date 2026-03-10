@@ -14,7 +14,7 @@ import { Plus, Play, CheckCircle, Eye, Calendar, Loader2 } from 'lucide-react';
 import { CreatePayrollPeriodDialog } from './CreatePayrollPeriodDialog';
 import { PayslipsListDialog } from './PayslipsListDialog';
 import { PayrollPeriod } from '@/types/payroll';
-import { DataTableShell, StatusBadge } from '@/components/system';
+import { DataTableShell, StatusBadge, TaskEmptyState } from '@/components/system';
 
 interface PayrollManagementProps {
   showCreateButton?: boolean;
@@ -66,17 +66,20 @@ export function PayrollManagement({
           ) : null
         }
         emptyState={
-          <div className="text-center py-12 text-muted-foreground">
-            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No payroll periods created yet</p>
-            <Button
-              variant="outline"
-              className="mt-4 rounded-full"
-              onClick={() => setCreateDialogOpen(true)}
-            >
-              Create First Period
-            </Button>
-          </div>
+          <TaskEmptyState
+            title="No payroll periods created yet"
+            description="Create the first payroll period to start generating payslips and managing payroll runs."
+            icon={Calendar}
+            action={(
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                Create First Period
+              </Button>
+            )}
+          />
         }
         content={
           periods?.length ? (

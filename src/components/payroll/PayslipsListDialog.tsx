@@ -7,7 +7,7 @@ import { PayrollPeriod, Payslip } from '@/types/payroll';
 import { format } from 'date-fns';
 import { Users, Search, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
-import { ModalScaffold, StatusBadge } from '@/components/system';
+import { ModalScaffold, StatusBadge, TaskEmptyState } from '@/components/system';
 
 interface PayslipsListDialogProps {
   period: PayrollPeriod | null;
@@ -78,10 +78,12 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
               {isLoading ? (
                 [...Array(5)].map((_, i) => <Skeleton key={i} className="h-16" />)
               ) : !filteredPayslips?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No payslips found</p>
-                </div>
+                <TaskEmptyState
+                  title="No payslips found"
+                  description="Generated payslips for this period will appear here once they are created."
+                  icon={Users}
+                  compact
+                />
               ) : (
                 filteredPayslips.map(payslip => (
                   <div

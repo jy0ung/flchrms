@@ -9,7 +9,7 @@ import { Plus, DollarSign, Edit } from 'lucide-react';
 import { SalaryStructureDialog } from './SalaryStructureDialog';
 import { SalaryStructure } from '@/types/payroll';
 import { Department, Profile } from '@/types/hrms';
-import { DataTableShell, SectionToolbar } from '@/components/system';
+import { DataTableShell, SectionToolbar, TaskEmptyState } from '@/components/system';
 
 type EmployeeWithDepartment = Profile & { department: Department | null };
 type SalaryStructureWithEmployee = SalaryStructure & {
@@ -97,10 +97,17 @@ export function SalaryManagement({
           ) : null
         }
         emptyState={
-          <div className="text-center py-12 text-muted-foreground">
-            <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No salary structures found</p>
-          </div>
+          <TaskEmptyState
+            title="No salary structures found"
+            description="Add salary structures to define compensation and allowances for active employees."
+            icon={DollarSign}
+            action={showCreateButton ? (
+              <Button className="rounded-full" onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Salary Structure
+              </Button>
+            ) : null}
+          />
         }
         content={
           filteredSalaries.length > 0 ? (

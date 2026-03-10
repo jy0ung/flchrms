@@ -107,6 +107,7 @@ vi.mock('@/layouts/ModuleLayout', () => {
 vi.mock('@/components/system', () => ({
   DataTableShell: ({ content }: { content: ReactNode }) => <div>{content}</div>,
   RecordSurfaceHeader: () => null,
+  ContextChip: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock('@/components/employees/OrgChart', () => ({

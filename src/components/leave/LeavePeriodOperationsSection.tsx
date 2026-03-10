@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useLeaveClosePeriod, useLeaveExportPayrollInputs } from '@/hooks/useLeaveCoreV2';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
+import { TaskEmptyState } from '@/components/system';
 
 type ClosePeriodPayload = {
   period_start?: string;
@@ -219,7 +220,12 @@ export function LeavePeriodOperationsSection() {
                 </div>
               </dl>
             ) : (
-              <p className="text-muted-foreground">No close run executed yet.</p>
+              <TaskEmptyState
+                title="No close run executed yet"
+                description="Run a dry close or write close to generate the current period summary."
+                compact
+                align="start"
+              />
             )}
           </div>
 
@@ -271,7 +277,12 @@ export function LeavePeriodOperationsSection() {
                 </div>
               </dl>
             ) : (
-              <p className="text-muted-foreground">No payroll export executed yet.</p>
+              <TaskEmptyState
+                title="No payroll export executed yet"
+                description="Run a dry export or write export to inspect payroll input totals for the selected period."
+                compact
+                align="start"
+              />
             )}
           </div>
         </div>
@@ -281,7 +292,12 @@ export function LeavePeriodOperationsSection() {
           {!exportSummary ? (
             <p className="text-muted-foreground">Run payroll export to inspect employee-level totals.</p>
           ) : exportReconciliation.employeeRows === 0 ? (
-            <p className="text-muted-foreground">No approved leave rows found in the selected period.</p>
+            <TaskEmptyState
+              title="No approved leave rows found"
+              description="The selected period does not currently contain approved leave rows for payroll export."
+              compact
+              align="start"
+            />
           ) : (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">

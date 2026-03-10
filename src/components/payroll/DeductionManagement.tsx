@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDeductionTypes } from '@/hooks/usePayroll';
 import { Plus, Settings } from 'lucide-react';
 import { CreateDeductionTypeDialog } from './CreateDeductionTypeDialog';
-import { CardHeaderStandard, DataTableShell } from '@/components/system';
+import { CardHeaderStandard, DataTableShell, TaskEmptyState } from '@/components/system';
 
 interface DeductionManagementProps {
   showCreateButton?: boolean;
@@ -47,10 +47,17 @@ export function DeductionManagement({
           ) : null
         }
         emptyState={
-          <div className="text-center py-12 text-muted-foreground">
-            <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No deduction types configured</p>
-          </div>
+          <TaskEmptyState
+            title="No deduction types configured"
+            description="Add statutory or company deduction types before assigning them to payroll structures."
+            icon={Settings}
+            action={showCreateButton ? (
+              <Button className="rounded-full" onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Deduction Type
+              </Button>
+            ) : null}
+          />
         }
         content={
           deductions?.length ? (

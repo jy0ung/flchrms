@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedFrom } from '@/integrations/supabase/untyped-client';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useWorkflowConfigEvents } from '@/hooks/useWorkflowConfigEvents';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,29 +31,7 @@ interface AuditEntry {
 
 function useAuditLog() {
   const { data: employees } = useEmployees();
-
-  // Query workflow config audit table for real audit entries
-  // Table may not exist in all deployments — gracefully handle errors
-  interface WorkflowAuditRow {
-    id: string;
-    changed_at: string;
-    changed_by: string | null;
-    department_id: string | null;
-    change_type: string;
-    field_changed: string | null;
-  }
-  const { data: workflowAudit, isLoading: auditLoading } = useQuery({
-    queryKey: ['admin-audit-workflow'],
-    queryFn: async () => {
-      const { data, error } = await untypedFrom('workflow_config_audit')
-        .select('*')
-        .order('changed_at', { ascending: false })
-        .limit(50);
-      if (error) return [] as WorkflowAuditRow[];
-      return (data ?? []) as WorkflowAuditRow[];
-    },
-    staleTime: 60_000,
-  });
+  const { data: workflowEvents, isLoading: workflowLoading } = useWorkflowConfigEvents(50);
 
   // Query recent leave request status changes
   const { data: recentLeaves, isLoading: leavesLoading } = useQuery({
@@ -91,7 +69,7 @@ function useAuditLog() {
     staleTime: 60_000,
   });
 
-  const isLoading = auditLoading || leavesLoading || profilesLoading;
+  const isLoading = workflowLoading || leavesLoading || profilesLoading;
 
   const entries = useMemo((): AuditEntry[] => {
     const empMap = new Map(
@@ -101,14 +79,20 @@ function useAuditLog() {
     const result: AuditEntry[] = [];
 
     // Workflow audit entries
-    for (const entry of workflowAudit ?? []) {
+    for (const entry of workflowEvents ?? []) {
+      const actorName = entry.actor
+        ? `${entry.actor.first_name} ${entry.actor.last_name}`.trim()
+        : 'System';
+      const workflowType = entry.workflow_type.replace(/_/g, ' ');
+      const eventType = entry.event_type.replace(/_/g, ' ');
+
       result.push({
         id: `wf-${entry.id}`,
-        timestamp: entry.changed_at,
-        actor: (entry.changed_by ? empMap.get(entry.changed_by) : undefined) ?? entry.changed_by ?? 'System',
+        timestamp: entry.created_at,
+        actor: actorName,
         action: 'Workflow Config Change',
-        target: `Department: ${entry.department_id}`,
-        details: `${entry.change_type}: ${entry.field_changed ?? 'configuration'}`,
+        target: entry.department_id ? `Department workflow` : 'Default workflow',
+        details: `${workflowType}: ${eventType}`,
       });
     }
 
@@ -139,7 +123,7 @@ function useAuditLog() {
     // Sort by timestamp, newest first
     result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return result.slice(0, 100);
-  }, [employees, workflowAudit, recentLeaves, recentProfiles]);
+  }, [employees, workflowEvents, recentLeaves, recentProfiles]);
 
   return { entries, isLoading };
 }

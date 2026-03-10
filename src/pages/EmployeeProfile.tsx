@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { StatusBadge, AppPageContainer } from '@/components/system';
+import { StatusBadge, AppPageContainer, TaskEmptyState } from '@/components/system';
 import { cn } from '@/lib/utils';
 
 // ── Lifecycle Event Timeline ─────────────────────────────────────────────────
@@ -59,9 +59,11 @@ const EVENT_ICONS: Record<string, string> = {
 function LifecycleTimeline({ events }: { events: LifecycleEvent[] }) {
   if (!events.length) {
     return (
-      <div className="text-center py-8 text-muted-foreground text-sm">
-        No lifecycle events recorded yet.
-      </div>
+      <TaskEmptyState
+        title="No lifecycle events recorded yet"
+        description="Major employment milestones will appear here as the employee record changes over time."
+        compact
+      />
     );
   }
 
@@ -121,8 +123,12 @@ function OnboardingSection({
 
   if (!items.length) {
     return (
-      <div className="text-center py-8 space-y-3">
-        <p className="text-sm text-muted-foreground">No onboarding checklist found.</p>
+      <div className="space-y-3 py-8">
+        <TaskEmptyState
+          title="No onboarding checklist found"
+          description="Create the default checklist to start tracking onboarding progress for this employee."
+          compact
+        />
         <Button
           variant="outline"
           size="sm"
@@ -535,9 +541,11 @@ export default function EmployeeProfile() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  No leave balance data available.
-                </p>
+                <TaskEmptyState
+                  title="No leave balance data available"
+                  description="Leave balances will appear here after entitlements are configured for this employee."
+                  compact
+                />
               )}
             </CardContent>
           </Card>
