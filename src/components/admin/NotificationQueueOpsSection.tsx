@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CardHeaderStandard, StatusBadge } from '@/components/system';
+import { CardHeaderStandard, StatusBadge, TaskEmptyState } from '@/components/system';
 import {
   useNotificationQueueOps,
   type NotificationQueueItemWithUser,
@@ -659,9 +659,12 @@ export function NotificationQueueOpsSection() {
               </div>
             </ScrollArea>
           ) : (
-            <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
-              No worker runs recorded yet.
-            </div>
+            <TaskEmptyState
+              title="No worker runs recorded yet"
+              description="Worker telemetry will appear after the notification runner processes queue items."
+              icon={Activity}
+              compact
+            />
           )}
         </div>
 
@@ -708,7 +711,13 @@ export function NotificationQueueOpsSection() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No provider analytics yet.</p>
+                  <TaskEmptyState
+                    title="No provider analytics yet"
+                    description="Provider-level retry trends will appear after failures are recorded."
+                    icon={AlertTriangle}
+                    align="start"
+                    compact
+                  />
                 )}
               </div>
 
@@ -729,7 +738,13 @@ export function NotificationQueueOpsSection() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No event-type analytics yet.</p>
+                  <TaskEmptyState
+                    title="No event-type analytics yet"
+                    description="Event-level retry trends will appear after failures are recorded."
+                    icon={AlertTriangle}
+                    align="start"
+                    compact
+                  />
                 )}
               </div>
 
@@ -762,7 +777,13 @@ export function NotificationQueueOpsSection() {
                     </div>
                   </ScrollArea>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No error fingerprints recorded yet.</p>
+                  <TaskEmptyState
+                    title="No error fingerprints recorded yet"
+                    description="Repeated provider and event-type failures will surface here when they occur."
+                    icon={AlertTriangle}
+                    align="start"
+                    compact
+                  />
                 )}
               </div>
             </div>
@@ -783,9 +804,11 @@ export function NotificationQueueOpsSection() {
             Loading queue items...
           </div>
         ) : queueItems.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No email queue items found for the selected filter.
-          </div>
+          <TaskEmptyState
+            title="No queue items for this filter"
+            description="Adjust the status filter or wait for new notification jobs to enter the queue."
+            icon={AlertTriangle}
+          />
         ) : (
           <ScrollArea className="h-[360px]">
             <div className="space-y-3 pr-3">

@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, Upload, Trash2, Download, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
-import { AppPageContainer, DataTableShell, ModalScaffold, PageHeader, SectionToolbar } from '@/components/system';
+import { AppPageContainer, DataTableShell, ModalScaffold, PageHeader, SectionToolbar, TaskEmptyState } from '@/components/system';
 
 const categoryColors: Record<DocumentCategory, string> = {
   contract: 'bg-primary/10 text-primary',
@@ -280,13 +280,19 @@ export default function Documents() {
           </div>
         }
         emptyState={
-          <div className="text-center py-12">
-            <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-            <h3 className="text-lg font-medium">No documents found</h3>
-            <p className="text-muted-foreground text-sm mt-1">
-              {canManageDocuments ? 'Upload documents to get started' : 'No documents have been uploaded for you yet'}
-            </p>
-          </div>
+          <TaskEmptyState
+            title="No documents found"
+            description={canManageDocuments ? 'Upload documents to get started.' : 'No documents have been uploaded for you yet.'}
+            icon={FileText}
+            action={
+              canManageDocuments ? (
+                <Button className="rounded-full" onClick={() => setIsUploadOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload document
+                </Button>
+              ) : null
+            }
+          />
         }
         mobileList={
           <div className="space-y-3">

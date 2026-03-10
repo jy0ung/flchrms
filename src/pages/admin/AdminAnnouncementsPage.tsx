@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ModalScaffold, PageHeader } from '@/components/system';
+import { ModalScaffold, PageHeader, TaskEmptyState } from '@/components/system';
 import {
   Table,
   TableBody,
@@ -244,12 +244,17 @@ export default function AdminAnnouncementsPage() {
               Loading announcements...
             </div>
           ) : sortedAnnouncements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Megaphone className="h-10 w-10 text-muted-foreground/50 mb-3" />
-              <p className="text-sm text-muted-foreground">No announcements yet.</p>
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
-                Create First Announcement
-              </Button>
+            <div className="p-6">
+              <TaskEmptyState
+                title="No announcements yet"
+                description="Create your first announcement to publish updates to the organization."
+                icon={Megaphone}
+                action={(
+                  <Button variant="outline" className="rounded-full" onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
+                    Create First Announcement
+                  </Button>
+                )}
+              />
             </div>
           ) : (
             <Table>

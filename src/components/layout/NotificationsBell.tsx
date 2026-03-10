@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { TaskEmptyState } from '@/components/system';
 import {
   useNotificationPreferences,
   useUserNotifications,
@@ -284,9 +285,13 @@ export function NotificationsBell({
             )}
 
             {!isLoading && !hasNotifications && (
-              <div className="h-32 flex items-center justify-center text-sm text-muted-foreground text-center px-4">
-                No notifications yet.
-              </div>
+              <TaskEmptyState
+                title="No notifications yet"
+                description="Updates, approvals, and system notices will appear here."
+                icon={Bell}
+                compact
+                className="h-32"
+              />
             )}
 
             {!isLoading &&

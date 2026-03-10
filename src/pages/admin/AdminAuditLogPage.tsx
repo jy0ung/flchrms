@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, RouteLoadingState } from '@/components/system';
+import { PageHeader, RouteLoadingState, TaskEmptyState } from '@/components/system';
 
 interface AuditEntry {
   id: string;
@@ -194,9 +194,12 @@ export default function AdminAuditLogPage() {
               Loading audit entries...
             </div>
           ) : entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <History className="h-10 w-10 text-muted-foreground/50 mb-3" />
-              <p className="text-sm text-muted-foreground">No audit entries found in the last 30 days.</p>
+            <div className="p-6">
+              <TaskEmptyState
+                title="No audit entries in the last 30 days"
+                description="Recent workflow, profile, and governance activity will appear here once it is recorded."
+                icon={History}
+              />
             </div>
           ) : (
             <Table>
