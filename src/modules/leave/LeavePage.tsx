@@ -346,6 +346,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
       />
 
       <ModuleLayout.Toolbar
+        surfaceVariant="flat"
         density="compact"
         ariaLabel="Leave workspace controls"
         trailingSlot={pageActions.canOpenTeamCalendarLink ? (
@@ -362,10 +363,11 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <ModuleLayout.Content>
-        <SummaryRail items={metricItems} compactBreakpoint="xl" />
+        <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
 
         {isLoading ? (
           <DataTableShell
+            surfaceVariant="flat"
             title="Leave Requests"
             loading
             loadingSkeleton={(

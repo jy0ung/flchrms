@@ -30,6 +30,7 @@ interface EmployeeTableProps {
   roleColors: Record<AppRole, string>;
   canSelectRows: boolean;
   canViewSensitiveIdentifiers: boolean;
+  embedded?: boolean;
 }
 
 function formatRoleLabel(role: AppRole) {
@@ -50,6 +51,7 @@ export function EmployeeTable({
   roleColors,
   canSelectRows,
   canViewSensitiveIdentifiers,
+  embedded = false,
 }: EmployeeTableProps) {
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const employeeIds = useMemo(() => (employees ?? []).map((employee) => employee.id), [employees]);
@@ -208,12 +210,13 @@ export function EmployeeTable({
         })}
       </div>
 
-      <Card className="hidden border-border shadow-sm md:block">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
+      <div className={embedded ? "hidden overflow-x-auto rounded-xl border border-border/60 md:block" : "hidden md:block"}>
+        <Card className={embedded ? "border-0 shadow-none" : "border-border shadow-sm"}>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                   {canSelectRows ? (
                     <TableHead className="w-14">
                       <Checkbox
@@ -229,80 +232,81 @@ export function EmployeeTable({
                   <TableHead>Identifier</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[124px] text-right">Open</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => {
-                  const employeeRole = getUserRole(employee.id);
-                  const isSelected = selectedIdSet.has(employee.id);
-                  const employeeName = `${employee.first_name} ${employee.last_name}`;
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employees.map((employee) => {
+                    const employeeRole = getUserRole(employee.id);
+                    const isSelected = selectedIdSet.has(employee.id);
+                    const employeeName = `${employee.first_name} ${employee.last_name}`;
 
-                  return (
-                    <TableRow key={employee.id} className="hover:bg-muted/30">
-                      {canSelectRows ? (
+                    return (
+                      <TableRow key={employee.id} className="hover:bg-muted/30">
+                        {canSelectRows ? (
+                          <TableCell>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => toggleEmployeeSelection(employee.id, checked === true)}
+                              aria-label={`Select ${employeeName}`}
+                            />
+                          </TableCell>
+                        ) : null}
                         <TableCell>
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={(checked) => toggleEmployeeSelection(employee.id, checked === true)}
-                            aria-label={`Select ${employeeName}`}
-                          />
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-primary text-primary-foreground">
+                                {getInitials(employee)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium">{employeeName}</p>
+                              <p className="truncate text-sm text-muted-foreground">{employee.email}</p>
+                              <p className="truncate text-xs text-muted-foreground">{employee.job_title || 'No title assigned'}</p>
+                            </div>
+                          </div>
                         </TableCell>
-                      ) : null}
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-primary text-primary-foreground">
-                              {getInitials(employee)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-medium">{employeeName}</p>
-                            <p className="truncate text-sm text-muted-foreground">{employee.email}</p>
-                            <p className="truncate text-xs text-muted-foreground">{employee.job_title || 'No title assigned'}</p>
+                        <TableCell>{employee.department?.name || 'Unassigned'}</TableCell>
+                        <TableCell>
+                          <Badge className={`border ${roleColors[employeeRole]}`}>
+                            {formatRoleLabel(employeeRole)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Shield className="h-3 w-3" />
+                              <span className="font-mono text-foreground">
+                                {canViewSensitiveIdentifiers ? employee.employee_id || 'Not assigned' : 'Restricted'}
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground">@{employee.username || 'not-set'}</p>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{employee.department?.name || 'Unassigned'}</TableCell>
-                      <TableCell>
-                        <Badge className={`border ${roleColors[employeeRole]}`}>
-                          {formatRoleLabel(employeeRole)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Shield className="h-3 w-3" />
-                            <span className="font-mono text-foreground">
-                              {canViewSensitiveIdentifiers ? employee.employee_id || 'Not assigned' : 'Restricted'}
-                            </span>
-                          </div>
-                          <p className="text-muted-foreground">@{employee.username || 'not-set'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={employee.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-full"
-                          aria-label={`Open employee record for ${employeeName}`}
-                          onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
-                        >
-                          Open
-                          <ChevronRight className="ml-1 h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={employee.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-full"
+                            aria-label={`Open employee record for ${employeeName}`}
+                            onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
+                          >
+                            Open
+                            <ChevronRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

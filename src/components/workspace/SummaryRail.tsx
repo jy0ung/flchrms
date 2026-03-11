@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export type SummaryRailTone = 'default' | 'success' | 'warning' | 'info';
-export type SummaryRailVariant = 'contained' | 'cards';
+export type SummaryRailVariant = 'contained' | 'cards' | 'subtle';
 
 export interface SummaryRailItem {
   id: string;
@@ -121,6 +121,55 @@ function SummaryRailContained({
   );
 }
 
+function SummaryRailSubtle({
+  items,
+  className,
+  compactBreakpoint,
+}: {
+  items: SummaryRailItem[];
+  className?: string;
+  compactBreakpoint?: SummaryRailProps['compactBreakpoint'];
+}) {
+  const helperClassName = compactBreakpoint ? HELPER_VISIBILITY_CLASS[compactBreakpoint] : '';
+
+  return (
+    <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-4', className)}>
+      {items.map((item, index) => {
+        const Icon = item.icon;
+        const tone = item.tone ?? 'default';
+
+        return (
+          <div
+            key={item.id}
+            className={cn(
+              'rounded-2xl border border-border/60 bg-muted/25 px-4 py-3',
+              index === items.length - 1 && items.length % 2 !== 0 && 'sm:col-span-2 xl:col-span-1',
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{item.value}</p>
+              </div>
+
+              {Icon ? (
+                <div className={cn('rounded-xl p-2', TONE_CLASSES[tone])}>
+                  <Icon className="h-4 w-4" />
+                </div>
+              ) : null}
+            </div>
+            {item.helper ? (
+              <p className={cn('mt-2 text-sm text-muted-foreground', helperClassName)}>{item.helper}</p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SummaryRail({
   items,
   className,
@@ -139,6 +188,10 @@ export function SummaryRail({
         ))}
       </div>
     );
+  }
+
+  if (variant === 'subtle') {
+    return <SummaryRailSubtle items={items} className={className} compactBreakpoint={compactBreakpoint} />;
   }
 
   return <SummaryRailContained items={items} className={className} compactBreakpoint={compactBreakpoint} />;

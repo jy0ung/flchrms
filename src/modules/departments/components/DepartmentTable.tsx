@@ -21,6 +21,7 @@ interface DepartmentTableProps {
   loading: boolean;
   canViewSensitiveIdentifiers: boolean;
   onOpenDepartment: (department: DepartmentRecord, trigger?: HTMLElement | null) => void;
+  embedded?: boolean;
 }
 
 function formatDate(value: string) {
@@ -32,6 +33,7 @@ export function DepartmentTable({
   loading,
   canViewSensitiveIdentifiers,
   onOpenDepartment,
+  embedded = false,
 }: DepartmentTableProps) {
   if (loading) {
     return (
@@ -131,69 +133,71 @@ export function DepartmentTable({
         ))}
       </div>
 
-      <Card className="hidden border-border shadow-sm md:block">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
+      <div className={embedded ? "hidden overflow-x-auto rounded-xl border border-border/60 md:block" : "hidden md:block"}>
+        <Card className={embedded ? "border-0 shadow-none" : "border-border shadow-sm"}>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                   <TableHead>Department</TableHead>
                   <TableHead>Manager</TableHead>
                   <TableHead>Members</TableHead>
                   <TableHead>Updated</TableHead>
                   <TableHead className="w-[124px] text-right">Open</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {departments.map((department) => (
-                  <TableRow key={department.id} className="hover:bg-muted/30">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{department.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {department.description || 'No department description yet.'}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {department.manager ? (
-                        <div>
-                          <p>{department.manager.first_name} {department.manager.last_name}</p>
-                          {canViewSensitiveIdentifiers ? (
-                            <p className="text-xs text-muted-foreground">{department.manager.email}</p>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Unassigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="gap-1">
-                        <Users className="h-3 w-3" />
-                        {department.memberCount}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(department.updated_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="rounded-full"
-                        aria-label={`Open department record for ${department.name}`}
-                        onClick={(event) => onOpenDepartment(department, event.currentTarget)}
-                      >
-                        Open
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {departments.map((department) => (
+                    <TableRow key={department.id} className="hover:bg-muted/30">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{department.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {department.description || 'No department description yet.'}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {department.manager ? (
+                          <div>
+                            <p>{department.manager.first_name} {department.manager.last_name}</p>
+                            {canViewSensitiveIdentifiers ? (
+                              <p className="text-xs text-muted-foreground">{department.manager.email}</p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Unassigned</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="gap-1">
+                          <Users className="h-3 w-3" />
+                          {department.memberCount}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(department.updated_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full"
+                          aria-label={`Open department record for ${department.name}`}
+                          onClick={(event) => onOpenDepartment(department, event.currentTarget)}
+                        >
+                          Open
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

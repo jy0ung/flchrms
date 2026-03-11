@@ -60,6 +60,26 @@ describe('workspace UX primitives', () => {
     expect(screen.getByText('Records requiring day-to-day attention.')).toBeInTheDocument();
   });
 
+  it('renders subtle summary items without the legacy contained card shell', () => {
+    render(
+      <SummaryRail
+        variant="subtle"
+        items={[
+          {
+            id: 'on-leave',
+            label: 'On leave',
+            value: 3,
+            helper: 'Unavailable employees today.',
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('On leave')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Unavailable employees today.')).toBeInTheDocument();
+  });
+
   it('renders the canonical summary rail with optional icons', () => {
     render(
       <SummaryRail

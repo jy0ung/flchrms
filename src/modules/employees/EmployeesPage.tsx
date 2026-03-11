@@ -326,6 +326,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       />
 
       <ModuleLayout.Toolbar
+        surfaceVariant="flat"
         density="compact"
         ariaLabel="Employee workspace controls"
         search={{
@@ -422,6 +423,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
 
       <ModuleLayout.Content>
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {
@@ -487,11 +489,13 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
 
         {viewType === 'org' ? (
           <DataTableShell
+            surfaceVariant="flat"
             density="compact"
             content={<OrgChart />}
           />
         ) : (
           <DataTableShell
+            surfaceVariant="flat"
             density="compact"
             content={
               <EmployeeTable
@@ -504,6 +508,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
                 roleColors={ADMIN_ROLE_COLORS}
                 canSelectRows={pageActions.canBulkActions}
                 canViewSensitiveIdentifiers={pageActions.canViewSensitiveIdentifiers}
+                embedded
               />
             }
           />

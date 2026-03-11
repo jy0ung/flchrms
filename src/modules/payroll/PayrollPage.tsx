@@ -200,7 +200,10 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           }
         />
 
-        <ModuleLayout.Toolbar ariaLabel="Payroll workspace controls">
+        <ModuleLayout.Toolbar
+          surfaceVariant="flat"
+          ariaLabel="Payroll workspace controls"
+        >
           <TabsList
             className={`grid h-auto w-full rounded-lg bg-muted/40 p-1 ${
               canManagePayroll ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 max-w-sm'
@@ -230,7 +233,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
         </ModuleLayout.Toolbar>
 
         <ModuleLayout.Content>
-          <SummaryRail items={summaryItems} compactBreakpoint="xl" />
+          <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
 
           {canManagePayroll ? (
             <>

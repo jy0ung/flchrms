@@ -94,6 +94,7 @@ vi.mock('@/layouts/ModuleLayout', () => {
 });
 
 vi.mock('@/components/system', () => ({
+  DataTableShell: ({ content }: { content?: ReactNode }) => <div>{content}</div>,
   QueryErrorState: () => <div>query-error</div>,
   RecordSurfaceHeader: () => null,
 }));

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { Badge } from '@/components/ui/badge';
-import { QueryErrorState, RecordSurfaceHeader } from '@/components/system';
+import { DataTableShell, QueryErrorState, RecordSurfaceHeader } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
 import { useEmployees, useDepartments } from '@/hooks/useEmployees';
@@ -178,6 +178,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
       />
 
       <ModuleLayout.Toolbar
+        surfaceVariant="flat"
         density="compact"
         ariaLabel="Department workspace controls"
         search={{
@@ -190,6 +191,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
 
       <ModuleLayout.Content>
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {
@@ -244,11 +246,18 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
           )}
         />
 
-        <DepartmentTable
-          departments={filteredDepartments}
-          loading={isLoading}
-          canViewSensitiveIdentifiers={capabilities.canViewSensitiveEmployeeIdentifiers}
-          onOpenDepartment={handleOpenDepartment}
+        <DataTableShell
+          surfaceVariant="flat"
+          density="compact"
+          content={(
+            <DepartmentTable
+              departments={filteredDepartments}
+              loading={isLoading}
+              canViewSensitiveIdentifiers={capabilities.canViewSensitiveEmployeeIdentifiers}
+              onOpenDepartment={handleOpenDepartment}
+              embedded
+            />
+          )}
         />
       </ModuleLayout.Content>
 

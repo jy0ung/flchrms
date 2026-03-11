@@ -22,6 +22,7 @@ export interface DataTableShellProps extends React.HTMLAttributes<HTMLDivElement
   pagination?: React.ReactNode;
   stickyToolbar?: boolean;
   contentClassName?: string;
+  surfaceVariant?: "card" | "flat";
 }
 
 /**
@@ -44,6 +45,7 @@ export function DataTableShell({
   content,
   pagination,
   stickyToolbar = false,
+  surfaceVariant = "card",
   className,
   contentClassName,
   ...props
@@ -53,14 +55,8 @@ export function DataTableShell({
   const hasRows = hasData ?? Boolean(content || table || mobileList);
   const compactDensity = density === "compact";
 
-  return (
-    <Card
-      role="region"
-      aria-labelledby={title ? titleId : undefined}
-      aria-busy={loading || undefined}
-      className={cn("overflow-hidden", className)}
-      {...props}
-    >
+  const contentNode = (
+    <>
       {hasHeader ? (
         <CardHeaderStandard
           title={title ?? ""}
@@ -123,6 +119,24 @@ export function DataTableShell({
           </>
         ) : null}
       </CardContent>
+    </>
+  );
+
+  const shellClassName = cn(
+    "overflow-hidden",
+    surfaceVariant === "flat" ? "rounded-2xl border border-border/70 bg-background/70 shadow-none" : undefined,
+    className,
+  );
+
+  return (
+    <Card
+      role="region"
+      aria-labelledby={title ? titleId : undefined}
+      aria-busy={loading || undefined}
+      className={shellClassName}
+      {...props}
+    >
+      {contentNode}
     </Card>
   );
 }

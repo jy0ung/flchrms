@@ -20,6 +20,7 @@ export interface ModuleToolbarProps extends Omit<SectionToolbarProps, "variant">
   children?: React.ReactNode;
   surfaceClassName?: string;
   contentClassName?: string;
+  surfaceVariant?: "card" | "flat";
 }
 
 export interface ContentAreaProps extends React.HTMLAttributes<HTMLElement> {
@@ -99,6 +100,7 @@ function ModuleToolbar({
   className,
   surfaceClassName,
   contentClassName,
+  surfaceVariant = "card",
   ...props
 }: ModuleToolbarProps) {
   const hasToolbarControls = Boolean(
@@ -109,30 +111,52 @@ function ModuleToolbar({
       trailingSlot,
   );
 
+  const body = (
+    <>
+      {hasToolbarControls ? (
+        <SectionToolbar
+          search={search}
+          filters={filters}
+          actions={actions}
+          leadingSlot={leadingSlot}
+          trailingSlot={trailingSlot}
+          density={density}
+          stackOnMobile={stackOnMobile}
+          sticky={sticky}
+          ariaLabel={ariaLabel}
+          variant="inline"
+          className={className}
+          {...props}
+        />
+      ) : null}
+      {children ? (
+        <div className={cn(hasToolbarControls && "mt-3")}>
+          {children}
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (surfaceVariant === "flat") {
+    return (
+      <section
+        role={hasToolbarControls ? "region" : undefined}
+        aria-label={hasToolbarControls ? ariaLabel : undefined}
+        className={cn(
+          "rounded-2xl border border-border/70 bg-background/60 p-3 sm:p-4",
+          surfaceClassName,
+          contentClassName,
+        )}
+      >
+        {body}
+      </section>
+    );
+  }
+
   return (
     <Card className={cn("border-border/80 shadow-sm", surfaceClassName)}>
       <CardContent className={cn("p-3 sm:p-4", contentClassName)}>
-        {hasToolbarControls ? (
-          <SectionToolbar
-            search={search}
-            filters={filters}
-            actions={actions}
-            leadingSlot={leadingSlot}
-            trailingSlot={trailingSlot}
-            density={density}
-            stackOnMobile={stackOnMobile}
-            sticky={sticky}
-            ariaLabel={ariaLabel}
-            variant="inline"
-            className={className}
-            {...props}
-          />
-        ) : null}
-        {children ? (
-          <div className={cn(hasToolbarControls && "mt-3")}>
-            {children}
-          </div>
-        ) : null}
+        {body}
       </CardContent>
     </Card>
   );
