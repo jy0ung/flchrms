@@ -2,7 +2,7 @@
  * Enterprise-grade dashboard hero greeting.
  * Clean, professional header with contextual action indicators.
  */
-import { memo, useMemo } from 'react';
+import { memo, useMemo, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,7 +23,13 @@ function getTimeGreeting(): string {
   return 'Good evening';
 }
 
-function DashboardGreetingInner({ role }: { role: AppRole }) {
+function DashboardGreetingInner({
+  role,
+  actionsSlot,
+}: {
+  role: AppRole;
+  actionsSlot?: ReactNode;
+}) {
   const { profile } = useAuth();
   const { unreadNotificationCount: unreadCount } = useDashboardData();
   const isMobile = useIsMobile();
@@ -59,21 +65,29 @@ function DashboardGreetingInner({ role }: { role: AppRole }) {
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/[0.04] blur-2xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/[0.03] blur-3xl" />
 
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {today}
-          </p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
-            {greeting}, {profile?.first_name || 'there'}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-foreground">
-              {formatRoleLabel(role)}
-            </span>
-            <span className="hidden text-border lg:inline">•</span>
-            <span className="hidden text-xs lg:inline">{getScopeLabel(role, null)}</span>
+      <div className="relative space-y-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {today}
+            </p>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
+              {greeting}, {profile?.first_name || 'there'}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-foreground">
+                {formatRoleLabel(role)}
+              </span>
+              <span className="hidden text-border lg:inline">•</span>
+              <span className="hidden text-xs lg:inline">{getScopeLabel(role, null)}</span>
+            </div>
           </div>
+
+          {actionsSlot ? (
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              {actionsSlot}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

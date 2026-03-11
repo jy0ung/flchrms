@@ -38,10 +38,12 @@ export function UtilityLayout({
     <AppPageContainer
       maxWidth={maxWidth}
       spacing={spacing}
+      framePadding="none"
       className={cn("w-full", className)}
       {...props}
     >
       <PageHeader
+        layout="aligned"
         title={title}
         description={description}
         actions={actions}

@@ -19,6 +19,7 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { getRouteLabel } from '@/lib/navigation-labels';
+import { AppPageContainer } from '@/components/system';
 
 export function AdminLayout() {
   const { user, role, isLoading } = useAuth();
@@ -74,40 +75,47 @@ export function AdminLayout() {
       <AdminSidebar capabilityMap={capabilityMap} />
       <SidebarInset>
         {/* Admin Top Bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background px-4 md:h-14">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-5" />
-          
-          {/* Breadcrumbs */}
-          <div className="flex-1 min-w-0">
-            <Breadcrumb>
-              <BreadcrumbList>
-                {pathSegments.map((segment, index) => {
-                  const path = '/' + pathSegments.slice(0, index + 1).join('/');
-                  const label = getRouteLabel(segment);
-                  const isLast = index === pathSegments.length - 1;
-                  return (
-                    <Fragment key={path}>
-                      {index > 0 && <BreadcrumbSeparator />}
-                      <BreadcrumbItem>
-                        {isLast ? (
-                          <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
-                        ) : (
-                          <BreadcrumbLink asChild><Link to={path}>{label}</Link></BreadcrumbLink>
-                        )}
-                      </BreadcrumbItem>
-                    </Fragment>
-                  );
-                })}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
+        <header className="sticky top-0 z-30 border-b border-border bg-background">
+          <AppPageContainer
+            spacing="none"
+            maxWidth="7xl"
+            framePadding="shell"
+            className="flex h-16 min-w-0 items-center gap-3 md:h-14"
+          >
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="h-5" />
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <NotificationsBell />
-          </div>
+            {/* Breadcrumbs */}
+            <div className="min-w-0 flex-1">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {pathSegments.map((segment, index) => {
+                    const path = '/' + pathSegments.slice(0, index + 1).join('/');
+                    const label = getRouteLabel(segment);
+                    const isLast = index === pathSegments.length - 1;
+                    return (
+                      <Fragment key={path}>
+                        {index > 0 && <BreadcrumbSeparator />}
+                        <BreadcrumbItem>
+                          {isLast ? (
+                            <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                          ) : (
+                            <BreadcrumbLink asChild><Link to={path}>{label}</Link></BreadcrumbLink>
+                          )}
+                        </BreadcrumbItem>
+                      </Fragment>
+                    );
+                  })}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <NotificationsBell />
+            </div>
+          </AppPageContainer>
         </header>
 
         {/* Page Content */}
@@ -116,13 +124,19 @@ export function AdminLayout() {
           tabIndex={-1}
           className="flex-1 overflow-auto focus:outline-none"
         >
-          <div key={location.pathname} className="animate-fadeIn p-4 md:p-6 lg:p-8">
+          <AppPageContainer
+            key={location.pathname}
+            spacing="none"
+            maxWidth="none"
+            framePadding="page"
+            className="animate-fadeIn py-4 md:py-6 lg:py-8"
+          >
             <div className="mx-auto w-full max-w-7xl">
               <InteractionModeProvider resetKeys={[user?.id ?? null]}>
                 <Outlet />
               </InteractionModeProvider>
             </div>
-          </div>
+          </AppPageContainer>
         </main>
       </SidebarInset>
     </SidebarProvider>

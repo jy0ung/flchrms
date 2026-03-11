@@ -37,7 +37,7 @@ export default function AdminQuickActionsPage() {
 
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <PageHeader
           title={SHELL_LABELS.governanceHub}
           description="Choose the right operational workspace or governance surface for the task at hand."
@@ -133,7 +133,7 @@ export default function AdminQuickActionsPage() {
   const adminActions = visibleQuickActions.filter((action) => action.surface === 'Governance');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title={SHELL_LABELS.governanceHub}
         description="Choose the right operational workspace or governance surface for the task at hand."
@@ -155,16 +155,19 @@ export default function AdminQuickActionsPage() {
           actions: adminActions,
         },
       ].filter((section) => section.actions.length > 0).map((section) => (
-        <section key={section.id} className="space-y-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <section.icon className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold sm:text-base">{section.title}</h2>
+        <section key={section.id} className="space-y-3">
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-x-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <section.icon className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold sm:text-base">{section.title}</h2>
+              </div>
+              <p className="max-w-2xl text-sm text-muted-foreground">{section.description}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{section.description}</p>
+            <div className="hidden lg:block" />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {section.actions.map((action) => (
               <ActionTile
                 key={action.id}

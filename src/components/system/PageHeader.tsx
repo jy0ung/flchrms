@@ -26,6 +26,7 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLElement> {
   toolbarSlot?: React.ReactNode;
   headingLevel?: 1 | 2 | 3;
   titleId?: string;
+  layout?: "aligned" | "stacked";
 }
 
 function renderAction(action: PageHeaderAction) {
@@ -77,6 +78,7 @@ export function PageHeader({
   toolbarSlot,
   headingLevel = 1,
   titleId,
+  layout = "aligned",
   className,
   ...props
 }: PageHeaderProps) {
@@ -91,7 +93,14 @@ export function PageHeader({
       aria-labelledby={headerTitleId}
       {...props}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div
+        className={cn(
+          "gap-3",
+          layout === "aligned"
+            ? "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6"
+            : "flex flex-col",
+        )}
+      >
         <div className="min-w-0 space-y-1">
           <HeadingTag
             id={headerTitleId}
@@ -105,7 +114,12 @@ export function PageHeader({
         </div>
 
         {(actionsSlot || (actions && actions.length > 0)) ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-2",
+              layout === "aligned" && "lg:justify-end",
+            )}
+          >
             {actionsSlot}
             {actions?.map((action) => renderAction(action))}
           </div>

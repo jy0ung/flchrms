@@ -55,6 +55,7 @@ function ModuleLayoutRoot({
     <AppPageContainer
       spacing={spacing}
       maxWidth={maxWidth}
+      framePadding="none"
       className={cn("w-full", className)}
       {...props}
     >
@@ -70,13 +71,13 @@ function ModuleHeader({
   ...props
 }: ModuleHeaderProps) {
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {eyebrow ? (
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {eyebrow}
         </div>
       ) : null}
-      <PageHeader {...props} />
+      <PageHeader layout="aligned" {...props} />
       {metaSlot ? (
         <div className="flex flex-wrap items-center gap-2">
           {metaSlot}

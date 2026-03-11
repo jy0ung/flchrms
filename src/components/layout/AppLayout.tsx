@@ -77,17 +77,20 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar />
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
-          <div
+          <AppPageContainer
             key={location.pathname}
+            spacing="none"
+            maxWidth="none"
+            framePadding="page"
             className={cn(
-              'animate-fadeIn p-4 md:p-6 lg:p-8',
+              'animate-fadeIn py-4 md:py-6 lg:py-8',
               isMobile && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
             )}
           >
             <InteractionModeProvider resetKeys={[user?.id ?? null]}>
               <Outlet />
             </InteractionModeProvider>
-          </div>
+          </AppPageContainer>
         </main>
       </div>
       {isMobile && (

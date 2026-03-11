@@ -241,20 +241,17 @@ export default function Dashboard() {
   return (
     <DashboardDataProvider>
       <AppPageContainer spacing="comfortable" maxWidth="7xl">
-        {/* Hero Greeting + action buttons */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex-1 min-w-0">
-            <DashboardGreeting role={role} />
-          </div>
-          <div className="flex items-center gap-2 self-end lg:mt-1 lg:self-start">
-            {editMode ? (
+        <DashboardGreeting
+          role={role}
+          actionsSlot={
+            editMode ? (
               <>
                 <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="mr-1 h-4 w-4" />
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-1" />
+                  <Save className="mr-1 h-4 w-4" />
                   {isSaving ? 'Saving…' : 'Save'}
                 </Button>
               </>
@@ -281,12 +278,12 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">Widgets</span>
                 </Button>
               </>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
 
         {!isLoading && !editMode && (
-          <div className="space-y-7 md:space-y-8">
+          <div className="space-y-6 md:space-y-7">
             {dashboardSections.map((section) => {
               const meta = DASHBOARD_SECTION_META[section.id];
               const hasContent = section.widgetIds.length > 0;
