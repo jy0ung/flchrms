@@ -317,7 +317,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
               Viewer role: {formatRoleLabel(role)}
             </ContextChip>
             {entryContext === 'admin' ? (
-              <ContextChip>
+              <ContextChip className="hidden sm:inline-flex">
                 Admin wrapper
               </ContextChip>
             ) : null}
@@ -422,6 +422,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
 
       <ModuleLayout.Content>
         <SummaryRail
+          compactBreakpoint="xl"
           items={[
             {
               id: 'total-employees',
@@ -467,11 +468,16 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
                   {bulkSelection.selectedCount} selected
                 </Badge>
               ) : null}
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+              <Badge variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
                 {viewType === 'org' ? 'Org chart view' : 'Table view'}
               </Badge>
+              {activeFilterLabels.length > 0 ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:hidden">
+                  {activeFilterLabels.length} filter{activeFilterLabels.length === 1 ? '' : 's'}
+                </Badge>
+              ) : null}
               {activeFilterLabels.map((label) => (
-                <Badge key={label} variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                <Badge key={label} variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
                   {label}
                 </Badge>
               ))}

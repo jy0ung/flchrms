@@ -27,6 +27,7 @@ export default function Training() {
 
       {!programsLoading || !enrollmentsLoading ? (
         <SummaryRail
+          compactBreakpoint="xl"
           items={[
             {
               id: 'active-enrollments',

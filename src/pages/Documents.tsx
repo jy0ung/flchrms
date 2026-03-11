@@ -130,7 +130,7 @@ export default function Documents() {
                 id: 'document-category',
                 control: (
                   <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
-                    <SelectTrigger className="w-full lg:w-44 rounded-full">
+                    <SelectTrigger aria-label="Filter documents by category" className="w-full lg:w-44 rounded-full">
                       <Filter className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
@@ -151,7 +151,7 @@ export default function Documents() {
                       id: 'document-employee',
                       control: (
                         <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
-                          <SelectTrigger className="w-full lg:w-56 rounded-full">
+                          <SelectTrigger aria-label="Filter documents by employee" className="w-full lg:w-56 rounded-full">
                             <SelectValue placeholder="All Employees" />
                           </SelectTrigger>
                           <SelectContent>

@@ -50,6 +50,7 @@ export default function Attendance() {
       />
 
       <SummaryRail
+        compactBreakpoint="xl"
         items={[
           {
             id: 'today-status',

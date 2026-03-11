@@ -190,6 +190,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
 
       <ModuleLayout.Content>
         <SummaryRail
+          compactBreakpoint="xl"
           items={[
             {
               id: 'departments-total',
@@ -226,13 +227,18 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
                 {filteredDepartments.length} result{filteredDepartments.length === 1 ? '' : 's'}
               </Badge>
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+              <Badge variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
                 {stats.assignedManagers} managers assigned
               </Badge>
               {search.trim() ? (
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                  Search: {search.trim()}
-                </Badge>
+                <>
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:hidden">
+                    Search active
+                  </Badge>
+                  <Badge variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
+                    Search: {search.trim()}
+                  </Badge>
+                </>
               ) : null}
             </>
           )}

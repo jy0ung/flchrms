@@ -29,6 +29,7 @@ export default function Announcements() {
 
       {!isLoading ? (
         <SummaryRail
+          compactBreakpoint="xl"
           items={[
             {
               id: 'published',

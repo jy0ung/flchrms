@@ -28,6 +28,7 @@ export default function Performance() {
 
       {!isLoading ? (
         <SummaryRail
+          compactBreakpoint="xl"
           items={[
             {
               id: 'review-count',

@@ -64,6 +64,18 @@ test.describe.serial('Phase 4 - Axe smoke @phase4 @a11y', () => {
     await page.goto('/payroll');
     await expect(page.getByRole('heading', { name: /^Payroll$/i })).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Payroll workspace');
+
+    await page.goto('/attendance');
+    await expect(page.getByRole('heading', { name: /^Attendance$/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Attendance workspace');
+
+    await page.goto('/training');
+    await expect(page.getByRole('heading', { name: /Training & Development/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Training workspace');
+
+    await page.goto('/announcements');
+    await expect(page.getByRole('heading', { name: /Announcements/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Announcements workspace');
   });
 
   test('admin-facing operational routes have no serious or critical accessibility violations', async ({ page }) => {
@@ -79,6 +91,14 @@ test.describe.serial('Phase 4 - Axe smoke @phase4 @a11y', () => {
     await page.goto('/dashboard');
     await expect(page.getByText(/Alerts/i)).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Admin dashboard');
+
+    await page.goto('/documents');
+    await expect(page.getByRole('heading', { name: /Document Management/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Documents workspace');
+
+    await page.goto('/performance');
+    await expect(page.getByRole('heading', { name: /Performance Reviews/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Performance workspace');
   });
 
   test('governance routes have no serious or critical accessibility violations', async ({ page }) => {
@@ -90,5 +110,9 @@ test.describe.serial('Phase 4 - Axe smoke @phase4 @a11y', () => {
     await page.goto('/admin/dashboard');
     await expect(page.getByRole('heading', { name: /Admin Dashboard/i })).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Governance dashboard');
+
+    await page.goto('/admin/audit-log');
+    await expect(page.getByRole('heading', { name: /Audit Log/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Governance audit log');
   });
 });

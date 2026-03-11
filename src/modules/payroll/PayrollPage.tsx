@@ -171,7 +171,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
               ? 'Manage payroll runs, salary structures, deduction rules, and published payslips.'
               : 'Review your payslips, salary information, and current payroll records.'
           }
-          metaSlot={<ContextChip>Active view: {activeTabLabel}</ContextChip>}
+          metaSlot={<ContextChip className="hidden sm:inline-flex">Active view: {activeTabLabel}</ContextChip>}
           actionsSlot={
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
               {isPayslipsTab ? (
@@ -230,7 +230,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
         </ModuleLayout.Toolbar>
 
         <ModuleLayout.Content>
-          <SummaryRail items={summaryItems} />
+          <SummaryRail items={summaryItems} compactBreakpoint="xl" />
 
           {canManagePayroll ? (
             <>
