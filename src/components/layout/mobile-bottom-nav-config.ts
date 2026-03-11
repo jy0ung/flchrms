@@ -1,8 +1,8 @@
-import { Bell, Calendar, LayoutDashboard, Users, Wallet } from 'lucide-react';
+import { Bell, Calendar, LayoutDashboard, Shield, Users, Wallet } from 'lucide-react';
 
 import { ROUTE_LABELS, SHELL_LABELS } from '@/lib/navigation-labels';
-import { canManagePayroll, canViewEmployeeDirectory } from '@/lib/permissions';
 import type { AppRole } from '@/types/hrms';
+import { MOBILE_ROLE_JOURNEYS, type MobilePrimaryRouteId } from './mobile-role-journeys';
 
 export interface BottomNavItem {
   name: string;
@@ -10,17 +10,17 @@ export interface BottomNavItem {
   icon: typeof LayoutDashboard;
 }
 
-export function buildBottomNavItems(role: AppRole | null | undefined): BottomNavItem[] {
-  const workAnchor = canManagePayroll(role)
-    ? { name: ROUTE_LABELS.payroll, href: '/payroll', icon: Wallet }
-    : canViewEmployeeDirectory(role)
-      ? { name: ROUTE_LABELS.employees, href: '/employees', icon: Users }
-      : { name: ROUTE_LABELS.payroll, href: '/payroll', icon: Wallet };
+const MOBILE_PRIMARY_ROUTE_CONFIG: Record<MobilePrimaryRouteId, BottomNavItem> = {
+  dashboard: { name: SHELL_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
+  leave: { name: ROUTE_LABELS.leave, href: '/leave', icon: Calendar },
+  employees: { name: ROUTE_LABELS.employees, href: '/employees', icon: Users },
+  payroll: { name: ROUTE_LABELS.payroll, href: '/payroll', icon: Wallet },
+  notifications: { name: SHELL_LABELS.notifications, href: '/notifications', icon: Bell },
+  governance: { name: SHELL_LABELS.governance, href: '/admin', icon: Shield },
+};
 
-  return [
-    { name: SHELL_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
-    { name: ROUTE_LABELS.leave, href: '/leave', icon: Calendar },
-    workAnchor,
-    { name: SHELL_LABELS.notifications, href: '/notifications', icon: Bell },
-  ];
+export function buildBottomNavItems(role: AppRole | null | undefined): BottomNavItem[] {
+  const journey = MOBILE_ROLE_JOURNEYS[role ?? 'employee'] ?? MOBILE_ROLE_JOURNEYS.employee;
+  return journey.map((routeId) => MOBILE_PRIMARY_ROUTE_CONFIG[routeId]);
 }
+

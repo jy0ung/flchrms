@@ -9,7 +9,7 @@ import { buildBottomNavItems } from './mobile-bottom-nav-config';
 
 /**
  * Fixed bottom navigation bar shown only on mobile (<md).
- * Surfaces the 4 most-used routes + overflow via sidebar hamburger.
+ * Surfaces the 4 primary routes for the signed-in role + overflow via sidebar.
  */
 export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { role } = useAuth();

@@ -44,11 +44,27 @@ describe('MobileBottomNav', () => {
     ]);
   });
 
-  it('keeps payroll in the third slot for payroll manager roles', () => {
+  it('uses the people-operations journey for hr and director roles', () => {
     expect(buildBottomNavItems('hr').map((item) => item.href)).toEqual([
       '/dashboard',
       '/leave',
-      '/payroll',
+      '/employees',
+      '/notifications',
+    ]);
+
+    expect(buildBottomNavItems('director').map((item) => item.href)).toEqual([
+      '/dashboard',
+      '/leave',
+      '/employees',
+      '/notifications',
+    ]);
+  });
+
+  it('uses the governance journey for admin roles', () => {
+    expect(buildBottomNavItems('admin').map((item) => item.href)).toEqual([
+      '/dashboard',
+      '/employees',
+      '/admin',
       '/notifications',
     ]);
   });
