@@ -16,7 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, Upload, Trash2, Download, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { canManageDocuments as canManageDocumentsPermission } from '@/lib/permissions';
-import { AppPageContainer, DataTableShell, ModalScaffold, PageHeader, SectionToolbar, TaskEmptyState } from '@/components/system';
+import { DataTableShell, ModalScaffold, SectionToolbar, TaskEmptyState } from '@/components/system';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 const categoryColors: Record<DocumentCategory, string> = {
   contract: 'bg-primary/10 text-primary',
@@ -99,80 +100,78 @@ export default function Documents() {
   };
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Document Management"
-        description={
-          canManageDocuments
-            ? 'Manage employee contracts, certificates, and official documents'
-            : 'View your documents'
-        }
-        actionsSlot={
-          canManageDocuments ? (
-            <Button className="h-9 w-full gap-2 rounded-full lg:w-auto" onClick={() => setIsUploadOpen(true)}>
-              <Upload className="w-4 h-4" />
-              Upload Document
-            </Button>
-          ) : null
-        }
-        toolbarSlot={
-          <SectionToolbar
-            density="compact"
-            search={{
-              value: searchTerm,
-              onChange: setSearchTerm,
-              placeholder: 'Search documents...',
-              ariaLabel: 'Search documents',
-              inputProps: { className: 'h-9' },
-            }}
-            filters={[
-              {
-                id: 'document-category',
-                control: (
-                  <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
-                    <SelectTrigger aria-label="Filter documents by category" className="w-full lg:w-44 rounded-full">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="contract">Contract</SelectItem>
-                      <SelectItem value="certificate">Certificate</SelectItem>
-                      <SelectItem value="official">Official</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ),
-                minWidthClassName: "sm:min-w-[180px]",
-              },
-              ...(canManageDocuments
-                ? [
-                    {
-                      id: 'document-employee',
-                      control: (
-                        <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
-                          <SelectTrigger aria-label="Filter documents by employee" className="w-full lg:w-56 rounded-full">
-                            <SelectValue placeholder="All Employees" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Employees</SelectItem>
-                            {employees?.map((emp) => (
-                              <SelectItem key={emp.id} value={emp.id}>
-                                {emp.first_name} {emp.last_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ),
-                      minWidthClassName: "sm:min-w-[220px]",
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        }
-      />
-
+    <UtilityLayout
+      title="Document Management"
+      description={
+        canManageDocuments
+          ? 'Manage employee contracts, certificates, and official documents'
+          : 'View your documents'
+      }
+      actionsSlot={
+        canManageDocuments ? (
+          <Button className="h-9 w-full gap-2 rounded-full lg:w-auto" onClick={() => setIsUploadOpen(true)}>
+            <Upload className="w-4 h-4" />
+            Upload Document
+          </Button>
+        ) : null
+      }
+      controlsSlot={
+        <SectionToolbar
+          density="compact"
+          search={{
+            value: searchTerm,
+            onChange: setSearchTerm,
+            placeholder: 'Search documents...',
+            ariaLabel: 'Search documents',
+            inputProps: { className: 'h-9' },
+          }}
+          filters={[
+            {
+              id: 'document-category',
+              control: (
+                <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as DocumentCategory | 'all')}>
+                  <SelectTrigger aria-label="Filter documents by category" className="w-full lg:w-44 rounded-full">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="certificate">Certificate</SelectItem>
+                    <SelectItem value="official">Official</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              ),
+              minWidthClassName: "sm:min-w-[180px]",
+            },
+            ...(canManageDocuments
+              ? [
+                  {
+                    id: 'document-employee',
+                    control: (
+                      <Select value={selectedEmployee || 'all'} onValueChange={(value) => setSelectedEmployee(value === 'all' ? undefined : value)}>
+                        <SelectTrigger aria-label="Filter documents by employee" className="w-full lg:w-56 rounded-full">
+                          <SelectValue placeholder="All Employees" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Employees</SelectItem>
+                          {employees?.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.first_name} {emp.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ),
+                    minWidthClassName: "sm:min-w-[220px]",
+                  },
+                ]
+              : []),
+          ]}
+        />
+      }
+    >
       {canManageDocuments ? (
         <ModalScaffold
           open={isUploadOpen}
@@ -457,6 +456,6 @@ export default function Documents() {
           </div>
         }
       />
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }

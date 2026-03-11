@@ -2,9 +2,10 @@ import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } fro
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Calendar, Clock3, Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { AppPageContainer, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
+import { DataTableShell, QueryErrorState, StatusBadge } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 export default function Attendance() {
   usePageTitle('Attendance');
@@ -18,74 +19,73 @@ export default function Attendance() {
   const clockOutLabel = today?.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '—';
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Attendance"
-        description="Track your work hours"
-        actions={
-          !today
+    <UtilityLayout
+      title="Attendance"
+      description="Track your work hours"
+      actions={
+        !today
+          ? [
+              {
+                id: 'clock-in',
+                label: 'Clock In',
+                icon: Play,
+                onClick: () => clockIn.mutate(),
+                disabled: clockIn.isPending,
+                variant: 'default',
+              },
+            ]
+          : !today.clock_out
             ? [
                 {
-                  id: 'clock-in',
-                  label: 'Clock In',
-                  icon: Play,
-                  onClick: () => clockIn.mutate(),
-                  disabled: clockIn.isPending,
-                  variant: 'default',
+                  id: 'clock-out',
+                  label: 'Clock Out',
+                  icon: Square,
+                  onClick: () => clockOut.mutate(),
+                  disabled: clockOut.isPending,
+                  variant: 'destructive',
                 },
-              ]
-            : !today.clock_out
-              ? [
-                  {
-                    id: 'clock-out',
-                    label: 'Clock Out',
-                    icon: Square,
-                    onClick: () => clockOut.mutate(),
-                    disabled: clockOut.isPending,
-                    variant: 'destructive',
-                  },
-              ]
+            ]
             : []
-        }
-      />
-
-      <SummaryRail
-        compactBreakpoint="xl"
-        items={[
-          {
-            id: 'today-status',
-            label: 'Today Status',
-            value: todayStatus,
-            helper: format(new Date(), 'EEEE, MMM d'),
-            icon: Calendar,
-            tone: today ? 'success' : 'default',
-          },
-          {
-            id: 'clock-in',
-            label: 'Clock In',
-            value: clockInLabel,
-            helper: today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.',
-            icon: Play,
-            tone: today?.clock_in ? 'info' : 'default',
-          },
-          {
-            id: 'clock-out',
-            label: 'Clock Out',
-            value: clockOutLabel,
-            helper: today?.clock_out ? 'Work session completed.' : 'Clock-out pending.',
-            icon: Square,
-            tone: today?.clock_out ? 'success' : 'warning',
-          },
-          {
-            id: 'history-count',
-            label: 'History Records',
-            value: attendanceHistoryCount,
-            helper: 'Tracked attendance entries on file.',
-            icon: Clock3,
-          },
-        ]}
-      />
-
+      }
+      summarySlot={
+        <SummaryRail
+          compactBreakpoint="xl"
+          items={[
+            {
+              id: 'today-status',
+              label: 'Today Status',
+              value: todayStatus,
+              helper: format(new Date(), 'EEEE, MMM d'),
+              icon: Calendar,
+              tone: today ? 'success' : 'default',
+            },
+            {
+              id: 'clock-in',
+              label: 'Clock In',
+              value: clockInLabel,
+              helper: today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.',
+              icon: Play,
+              tone: today?.clock_in ? 'info' : 'default',
+            },
+            {
+              id: 'clock-out',
+              label: 'Clock Out',
+              value: clockOutLabel,
+              helper: today?.clock_out ? 'Work session completed.' : 'Clock-out pending.',
+              icon: Square,
+              tone: today?.clock_out ? 'success' : 'warning',
+            },
+            {
+              id: 'history-count',
+              label: 'History Records',
+              value: attendanceHistoryCount,
+              helper: 'Tracked attendance entries on file.',
+              icon: Clock3,
+            },
+          ]}
+        />
+      }
+    >
       {isError && (
         <QueryErrorState label="attendance records" onRetry={() => refetch()} />
       )}
@@ -147,6 +147,6 @@ export default function Attendance() {
           </div>
         }
       />
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }

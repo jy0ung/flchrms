@@ -3,9 +3,10 @@ import { AlertTriangle, Megaphone, RadioTower } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 import { useAnnouncements } from '@/hooks/useAnnouncements';
-import { AppPageContainer, PageHeader, StatusBadge, SurfaceSection } from '@/components/system';
+import { StatusBadge, SurfaceSection } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 export default function Announcements() {
   usePageTitle('Announcements');
@@ -21,13 +22,10 @@ export default function Announcements() {
   const latestPublished = latestPublishedAt ? format(new Date(latestPublishedAt), 'MMM d, yyyy') : 'No updates';
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Announcements"
-        description={!isLoading ? `${count} item${count === 1 ? '' : 's'} — Company-wide updates, reminders, and internal notices.` : 'Company-wide updates, reminders, and internal notices.'}
-      />
-
-      {!isLoading ? (
+    <UtilityLayout
+      title="Announcements"
+      description={!isLoading ? `${count} item${count === 1 ? '' : 's'} — Company-wide updates, reminders, and internal notices.` : 'Company-wide updates, reminders, and internal notices.'}
+      summarySlot={!isLoading ? (
         <SummaryRail
           compactBreakpoint="xl"
           items={[
@@ -57,7 +55,7 @@ export default function Announcements() {
           ]}
         />
       ) : null}
-
+    >
       {isLoading ? (
         <SurfaceSection title="Announcement Feed" description="Loading updates">
           <WorkspaceStatePanel
@@ -98,6 +96,6 @@ export default function Announcements() {
           </div>
         </SurfaceSection>
       )}
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }

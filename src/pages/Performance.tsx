@@ -5,9 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, StatusBadge } from '@/components/system';
+import { CardHeaderStandard, DataTableShell, StatusBadge } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 export default function Performance() {
   usePageTitle('Performance');
@@ -20,13 +21,10 @@ export default function Performance() {
     : '—';
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Performance Reviews"
-        description="Performance evaluation records and status."
-      />
-
-      {!isLoading ? (
+    <UtilityLayout
+      title="Performance Reviews"
+      description="Performance evaluation records and status."
+      summarySlot={!isLoading ? (
         <SummaryRail
           compactBreakpoint="xl"
           items={[
@@ -56,7 +54,7 @@ export default function Performance() {
           ]}
         />
       ) : null}
-
+    >
       <DataTableShell
         title="My Reviews"
         description="Current and past performance evaluations."
@@ -137,6 +135,6 @@ export default function Performance() {
           </div>
         }
       />
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }

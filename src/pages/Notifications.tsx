@@ -23,7 +23,8 @@ import {
 } from '@/hooks/useNotifications';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { AppPageContainer, ContextChip, DataTableShell, PageHeader, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
+import { ContextChip, DataTableShell, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -243,123 +244,121 @@ export default function Notifications() {
   };
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Notifications"
-        description="Review leave workflow and workflow configuration activity."
-        actionsSlot={
-          <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end">
-            <div className="col-span-2 lg:col-span-1">
-              <Select value={String(cleanupDays)} onValueChange={(value) => setCleanupDays(Number(value))}>
-                <SelectTrigger aria-label="Select notification cleanup window" className="h-9 w-full rounded-full lg:w-[180px]">
-                  <SelectValue placeholder="Cleanup window" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">Cleanup Read: 30d+</SelectItem>
-                  <SelectItem value="90">Cleanup Read: 90d+</SelectItem>
-                  <SelectItem value="180">Cleanup Read: 180d+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              variant="outline"
-              className="h-9 rounded-full"
-              onClick={() => void handleCleanupReadNotifications()}
-              disabled={isDeleting}
-            >
-              {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              Cleanup Read
-            </Button>
-            <Button
-              variant="outline"
-              className="h-9 rounded-full"
-              onClick={() => void refetch()}
-              aria-busy={isFetching}
-            >
-              {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isFetching ? 'Refreshing…' : 'Refresh'}
-            </Button>
-            <div className="col-span-2 grid grid-cols-[1fr_auto] gap-2 lg:contents">
-              {unreadCount > 0 ? (
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-full"
-                  onClick={() => void markAllNotificationsRead()}
-                  disabled={isMarkingRead}
-                >
-                  <CheckCheck className="w-4 h-4 mr-2" />
-                  Mark All Read
-                </Button>
-              ) : (
-                <ContextChip className="justify-center rounded-full sm:justify-start">
-                  All notifications read
-                </ContextChip>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 rounded-full justify-self-end"
-                onClick={() => navigate('/profile?tab=notifications')}
-                title="Notification settings"
-                aria-label="Open notification settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
+    <UtilityLayout
+      title="Notifications"
+      description="Review leave workflow and workflow configuration activity."
+      controlsSlot={
+        <SectionToolbar
+          variant="inline"
+          density="compact"
+          ariaLabel="Notification history filters"
+          filters={[
+            {
+              id: 'notification-category',
+              label: 'Category',
+              control: (
+                <Select value={category} onValueChange={(value) => handleChangeCategory(value as NotificationCategoryFilter)}>
+                  <SelectTrigger aria-label="Filter notifications by category" className="rounded-full bg-background">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions().map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ),
+            },
+            {
+              id: 'notification-read-status',
+              label: 'Read Status',
+              control: (
+                <Select value={readFilter} onValueChange={(value) => handleChangeReadFilter(value as NotificationReadFilter)}>
+                  <SelectTrigger aria-label="Filter notifications by read status" className="rounded-full bg-background">
+                    <SelectValue placeholder="Select read status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {readFilterOptions().map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ),
+            },
+          ]}
+        />
+      }
+      actionsSlot={
+        <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end">
+          <div className="col-span-2 lg:col-span-1">
+            <Select value={String(cleanupDays)} onValueChange={(value) => setCleanupDays(Number(value))}>
+              <SelectTrigger aria-label="Select notification cleanup window" className="h-9 w-full rounded-full lg:w-[180px]">
+                <SelectValue placeholder="Cleanup window" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">Cleanup Read: 30d+</SelectItem>
+                <SelectItem value="90">Cleanup Read: 90d+</SelectItem>
+                <SelectItem value="180">Cleanup Read: 180d+</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        }
-      />
-
+          <Button
+            variant="outline"
+            className="h-9 rounded-full"
+            onClick={() => void handleCleanupReadNotifications()}
+            disabled={isDeleting}
+          >
+            {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            Cleanup Read
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 rounded-full"
+            onClick={() => void refetch()}
+            aria-busy={isFetching}
+          >
+            {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isFetching ? 'Refreshing…' : 'Refresh'}
+          </Button>
+          <div className="col-span-2 grid grid-cols-[1fr_auto] gap-2 lg:contents">
+            {unreadCount > 0 ? (
+              <Button
+                variant="outline"
+                className="h-9 rounded-full"
+                onClick={() => void markAllNotificationsRead()}
+                disabled={isMarkingRead}
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark All Read
+              </Button>
+            ) : (
+              <ContextChip className="justify-center rounded-full sm:justify-start">
+                All notifications read
+              </ContextChip>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-full justify-self-end"
+              onClick={() => navigate('/profile?tab=notifications')}
+              title="Notification settings"
+              aria-label="Open notification settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      }
+    >
       <DataTableShell
         title="Notification History"
         description={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
         hasData={notifications.length > 0}
-        headerActions={
-          <SectionToolbar
-            variant="inline"
-            density="compact"
-            ariaLabel="Notification history filters"
-            filters={[
-              {
-                id: 'notification-category',
-                label: 'Category',
-                control: (
-                  <Select value={category} onValueChange={(value) => handleChangeCategory(value as NotificationCategoryFilter)}>
-                    <SelectTrigger aria-label="Filter notifications by category" className="rounded-full bg-background">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions().map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ),
-              },
-              {
-                id: 'notification-read-status',
-                label: 'Read Status',
-                control: (
-                  <Select value={readFilter} onValueChange={(value) => handleChangeReadFilter(value as NotificationReadFilter)}>
-                    <SelectTrigger aria-label="Filter notifications by read status" className="rounded-full bg-background">
-                      <SelectValue placeholder="Select read status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {readFilterOptions().map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ),
-              },
-            ]}
-          />
-        }
         pagination={
           <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground">{pageLabel}</span>
@@ -420,6 +419,6 @@ export default function Notifications() {
           </ScrollArea>
         }
       />
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }

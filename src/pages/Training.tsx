@@ -4,9 +4,10 @@ import { BookOpenCheck, GraduationCap, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AppPageContainer, CardHeaderStandard, DataTableShell, PageHeader, QueryErrorState, StatusBadge } from '@/components/system';
+import { CardHeaderStandard, DataTableShell, QueryErrorState, StatusBadge } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 export default function Training() {
   usePageTitle('Training');
@@ -19,13 +20,10 @@ export default function Training() {
   const activeEnrollments = enrollments?.length ?? 0;
 
   return (
-    <AppPageContainer maxWidth="7xl">
-      <PageHeader
-        title="Training & Development"
-        description="Training programs and enrollment status."
-      />
-
-      {!programsLoading || !enrollmentsLoading ? (
+    <UtilityLayout
+      title="Training & Development"
+      description="Training programs and enrollment status."
+      summarySlot={!programsLoading || !enrollmentsLoading ? (
         <SummaryRail
           compactBreakpoint="xl"
           items={[
@@ -55,7 +53,7 @@ export default function Training() {
           ]}
         />
       ) : null}
-
+    >
       {programsError && (
         <QueryErrorState label="training programs" onRetry={() => refetchPrograms()} />
       )}
@@ -134,6 +132,6 @@ export default function Training() {
           </div>
         }
       />
-    </AppPageContainer>
+    </UtilityLayout>
   );
 }
