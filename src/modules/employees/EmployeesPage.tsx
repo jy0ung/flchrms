@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Download, GitBranch, Plus, Upload, Users } from 'lucide-react';
+import { Download, GitBranch, MoreHorizontal, Plus, Upload, Users } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
@@ -8,6 +8,12 @@ import { BulkActionBar } from '@/components/bulk-actions/BulkActionBar';
 import { OrgChart } from '@/components/employees/OrgChart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -27,7 +33,13 @@ import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
 
-import { EmployeeDetailDrawer, EmployeeManagementDialogs, EmployeeTable, type DirectoryEmployee } from './components';
+import {
+  EmployeeDetailDrawer,
+  EmployeeManagementDialogs,
+  EmployeeTable,
+  EmployeeTablePagination,
+  type DirectoryEmployee,
+} from './components';
 import { useEmployeeManagementController, useEmployeeModuleCapabilities } from './hooks';
 import { coerceEmployeeDrawerTab, type EmployeesPageProps } from './types';
 
@@ -95,6 +107,8 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [viewType, setViewType] = useState<'table' | 'org'>('table');
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const deferredSearch = useDeferredValue(search);
   const { rememberTrigger, restoreFocusElement } = useDrawerFocusReturn();
 
@@ -140,7 +154,27 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     });
   }, [deferredSearch, departmentFilter, employees, statusFilter]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredSearch, departmentFilter, statusFilter, viewType]);
+
   const bulkSelection = useBulkSelection(filteredEmployees, getEmployeeId);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const pagedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredEmployees.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredEmployees, pageSize]);
+
+  const visibleStart = filteredEmployees.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const visibleEnd = filteredEmployees.length === 0 ? 0 : Math.min(currentPage * pageSize, filteredEmployees.length);
 
   const managerNameById = useMemo(
     () =>
@@ -280,31 +314,6 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     );
   }
 
-  const toolbarActions = (
-    <div className="flex flex-wrap gap-2">
-      {pageActions.canCreateEmployee ? (
-        <Button className="h-9 rounded-full" onClick={controller.openCreateEmployeeDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
-      ) : null}
-
-      {pageActions.canImportEmployees ? (
-        <Button variant="outline" className="h-9 rounded-full" onClick={() => setBatchUpdateDialogOpen(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Import
-        </Button>
-      ) : null}
-
-      {pageActions.canExportEmployees ? (
-        <Button variant="outline" className="h-9 rounded-full" onClick={handleExportFiltered}>
-          <Download className="mr-2 h-4 w-4" />
-          Export Filtered
-        </Button>
-      ) : null}
-    </div>
-  );
-
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
@@ -377,7 +386,56 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
             ),
           },
         ]}
-        actions={toolbarActions}
+        actions={(
+          <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
+            {pageActions.canCreateEmployee ? (
+              <Button className="h-9 rounded-full" onClick={controller.openCreateEmployeeDialog}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </Button>
+            ) : null}
+
+            <div className="hidden md:flex md:flex-wrap md:gap-2">
+              {pageActions.canImportEmployees ? (
+                <Button variant="outline" className="h-9 rounded-full" onClick={() => setBatchUpdateDialogOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import
+                </Button>
+              ) : null}
+
+              {pageActions.canExportEmployees ? (
+                <Button variant="outline" className="h-9 rounded-full" onClick={handleExportFiltered}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Filtered
+                </Button>
+              ) : null}
+            </div>
+
+            {(pageActions.canImportEmployees || pageActions.canExportEmployees) ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 rounded-full md:hidden" aria-label="More employee actions">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {pageActions.canImportEmployees ? (
+                    <DropdownMenuItem onClick={() => setBatchUpdateDialogOpen(true)}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Import employees
+                    </DropdownMenuItem>
+                  ) : null}
+                  {pageActions.canExportEmployees ? (
+                    <DropdownMenuItem onClick={handleExportFiltered}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export filtered
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+        )}
         trailingSlot={
           <ToggleGroup
             type="single"
@@ -463,7 +521,11 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
           meta={(
             <>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                {filteredEmployees.length} result{filteredEmployees.length === 1 ? '' : 's'}
+                {viewType === 'org'
+                  ? `${filteredEmployees.length} result${filteredEmployees.length === 1 ? '' : 's'}`
+                  : filteredEmployees.length === 0
+                    ? '0 results'
+                    : `${visibleStart}-${visibleEnd} of ${filteredEmployees.length}`}
               </Badge>
               {pageActions.canBulkActions ? (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
@@ -499,7 +561,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
             density="compact"
             content={
               <EmployeeTable
-                employees={filteredEmployees}
+                employees={pagedEmployees}
                 loading={employeesLoading}
                 selectedIds={bulkSelection.selectedIds}
                 onSelectedIdsChange={bulkSelection.setSelectedIds}
@@ -511,6 +573,21 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
                 embedded
               />
             }
+            pagination={(
+              <EmployeeTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={filteredEmployees.length}
+                visibleStart={visibleStart}
+                visibleEnd={visibleEnd}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPageSize(nextPageSize);
+                  setCurrentPage(1);
+                }}
+              />
+            )}
           />
         )}
       </ModuleLayout.Content>

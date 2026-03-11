@@ -193,17 +193,14 @@ export function EmployeeTable({
                       {formatRoleLabel(employeeRole)}
                     </Badge>
                   </div>
-                  <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2">
-                    <p className="text-muted-foreground">Employee ID</p>
-                    <p className="mt-1 font-mono text-[11px]">
-                      {canViewSensitiveIdentifiers ? employee.employee_id || 'Not assigned' : 'Restricted'}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2">
-                    <p className="text-muted-foreground">Username</p>
-                    <p className="mt-1 truncate text-[11px]">{employee.username || 'Not set'}</p>
-                  </div>
                 </div>
+
+                {(canViewSensitiveIdentifiers || employee.username) ? (
+                  <p className="text-xs text-muted-foreground">
+                    {canViewSensitiveIdentifiers ? `${employee.employee_id || 'No employee ID'} • ` : ''}
+                    {employee.username ? `@${employee.username}` : 'Username not set'}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           );
