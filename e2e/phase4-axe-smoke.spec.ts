@@ -69,6 +69,10 @@ test.describe.serial('Phase 4 - Axe smoke @phase4 @a11y', () => {
     await expect(page.getByRole('heading', { name: /^Attendance$/i })).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Attendance workspace');
 
+    await page.goto('/notifications');
+    await expect(page.getByRole('heading', { name: /^Notifications$/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Notifications workspace');
+
     await page.goto('/training');
     await expect(page.getByRole('heading', { name: /Training & Development/i })).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Training workspace');
@@ -110,6 +114,10 @@ test.describe.serial('Phase 4 - Axe smoke @phase4 @a11y', () => {
     await page.goto('/admin/dashboard');
     await expect(page.getByRole('heading', { name: /Admin Dashboard/i })).toBeVisible();
     await expectNoSeriousAxeViolations(page, 'Governance dashboard');
+
+    await page.goto('/admin/announcements');
+    await expect(page.getByRole('heading', { name: /Announcement Management/i })).toBeVisible();
+    await expectNoSeriousAxeViolations(page, 'Governance announcements');
 
     await page.goto('/admin/audit-log');
     await expect(page.getByRole('heading', { name: /Audit Log/i })).toBeVisible();

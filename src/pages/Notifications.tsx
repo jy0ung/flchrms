@@ -23,7 +23,7 @@ import {
 } from '@/hooks/useNotifications';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { AppPageContainer, DataTableShell, PageHeader, SectionToolbar, StatusBadge } from '@/components/system';
+import { AppPageContainer, ContextChip, DataTableShell, PageHeader, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -41,6 +41,18 @@ function categoryBadgeVariant(category: string) {
   if (category === 'leave') return 'outline';
   if (category === 'admin') return 'secondary';
   return 'outline';
+}
+
+function eventTypeLabel(notification: UserNotification) {
+  const eventType =
+    notification.metadata &&
+    typeof notification.metadata === 'object' &&
+    'event_type' in notification.metadata &&
+    typeof notification.metadata.event_type === 'string'
+      ? notification.metadata.event_type
+      : null;
+
+  return eventType ?? notification.category;
 }
 
 function categoryOptions(): { value: NotificationCategoryFilter; label: string }[] {
@@ -90,7 +102,7 @@ function NotificationRow({
               {categoryLabel(notification.category)}
             </Badge>
             <Badge variant="outline" className="font-mono text-[10px]">
-              {(notification as any).event_type ?? notification.category}
+              {eventTypeLabel(notification)}
             </Badge>
             {isUnread && <StatusBadge status="unread" />}
           </div>
@@ -239,7 +251,7 @@ export default function Notifications() {
           <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end">
             <div className="col-span-2 lg:col-span-1">
               <Select value={String(cleanupDays)} onValueChange={(value) => setCleanupDays(Number(value))}>
-                <SelectTrigger className="h-9 w-full rounded-full lg:w-[180px]">
+                <SelectTrigger aria-label="Select notification cleanup window" className="h-9 w-full rounded-full lg:w-[180px]">
                   <SelectValue placeholder="Cleanup window" />
                 </SelectTrigger>
                 <SelectContent>
@@ -258,20 +270,31 @@ export default function Notifications() {
               {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
               Cleanup Read
             </Button>
-            <Button variant="outline" className="h-9 rounded-full" onClick={() => void refetch()} disabled={isFetching}>
+            <Button
+              variant="outline"
+              className="h-9 rounded-full"
+              onClick={() => void refetch()}
+              aria-busy={isFetching}
+            >
               {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Refresh
+              {isFetching ? 'Refreshing…' : 'Refresh'}
             </Button>
             <div className="col-span-2 grid grid-cols-[1fr_auto] gap-2 lg:contents">
-              <Button
-                variant="outline"
-                className="h-9 rounded-full"
-                onClick={() => void markAllNotificationsRead()}
-                disabled={unreadCount === 0 || isMarkingRead}
-              >
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Mark All Read
-              </Button>
+              {unreadCount > 0 ? (
+                <Button
+                  variant="outline"
+                  className="h-9 rounded-full"
+                  onClick={() => void markAllNotificationsRead()}
+                  disabled={isMarkingRead}
+                >
+                  <CheckCheck className="w-4 h-4 mr-2" />
+                  Mark All Read
+                </Button>
+              ) : (
+                <ContextChip className="justify-center rounded-full sm:justify-start">
+                  All notifications read
+                </ContextChip>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -303,7 +326,7 @@ export default function Notifications() {
                 label: 'Category',
                 control: (
                   <Select value={category} onValueChange={(value) => handleChangeCategory(value as NotificationCategoryFilter)}>
-                    <SelectTrigger className="rounded-full bg-background">
+                    <SelectTrigger aria-label="Filter notifications by category" className="rounded-full bg-background">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -321,7 +344,7 @@ export default function Notifications() {
                 label: 'Read Status',
                 control: (
                   <Select value={readFilter} onValueChange={(value) => handleChangeReadFilter(value as NotificationReadFilter)}>
-                    <SelectTrigger className="rounded-full bg-background">
+                    <SelectTrigger aria-label="Filter notifications by read status" className="rounded-full bg-background">
                       <SelectValue placeholder="Select read status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -373,9 +396,12 @@ export default function Notifications() {
           </div>
         }
         emptyState={
-          <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
-            No notifications match the selected filters.
-          </div>
+          <TaskEmptyState
+            title="No notifications match this view"
+            description="Try another filter or check back later for new workflow activity."
+            icon={CheckCheck}
+            compact
+          />
         }
         content={
           <ScrollArea className="h-[460px] sm:h-[520px]">

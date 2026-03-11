@@ -288,13 +288,22 @@ export default function AdminAnnouncementsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(ann)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={`Edit announcement ${ann.title}`}
+                          title={`Edit announcement ${ann.title}`}
+                          onClick={() => handleEdit(ann)}
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
+                          aria-label={`Delete announcement ${ann.title}`}
+                          title={`Delete announcement ${ann.title}`}
                           onClick={() => { setEditId(ann.id); setDeleteOpen(true); }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
