@@ -203,6 +203,7 @@ export function useNotificationHistory({
   const { user } = useAuth();
   const markReadMutation = useMarkNotificationsReadMutation();
   const markUnreadMutation = useMarkNotificationsUnreadMutation();
+  const deleteNotificationsMutation = useDeleteNotificationsMutation();
 
   const safePage = Math.max(1, page);
   const from = (safePage - 1) * pageSize;
@@ -253,6 +254,7 @@ export function useNotificationHistory({
     refetch: historyQuery.refetch,
     isMarkingRead: markReadMutation.isPending,
     isMarkingUnread: markUnreadMutation.isPending,
+    isDeletingReadNotifications: deleteNotificationsMutation.isPending,
     markNotificationRead: async (notificationId: string) => {
       await markReadMutation.mutateAsync([notificationId]);
     },
@@ -261,6 +263,15 @@ export function useNotificationHistory({
     },
     markAllNotificationsRead: async () => {
       await markReadMutation.mutateAsync(undefined);
+    },
+    deleteReadNotifications: async ({
+      olderThanDays = 90,
+      readOnly = true,
+    }: {
+      olderThanDays?: number;
+      readOnly?: boolean;
+    }) => {
+      return deleteNotificationsMutation.mutateAsync({ olderThanDays, readOnly });
     },
   };
 }

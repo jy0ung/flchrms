@@ -7,7 +7,6 @@ import Notifications from '@/pages/Notifications';
 const navigateMock = vi.fn();
 
 const useNotificationHistoryMock = vi.fn();
-const deleteNotificationsMock = vi.fn();
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
@@ -15,7 +14,6 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('@/hooks/useNotifications', () => ({
   useUserNotifications: () => ({ unreadCount: 2 }),
-  useDeleteNotifications: () => ({ deleteNotifications: deleteNotificationsMock, isDeleting: false }),
   useNotificationHistory: (params: unknown) => useNotificationHistoryMock(params),
 }));
 
@@ -87,9 +85,9 @@ describe('Notifications page header control relocation', () => {
         {
           id: 'n-1',
           category: 'system',
-          event_type: 'phase7_test_unread',
+          metadata: { event_type: 'phase7_test_unread' },
           title: 'System Alert',
-          message: 'Unread test message',
+          body: 'Unread test message',
           created_at: '2026-02-27T00:00:00Z',
           read_at: null,
         },
@@ -104,13 +102,18 @@ describe('Notifications page header control relocation', () => {
       markNotificationRead: vi.fn(),
       markNotificationUnread: vi.fn(),
       markAllNotificationsRead: vi.fn(),
+      deleteReadNotifications: vi.fn(),
+      isDeletingReadNotifications: false,
     });
   });
 
-  it('renders notification filters in header controls and preserves behavior', () => {
+  it('renders notification filters in header controls and maintenance actions separately', () => {
     render(<Notifications />);
 
     expect(screen.getByRole('region', { name: /Notification history filters/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Inbox maintenance/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mark All Read/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Notification settings/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('option', { name: 'Leave Workflow' }));
     expect(useNotificationHistoryMock).toHaveBeenLastCalledWith(
@@ -123,4 +126,3 @@ describe('Notifications page header control relocation', () => {
     );
   });
 });
-

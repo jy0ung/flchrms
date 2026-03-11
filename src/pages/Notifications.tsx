@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, CheckCheck, ExternalLink, Loader2, Settings, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, ExternalLink, Loader2, RefreshCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/select';
 import {
   useNotificationHistory,
-  useDeleteNotifications,
   useUserNotifications,
   type NotificationCategoryFilter,
   type NotificationReadFilter,
@@ -24,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ContextChip, DataTableShell, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
+import { NotificationMaintenancePanel } from '@/components/notifications/NotificationMaintenancePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 function resolveNotificationTarget(notification: UserNotification) {
@@ -102,9 +102,6 @@ function NotificationRow({
             <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
               {categoryLabel(notification.category)}
             </Badge>
-            <Badge variant="outline" className="font-mono text-[10px]">
-              {eventTypeLabel(notification)}
-            </Badge>
             {isUnread && <StatusBadge status="unread" />}
           </div>
           <div>
@@ -113,35 +110,16 @@ function NotificationRow({
               {notification.body}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium uppercase tracking-[0.16em] text-muted-foreground/80">
+              {eventTypeLabel(notification)}
+            </span>
+            <span aria-hidden="true">•</span>
+            <span>{formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}</span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
-          {isUnread && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => void onMarkRead(notification)}
-              disabled={markingRead}
-            >
-              <Check className="w-4 h-4 mr-1" />
-              Mark Read
-            </Button>
-          )}
-          {!isUnread && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => void onMarkUnread(notification)}
-              disabled={markingRead}
-            >
-              Mark Unread
-            </Button>
-          )}
           {target && (
             <Button
               size="sm"
@@ -151,6 +129,28 @@ function NotificationRow({
             >
               <ExternalLink className="w-4 h-4 mr-1" />
               Open
+            </Button>
+          )}
+          {isUnread ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={() => void onMarkRead(notification)}
+              disabled={markingRead}
+            >
+              <Check className="w-4 h-4 mr-1" />
+              Mark read
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={() => void onMarkUnread(notification)}
+              disabled={markingRead}
+            >
+              Mark unread
             </Button>
           )}
         </div>
@@ -168,7 +168,6 @@ export default function Notifications() {
   const [page, setPage] = useState(1);
 
   const { unreadCount } = useUserNotifications(1);
-  const { deleteNotifications, isDeleting } = useDeleteNotifications();
   const {
     notifications,
     totalCount,
@@ -181,6 +180,8 @@ export default function Notifications() {
     markNotificationRead,
     markNotificationUnread,
     markAllNotificationsRead,
+    deleteReadNotifications,
+    isDeletingReadNotifications,
   } = useNotificationHistory({
     page,
     pageSize: 20,
@@ -227,7 +228,7 @@ export default function Notifications() {
 
   const handleCleanupReadNotifications = async () => {
     try {
-      const deletedCount = await deleteNotifications({ olderThanDays: cleanupDays, readOnly: true });
+      const deletedCount = await deleteReadNotifications({ olderThanDays: cleanupDays, readOnly: true });
       setPage(1);
       toast.success('Cleanup complete', {
         description:
@@ -246,7 +247,7 @@ export default function Notifications() {
   return (
     <UtilityLayout
       title="Notifications"
-      description="Review leave workflow and workflow configuration activity."
+      description="Review updates, open related work, and keep track of workflow activity."
       controlsSlot={
         <SectionToolbar
           variant="inline"
@@ -293,65 +294,30 @@ export default function Notifications() {
         />
       }
       actionsSlot={
-        <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:flex-wrap lg:items-center lg:justify-end">
-          <div className="col-span-2 lg:col-span-1">
-            <Select value={String(cleanupDays)} onValueChange={(value) => setCleanupDays(Number(value))}>
-              <SelectTrigger aria-label="Select notification cleanup window" className="h-9 w-full rounded-full lg:w-[180px]">
-                <SelectValue placeholder="Cleanup window" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">Cleanup Read: 30d+</SelectItem>
-                <SelectItem value="90">Cleanup Read: 90d+</SelectItem>
-                <SelectItem value="180">Cleanup Read: 180d+</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="outline"
-            className="h-9 rounded-full"
-            onClick={() => void handleCleanupReadNotifications()}
-            disabled={isDeleting}
-          >
-            {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-            Cleanup Read
-          </Button>
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <Button
             variant="outline"
             className="h-9 rounded-full"
             onClick={() => void refetch()}
             aria-busy={isFetching}
           >
-            {isFetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isFetching ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
             {isFetching ? 'Refreshing…' : 'Refresh'}
           </Button>
-          <div className="col-span-2 grid grid-cols-[1fr_auto] gap-2 lg:contents">
-            {unreadCount > 0 ? (
-              <Button
-                variant="outline"
-                className="h-9 rounded-full"
-                onClick={() => void markAllNotificationsRead()}
-                disabled={isMarkingRead}
-              >
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Mark All Read
-              </Button>
-            ) : (
-              <ContextChip className="justify-center rounded-full sm:justify-start">
-                All notifications read
-              </ContextChip>
-            )}
+          {unreadCount > 0 ? (
             <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 rounded-full justify-self-end"
-              onClick={() => navigate('/profile?tab=notifications')}
-              title="Notification settings"
-              aria-label="Open notification settings"
+              className="h-9 rounded-full"
+              onClick={() => void markAllNotificationsRead()}
+              disabled={isMarkingRead}
             >
-              <Settings className="h-4 w-4" />
+              <CheckCheck className="w-4 h-4 mr-2" />
+              Mark All Read
             </Button>
-          </div>
+          ) : (
+            <ContextChip className="justify-center rounded-full sm:justify-start">
+              All notifications read
+            </ContextChip>
+          )}
         </div>
       }
     >
@@ -359,9 +325,9 @@ export default function Notifications() {
         title="Notification History"
         description={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
         hasData={notifications.length > 0}
+        headerActions={<ContextChip className="rounded-full">{pageLabel}</ContextChip>}
         pagination={
           <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-muted-foreground">{pageLabel}</span>
             <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
               <Button
                 variant="outline"
@@ -418,6 +384,14 @@ export default function Notifications() {
             </div>
           </ScrollArea>
         }
+      />
+
+      <NotificationMaintenancePanel
+        cleanupDays={cleanupDays}
+        onCleanupDaysChange={setCleanupDays}
+        onCleanup={() => void handleCleanupReadNotifications()}
+        onOpenSettings={() => navigate('/profile?tab=notifications')}
+        isDeleting={isDeletingReadNotifications}
       />
     </UtilityLayout>
   );
