@@ -3,7 +3,7 @@
  * Tabbed workforce analytics — attendance, leave, training.
  */
 import { memo, useState } from 'react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, AreaChart, Area } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -110,27 +110,25 @@ function ChartsWidgetInner() {
             <p className="sr-only">{getChartSummary('attendance', stats)}</p>
             <div aria-hidden="true">
               <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart accessibilityLayer={false}>
-                    <Pie
-                      data={attendanceData.length > 0 ? attendanceData : [{ name: 'No Data', value: 1, fill: 'hsl(var(--muted))' }]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={70}
-                      paddingAngle={2}
-                      dataKey="value"
-                      rootTabIndex={-1}
-                      label={({ name, value }) => `${name}: ${value}`}
-                      labelLine={false}
-                    >
-                      {attendanceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <PieChart accessibilityLayer={false}>
+                  <Pie
+                    data={attendanceData.length > 0 ? attendanceData : [{ name: 'No Data', value: 1, fill: 'hsl(var(--muted))' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                    rootTabIndex={-1}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    labelLine={false}
+                  >
+                    {attendanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
               </ChartContainer>
             </div>
             <ChartLegend
@@ -148,18 +146,16 @@ function ChartsWidgetInner() {
             <p className="sr-only">{getChartSummary('leave', stats)}</p>
             <div aria-hidden="true">
               <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={leaveData} layout="vertical" accessibilityLayer={false}>
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 12 }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {leaveData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <BarChart data={leaveData} layout="vertical" accessibilityLayer={false}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 12 }} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {leaveData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </BarChart>
               </ChartContainer>
             </div>
             <ChartLegend
@@ -176,20 +172,18 @@ function ChartsWidgetInner() {
             <p className="sr-only">{getChartSummary('training', stats)}</p>
             <div aria-hidden="true">
               <ChartContainer config={CHART_CONFIG} className="h-48 w-full md:h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trainingData} accessibilityLayer={false}>
-                    <defs>
-                      <linearGradient id="trainingGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis hide />
-                    <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#trainingGradient)" strokeWidth={2} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <AreaChart data={trainingData} accessibilityLayer={false}>
+                  <defs>
+                    <linearGradient id="trainingGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis hide />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#trainingGradient)" strokeWidth={2} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </AreaChart>
               </ChartContainer>
             </div>
             <ChartLegend

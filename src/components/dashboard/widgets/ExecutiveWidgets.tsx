@@ -130,24 +130,6 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
       });
     }
 
-    if (stats.pendingLeaveRequests > 5) {
-      nextAlerts.push({
-        tone: stats.pendingLeaveRequests > 10 ? 'warning' : 'info',
-        title: 'Leave approvals pending',
-        detail: `${stats.pendingLeaveRequests} leave request(s) are waiting for approval action.`,
-        route: '/leave',
-      });
-    }
-
-    if (stats.pendingReviews > 3) {
-      nextAlerts.push({
-        tone: stats.pendingReviews > 8 ? 'warning' : 'info',
-        title: 'Performance reviews pending',
-        detail: `${stats.pendingReviews} review(s) remain in draft or incomplete state.`,
-        route: '/performance',
-      });
-    }
-
     if (stats.trainingCompletionRate < 60) {
       nextAlerts.push({
         tone: 'warning',

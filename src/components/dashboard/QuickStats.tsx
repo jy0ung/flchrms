@@ -8,8 +8,8 @@ import {
   TrendingDown,
   Minus,
   Users,
-  Clock,
-  CalendarDays,
+  UserPlus,
+  GraduationCap,
   ClipboardList,
   ArrowUpRight,
 } from 'lucide-react';
@@ -135,7 +135,6 @@ function QuickStatsInner() {
 
   if (!stats) return null;
 
-  const attendanceTrend = stats.attendanceRate >= 80 ? 'up' : stats.attendanceRate >= 60 ? 'neutral' : 'down';
   const workforceTotal = role === 'manager'
     ? stats.departmentEmployeeCount ?? stats.activeEmployees
     : stats.totalEmployees;
@@ -154,33 +153,37 @@ function QuickStatsInner() {
         to="/employees"
       />
       <QuickStat
-        title="Attendance Rate"
-        value={`${stats.attendanceRate}%`}
-        subtitle={`${stats.presentToday} present today`}
-        trend={attendanceTrend}
-        trendLabel={`${stats.avgAttendanceThisMonth}% monthly avg`}
-        icon={Clock}
-        accentColor={stats.attendanceRate >= 80 ? 'bg-success' : stats.attendanceRate >= 60 ? 'bg-warning' : 'bg-destructive'}
+        title="New Hires"
+        value={stats.newHiresThisMonth}
+        subtitle="Employees added this month"
+        trend={stats.newHiresThisMonth > 0 ? 'up' : 'neutral'}
+        trendLabel={stats.newHiresThisMonth > 0 ? 'Hiring activity this month' : 'No hiring activity this month'}
+        icon={UserPlus}
+        accentColor={stats.newHiresThisMonth > 0 ? 'bg-info' : 'bg-primary'}
         clickable
-        to="/attendance"
+        to="/employees"
       />
       <QuickStat
-        title="On Leave Today"
-        value={stats.onLeaveToday}
-        subtitle="Employees currently unavailable"
-        icon={CalendarDays}
-        accentColor={stats.onLeaveToday > 0 ? 'bg-info' : 'bg-success'}
+        title="Training Completion"
+        value={`${stats.trainingCompletionRate}%`}
+        subtitle={`${stats.completedTrainingsThisMonth} completions this month`}
+        trend={stats.trainingCompletionRate >= 70 ? 'up' : stats.trainingCompletionRate >= 50 ? 'neutral' : 'down'}
+        trendLabel={`${stats.activeTrainings} active programs`}
+        icon={GraduationCap}
+        accentColor={stats.trainingCompletionRate >= 70 ? 'bg-success' : stats.trainingCompletionRate >= 50 ? 'bg-warning' : 'bg-destructive'}
         clickable
-        to="/calendar"
+        to="/training"
       />
       <QuickStat
-        title="Approved Leaves"
-        value={stats.approvedLeavesThisMonth}
-        subtitle="Approved this month"
+        title="Completed Reviews"
+        value={stats.completedReviewsThisMonth}
+        subtitle="Performance reviews closed this month"
+        trend={stats.completedReviewsThisMonth > 0 ? 'up' : 'neutral'}
+        trendLabel={stats.completedReviewsThisMonth > 0 ? `${stats.completedReviewsThisMonth} completed this month` : 'No reviews completed this month'}
         icon={ClipboardList}
-        accentColor={stats.approvedLeavesThisMonth > 0 ? 'bg-info' : 'bg-primary'}
+        accentColor={stats.completedReviewsThisMonth > 0 ? 'bg-info' : 'bg-primary'}
         clickable
-        to="/leave"
+        to="/performance"
       />
     </div>
   );

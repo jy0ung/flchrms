@@ -23,7 +23,13 @@ import {
 
 import { AppPageContainer } from '@/components/system';
 import { Button } from '@/components/ui/button';
-import { DashboardWidgetRenderer } from '@/components/dashboard/widgets';
+import {
+  ChartsWidget,
+  CriticalInsightsWidget,
+  DashboardWidgetErrorBoundary,
+  DashboardWidgetRenderer,
+  PendingActionsWidget,
+} from '@/components/dashboard/widgets';
 import { QuickStats } from '@/components/dashboard/QuickStats';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardDataProvider } from '@/components/dashboard/DashboardDataProvider';
@@ -283,14 +289,103 @@ export default function Dashboard() {
           <div className="space-y-7 md:space-y-8">
             {dashboardSections.map((section) => {
               const meta = DASHBOARD_SECTION_META[section.id];
-              const shouldRenderQuickStats = section.id === 'organizationMetrics' && showManagerWidgets;
-              const hasContent = shouldRenderQuickStats || section.widgetIds.length > 0;
+              const hasContent = section.widgetIds.length > 0;
               const supportingWidgets =
                 section.id === 'supportingInformation'
                   ? splitSupportingWidgets(section.widgetIds as DashboardWidgetId[])
                   : null;
 
               if (!hasContent) return null;
+
+              const renderSectionContent = () => {
+                if (section.id === 'alerts') {
+                  return section.widgetIds.includes('criticalInsights') ? (
+                    <DashboardWidgetErrorBoundary widgetLabel="Critical Insights">
+                      <CriticalInsightsWidget role={role} />
+                    </DashboardWidgetErrorBoundary>
+                  ) : null;
+                }
+
+                if (section.id === 'requiredActions') {
+                  return section.widgetIds.includes('pendingActions') ? (
+                    <DashboardWidgetErrorBoundary widgetLabel="Pending Actions">
+                      <PendingActionsWidget role={role} />
+                    </DashboardWidgetErrorBoundary>
+                  ) : null;
+                }
+
+                if (section.id === 'organizationMetrics') {
+                  const showSummaryMetrics = showManagerWidgets && section.widgetIds.includes('executiveMetrics');
+                  const showAnalytics = section.widgetIds.includes('charts');
+
+                  if (!showSummaryMetrics && !showAnalytics) {
+                    return null;
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {showSummaryMetrics ? <QuickStats /> : null}
+                      {showAnalytics ? (
+                        <DashboardWidgetErrorBoundary widgetLabel="Analytics">
+                          <ChartsWidget />
+                        </DashboardWidgetErrorBoundary>
+                      ) : null}
+                    </div>
+                  );
+                }
+
+                if (section.widgetIds.length === 0) {
+                  return null;
+                }
+
+                if (section.id === 'supportingInformation') {
+                  return (
+                    <div className="space-y-4">
+                      {supportingWidgets && supportingWidgets.featured.length > 0 ? (
+                        <div className="grid gap-4 xl:grid-cols-2">
+                          {supportingWidgets.featured.map((id) => (
+                            <DashboardWidgetRenderer
+                              key={`${section.id}-featured-${id}`}
+                              widgetId={id}
+                              role={role}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {supportingWidgets && supportingWidgets.secondary.length > 0 ? (
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          {supportingWidgets.secondary.map((id) => (
+                            <DashboardWidgetRenderer
+                              key={`${section.id}-secondary-${id}`}
+                              widgetId={id}
+                              role={role}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className={getSectionGridClass(section.id)}>
+                    {section.widgetIds.map((id) => (
+                      <DashboardWidgetRenderer
+                        key={`${section.id}-${id}`}
+                        widgetId={id as DashboardWidgetId}
+                        role={role}
+                      />
+                    ))}
+                  </div>
+                );
+              };
+
+              const sectionContent = renderSectionContent();
+
+              if (!sectionContent) {
+                return null;
+              }
 
               return (
                 <DashboardSection
@@ -299,46 +394,7 @@ export default function Dashboard() {
                   description={getSectionDescription(section.id, showManagerWidgets)}
                   contentClassName="space-y-4"
                 >
-                  {shouldRenderQuickStats ? <QuickStats /> : null}
-                  {section.widgetIds.length > 0 ? (
-                    section.id === 'supportingInformation' ? (
-                      <div className="space-y-4">
-                        {supportingWidgets && supportingWidgets.featured.length > 0 ? (
-                          <div className="grid gap-4 xl:grid-cols-2">
-                            {supportingWidgets.featured.map((id) => (
-                              <DashboardWidgetRenderer
-                                key={`${section.id}-featured-${id}`}
-                                widgetId={id}
-                                role={role}
-                              />
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {supportingWidgets && supportingWidgets.secondary.length > 0 ? (
-                          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {supportingWidgets.secondary.map((id) => (
-                              <DashboardWidgetRenderer
-                                key={`${section.id}-secondary-${id}`}
-                                widgetId={id}
-                                role={role}
-                              />
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className={getSectionGridClass(section.id)}>
-                        {section.widgetIds.map((id) => (
-                          <DashboardWidgetRenderer
-                            key={`${section.id}-${id}`}
-                            widgetId={id as DashboardWidgetId}
-                            role={role}
-                          />
-                        ))}
-                      </div>
-                    )
-                  ) : null}
+                  {sectionContent}
                 </DashboardSection>
               );
             })}
