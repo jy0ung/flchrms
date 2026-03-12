@@ -3,7 +3,7 @@ import { MoreHorizontal } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { useUserNotifications } from '@/hooks/useNotifications';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import { SHELL_LABELS } from '@/lib/navigation-labels';
 import { buildBottomNavItems } from './mobile-bottom-nav-config';
 
@@ -14,7 +14,7 @@ import { buildBottomNavItems } from './mobile-bottom-nav-config';
 export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { role } = useAuth();
   const location = useLocation();
-  const { unreadCount } = useUserNotifications();
+  const { unreadCount } = useUnreadNotificationCount();
   const bottomNavItems = buildBottomNavItems(role);
 
   return (

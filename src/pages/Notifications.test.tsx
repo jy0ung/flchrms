@@ -13,7 +13,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@/hooks/useNotifications', () => ({
-  useUserNotifications: () => ({ unreadCount: 2 }),
+  useUnreadNotificationCount: () => ({ unreadCount: 2 }),
   useNotificationHistory: (params: unknown) => useNotificationHistoryMock(params),
 }));
 

@@ -35,7 +35,7 @@ vi.mock('@/hooks/use-mobile', () => ({
 }));
 
 vi.mock('@/hooks/useNotifications', () => ({
-  useUserNotifications: () => ({
+  useUnreadNotificationCount: () => ({
     unreadCount: 4,
   }),
 }));

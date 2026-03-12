@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import {
   useNotificationHistory,
-  useUserNotifications,
+  useUnreadNotificationCount,
   type NotificationCategoryFilter,
   type NotificationReadFilter,
   type UserNotification,
@@ -167,7 +167,7 @@ export default function Notifications() {
   const [cleanupDays, setCleanupDays] = useState(90);
   const [page, setPage] = useState(1);
 
-  const { unreadCount } = useUserNotifications(1);
+  const { unreadCount } = useUnreadNotificationCount();
   const {
     notifications,
     totalCount,

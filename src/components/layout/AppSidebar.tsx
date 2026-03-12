@@ -33,7 +33,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUserNotifications } from '@/hooks/useNotifications';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 
 type SidebarNavItem = {
   name: string;
@@ -166,7 +166,7 @@ function SidebarContent({
   const { role } = useAuth();
   const { branding } = useBrandingContext();
   const { capabilityMap } = useMyAdminCapabilities(role);
-  const { unreadCount } = useUserNotifications(10);
+  const { unreadCount } = useUnreadNotificationCount();
 
   const workWithBadge = workNavigation.map((item) =>
     item.href === '/notifications' ? { ...item, badge: unreadCount } : item,

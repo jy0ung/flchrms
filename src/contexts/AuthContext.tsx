@@ -6,6 +6,7 @@ import { AppRole, Profile } from '@/types/hrms';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { toast } from 'sonner';
 import { signOutLocalSession } from '@/lib/auth-signout';
+import { withAuthReadRetry } from '@/lib/auth-bootstrap';
 
 interface AuthContextType {
   user: User | null;
@@ -87,32 +88,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getProfileStatus = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('status')
-      .eq('id', userId)
-      .single();
+    try {
+      const data = await withAuthReadRetry(async () => {
+        const { data: statusData, error } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', userId)
+          .single();
 
-    return {
-      status: data?.status as string | null | undefined,
-      error,
-    };
+        if (error) throw error;
+        return statusData;
+      });
+
+      return {
+        status: data?.status as string | null | undefined,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        status: null,
+        error,
+      };
+    }
   };
 
   const fetchProfile = async (userId: string): Promise<boolean> => {
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const profileData = await withAuthReadRetry(async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        setProfile(null);
-        setRole(null);
-        return false;
-      }
+        if (error) throw error;
+        return data;
+      });
 
       if (isBlockedAccountStatus(profileData.status)) {
         // Safety net for restored sessions after HR/Admin changes account status.
@@ -123,17 +134,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setProfile(profileData as Profile);
 
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      const roleData = await withAuthReadRetry(async () => {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
 
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-        setRole(null);
-        return false;
-      }
+        if (error) throw error;
+        return data;
+      });
 
       setRole(roleData.role as AppRole);
       return true;

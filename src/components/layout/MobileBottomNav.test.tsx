@@ -13,7 +13,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }));
 
 vi.mock('@/hooks/useNotifications', () => ({
-  useUserNotifications: () => ({
+  useUnreadNotificationCount: () => ({
     unreadCount: 5,
   }),
 }));

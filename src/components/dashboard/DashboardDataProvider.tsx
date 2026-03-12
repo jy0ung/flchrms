@@ -10,7 +10,7 @@ import {
 
 function useDashboardDataValue(): DashboardDataContextValue {
   const executiveStatsQuery = useExecutiveStats();
-  const notificationsQuery = useUserNotifications(8);
+  const notificationsQuery = useUserNotifications(8, { poll: false });
 
   return {
     executiveStats: executiveStatsQuery.data ?? null,

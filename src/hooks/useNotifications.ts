@@ -37,6 +37,12 @@ interface NotificationHistoryParams {
   readFilter?: NotificationReadFilter;
 }
 
+interface UserNotificationsOptions {
+  includeNotifications?: boolean;
+  includeUnreadCount?: boolean;
+  poll?: boolean;
+}
+
 const DEFAULT_NOTIFICATION_PREFERENCE_FLAGS = {
   leave_enabled: true,
   admin_enabled: true,
@@ -54,6 +60,22 @@ function buildDefaultNotificationPreferences(userId: string): UserNotificationPr
     created_at: now,
     updated_at: now,
   };
+}
+
+const NOTIFICATION_POLL_INTERVAL_MS = 30_000;
+
+export function getNotificationPollInterval(shouldPoll = true) {
+  if (!shouldPoll) return false;
+
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    return false;
+  }
+
+  if (typeof navigator !== 'undefined' && 'onLine' in navigator && navigator.onLine === false) {
+    return false;
+  }
+
+  return NOTIFICATION_POLL_INTERVAL_MS;
 }
 
 function useMarkNotificationsReadMutation() {
@@ -138,15 +160,23 @@ function useDeleteNotificationsMutation() {
   });
 }
 
-export function useUserNotifications(limitCount = 15) {
+export function useUserNotifications(
+  limitCount = 15,
+  {
+    includeNotifications = true,
+    includeUnreadCount = true,
+    poll = true,
+  }: UserNotificationsOptions = {},
+) {
   const { user } = useAuth();
   const markReadMutation = useMarkNotificationsReadMutation();
   const markUnreadMutation = useMarkNotificationsUnreadMutation();
 
   const notificationsQuery = useQuery({
     queryKey: ['user-notifications', user?.id, limitCount],
-    enabled: !!user,
-    refetchInterval: 30_000,
+    enabled: !!user && includeNotifications,
+    refetchInterval: () => getNotificationPollInterval(poll),
+    refetchOnWindowFocus: poll,
     queryFn: async () => {
       const { data, error } = await untypedFrom('user_notifications')
         .select('*')
@@ -160,8 +190,9 @@ export function useUserNotifications(limitCount = 15) {
 
   const unreadCountQuery = useQuery({
     queryKey: ['user-notifications-unread-count', user?.id],
-    enabled: !!user,
-    refetchInterval: 30_000,
+    enabled: !!user && includeUnreadCount,
+    refetchInterval: () => getNotificationPollInterval(poll),
+    refetchOnWindowFocus: poll,
     queryFn: async () => {
       const { count, error } = await untypedFrom('user_notifications')
         .select('*', { count: 'exact', head: true })
@@ -175,12 +206,19 @@ export function useUserNotifications(limitCount = 15) {
   return {
     notifications: notificationsQuery.data ?? [],
     unreadCount: unreadCountQuery.data ?? 0,
-    isLoading: notificationsQuery.isLoading || unreadCountQuery.isLoading,
-    isRefreshing: notificationsQuery.isFetching || unreadCountQuery.isFetching,
+    isLoading:
+      (includeNotifications && notificationsQuery.isLoading) ||
+      (includeUnreadCount && unreadCountQuery.isLoading),
+    isRefreshing:
+      (includeNotifications && notificationsQuery.isFetching) ||
+      (includeUnreadCount && unreadCountQuery.isFetching),
     isMarkingRead: markReadMutation.isPending,
     isMarkingUnread: markUnreadMutation.isPending,
     refetch: async () => {
-      await Promise.all([notificationsQuery.refetch(), unreadCountQuery.refetch()]);
+      await Promise.all([
+        includeNotifications ? notificationsQuery.refetch() : Promise.resolve(),
+        includeUnreadCount ? unreadCountQuery.refetch() : Promise.resolve(),
+      ]);
     },
     markNotificationRead: async (notificationId: string) => {
       await markReadMutation.mutateAsync([notificationId]);
@@ -191,6 +229,25 @@ export function useUserNotifications(limitCount = 15) {
     markAllNotificationsRead: async () => {
       await markReadMutation.mutateAsync(undefined);
     },
+  };
+}
+
+export function useUnreadNotificationCount({
+  poll = false,
+}: {
+  poll?: boolean;
+} = {}) {
+  const { unreadCount, isLoading, isRefreshing, refetch } = useUserNotifications(15, {
+    includeNotifications: false,
+    includeUnreadCount: true,
+    poll,
+  });
+
+  return {
+    unreadCount,
+    isLoading,
+    isRefreshing,
+    refetch,
   };
 }
 
