@@ -294,7 +294,7 @@ export default function Notifications() {
         />
       }
       actionsSlot={
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <Button
             variant="outline"
             className="h-9 rounded-full"

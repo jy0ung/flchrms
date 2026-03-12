@@ -343,19 +343,18 @@ export function LeavePage({ initialView }: LeavePageProps) {
             variant: 'default',
           },
         ] : undefined}
-      />
-
-      <ModuleLayout.Toolbar
-        surfaceVariant="flat"
-        density="compact"
-        ariaLabel="Leave workspace controls"
-        trailingSlot={pageActions.canOpenTeamCalendarLink ? (
-          <Button variant="outline" className="h-9 rounded-full" onClick={() => navigate('/calendar')}>
+        actionsSlot={pageActions.canOpenTeamCalendarLink ? (
+          <Button
+            variant="outline"
+            className="h-9 rounded-full"
+            aria-label="Open Team Calendar"
+            onClick={() => navigate('/calendar')}
+          >
             <CalendarDays className="mr-2 h-4 w-4" />
             <span className="lg:hidden">Calendar</span>
             <span className="hidden lg:inline">Open Team Calendar</span>
           </Button>
-        ) : null}
+        ) : undefined}
       />
 
       {isError ? (

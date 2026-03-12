@@ -50,10 +50,10 @@ export function UtilityLayout({
         actionsSlot={actionsSlot}
       />
 
-      {summarySlot ? <div>{summarySlot}</div> : null}
-      {controlsSlot ? <div>{controlsSlot}</div> : null}
+      {summarySlot ? <div className="pt-1">{summarySlot}</div> : null}
+      {controlsSlot ? <div className="pt-1">{controlsSlot}</div> : null}
 
-      <div className={cn("space-y-4", contentClassName)}>{children}</div>
+      <div className={cn("space-y-4 md:space-y-5", contentClassName)}>{children}</div>
     </AppPageContainer>
   );
 }

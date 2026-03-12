@@ -320,6 +320,15 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         eyebrow={entryContext === 'admin' ? 'Admin Workspace' : 'Module Workspace'}
         title="Employee Directory"
         description="Contextual employee management is now anchored in the employee module."
+        actions={pageActions.canCreateEmployee ? [
+          {
+            id: 'create-employee',
+            label: 'Add Employee',
+            icon: Plus,
+            onClick: controller.openCreateEmployeeDialog,
+            variant: 'default',
+          },
+        ] : undefined}
         metaSlot={
           <>
             <ContextChip className="capitalize">
@@ -388,13 +397,6 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         ]}
         actions={(
           <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
-            {pageActions.canCreateEmployee ? (
-              <Button className="h-9 rounded-full" onClick={controller.openCreateEmployeeDialog}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Employee
-              </Button>
-            ) : null}
-
             <div className="hidden md:flex md:flex-wrap md:gap-2">
               {pageActions.canImportEmployees ? (
                 <Button variant="outline" className="h-9 rounded-full" onClick={() => setBatchUpdateDialogOpen(true)}>

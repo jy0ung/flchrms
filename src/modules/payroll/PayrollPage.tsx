@@ -173,12 +173,12 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           }
           metaSlot={<ContextChip className="hidden sm:inline-flex">Active view: {activeTabLabel}</ContextChip>}
           actionsSlot={
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               {isPayslipsTab ? (
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-9 w-full rounded-full sm:w-auto"
+                  className="h-9 rounded-full"
                   onClick={() => setHidePayslipAmounts((current) => !current)}
                   aria-pressed={hidePayslipAmounts}
                 >
@@ -191,7 +191,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
                 </Button>
               ) : null}
               {headerAction ? (
-                <Button type="button" className="h-9 w-full rounded-full sm:w-auto" onClick={headerAction.onClick}>
+                <Button type="button" className="h-9 rounded-full" onClick={headerAction.onClick}>
                   <Plus className="mr-2 h-4 w-4" />
                   {headerAction.label}
                 </Button>

@@ -71,7 +71,7 @@ function ModuleHeader({
   ...props
 }: ModuleHeaderProps) {
   return (
-    <div className={cn("space-y-2.5", className)}>
+    <div className={cn("space-y-3", className)}>
       {eyebrow ? (
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {eyebrow}
@@ -79,7 +79,7 @@ function ModuleHeader({
       ) : null}
       <PageHeader layout="aligned" {...props} />
       {metaSlot ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           {metaSlot}
         </div>
       ) : null}
@@ -144,7 +144,7 @@ function ModuleToolbar({
         role={hasToolbarControls ? "region" : undefined}
         aria-label={hasToolbarControls ? ariaLabel : undefined}
         className={cn(
-          "rounded-2xl border border-border/70 bg-background/60 p-3 sm:p-4",
+          "rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4",
           surfaceClassName,
           contentClassName,
         )}

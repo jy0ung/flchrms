@@ -109,7 +109,7 @@ export default function Documents() {
       }
       actionsSlot={
         canManageDocuments ? (
-          <Button className="h-9 w-full gap-2 rounded-full lg:w-auto" onClick={() => setIsUploadOpen(true)}>
+          <Button className="h-9 gap-2 rounded-full" onClick={() => setIsUploadOpen(true)}>
             <Upload className="w-4 h-4" />
             Upload Document
           </Button>

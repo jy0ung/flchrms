@@ -180,10 +180,19 @@ vi.mock('@/modules/leave/hooks/useLeaveWorkflowController', () => ({
 
 vi.mock('@/layouts/ModuleLayout', () => {
   const Root = ({ children }: { children: ReactNode }) => <div>{children}</div>;
-  const Header = ({ title, description }: { title: string; description?: string }) => (
+  const Header = ({
+    title,
+    description,
+    actionsSlot,
+  }: {
+    title: string;
+    description?: string;
+    actionsSlot?: ReactNode;
+  }) => (
     <div>
       <div>{title}</div>
       {description ? <div>{description}</div> : null}
+      {actionsSlot}
     </div>
   );
   const Toolbar = ({ children, trailingSlot }: { children?: ReactNode; trailingSlot?: ReactNode }) => (
