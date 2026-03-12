@@ -37,10 +37,10 @@ export default function AdminQuickActionsPage() {
 
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-4">
         <PageHeader
           title={SHELL_LABELS.governanceHub}
-          description="Choose the right operational workspace or governance surface for the task at hand."
+          description="Launch the right workspace or governance control without leaving the admin shell."
         />
         <RouteLoadingState
           title="Loading governance hub"
@@ -133,41 +133,41 @@ export default function AdminQuickActionsPage() {
   const adminActions = visibleQuickActions.filter((action) => action.surface === 'Governance');
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader
         title={SHELL_LABELS.governanceHub}
-        description="Choose the right operational workspace or governance surface for the task at hand."
+        description="Launch the right workspace or governance control without leaving the admin shell."
       />
 
       {[
         {
           id: 'workspace-section',
           title: 'Operational Workspaces',
-          description: 'Go directly to the modules where records are viewed, updated, and processed.',
+          description: 'Go straight to the modules where operational work happens.',
           icon: Compass,
           actions: workspaceActions,
         },
         {
           id: 'admin-section',
           title: 'Governance Controls',
-          description: 'Use the admin shell for policy, configuration, audit, and system controls.',
+          description: 'Open policy, audit, communication, and system-control surfaces.',
           icon: Shield,
           actions: adminActions,
         },
       ].filter((section) => section.actions.length > 0).map((section) => (
-        <section key={section.id} className="space-y-3">
+        <section key={section.id} className="space-y-2.5">
           <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-x-6">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <section.icon className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold sm:text-base">{section.title}</h2>
               </div>
-              <p className="max-w-2xl text-sm text-muted-foreground">{section.description}</p>
+              <p className="max-w-xl text-sm text-muted-foreground">{section.description}</p>
             </div>
             <div className="hidden lg:block" />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {section.actions.map((action) => (
               <ActionTile
                 key={action.id}
@@ -178,6 +178,7 @@ export default function AdminQuickActionsPage() {
                 iconClassName={action.color}
                 iconSurfaceClassName={action.bg}
                 badgeLabel={action.surface}
+                size="compact"
               />
             ))}
           </div>
