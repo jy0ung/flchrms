@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { buildAuthRedirectHref } from '@/lib/auth-redirect';
-import { InteractionModeProvider, RouteLoadingState } from '@/components/system';
+import { AppPageContainer, InteractionModeProvider, RouteLoadingState } from '@/components/system';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { MobileBottomNav } from './MobileBottomNav';
