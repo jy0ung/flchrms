@@ -27,6 +27,10 @@ type UntypedRpcClient = {
 
 const rpcClient = supabase as unknown as UntypedRpcClient;
 
+function resolveAsOfDate(asOfDate?: string | null) {
+  return asOfDate ?? new Date().toISOString().slice(0, 10);
+}
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string');
@@ -229,8 +233,10 @@ export function useLeaveRequestV2(requestId: string | null | undefined) {
 }
 
 export function useLeaveBalanceV2(asOfDate?: string) {
+  const effectiveAsOfDate = resolveAsOfDate(asOfDate);
+
   return useQuery({
-    queryKey: ['leave-balance-v2', asOfDate ?? null],
+    queryKey: ['leave-balance-v2', effectiveAsOfDate],
     queryFn: async () => {
       const { data, error } = await rpcClient.rpc<
         Array<{
@@ -243,7 +249,7 @@ export function useLeaveBalanceV2(asOfDate?: string) {
           source: string;
           as_of_date: string;
         }>
-      >('leave_get_my_balance_v2', { _as_of: asOfDate ?? null });
+      >('leave_get_my_balance_v2', { _as_of: effectiveAsOfDate });
 
       if (error) throw error;
       return data ?? [];

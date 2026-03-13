@@ -6,8 +6,6 @@ import {
   getRoleCredentials,
   login,
   openLeavePage,
-  openTopLeaveTab,
-  openVisibleLeaveSubtab,
   RbacRole,
 } from './helpers/rbac';
 
@@ -23,8 +21,7 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
 
     await login(page, 'employee');
     await openLeavePage(page);
-    await openTopLeaveTab(page, 'My Leave');
-    await openVisibleLeaveSubtab(page, 'History');
+    await page.getByRole('tab', { name: /^My History/i }).first().click();
 
     const row =
       (await findVisibleLeaveRow(page, { text: cfg.targetLeaveRowText })) ||
@@ -43,9 +40,10 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
     await page.getByRole('button', { name: /Submit Cancellation Request/i }).click();
 
     await expect(page.getByText(/Leave cancellation request submitted/i)).toBeVisible();
-    await openVisibleLeaveSubtab(page, 'Current');
-    await expect(page.getByText(/Cancel req: E2E cancellation request reason/i)).toBeVisible();
-    await expect(page.getByText(/Cancellation Pending/i).first()).toBeVisible();
+    await page.getByRole('tab', { name: /^My Current/i }).first().click();
+    const currentRow = page.locator('table tbody tr').first();
+    await expect(currentRow).toContainText(/E2E cancellation request reason/i);
+    await expect(currentRow).toContainText(/Cancellation Pending/i);
   });
 
   test('manager can view leave details and sees cancellation action controls', async ({ page }) => {
@@ -53,8 +51,7 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
 
     await login(page, 'manager');
     await openLeavePage(page);
-    await openTopLeaveTab(page, 'Team Leave');
-    await openVisibleLeaveSubtab(page, 'Current');
+    await page.getByRole('tab', { name: /^Team Current/i }).first().click();
 
     const row =
       (await findVisibleLeaveRow(page, {
@@ -86,10 +83,9 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
 
     await login(page, 'hr');
     await openLeavePage(page);
-    await openTopLeaveTab(page, 'Team Leave');
 
     // Prefer current tab for pending cancellation requests, but fallback to history for details-only coverage.
-    await openVisibleLeaveSubtab(page, 'Current');
+    await page.getByRole('tab', { name: /^Team Current/i }).first().click();
 
     let row =
       (await findVisibleLeaveRow(page, {
@@ -99,7 +95,7 @@ test.describe.serial('RBAC Phase 3B - Leave Cancellations @rbac @phase3b', () =>
       (await findVisibleLeaveRow(page, { containsCancellation: true }));
 
     if (!row) {
-      await openVisibleLeaveSubtab(page, 'History');
+      await page.getByRole('tab', { name: /^Team History/i }).first().click();
       row =
         (await findVisibleLeaveRow(page, {
           text: cfg.targetLeaveRowText,
