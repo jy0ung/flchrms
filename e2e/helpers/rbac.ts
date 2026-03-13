@@ -12,6 +12,8 @@ export interface RbacE2EConfig {
   targetLeaveRowText?: string;
 }
 
+const leaveWorkspaceSelections = new WeakMap<Page, 'My Leave' | 'Team Leave'>();
+
 function envName(role: RbacRole, field: 'IDENTIFIER' | 'PASSWORD') {
   return `E2E_${role.toUpperCase()}_${field}`;
 }
@@ -56,15 +58,33 @@ export async function openLeavePage(page: Page) {
 
 export async function openAdminPage(page: Page) {
   await page.goto('/admin');
-  const adminHeading = page.getByRole('heading', { name: /(HR Admin Dashboard|Admin Dashboard)/i });
+  const adminHeadings = [
+    page.getByRole('heading', { name: /Admin Dashboard/i }),
+    page.getByRole('heading', { name: /Governance Hub/i }),
+    page.getByRole('heading', { name: /HR Admin Dashboard/i }),
+  ];
 
-  if (!(await adminHeading.isVisible().catch(() => false))) {
-    const adminLink = page.getByRole('link', { name: /^(HR Admin|Admin)$/ });
-    await expect(adminLink).toBeVisible({ timeout: 15_000 });
-    await adminLink.click();
+  for (const heading of adminHeadings) {
+    if (await heading.isVisible().catch(() => false)) {
+      return;
+    }
   }
 
-  await expect(adminHeading).toBeVisible();
+  const adminLink = page.getByRole('link', { name: /^(Governance|HR Admin|Admin)$/ });
+  await expect(adminLink).toBeVisible({ timeout: 15_000 });
+  await adminLink.click();
+
+  let lastError: Error | null = null;
+  for (const heading of adminHeadings) {
+    try {
+      await expect(heading).toBeVisible({ timeout: 15_000 });
+      return;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  throw lastError ?? new Error('Unable to open an admin governance page.');
 }
 
 export async function openCalendarPage(page: Page) {
@@ -78,15 +98,40 @@ export async function openNotificationsPage(page: Page) {
 }
 
 export async function openTopLeaveTab(page: Page, tabName: 'My Leave' | 'Team Leave') {
-  await page.getByRole('tab', { name: new RegExp(`^${tabName}`) }).click();
+  leaveWorkspaceSelections.set(page, tabName);
+
+  const legacyTab = page.getByRole('tab', { name: new RegExp(`^${tabName}`) });
+  if (await legacyTab.count()) {
+    await legacyTab.first().click();
+    return;
+  }
+
+  const combinedDefault = tabName === 'My Leave' ? 'My Current' : 'Team Current';
+  await page.getByRole('tab', { name: new RegExp(`^${combinedDefault}`) }).first().click();
 }
 
 export async function openVisibleLeaveSubtab(page: Page, tabName: 'Current' | 'History') {
-  await page.getByRole('tab', { name: new RegExp(`^${tabName}`) }).click();
+  const topLevel = leaveWorkspaceSelections.get(page) ?? 'My Leave';
+  const combinedTab = `${topLevel === 'My Leave' ? 'My' : 'Team'} ${tabName}`;
+
+  const combinedLocator = page.getByRole('tab', { name: new RegExp(`^${combinedTab}`) });
+  if (await combinedLocator.count()) {
+    await combinedLocator.first().click();
+    return;
+  }
+
+  await page.getByRole('tab', { name: new RegExp(`^${tabName}`) }).first().click();
 }
 
 export async function openAdminTab(page: Page, tabName: 'Employee Profiles' | 'Departments' | 'Role Management' | 'Leave Policies') {
-  await page.getByRole('tab', { name: new RegExp(`^${tabName}$`) }).click();
+  const routeByTab: Record<typeof tabName, string> = {
+    'Employee Profiles': '/admin/employees',
+    Departments: '/admin/departments',
+    'Role Management': '/admin/roles',
+    'Leave Policies': '/admin/leave-policies',
+  };
+
+  await page.goto(routeByTab[tabName]);
 }
 
 export async function findDayCellWithLeaveEvent(page: Page) {

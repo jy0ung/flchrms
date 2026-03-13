@@ -164,3 +164,82 @@ BEGIN
   END LOOP;
 END
 $$;
+
+DO $$
+DECLARE
+  v_admin_id uuid;
+  v_employee_id uuid;
+  v_annual_leave_id uuid;
+BEGIN
+  UPDATE public.profiles
+  SET
+    hire_date = CASE lower(email)
+      WHEN 'admin@flchrms.test' THEN DATE '2024-01-15'
+      WHEN 'hr@flchrms.test' THEN DATE '2024-02-01'
+      WHEN 'director@flchrms.test' THEN DATE '2023-11-01'
+      WHEN 'gm@flchrms.test' THEN DATE '2024-01-08'
+      WHEN 'manager@flchrms.test' THEN DATE '2024-03-04'
+      WHEN 'employee@flchrms.test' THEN DATE '2025-01-06'
+      ELSE hire_date
+    END,
+    job_title = CASE lower(email)
+      WHEN 'admin@flchrms.test' THEN 'System Administrator'
+      WHEN 'hr@flchrms.test' THEN 'HR Business Partner'
+      WHEN 'director@flchrms.test' THEN 'Operations Director'
+      WHEN 'gm@flchrms.test' THEN 'General Manager'
+      WHEN 'manager@flchrms.test' THEN 'Operations Manager'
+      WHEN 'employee@flchrms.test' THEN 'Operations Analyst'
+      ELSE job_title
+    END,
+    updated_at = now()
+  WHERE lower(email) IN (
+    'admin@flchrms.test',
+    'hr@flchrms.test',
+    'director@flchrms.test',
+    'gm@flchrms.test',
+    'manager@flchrms.test',
+    'employee@flchrms.test'
+  );
+
+  SELECT id
+  INTO v_admin_id
+  FROM public.profiles
+  WHERE lower(email) = 'admin@flchrms.test'
+  LIMIT 1;
+
+  SELECT id
+  INTO v_employee_id
+  FROM public.profiles
+  WHERE lower(email) = 'employee@flchrms.test'
+  LIMIT 1;
+
+  SELECT id
+  INTO v_annual_leave_id
+  FROM public.leave_types
+  WHERE name = 'Annual Leave'
+  LIMIT 1;
+
+  IF v_admin_id IS NOT NULL AND v_employee_id IS NOT NULL AND v_annual_leave_id IS NOT NULL THEN
+    INSERT INTO public.leave_balance_adjustments (
+      id,
+      employee_id,
+      leave_type_id,
+      adjustment_days,
+      effective_date,
+      reason,
+      created_by,
+      metadata
+    ) VALUES (
+      '11111111-1111-4111-8111-111111111111',
+      v_employee_id,
+      v_annual_leave_id,
+      5,
+      DATE '2026-01-01',
+      'Local seed: ensure employee leave request preview remains testable.',
+      v_admin_id,
+      jsonb_build_object('seed', 'local-dev', 'fixture', 'employee-annual-balance')
+    )
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END
+$$;

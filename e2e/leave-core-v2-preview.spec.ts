@@ -22,17 +22,29 @@ test.describe.serial('Leave Core V2 Preview @leave @phase1', () => {
 
     const cardCount = await leaveTypeCards.count();
     let selected = false;
+    let enabledFallbackIndex = -1;
     for (let i = 0; i < cardCount; i += 1) {
       const card = leaveTypeCards.nth(i);
+      if (!(await card.isEnabled())) {
+        continue;
+      }
+
+      if (enabledFallbackIndex === -1) {
+        enabledFallbackIndex = i;
+      }
+
       if ((await card.getByText(/Doc required/i).count()) === 0) {
         await card.click();
         selected = true;
         break;
       }
     }
-    if (!selected) {
-      await leaveTypeCards.first().click();
+    if (!selected && enabledFallbackIndex >= 0) {
+      await leaveTypeCards.nth(enabledFallbackIndex).click();
+      selected = true;
     }
+
+    expect(selected).toBeTruthy();
 
     await page.getByTestId('leave-wizard-next').click();
 

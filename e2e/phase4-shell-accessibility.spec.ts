@@ -19,15 +19,17 @@ test.describe.serial('Phase 4 - Shell accessibility smoke @phase4 @a11y', () => 
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, fallbackCreds.employee, '/dashboard');
 
+    const mobileNav = page.getByRole('navigation', { name: /Mobile navigation/i });
     const navTargets = [
-      page.getByRole('link', { name: /^Dashboard$/i }),
-      page.getByRole('link', { name: /^Leave$/i }),
-      page.getByRole('link', { name: /^Payroll$/i }),
-      page.getByRole('link', { name: /^Notifications$/i }),
-      page.getByRole('button', { name: /More navigation/i }),
+      mobileNav.locator('a[href="/dashboard"]'),
+      mobileNav.locator('a[href="/leave"]'),
+      mobileNav.locator('a[href="/payroll"]'),
+      mobileNav.locator('a[href="/notifications"]'),
+      mobileNav.getByRole('button', { name: /More navigation/i }),
     ];
 
     for (const control of navTargets) {
+      await expect(control).toBeVisible();
       const box = await control.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);

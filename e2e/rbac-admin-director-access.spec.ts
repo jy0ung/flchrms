@@ -12,18 +12,16 @@ function hasCredentials(...roles: RbacRole[]) {
 }
 
 test.describe.serial('RBAC Phase 3B - Admin & Director Access @rbac @phase3b', () => {
-  test('director can access HR Admin and see department workflow builders', async ({ page }) => {
+  test('director can access governance leave policies and see department workflow builders', async ({ page }) => {
     test.skip(!hasCredentials('director'), 'Missing director E2E credentials');
 
     await login(page, 'director');
-
-    await expect(page.getByRole('link', { name: /^HR Admin$/ })).toBeVisible();
-    await page.getByRole('link', { name: /^HR Admin$/ }).click();
-
-    await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: /HR Admin Dashboard/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Governance$/ })).toBeVisible();
+    await openAdminPage(page);
+    await expect(page).toHaveURL(/\/admin(\/.*)?$/);
 
     await openAdminTab(page, 'Leave Policies');
+    await page.getByRole('tab', { name: /^Workflow Builders$/i }).click();
 
     await expect(page.getByText('Leave Approval Workflow Builder')).toBeVisible();
     await expect(page.getByText('Leave Cancellation Workflow Builder')).toBeVisible();
@@ -35,41 +33,39 @@ test.describe.serial('RBAC Phase 3B - Admin & Director Access @rbac @phase3b', (
     await expect(page.getByText('Save As Profile (Copy To Role)')).toHaveCount(0);
   });
 
-  test('admin defaults to Role Management tab on HR Admin page', async ({ page }) => {
+  test('admin entry route defaults to the governance dashboard', async ({ page }) => {
     test.skip(!hasCredentials('admin'), 'Missing admin E2E credentials');
 
     await login(page, 'admin');
-    await openAdminPage(page);
+    await page.goto('/admin');
 
-    const roleTab = page.getByRole('tab', { name: /^Role Management$/ });
-    await expect(roleTab).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Role Management').nth(1)).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/dashboard$/);
+    await expect(page.getByRole('heading', { name: /Admin Dashboard/i })).toBeVisible();
   });
 
-  test('admin employee profile dialog is account-limited (username alias only)', async ({ page }) => {
+  test('admin can open the employee profile editor from the employee workspace', async ({ page }) => {
     test.skip(!hasCredentials('admin'), 'Missing admin E2E credentials');
 
     await login(page, 'admin');
-    await openAdminPage(page);
+    await openAdminTab(page, 'Employee Profiles');
+    await expect(page.getByRole('heading', { name: /Employee Directory/i })).toBeVisible();
 
-    const employeeTab = page.getByRole('tab', { name: /^Employee Profiles$/ });
-    await employeeTab.click();
+    const employeeRow = page.getByRole('row', { name: /Evan Employee/i });
+    await expect(employeeRow).toBeVisible();
+    await employeeRow.getByRole('button', { name: /Open employee record for Evan Employee/i }).click();
+    await expect(page.getByText('Workspace actions')).toBeVisible();
 
-    const editButtons = page.getByTitle('Edit username alias');
-    const editButtonCount = await editButtons.count();
-    test.skip(editButtonCount === 0, 'No employee rows available for admin account editor test.');
-
-    await editButtons.first().click();
+    const editEmployeeButton = page.getByRole('button', { name: /^Edit Employee$/i });
+    await expect(editEmployeeButton).toBeVisible();
+    await editEmployeeButton.click();
 
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Manage Account Access')).toBeVisible();
-    await expect(page.getByText(/Admin access is limited to account-level username alias management/i)).toBeVisible();
+    await expect(page.getByText('Edit Employee Profile')).toBeVisible();
+    await expect(page.getByText(/Update profile information for Evan Employee/i)).toBeVisible();
+    await expect(page.getByLabel('First Name')).toBeVisible();
+    await expect(page.getByLabel('Last Name')).toBeVisible();
+    await expect(page.getByLabel('Employee ID')).toBeVisible();
     await expect(page.getByLabel('Username Alias (Optional)')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Save Username Alias/i })).toBeVisible();
-
-    // Full employee profile fields should not render for admin-limited mode.
-    await expect(page.getByLabel('First Name')).toHaveCount(0);
-    await expect(page.getByLabel('Last Name')).toHaveCount(0);
-    await expect(page.getByLabel('Employee ID')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Save Changes/i })).toBeVisible();
   });
 });
