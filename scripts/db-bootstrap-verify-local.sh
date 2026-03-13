@@ -6,6 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DO_DB_TESTS=1
 DO_START=1
 DO_BOOTSTRAP_DEFAULTS=0
+DO_SEED=0
 SUPABASE_CLI_VERSION="${SUPABASE_CLI_VERSION:-2.76.14}"
 
 if command -v supabase >/dev/null 2>&1; then
@@ -26,6 +27,7 @@ Use separate scripts if you also want to apply compatibility bootstrap artifacts
 Options:
   --apply-bootstrap-defaults
                     Apply supabase/bootstrap_defaults.sql after migrations
+  --apply-seed      Apply supabase/seed.sql after migrations/defaults
   --skip-db-tests   Skip npm run test:db:sql
   --skip-start      Skip 'supabase start' (use when the local stack is already running)
   -h, --help        Show this help message
@@ -36,6 +38,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --apply-bootstrap-defaults)
       DO_BOOTSTRAP_DEFAULTS=1
+      shift
+      ;;
+    --apply-seed)
+      DO_SEED=1
       shift
       ;;
     --skip-db-tests)
@@ -95,6 +101,11 @@ echo "Using SUPABASE_DB_CONTAINER=${SUPABASE_DB_CONTAINER}"
 if [[ "${DO_BOOTSTRAP_DEFAULTS}" -eq 1 ]]; then
   echo "Applying bootstrap defaults..."
   npm run db:bootstrap:defaults:apply:local
+fi
+
+if [[ "${DO_SEED}" -eq 1 ]]; then
+  echo "Applying targeted local seed fixtures..."
+  npm run db:seed:local
 fi
 
 if [[ "${DO_DB_TESTS}" -eq 1 ]]; then
