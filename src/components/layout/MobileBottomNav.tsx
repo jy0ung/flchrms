@@ -32,7 +32,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
             key={item.href}
             to={item.href}
             className={cn(
-              'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors',
+              'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-medium transition-colors',
               isActive
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:text-foreground',
@@ -52,7 +52,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
       <button
         type="button"
         onClick={onOpenSidebar}
-        className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
         aria-label="More navigation"
       >
         <MoreHorizontal className="h-5 w-5" />

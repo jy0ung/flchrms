@@ -51,6 +51,7 @@ export function CreatePayrollPeriodDialog({ open, onOpenChange }: CreatePayrollP
       title="Create Payroll Period"
       description="Set up a new payroll period for processing"
       maxWidth="xl"
+      mobileLayout="full-screen"
       headerMeta={<Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
       body={(
         <form onSubmit={handleSubmit} className="space-y-4" id="create-payroll-period-form">

@@ -36,6 +36,10 @@ interface LeaveRequestWizardProps {
 }
 
 type WizardStep = 1 | 2 | 3 | 4;
+type StepGuard = {
+  message: string;
+  tone?: 'muted' | 'destructive';
+};
 
 const STEP_LABELS: Record<WizardStep, string> = {
   1: 'Leave Type',
@@ -209,7 +213,7 @@ function StepLeaveType({
       <div>
         <h3 className="text-sm font-medium">Select Leave Type</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Choose the type of leave you want to request. Final availability is validated after you pick dates.
+          Choose the type of leave you want to request. Types with no available balance are disabled until entitlement becomes available again.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -217,19 +221,22 @@ function StepLeaveType({
           const balance = balances?.find((b) => b.leave_type_id === type.id);
           const isSelected = selectedTypeId === type.id;
           const isExhausted = balance ? !balance.is_unlimited && balance.days_remaining <= 0 : false;
+          const isUnavailable = isExhausted;
 
           return (
             <button
               key={type.id}
               type="button"
               data-testid={`leave-type-card-${type.id}`}
+              disabled={isUnavailable}
               onClick={() => onSelect(type.id)}
+              title={isUnavailable ? `${type.name} is unavailable because the current balance is exhausted.` : undefined}
               className={cn(
                 'relative flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
                 isSelected
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                  : isExhausted
-                    ? 'border-amber-500/30 bg-amber-500/5 hover:border-primary/30 hover:bg-muted/30 cursor-pointer'
+                  : isUnavailable
+                    ? 'cursor-not-allowed border-amber-500/30 bg-amber-500/5 opacity-75'
                     : 'border-border hover:border-primary/30 hover:bg-muted/30 cursor-pointer',
               )}
             >
@@ -257,9 +264,14 @@ function StepLeaveType({
                     </span>
                   )}
                   {isExhausted && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      Current balance exhausted
-                    </Badge>
+                    <>
+                      <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-[10px] px-1.5 py-0 text-amber-700">
+                        Unavailable
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        Current balance exhausted
+                      </span>
+                    </>
                   )}
                   {type.min_days > 0 && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">
@@ -721,6 +733,15 @@ export function LeaveRequestWizard({
     return differenceInDays(new Date(endDate), new Date(startDate)) + 1;
   }, [startDate, endDate]);
 
+  const selectedTypeUnavailable = useMemo(
+    () => Boolean(
+      selectedBalance
+      && !selectedBalance.is_unlimited
+      && selectedBalance.days_remaining <= 0,
+    ),
+    [selectedBalance],
+  );
+
   const resetPreviewState = useCallback(() => {
     setPreviewResult(null);
   }, []);
@@ -755,73 +776,108 @@ export function LeaveRequestWizard({
     }
   }, [daysCount, endDate, onPreview, reason, selectedTypeId, startDate]);
 
-  const canAdvance = useCallback((): boolean => {
-    setValidationError(null);
-
+  const currentStepGuard = useMemo<StepGuard | null>(() => {
     switch (step) {
       case 1:
         if (!selectedTypeId) {
-          setValidationError('Please select a leave type.');
-          return false;
+          return { message: 'Select a leave type to continue.', tone: 'muted' };
         }
-        return true;
+        if (selectedTypeUnavailable) {
+          return {
+            message: `${selectedType?.name ?? 'This leave type'} is currently unavailable because the balance is exhausted.`,
+            tone: 'destructive',
+          };
+        }
+        return null;
 
-      case 2:
+      case 2: {
         if (!startDate || !endDate) {
-          setValidationError('Please select both start and end dates.');
-          return false;
+          return { message: 'Choose both start and end dates to continue.', tone: 'muted' };
         }
         if (daysCount <= 0) {
-          setValidationError('End date must be on or after start date.');
-          return false;
+          return { message: 'End date must be on or after start date.', tone: 'destructive' };
         }
-        // Advance notice check
+
+        const today = startOfDay(new Date());
+        const leaveStart = startOfDay(new Date(startDate));
+        if (leaveStart < today) {
+          return { message: 'Start date cannot be in the past.', tone: 'destructive' };
+        }
+
         if (selectedType && selectedType.min_days > 0) {
-          const today = startOfDay(new Date());
-          const leaveStart = startOfDay(new Date(startDate));
           const daysUntil = differenceInDays(leaveStart, today);
           if (daysUntil < selectedType.min_days) {
-            setValidationError(
-              `${selectedType.name} requires at least ${selectedType.min_days} day(s) advance notice. Your leave starts in ${daysUntil} day(s).`,
-            );
-            return false;
+            return {
+              message: `${selectedType.name} requires at least ${selectedType.min_days} day(s) advance notice. Your leave starts in ${daysUntil} day(s).`,
+              tone: 'destructive',
+            };
           }
         }
-        // Past date check
-        {
-          const today = startOfDay(new Date());
-          const leaveStart = startOfDay(new Date(startDate));
-          if (leaveStart < today) {
-            setValidationError('Start date cannot be in the past.');
-            return false;
-          }
+
+        if (
+          selectedBalance
+          && !selectedBalance.is_unlimited
+          && daysCount > selectedBalance.days_remaining
+        ) {
+          return {
+            message: `Shorten the request or choose another leave type. This range exceeds the available balance by ${daysCount - selectedBalance.days_remaining} day(s).`,
+            tone: 'destructive',
+          };
         }
-        return true;
+
+        return null;
+      }
 
       case 3:
-        // Document required check
         if (selectedType?.requires_document && !documentFile) {
-          setValidationError(
-            `${selectedType.name} requires a supporting document.`,
-          );
-          return false;
+          return {
+            message: `Upload a supporting document to continue with ${selectedType.name}.`,
+            tone: 'muted',
+          };
         }
         if (documentFile) {
           const fileError = validateDocumentFile(documentFile);
           if (fileError) {
-            setValidationError(fileError);
-            return false;
+            return { message: fileError, tone: 'destructive' };
           }
         }
-        return true;
+        return null;
 
+      case 4:
+      default:
+        return null;
+    }
+  }, [
+    daysCount,
+    documentFile,
+    endDate,
+    selectedBalance,
+    selectedType,
+    selectedTypeId,
+    selectedTypeUnavailable,
+    startDate,
+    step,
+  ]);
+
+  const canAdvance = useCallback((): boolean => {
+    setValidationError(null);
+
+    if (currentStepGuard) {
+      setValidationError(currentStepGuard.message);
+      return false;
+    }
+
+    switch (step) {
+      case 1:
+      case 2:
+      case 3:
       case 4:
         return true;
 
       default:
         return false;
     }
-  }, [step, selectedTypeId, startDate, endDate, daysCount, selectedType, documentFile]);
+  }, [currentStepGuard, step]);
 
   const handleNext = async () => {
     if (!canAdvance()) return;
@@ -961,9 +1017,24 @@ export function LeaveRequestWizard({
             </Button>
           )}
         </div>
-        <div>
+        <div className="flex flex-col items-end gap-2">
+          {step < 4 && currentStepGuard ? (
+            <p
+              className={cn(
+                'max-w-xs text-right text-xs',
+                currentStepGuard.tone === 'destructive' ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {currentStepGuard.message}
+            </p>
+          ) : null}
           {step < 4 ? (
-            <Button type="button" data-testid="leave-wizard-next" onClick={() => void handleNext()} disabled={isPending || isPreviewPending}>
+            <Button
+              type="button"
+              data-testid="leave-wizard-next"
+              onClick={() => void handleNext()}
+              disabled={isPending || isPreviewPending || Boolean(currentStepGuard)}
+            >
               {isPreviewPending && step === 3 ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
