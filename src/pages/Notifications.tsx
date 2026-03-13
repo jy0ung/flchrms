@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/select';
 import {
   useNotificationHistory,
-  useUnreadNotificationCount,
   type NotificationCategoryFilter,
   type NotificationReadFilter,
   type UserNotification,
@@ -25,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { ContextChip, DataTableShell, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
 import { NotificationMaintenancePanel } from '@/components/notifications/NotificationMaintenancePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
+import { useOptionalShellNotifications } from '@/components/layout/ShellNotificationsProvider';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -167,7 +167,7 @@ export default function Notifications() {
   const [cleanupDays, setCleanupDays] = useState(90);
   const [page, setPage] = useState(1);
 
-  const { unreadCount } = useUnreadNotificationCount();
+  const shellNotifications = useOptionalShellNotifications();
   const {
     notifications,
     totalCount,
@@ -196,6 +196,7 @@ export default function Notifications() {
     const to = Math.min(page * pageSize, totalCount);
     return `Showing ${from}-${to} of ${totalCount}`;
   }, [page, totalCount]);
+  const unreadCount = shellNotifications?.unreadCount ?? 0;
 
   const handleChangeCategory = (value: NotificationCategoryFilter) => {
     setCategory(value);

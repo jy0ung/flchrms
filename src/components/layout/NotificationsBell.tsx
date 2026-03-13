@@ -14,10 +14,10 @@ import { cn } from '@/lib/utils';
 import { TaskEmptyState } from '@/components/system';
 import {
   useNotificationPreferences,
-  useUserNotifications,
   type NotificationPreferenceCategory,
   type UserNotification,
 } from '@/hooks/useNotifications';
+import { useShellNotifications } from './ShellNotificationsProvider';
 
 function resolveNotificationTarget(notification: UserNotification) {
   if (notification.category === 'leave') return '/leave';
@@ -126,7 +126,7 @@ export function NotificationsBell({
     markNotificationRead,
     markNotificationUnread,
     markAllNotificationsRead,
-  } = useUserNotifications(20);
+  } = useShellNotifications();
   const {
     preferences,
     isLoading: preferencesLoading,

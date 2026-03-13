@@ -13,8 +13,11 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@/hooks/useNotifications', () => ({
-  useUnreadNotificationCount: () => ({ unreadCount: 2 }),
   useNotificationHistory: (params: unknown) => useNotificationHistoryMock(params),
+}));
+
+vi.mock('@/components/layout/ShellNotificationsProvider', () => ({
+  useOptionalShellNotifications: () => ({ unreadCount: 2 }),
 }));
 
 vi.mock('@/components/ui/select', () => {

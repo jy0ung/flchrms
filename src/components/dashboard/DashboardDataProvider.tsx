@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { useExecutiveStats } from '@/hooks/useExecutiveStats';
 import { useUserNotifications } from '@/hooks/useNotifications';
+import { useOptionalShellNotifications } from '@/components/layout/ShellNotificationsProvider';
 
 import {
   DashboardDataContext,
@@ -10,18 +11,22 @@ import {
 
 function useDashboardDataValue(): DashboardDataContextValue {
   const executiveStatsQuery = useExecutiveStats();
-  const notificationsQuery = useUserNotifications(8, { poll: false });
+  const shellNotifications = useOptionalShellNotifications();
+  const notificationsQuery = useUserNotifications(8, {
+    poll: false,
+    includeUnreadCount: !shellNotifications,
+  });
 
   return {
     executiveStats: executiveStatsQuery.data ?? null,
     executiveStatsLoading: executiveStatsQuery.isLoading,
     executiveStatsError: executiveStatsQuery.isError,
     refetchExecutiveStats: executiveStatsQuery.refetch,
-    notifications: notificationsQuery.notifications,
-    unreadNotificationCount: notificationsQuery.unreadCount,
-    notificationsLoading: notificationsQuery.isLoading,
-    notificationsRefreshing: notificationsQuery.isRefreshing,
-    refetchNotifications: notificationsQuery.refetch,
+    notifications: shellNotifications?.notifications.slice(0, 8) ?? notificationsQuery.notifications,
+    unreadNotificationCount: shellNotifications?.unreadCount ?? notificationsQuery.unreadCount,
+    notificationsLoading: shellNotifications?.isLoading ?? notificationsQuery.isLoading,
+    notificationsRefreshing: shellNotifications?.isRefreshing ?? notificationsQuery.isRefreshing,
+    refetchNotifications: shellNotifications?.refetch ?? notificationsQuery.refetch,
   };
 }
 

@@ -34,8 +34,8 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => mockIsMobile,
 }));
 
-vi.mock('@/hooks/useNotifications', () => ({
-  useUnreadNotificationCount: () => ({
+vi.mock('@/components/layout/ShellNotificationsProvider', () => ({
+  useShellNotifications: () => ({
     unreadCount: 4,
   }),
 }));

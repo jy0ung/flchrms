@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { buildAuthRedirectHref } from '@/lib/auth-redirect';
 import { AppPageContainer, InteractionModeProvider, RouteLoadingState } from '@/components/system';
 import { AppSidebar } from './AppSidebar';
+import { ShellNotificationsProvider } from './ShellNotificationsProvider';
 import { TopBar } from './TopBar';
 import { MobileBottomNav } from './MobileBottomNav';
 
@@ -60,42 +61,44 @@ export function AppLayout() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full bg-background">
-      <a
-        href="#main-content"
-        onClick={focusMainContent}
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
-      >
-        Skip to main content
-      </a>
-      <AppSidebar
-        collapsed={sidebarCollapsed}
-        onToggle={toggleSidebar}
-        mobileOpen={mobileSidebarOpen}
-        onMobileOpenChange={setMobileSidebarOpen}
-      />
-      <div className="flex flex-1 flex-col min-w-0">
-        <TopBar />
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
-          <AppPageContainer
-            key={location.pathname}
-            spacing="none"
-            maxWidth="none"
-            framePadding="page"
-            className={cn(
-              'animate-fadeIn py-4 md:py-6 lg:py-8',
-              isMobile && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
-            )}
-          >
-            <InteractionModeProvider resetKeys={[user?.id ?? null]}>
-              <Outlet />
-            </InteractionModeProvider>
-          </AppPageContainer>
-        </main>
+    <ShellNotificationsProvider>
+      <div className="relative flex min-h-screen w-full bg-background">
+        <a
+          href="#main-content"
+          onClick={focusMainContent}
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
+        <AppSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
+          mobileOpen={mobileSidebarOpen}
+          onMobileOpenChange={setMobileSidebarOpen}
+        />
+        <div className="flex flex-1 flex-col min-w-0">
+          <TopBar />
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
+            <AppPageContainer
+              key={location.pathname}
+              spacing="none"
+              maxWidth="none"
+              framePadding="page"
+              className={cn(
+                'animate-fadeIn py-4 md:py-6 lg:py-8',
+                isMobile && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
+              )}
+            >
+              <InteractionModeProvider resetKeys={[user?.id ?? null]}>
+                <Outlet />
+              </InteractionModeProvider>
+            </AppPageContainer>
+          </main>
+        </div>
+        {isMobile && (
+          <MobileBottomNav onOpenSidebar={() => setMobileSidebarOpen(true)} />
+        )}
       </div>
-      {isMobile && (
-        <MobileBottomNav onOpenSidebar={() => setMobileSidebarOpen(true)} />
-      )}
-    </div>
+    </ShellNotificationsProvider>
   );
 }
