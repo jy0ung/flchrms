@@ -98,7 +98,7 @@ describe('Leave dialogs modal scaffold integration', () => {
       />,
     );
 
-    expect(screen.getByRole('dialog')).toHaveAttribute('data-layout', 'full-screen');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Request Supporting Document/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Document Request Message/i, level: 3 })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Request Document/i })).toBeInTheDocument();

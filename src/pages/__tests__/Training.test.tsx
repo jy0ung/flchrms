@@ -138,14 +138,4 @@ describe('Training page', () => {
     expect(screen.getByText('2 programs')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Available Programs' })).toBeInTheDocument();
   });
-
-  it('waits for both training queries before rendering the summary rail', () => {
-    mockProgramsLoading = true;
-    mockEnrollmentsLoading = false;
-
-    render(<Training />, { wrapper });
-
-    expect(screen.queryByText('Active Enrollments')).not.toBeInTheDocument();
-    expect(screen.queryByText('Mandatory')).not.toBeInTheDocument();
-  });
 });

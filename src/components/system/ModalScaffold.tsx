@@ -21,7 +21,6 @@ export interface ModalScaffoldProps {
   body: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
-  mobileLayout?: "dialog" | "full-screen";
   showCloseButton?: boolean;
   contentClassName?: string;
   bodyClassName?: string;
@@ -53,7 +52,6 @@ export function ModalScaffold({
   body,
   footer,
   maxWidth = "lg",
-  mobileLayout = "dialog",
   showCloseButton = true,
   contentClassName,
   bodyClassName,
@@ -86,7 +84,6 @@ export function ModalScaffold({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={showCloseButton}
-        layout={mobileLayout}
         className={cn(maxWidthClasses[maxWidth], contentClassName)}
       >
         <DialogHeader className={cn(headerClassName)}>

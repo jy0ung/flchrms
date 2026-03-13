@@ -160,9 +160,8 @@ describe('LeaveRequestWizard', () => {
 
     it('prevents advancing without selecting a type', () => {
       render(<LeaveRequestWizard {...defaultProps()} />);
-      expect(screen.getByTestId('leave-wizard-next')).toBeDisabled();
-      expect(screen.getByText(/select a leave type to continue/i)).toBeInTheDocument();
       clickNext();
+      expect(screen.getByText(/please select a leave type/i)).toBeInTheDocument();
       expect(screen.getByText('Select Leave Type')).toBeInTheDocument();
     });
 
@@ -185,12 +184,11 @@ describe('LeaveRequestWizard', () => {
       expect(screen.getByText('7d notice')).toBeInTheDocument();
     });
 
-    it('disables exhausted leave types and explains why they are unavailable', () => {
+    it('keeps exhausted leave types selectable until policy preview runs', () => {
       const balances = [makeBalance({ days_remaining: 0 })];
       render(<LeaveRequestWizard {...defaultProps()} balances={balances} />);
       const annualButton = screen.getByText('Annual Leave').closest('button');
-      expect(annualButton).toBeDisabled();
-      expect(screen.getByText('Unavailable')).toBeInTheDocument();
+      expect(annualButton).not.toBeDisabled();
       expect(screen.getByText('Current balance exhausted')).toBeInTheDocument();
     });
 
@@ -213,9 +211,8 @@ describe('LeaveRequestWizard', () => {
     it('prevents advancing without selecting dates', () => {
       render(<LeaveRequestWizard {...defaultProps()} />);
       goToStep2();
-      expect(screen.getByTestId('leave-wizard-next')).toBeDisabled();
-      expect(screen.getByText(/choose both start and end dates to continue/i)).toBeInTheDocument();
       clickNext();
+      expect(screen.getByText(/please select both start and end dates/i)).toBeInTheDocument();
     });
 
     it('shows Back button on step 2 that returns to step 1', () => {
@@ -245,10 +242,9 @@ describe('LeaveRequestWizard', () => {
       const { container } = render(<LeaveRequestWizard {...defaultProps()} />);
       goToStep2();
       setDates(container, '2026-06-01', '2026-06-15');
-      expect(screen.getByTestId('leave-wizard-next')).toBeDisabled();
-      expect(screen.getByText(/shorten the request or choose another leave type/i)).toBeInTheDocument();
       clickNext();
-      expect(container.querySelector('h3')?.textContent).toBe('Select Dates');
+      expect(screen.queryByText(/insufficient balance/i)).not.toBeInTheDocument();
+      expect(container.querySelector('h3')?.textContent).toBe('Additional Details');
     });
   });
 
@@ -301,9 +297,8 @@ describe('LeaveRequestWizard', () => {
         <LeaveRequestWizard {...defaultProps()} leaveTypes={types} balances={balances} />,
       );
       goToStep3(container, 'Sick Leave');
-      expect(screen.getByTestId('leave-wizard-next')).toBeDisabled();
-      expect(screen.getByText(/upload a supporting document to continue with sick leave/i)).toBeInTheDocument();
       clickNext();
+      expect(screen.getByText(/requires a supporting document/i)).toBeInTheDocument();
     });
 
     it('shows "Required" badge for document when type requires it', () => {
@@ -394,22 +389,24 @@ describe('LeaveRequestWizard', () => {
   });
 
   describe('Validation edge cases', () => {
-    it('clears step guidance when user selects a leave type after an incomplete step', () => {
+    it('clears validation error when user selects a leave type after failed advance', () => {
       render(<LeaveRequestWizard {...defaultProps()} />);
-      expect(screen.getByText(/select a leave type to continue/i)).toBeInTheDocument();
+      clickNext();
+      expect(screen.getByText(/please select a leave type/i)).toBeInTheDocument();
 
       fireEvent.click(screen.getByText('Annual Leave'));
-      expect(screen.queryByText(/select a leave type to continue/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/please select a leave type/i)).not.toBeInTheDocument();
     });
 
-    it('clears step guidance when navigating back', () => {
+    it('clears validation error when navigating back', () => {
       render(<LeaveRequestWizard {...defaultProps()} />);
       goToStep2();
-      expect(screen.getByText(/choose both start and end dates to continue/i)).toBeInTheDocument();
+      clickNext();
+      expect(screen.getByText(/please select both start and end dates/i)).toBeInTheDocument();
 
       fireEvent.click(screen.getByRole('button', { name: /back/i }));
       expect(
-        screen.queryByText(/choose both start and end dates to continue/i),
+        screen.queryByText(/please select both start and end dates/i),
       ).not.toBeInTheDocument();
     });
   });

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, RefreshCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, ExternalLink, Loader2, RefreshCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,6 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ContextChip, DataTableShell, SectionToolbar, StatusBadge, TaskEmptyState } from '@/components/system';
-import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { NotificationMaintenancePanel } from '@/components/notifications/NotificationMaintenancePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
 import { useOptionalShellNotifications } from '@/components/layout/ShellNotificationsProvider';
@@ -198,31 +197,6 @@ export default function Notifications() {
     return `Showing ${from}-${to} of ${totalCount}`;
   }, [page, totalCount]);
   const unreadCount = shellNotifications?.unreadCount ?? 0;
-  const summaryItems = useMemo(() => ([
-    {
-      id: 'unread-count',
-      label: 'Unread',
-      value: unreadCount,
-      helper: unreadCount > 0 ? 'Notifications that still need attention.' : 'Nothing unread right now.',
-      icon: Bell,
-      tone: unreadCount > 0 ? 'warning' : 'default',
-    },
-    {
-      id: 'current-view',
-      label: 'Current View',
-      value: totalCount,
-      helper: pageLabel,
-      icon: SlidersHorizontal,
-      tone: 'info',
-    },
-    {
-      id: 'cleanup-window',
-      label: 'Cleanup Window',
-      value: `${cleanupDays} days`,
-      helper: 'Read notifications older than this can be cleared from maintenance.',
-      icon: Trash2,
-    },
-  ]), [cleanupDays, pageLabel, totalCount, unreadCount]);
 
   const handleChangeCategory = (value: NotificationCategoryFilter) => {
     setCategory(value);
@@ -275,7 +249,6 @@ export default function Notifications() {
     <UtilityLayout
       title="Notifications"
       description="Review updates, open related work, and keep track of workflow activity."
-      summarySlot={<SummaryRail items={summaryItems} compactBreakpoint="xl" />}
       controlsSlot={
         <SectionToolbar
           variant="inline"

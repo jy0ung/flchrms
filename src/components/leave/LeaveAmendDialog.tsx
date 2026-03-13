@@ -52,7 +52,6 @@ export function LeaveAmendDialog({
       open={open}
       onOpenChange={onOpenChange}
       maxWidth="xl"
-      mobileLayout="full-screen"
       title="Amend Leave Request"
       description="Update your request and attach any required documents"
       body={

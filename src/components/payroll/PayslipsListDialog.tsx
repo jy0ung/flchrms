@@ -41,8 +41,7 @@ export function PayslipsListDialog({ period, open, onOpenChange }: PayslipsListD
         title={`${period.name} - Payslips`}
         description={`${format(new Date(period.start_date), 'MMM d')} - ${format(new Date(period.end_date), 'MMM d, yyyy')}`}
         maxWidth="4xl"
-        mobileLayout="full-screen"
-        contentClassName="overflow-hidden sm:max-h-[90vh]"
+        contentClassName="max-h-[90vh] overflow-hidden"
         headerMeta={<Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
         bodyClassName="space-y-4 flex-1 overflow-hidden flex flex-col"
         body={(

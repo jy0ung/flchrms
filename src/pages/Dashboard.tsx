@@ -10,10 +10,6 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useTodayAttendance } from '@/hooks/useAttendance';
-import { useLeaveBalance } from '@/hooks/useLeaveBalance';
-import { useMyEnrollments } from '@/hooks/useTraining';
-import { useMyReviews } from '@/hooks/usePerformance';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
 import { GRID_COLUMNS, compactLayoutVertically } from '@/lib/dashboard-layout';
@@ -38,7 +34,6 @@ import { QuickStats } from '@/components/dashboard/QuickStats';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardDataProvider } from '@/components/dashboard/DashboardDataProvider';
 import { DashboardCustomizePanel } from '@/components/dashboard/DashboardCustomizePanel';
-import { DashboardGettingStarted } from '@/components/dashboard/DashboardGettingStarted';
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
 
 // ── Grid constants ───────────────────────────────────────────────
@@ -179,10 +174,6 @@ export default function Dashboard() {
   const showManagerWidgets = canViewManagerDashboardWidgets(role);
   const currentCols = useMemo(() => getGridColumns(width), [width]);
   const canEditLayout = currentCols === GRID_COLUMNS;
-  const { data: todayAttendance } = useTodayAttendance();
-  const { data: leaveBalances, isLoading: leaveBalancesLoading } = useLeaveBalance();
-  const { data: enrollments, isLoading: enrollmentsLoading } = useMyEnrollments();
-  const { data: reviews, isLoading: reviewsLoading } = useMyReviews();
 
   // Build RGL layout from persisted state
   const rglLayout = useMemo(() => toRglLayout(layoutState.widgets), [layoutState]);
@@ -209,36 +200,6 @@ export default function Dashboard() {
     })),
     [visibleIds],
   );
-
-  const hasMeaningfulLeaveSignal = useMemo(
-    () => (leaveBalances ?? []).some((balance) =>
-      balance.is_unlimited
-      || balance.days_remaining > 0
-      || balance.days_used > 0
-      || balance.days_pending > 0),
-    [leaveBalances],
-  );
-
-  const showGettingStartedDashboard = useMemo(() => {
-    if (showManagerWidgets || isLoading || editMode) return false;
-    if (leaveBalancesLoading || enrollmentsLoading || reviewsLoading) return false;
-
-    return !todayAttendance
-      && !hasMeaningfulLeaveSignal
-      && (enrollments?.length ?? 0) === 0
-      && (reviews?.length ?? 0) === 0;
-  }, [
-    editMode,
-    enrollments,
-    enrollmentsLoading,
-    hasMeaningfulLeaveSignal,
-    isLoading,
-    leaveBalancesLoading,
-    reviews,
-    reviewsLoading,
-    showManagerWidgets,
-    todayAttendance,
-  ]);
 
   // ── Edit mode actions ──────────────────────────────────────────
 
@@ -302,32 +263,26 @@ export default function Dashboard() {
                   className="gap-1.5"
                   onClick={enterEditMode}
                   disabled={!canEditLayout}
-                  aria-label="Edit dashboard layout"
                   title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
                 >
                   <Pencil className="h-4 w-4" />
-                  <span>Edit</span>
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
                   onClick={() => setCustomizeOpen(true)}
-                  aria-label="Customize dashboard widgets"
                 >
                   <Settings2 className="h-4 w-4" />
-                  <span>Widgets</span>
+                  <span className="hidden sm:inline">Widgets</span>
                 </Button>
               </>
             )
           }
         />
 
-        {!isLoading && !editMode && showGettingStartedDashboard && (
-          <DashboardGettingStarted />
-        )}
-
-        {!isLoading && !editMode && !showGettingStartedDashboard && (
+        {!isLoading && !editMode && (
           <div className="space-y-6 md:space-y-7">
             {dashboardSections.map((section) => {
               const meta = DASHBOARD_SECTION_META[section.id];

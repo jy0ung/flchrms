@@ -57,7 +57,6 @@ export function LeaveCancellationDialogs({
         open={requestDialogOpen}
         onOpenChange={onRequestDialogOpenChange}
         maxWidth="xl"
-        mobileLayout="full-screen"
         title={
           requestDialogMode === 'request_approved_cancel'
             ? 'Request Leave Cancellation'
@@ -117,7 +116,6 @@ export function LeaveCancellationDialogs({
         open={reviewDialogOpen}
         onOpenChange={onReviewDialogOpenChange}
         maxWidth="xl"
-        mobileLayout="full-screen"
         title={reviewAction === 'approve' ? 'Approve Leave Cancellation' : 'Reject Leave Cancellation'}
         description={getLeaveRequestDialogDescription(reviewDialogRequest)}
         body={

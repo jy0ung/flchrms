@@ -113,9 +113,6 @@ describe('Notifications page header control relocation', () => {
   it('renders notification filters in header controls and maintenance actions separately', () => {
     render(<Notifications />);
 
-    expect(screen.getAllByText('Unread').length).toBeGreaterThan(0);
-    expect(screen.getByText('Current View')).toBeInTheDocument();
-    expect(screen.getByText('Cleanup Window')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Notification history filters/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Inbox maintenance/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mark All Read/i })).toBeInTheDocument();

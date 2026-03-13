@@ -112,8 +112,7 @@ export function SalaryStructureDialog({
           : 'Set up salary structure for an employee'
       }
       maxWidth="2xl"
-      mobileLayout="full-screen"
-      contentClassName="overflow-y-auto sm:max-h-[90vh]"
+      contentClassName="max-h-[90vh] overflow-y-auto"
       headerMeta={<DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
       body={(
         <form onSubmit={handleSubmit} className="space-y-4" id="salary-structure-form">

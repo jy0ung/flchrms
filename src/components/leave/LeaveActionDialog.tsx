@@ -37,7 +37,6 @@ export function LeaveActionDialog({
       open={open}
       onOpenChange={onOpenChange}
       maxWidth="xl"
-      mobileLayout="full-screen"
       title={
         actionType === 'approve'
           ? 'Approve Leave Request'

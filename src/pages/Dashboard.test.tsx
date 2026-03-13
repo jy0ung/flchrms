@@ -9,16 +9,6 @@ import type { AppRole } from '@/types/hrms';
 import type { DashboardLayoutStateV2 } from '@/lib/dashboard-layout';
 
 let mockRole: AppRole = 'employee';
-let mockTodayAttendance: { clock_in?: string | null; clock_out?: string | null; status?: string } | null = null;
-let mockLeaveBalances: Array<{
-  leave_type_id: string;
-  days_remaining?: number;
-  days_used?: number;
-  days_pending?: number;
-  is_unlimited?: boolean;
-}> = [];
-let mockEnrollments: Array<{ id: string }> = [];
-let mockReviews: Array<{ id: string }> = [];
 
 // ── Mocks ────────────────────────────────────────────────────────
 
@@ -82,7 +72,7 @@ vi.mock('@/hooks/useAnnouncements', () => ({
 
 vi.mock('@/hooks/useAttendance', () => ({
   useTodayAttendance: () => ({
-    data: mockTodayAttendance,
+    data: null,
   }),
   useClockIn: () => ({
     mutate: vi.fn(),
@@ -97,21 +87,21 @@ vi.mock('@/hooks/useAttendance', () => ({
 vi.mock('@/hooks/useLeaveBalance', () => ({
   useLeaveBalance: () => ({
     isLoading: false,
-    data: mockLeaveBalances,
+    data: [],
   }),
 }));
 
 vi.mock('@/hooks/useTraining', () => ({
   useMyEnrollments: () => ({
     isLoading: false,
-    data: mockEnrollments,
+    data: [],
   }),
 }));
 
 vi.mock('@/hooks/usePerformance', () => ({
   useMyReviews: () => ({
     isLoading: false,
-    data: mockReviews,
+    data: [],
   }),
   useReviewsToConduct: () => ({
     isLoading: false,
@@ -167,10 +157,6 @@ describe('Dashboard widget rendering', () => {
     mockSaveLayout.mockClear();
     mockResetLayout.mockClear();
     capturedResizeConfig = undefined;
-    mockTodayAttendance = null;
-    mockLeaveBalances = [];
-    mockEnrollments = [];
-    mockReviews = [];
   });
 
   it('renders the greeting section', () => {
@@ -189,7 +175,7 @@ describe('Dashboard widget rendering', () => {
     expect(screen.getByText(/Evelyn/)).toBeInTheDocument();
   });
 
-  it('renders labeled dashboard utility actions', () => {
+  it('renders the Edit and Widgets buttons', () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -199,35 +185,12 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    expect(screen.getByRole('button', { name: /edit dashboard layout/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /customize dashboard widgets/i })).toBeInTheDocument();
-  });
-
-  it('renders a task-first onboarding dashboard for low-data employee accounts', () => {
-    mockRole = 'employee';
-    mockLayoutState = {
-      version: 2,
-      presetVersion: 6,
-      role: 'employee',
-      widgets: [],
-    };
-    renderDashboard();
-
-    expect(screen.getByRole('heading', { name: 'Start Here' })).toBeInTheDocument();
-    expect(screen.getByText('Clock In or Review Attendance')).toBeInTheDocument();
-    expect(screen.getByText('Request Leave')).toBeInTheDocument();
-    expect(screen.getByText('Complete Profile')).toBeInTheDocument();
-    expect(screen.getByText('View Payroll')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Operational Status' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /widgets/i })).toBeInTheDocument();
   });
 
   it('renders visible widgets inside the fixed priority sections', () => {
     mockRole = 'employee';
-    mockTodayAttendance = {
-      clock_in: '2026-03-13T08:00:00Z',
-      clock_out: null,
-      status: 'present',
-    };
     mockLayoutState = {
       version: 2,
       presetVersion: 6,
@@ -248,7 +211,6 @@ describe('Dashboard widget rendering', () => {
 
   it('keeps supporting information widgets in a compact reference band for employee views', () => {
     mockRole = 'employee';
-    mockLeaveBalances = [{ leave_type_id: 'annual', days_remaining: 8, days_used: 1, days_pending: 0, is_unlimited: false }];
     mockLayoutState = {
       version: 2,
       presetVersion: 6,
@@ -270,7 +232,6 @@ describe('Dashboard widget rendering', () => {
 
   it('does not render hidden widgets', () => {
     mockRole = 'employee';
-    mockLeaveBalances = [{ leave_type_id: 'annual', days_remaining: 8, days_used: 1, days_pending: 0, is_unlimited: false }];
     mockLayoutState = {
       version: 2,
       presetVersion: 6,
@@ -322,7 +283,7 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /edit dashboard layout/i }));
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
 
     const grid = screen.getByTestId('rgl-grid');
     expect(grid).toBeInTheDocument();
@@ -342,7 +303,7 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /edit dashboard layout/i }));
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
 
     expect(capturedResizeConfig).toBeDefined();
     expect(capturedResizeConfig!.handles).toContain('e');
