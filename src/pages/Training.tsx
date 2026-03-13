@@ -23,7 +23,7 @@ export default function Training() {
     <UtilityLayout
       title="Training & Development"
       description="Training programs and enrollment status."
-      summarySlot={!programsLoading || !enrollmentsLoading ? (
+      summarySlot={!programsLoading && !enrollmentsLoading ? (
         <SummaryRail
           compactBreakpoint="xl"
           items={[

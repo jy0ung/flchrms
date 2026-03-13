@@ -78,5 +78,6 @@ describe('AppSidebar', () => {
     expect(
       screen.getByText('Browse workspaces, records, and governance routes available to your current role.'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveClass('w-[88vw]', 'max-w-sm');
   });
 });

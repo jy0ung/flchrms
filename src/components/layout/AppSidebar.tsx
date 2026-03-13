@@ -143,7 +143,7 @@ function SidebarNavGroup({
   return (
     <div className="space-y-1">
       {label && !collapsed && (
-        <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/80">
+        <p className="mb-1.5 px-2 text-xs font-medium uppercase tracking-[0.12em] text-sidebar-foreground">
           {label}
         </p>
       )}
@@ -279,7 +279,10 @@ export function AppSidebar({
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
+        <SheetContent
+          side="left"
+          className="w-[88vw] max-w-sm bg-sidebar p-0 text-sidebar-foreground border-sidebar-border"
+        >
           <SheetHeader className="sr-only">
             <SheetTitle>Mobile navigation menu</SheetTitle>
             <SheetDescription>

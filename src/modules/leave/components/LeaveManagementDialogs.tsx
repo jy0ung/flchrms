@@ -28,6 +28,7 @@ export function LeaveManagementDialogs({
         title="New Leave Request"
         description="Submit a new leave request for approval"
         maxWidth="3xl"
+        mobileLayout="full-screen"
         body={(
           <LeaveRequestWizard
             leaveTypes={leaveTypes}

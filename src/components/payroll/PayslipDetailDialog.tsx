@@ -47,7 +47,8 @@ export function PayslipDetailDialog({
       description={payslip.payroll_period?.name || 'Payslip'}
       statusBadge={<StatusBadge status={payslip.status} />}
       maxWidth="3xl"
-      contentClassName="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-3xl"
+      mobileLayout="full-screen"
+      contentClassName="max-w-full overflow-y-auto sm:max-h-[90vh] sm:max-w-3xl"
       headerMeta={(
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1">

@@ -54,6 +54,7 @@ export function CreateDeductionTypeDialog({ open, onOpenChange }: CreateDeductio
       title="Add Deduction Type"
       description="Configure a new deduction type for payroll"
       maxWidth="xl"
+      mobileLayout="full-screen"
       headerMeta={<Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
       body={(
         <form onSubmit={handleSubmit} className="space-y-4" id="deduction-type-form">
