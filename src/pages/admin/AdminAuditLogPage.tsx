@@ -29,10 +29,6 @@ interface AuditEntry {
   details: string;
 }
 
-function humanizeWorkflowToken(value: string | null | undefined, fallback: string) {
-  return (value ?? fallback).replace(/_/g, ' ');
-}
-
 function useAuditLog() {
   const { data: employees } = useEmployees();
   const { data: workflowEvents, isLoading: workflowLoading } = useWorkflowConfigEvents(50);
@@ -87,8 +83,8 @@ function useAuditLog() {
       const actorName = entry.actor
         ? `${entry.actor.first_name} ${entry.actor.last_name}`.trim()
         : 'System';
-      const workflowType = humanizeWorkflowToken(entry.workflow_type, 'workflow');
-      const actionType = humanizeWorkflowToken(entry.action, 'updated');
+      const workflowType = entry.workflow_type.replace(/_/g, ' ');
+      const eventType = entry.event_type.replace(/_/g, ' ');
 
       result.push({
         id: `wf-${entry.id}`,
@@ -96,7 +92,7 @@ function useAuditLog() {
         actor: actorName,
         action: 'Workflow Config Change',
         target: entry.department_id ? `Department workflow` : 'Default workflow',
-        details: `${workflowType}: ${actionType}`,
+        details: `${workflowType}: ${eventType}`,
       });
     }
 

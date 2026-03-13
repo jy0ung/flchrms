@@ -23,26 +23,14 @@ test.describe.serial('Phase 7 - Notifications @phase7 @notifications', () => {
     await expect(page.getByText('Phase 7 Read Notification')).toBeVisible();
 
     const fixtureRow = page
-      .locator('div.rounded-lg.border.p-4')
-      .filter({ has: page.getByText('Phase 7 Read Notification', { exact: true }) })
-      .first();
+      .getByText('Phase 7 Read Notification')
+      .locator('xpath=ancestor::div[contains(@class,"rounded-lg") and contains(@class,"border") and contains(@class,"p-4")][1]');
 
-    await expect(fixtureRow).toBeVisible();
-
-    const markUnreadButton = fixtureRow.getByRole('button', { name: /Mark unread/i });
-    const markReadButton = fixtureRow.getByRole('button', { name: /Mark read/i });
-
-    if (await markUnreadButton.isVisible().catch(() => false)) {
-      await markUnreadButton.click();
-    } else {
-      await expect(markReadButton).toBeVisible();
-      await markReadButton.click();
-      await expect(markUnreadButton).toBeVisible();
-      await markUnreadButton.click();
-    }
+    await expect(fixtureRow.getByRole('button', { name: /Mark Unread/i })).toBeVisible();
+    await fixtureRow.getByRole('button', { name: /Mark Unread/i }).click();
 
     await expect(fixtureRow.getByText(/^Unread$/)).toBeVisible();
-    await expect(fixtureRow.getByRole('button', { name: /Mark read/i })).toBeVisible();
+    await expect(fixtureRow.getByRole('button', { name: /Mark Read/i })).toBeVisible();
   });
 
   test('admin can view workflow config notifications and audit activity in HR Admin', async ({ page }) => {
@@ -56,7 +44,6 @@ test.describe.serial('Phase 7 - Notifications @phase7 @notifications', () => {
 
     await openAdminPage(page);
     await openAdminTab(page, 'Leave Policies');
-    await page.getByRole('tab', { name: /^Workflow Audit$/i }).click();
 
     await expect(page.getByText('Workflow Configuration Activity')).toBeVisible();
     await expect(page.getByText(/Notes updated|Workflow settings updated|Route changed/i).first()).toBeVisible();

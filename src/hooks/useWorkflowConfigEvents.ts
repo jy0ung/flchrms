@@ -7,15 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 interface WorkflowConfigEventRow {
   id: string;
   workflow_type: string;
-  action: string;
-  workflow_table: string;
-  workflow_row_id: string | null;
-  requester_role: string;
+  event_type: string;
   changed_by_user_id: string | null;
-  changed_by_role: string | null;
   department_id: string | null;
-  old_values: unknown;
-  new_values: unknown;
+  old_value: unknown;
+  new_value: unknown;
   metadata: unknown;
   created_at: string;
 }

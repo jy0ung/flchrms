@@ -44,7 +44,7 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
     await login(page, 'admin');
     await page.goto('/dashboard');
 
-    const editButton = page.getByRole('button', { name: /Edit dashboard layout/i });
+    const editButton = page.getByRole('button', { name: /^Edit$/i });
     await expect(editButton).toBeVisible();
     await expect(editButton).toBeEnabled();
     await editButton.click();
@@ -81,7 +81,7 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
     expect(attempted).toBeTruthy();
 
     await page.getByRole('button', { name: /^Cancel$/i }).click();
-    await expect(page.getByRole('button', { name: /Edit dashboard layout/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Edit$/i })).toBeVisible();
   });
 
   test('edit mode exposes west/southwest resize handles and applies resize change', async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
     await login(page, 'admin');
     await page.goto('/dashboard');
 
-    const editButton = page.getByRole('button', { name: /Edit dashboard layout/i });
+    const editButton = page.getByRole('button', { name: /^Edit$/i });
     await expect(editButton).toBeVisible();
     await expect(editButton).toBeEnabled();
     await editButton.click();
@@ -157,6 +157,6 @@ test.describe.serial('Dashboard layout drag/resize @dashboard @layout', () => {
     expect(resized).toBeTruthy();
 
     await page.getByRole('button', { name: /^Cancel$/i }).click();
-    await expect(page.getByRole('button', { name: /Edit dashboard layout/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Edit$/i })).toBeVisible();
   });
 });

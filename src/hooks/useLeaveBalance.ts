@@ -100,10 +100,6 @@ function inferCycleBounds(asOfDate?: string | null) {
   };
 }
 
-function resolveAsOfDate(asOfDate?: string | null) {
-  return asOfDate ?? new Date().toISOString().slice(0, 10);
-}
-
 interface UseLeaveBalanceOptions {
   enabled?: boolean;
 }
@@ -112,10 +108,9 @@ export function useLeaveBalance(employeeId?: string, asOfDate?: string, options?
   const { user } = useAuth();
   const targetId = employeeId || user?.id;
   const queryEnabled = options?.enabled ?? !!targetId;
-  const effectiveAsOfDate = resolveAsOfDate(asOfDate);
 
   return useQuery({
-    queryKey: ['leave-balance', targetId, effectiveAsOfDate],
+    queryKey: ['leave-balance', targetId, asOfDate ?? null],
     queryFn: async () => {
       if (!targetId) {
         throw new Error('Missing employee id for leave balance query.');
@@ -125,7 +120,7 @@ export function useLeaveBalance(employeeId?: string, asOfDate?: string, options?
         'get_employee_leave_balances',
         {
           _employee_id: targetId,
-          _as_of_date: effectiveAsOfDate,
+          _as_of_date: asOfDate ?? null,
         },
       );
 
@@ -149,10 +144,10 @@ export function useLeaveBalance(employeeId?: string, asOfDate?: string, options?
             available: number;
             source?: string;
           }>
-        >('leave_get_my_balance_v2', { _as_of: effectiveAsOfDate });
+        >('leave_get_my_balance_v2', { _as_of: asOfDate ?? null });
 
         if (v2Error) throw v2Error;
-        const cycle = inferCycleBounds(effectiveAsOfDate);
+        const cycle = inferCycleBounds(asOfDate);
 
         return (v2Balances ?? []).map((entry) => {
           const entitled = Number(entry.entitled ?? 0);

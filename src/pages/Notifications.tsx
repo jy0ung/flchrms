@@ -112,7 +112,7 @@ function NotificationRow({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium uppercase tracking-[0.16em] text-foreground">
+            <span className="font-medium uppercase tracking-[0.16em] text-muted-foreground/80">
               {eventTypeLabel(notification)}
             </span>
             <span aria-hidden="true">•</span>
