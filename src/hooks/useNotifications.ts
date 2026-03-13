@@ -195,7 +195,9 @@ export function useUserNotifications(
     refetchOnWindowFocus: poll,
     queryFn: async () => {
       const { count, error } = await untypedFrom('user_notifications')
-        .select('*', { count: 'exact', head: true })
+        // Use a counted GET instead of a HEAD request so unread badge refreshes
+        // don't emit aborted HEAD noise during fast SPA navigation.
+        .select('id', { count: 'exact' })
         .is('read_at', null);
 
       if (error) throw error;
