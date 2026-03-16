@@ -20,8 +20,9 @@ export default function Attendance() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Attendance"
-      description="Track your work hours"
+      description="Clock in, review today’s status, and reference recent work sessions."
       actions={
         !today
           ? [
@@ -49,6 +50,7 @@ export default function Attendance() {
       }
       summarySlot={
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {

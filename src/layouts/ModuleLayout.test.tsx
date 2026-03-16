@@ -13,6 +13,7 @@ describe('ModuleLayout', () => {
     render(
       <ModuleLayout>
         <ModuleLayout.Header
+          eyebrow="Workspace"
           title="Employee Workspace"
           description="Manage employee records in context."
           metaSlot={<span>RBAC: HR</span>}
@@ -42,6 +43,7 @@ describe('ModuleLayout', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /create employee/i }));
 
+    expect(screen.getByText(/^Workspace$/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /employee workspace/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /employee workspace controls/i })).toBeInTheDocument();
     expect(screen.getByText(/rbac: hr/i)).toBeInTheDocument();

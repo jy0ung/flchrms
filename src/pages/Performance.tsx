@@ -22,10 +22,12 @@ export default function Performance() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Performance Reviews"
       description="Performance evaluation records and status."
       summarySlot={!isLoading ? (
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {

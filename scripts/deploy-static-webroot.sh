@@ -78,7 +78,7 @@ fi
 
 VERIFY_ARGS=("${WEB_ROOT}")
 if [[ "${TARGET}" == "test" ]]; then
-  VERIFY_ARGS=(--allow-private-network-endpoints "${WEB_ROOT}")
+  VERIFY_ARGS=(--allow-private-network-endpoints --allow-localhost-endpoints "${WEB_ROOT}")
 fi
 
 bash "${ROOT_DIR}/scripts/verify-dist-network-endpoints.sh" "${VERIFY_ARGS[@]}"

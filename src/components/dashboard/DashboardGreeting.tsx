@@ -26,9 +26,11 @@ function getTimeGreeting(): string {
 function DashboardGreetingInner({
   role,
   actionsSlot,
+  headingLevel = 1,
 }: {
   role: AppRole;
   actionsSlot?: ReactNode;
+  headingLevel?: 1 | 2 | 3;
 }) {
   const { profile } = useAuth();
   const { unreadNotificationCount: unreadCount } = useDashboardData();
@@ -58,6 +60,7 @@ function DashboardGreetingInner({
     warning: 'bg-warning/10 text-foreground border-warning/20 hover:bg-warning/15',
     info: 'bg-info/10 text-foreground border-info/20 hover:bg-info/15',
   };
+  const HeadingTag = `h${headingLevel}` as const;
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.03] p-4 sm:p-5 lg:p-6">
@@ -71,9 +74,9 @@ function DashboardGreetingInner({
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {today}
             </p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
+            <HeadingTag className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]">
               {greeting}, {profile?.first_name || 'there'}
-            </h1>
+            </HeadingTag>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-foreground">
                 {formatRoleLabel(role)}

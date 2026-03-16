@@ -163,7 +163,7 @@ export function DepartmentsPage({ entryContext = 'module', adminCapabilitiesOver
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
-        eyebrow="Module Workspace"
+        eyebrow="Workspace"
         title="Department Management"
         description="Create, edit, and review department ownership in context."
         actions={pageActions.canCreateDepartment ? [

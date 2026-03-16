@@ -317,7 +317,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
-        eyebrow={entryContext === 'admin' ? 'Admin Workspace' : 'Module Workspace'}
+        eyebrow={entryContext === 'admin' ? 'Governance' : 'Workspace'}
         title="Employee Directory"
         description="Contextual employee management is now anchored in the employee module."
         actions={pageActions.canCreateEmployee ? [

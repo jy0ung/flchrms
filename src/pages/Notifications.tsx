@@ -273,9 +273,10 @@ export default function Notifications() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Notifications"
       description="Review updates, open related work, and keep track of workflow activity."
-      summarySlot={<SummaryRail items={summaryItems} compactBreakpoint="xl" />}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
       controlsSlot={
         <SectionToolbar
           variant="inline"

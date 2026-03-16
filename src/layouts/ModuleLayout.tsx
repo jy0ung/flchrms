@@ -1,10 +1,11 @@
 import * as React from "react";
 
-import { AppPageContainer, type AppPageContainerProps, PageHeader, type PageHeaderProps, SectionToolbar, type SectionToolbarProps } from "@/components/system";
+import { AppPageContainer, type AppPageContainerProps, type PageHeaderProps, SectionToolbar, type SectionToolbarProps } from "@/components/system";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { WorkspaceHeaderBlock } from "@/layouts/WorkspaceHeaderBlock";
 
 export interface ModuleLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   spacing?: AppPageContainerProps["spacing"];
@@ -71,19 +72,12 @@ function ModuleHeader({
   ...props
 }: ModuleHeaderProps) {
   return (
-    <div className={cn("space-y-3", className)}>
-      {eyebrow ? (
-        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {eyebrow}
-        </div>
-      ) : null}
-      <PageHeader layout="aligned" {...props} />
-      {metaSlot ? (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {metaSlot}
-        </div>
-      ) : null}
-    </div>
+    <WorkspaceHeaderBlock
+      eyebrow={eyebrow}
+      metaSlot={metaSlot}
+      className={className}
+      {...props}
+    />
   );
 }
 

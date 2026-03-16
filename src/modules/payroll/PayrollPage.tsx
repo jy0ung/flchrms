@@ -164,7 +164,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PayrollWorkspaceTab)} className="space-y-6">
       <ModuleLayout maxWidth="7xl">
         <ModuleLayout.Header
-          eyebrow="Module Workspace"
+          eyebrow="Workspace"
           title="Payroll"
           description={
             canManagePayroll

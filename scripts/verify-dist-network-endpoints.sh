@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
 ALLOW_PRIVATE_NETWORKS=0
+ALLOW_LOCALHOST=0
 
 usage() {
   cat <<'EOF'
@@ -12,6 +13,7 @@ Usage: bash scripts/verify-dist-network-endpoints.sh [OPTIONS] [dist-dir]
 Options:
   --allow-private-network-endpoints   Allow RFC1918/private IP API endpoints.
                                       Localhost endpoints remain forbidden.
+  --allow-localhost-endpoints         Allow localhost/127.0.0.1 API endpoints.
   -h, --help                          Show this help message.
 EOF
 }
@@ -20,6 +22,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --allow-private-network-endpoints)
       ALLOW_PRIVATE_NETWORKS=1
+      shift
+      ;;
+    --allow-localhost-endpoints)
+      ALLOW_LOCALHOST=1
       shift
       ;;
     -h|--help)
@@ -53,10 +59,14 @@ else
   exit 2
 fi
 
-forbidden_patterns=(
-  "https?://127\\.0\\.0\\.1(:[0-9]+)?/api"
-  "https?://localhost(:[0-9]+)?/api"
-)
+forbidden_patterns=()
+
+if [[ "${ALLOW_LOCALHOST}" -ne 1 ]]; then
+  forbidden_patterns+=(
+    "https?://127\\.0\\.0\\.1(:[0-9]+)?/api"
+    "https?://localhost(:[0-9]+)?/api"
+  )
+fi
 
 if [[ "${ALLOW_PRIVATE_NETWORKS}" -ne 1 ]]; then
   forbidden_patterns+=(

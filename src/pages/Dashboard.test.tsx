@@ -185,6 +185,7 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
     // Greeting shows profile first name somewhere on the page
     expect(screen.getByText(/Evelyn/)).toBeInTheDocument();
   });
@@ -239,10 +240,13 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
+    expect(screen.getByText('Act first')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Operational Status' })).toBeInTheDocument();
     expect(screen.getByText('Today Attendance')).toBeInTheDocument();
+    expect(screen.getByText('Reference')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Supporting Information' })).toBeInTheDocument();
     expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Inbox' })).toBeInTheDocument();
     expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 
@@ -261,6 +265,7 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
+    expect(screen.getByText('Reference')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Supporting Information' })).toBeInTheDocument();
     expect(screen.getByText('Updates, personal progress, and schedule context.')).toBeInTheDocument();
     expect(screen.getByText('Announcements')).toBeInTheDocument();
@@ -302,6 +307,8 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
+    expect(screen.getByText('High priority')).toBeInTheDocument();
+    expect(screen.getByText('Act now')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Alerts' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Required Actions' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Operational Status' })).toBeInTheDocument();

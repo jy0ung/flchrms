@@ -47,7 +47,7 @@ function CalendarPreviewWidgetInner() {
       icon={CalendarDays}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/calendar')}>
-          Full Calendar
+          Open Calendar
         </Button>
       }
     >

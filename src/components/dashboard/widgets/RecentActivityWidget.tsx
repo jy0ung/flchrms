@@ -40,7 +40,7 @@ function RecentActivityWidgetInner() {
       icon={Activity}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/notifications')}>
-          View All
+          Open Inbox
         </Button>
       }
     >

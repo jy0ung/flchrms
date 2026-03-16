@@ -66,7 +66,7 @@ export function ExecutiveMetricsWidget({ role }: { role: AppRole }) {
       icon={Target}
       action={
         <Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/employees')}>
-          Workforce
+          View Workforce
         </Button>
       }
     >
@@ -206,9 +206,13 @@ export function CriticalInsightsWidget({ role }: { role: AppRole }) {
                   size="sm"
                   className="h-8 w-full rounded-full sm:w-auto"
                   onClick={() => navigate(alert.route!)}
-                  aria-label={`Open action for ${alert.title}`}
+                  aria-label={`${alert.route === '/attendance' ? 'Review attendance' : alert.route === '/training' ? 'Review training progress' : 'Review issue'} for ${alert.title}`}
                 >
-                  Open
+                  {alert.route === '/attendance'
+                    ? 'Review Attendance'
+                    : alert.route === '/training'
+                      ? 'Review Training'
+                      : 'Review Issue'}
                 </Button>
               ) : null}
             </div>

@@ -23,10 +23,12 @@ export default function Announcements() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Announcements"
       description={!isLoading ? `${count} item${count === 1 ? '' : 's'} — Company-wide updates, reminders, and internal notices.` : 'Company-wide updates, reminders, and internal notices.'}
       summarySlot={!isLoading ? (
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {

@@ -171,7 +171,7 @@ export function LeaveBalanceWidget() {
   if (isAdminViewer) {
     return (
       <DashboardWidgetCard title="Pending Leave Approvals" description="Awaiting management action." icon={Briefcase}
-        action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>View All</Button>}>
+        action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')}>Review Queue</Button>}>
         {isPendingApprovalsLoading ? (
           <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
         ) : (pendingApprovals?.length ?? 0) === 0 ? (
@@ -195,7 +195,7 @@ export function LeaveBalanceWidget() {
 
   return (
     <DashboardWidgetCard title="Leave Balance" description="Your approved and pending leave usage across available leave types." icon={Calendar}
-      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')} aria-label="Open leave management">Open Leave</Button>}>
+      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/leave')} aria-label="Manage leave requests and balances">Manage Leave</Button>}>
       {isLoading ? (
         <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-4 rounded-md" /><Skeleton className="h-20 rounded-lg" /></div>
       ) : (
@@ -254,7 +254,7 @@ export function AnnouncementsWidget() {
   const { data: announcements, isLoading } = useAnnouncements();
   return (
     <DashboardWidgetCard title="Announcements" description="Latest company updates and internal notices relevant to all staff." icon={Megaphone}
-      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/announcements')}>View All</Button>}>
+      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/announcements')}>Browse Updates</Button>}>
       {isLoading ? (
         <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
       ) : (announcements?.length ?? 0) === 0 ? (
@@ -352,7 +352,7 @@ export function TrainingSummaryWidget() {
 
   return (
     <DashboardWidgetCard title="Training" description="Active training assignments and completion progress." icon={GraduationCap}
-      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/training')}>Open Training</Button>}>
+      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/training')}>View Training</Button>}>
       {isLoading ? (
         <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-14 rounded-lg" /></div>
       ) : (
@@ -389,7 +389,7 @@ export function PerformanceSummaryWidget() {
 
   return (
     <DashboardWidgetCard title="Performance Reviews" description="Your review progress and latest performance review status." icon={ClipboardList}
-      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/performance')}>Open Reviews</Button>}>
+      action={<Button variant="outline" size="sm" className="rounded-full" onClick={() => navigate('/performance')}>View Reviews</Button>}>
       {isLoading ? (
         <div className="space-y-3"><Skeleton className="h-16 rounded-lg" /><Skeleton className="h-14 rounded-lg" /></div>
       ) : (

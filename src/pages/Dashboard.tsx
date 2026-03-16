@@ -23,9 +23,11 @@ import {
   DASHBOARD_SECTION_META,
   DASHBOARD_SECTION_ORDER,
   DASHBOARD_SECTION_WIDGETS,
+  formatRoleLabel,
+  getScopeLabel,
 } from '@/components/dashboard/dashboard-config';
 
-import { AppPageContainer } from '@/components/system';
+import { ContextChip } from '@/components/system';
 import { Button } from '@/components/ui/button';
 import {
   ChartsWidget,
@@ -40,6 +42,7 @@ import { DashboardDataProvider } from '@/components/dashboard/DashboardDataProvi
 import { DashboardCustomizePanel } from '@/components/dashboard/DashboardCustomizePanel';
 import { DashboardGettingStarted } from '@/components/dashboard/DashboardGettingStarted';
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 // ── Grid constants ───────────────────────────────────────────────
 
@@ -48,6 +51,7 @@ const GRID_MARGIN: [number, number] = [12, 12];
 const TABLET_GRID_COLUMNS = 6;
 const MOBILE_GRID_COLUMNS = 1;
 const FEATURED_SUPPORTING_WIDGETS = new Set<DashboardWidgetId>(['announcements', 'recentActivity']);
+const PRIORITY_SECTIONS = new Set(['alerts', 'requiredActions']);
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -111,6 +115,60 @@ function splitSupportingWidgets(widgetIds: DashboardWidgetId[]) {
     featured: widgetIds.filter((widgetId) => FEATURED_SUPPORTING_WIDGETS.has(widgetId)),
     secondary: widgetIds.filter((widgetId) => !FEATURED_SUPPORTING_WIDGETS.has(widgetId)),
   };
+}
+
+function getSectionEyebrow(
+  sectionId: (typeof DASHBOARD_SECTION_ORDER)[number],
+  hasPrioritySections: boolean,
+) {
+  switch (sectionId) {
+    case 'alerts':
+      return 'High priority';
+    case 'requiredActions':
+      return 'Act now';
+    case 'operationalStatus':
+      return hasPrioritySections ? 'Scan now' : 'Act first';
+    case 'organizationMetrics':
+      return 'Monitor';
+    case 'supportingInformation':
+      return 'Reference';
+    default:
+      return undefined;
+  }
+}
+
+function getSectionVariant(
+  sectionId: (typeof DASHBOARD_SECTION_ORDER)[number],
+  hasPrioritySections: boolean,
+): 'default' | 'priority' | 'subtle' {
+  if (sectionId === 'alerts' || sectionId === 'requiredActions') {
+    return 'priority';
+  }
+
+  if (sectionId === 'operationalStatus' && !hasPrioritySections) {
+    return 'priority';
+  }
+
+  if (sectionId === 'supportingInformation') {
+    return 'subtle';
+  }
+
+  return 'default';
+}
+
+function getSectionContentClass(
+  sectionId: (typeof DASHBOARD_SECTION_ORDER)[number],
+  hasPrioritySections: boolean,
+) {
+  if (sectionId === 'alerts' || sectionId === 'requiredActions') {
+    return 'space-y-4 [&_.group\\/widget]:border-primary/20 [&_.group\\/widget]:shadow-md';
+  }
+
+  if (sectionId === 'operationalStatus' && !hasPrioritySections) {
+    return 'space-y-4 [&_.group\\/widget]:border-primary/15 [&_.group\\/widget]:shadow-md';
+  }
+
+  return 'space-y-4';
 }
 
 // ── RGL layout helpers ───────────────────────────────────────────
@@ -209,6 +267,10 @@ export default function Dashboard() {
     })),
     [visibleIds],
   );
+  const hasPrioritySections = useMemo(
+    () => dashboardSections.some((section) => PRIORITY_SECTIONS.has(section.id) && section.widgetIds.length > 0),
+    [dashboardSections],
+  );
 
   const hasMeaningfulLeaveSignal = useMemo(
     () => (leaveBalances ?? []).some((balance) =>
@@ -279,49 +341,63 @@ export default function Dashboard() {
 
   return (
     <DashboardDataProvider>
-      <AppPageContainer spacing="comfortable" maxWidth="7xl">
-        <DashboardGreeting
-          role={role}
-          actionsSlot={
-            editMode ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                  <X className="mr-1 h-4 w-4" />
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                  <Save className="mr-1 h-4 w-4" />
-                  {isSaving ? 'Saving…' : 'Save'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={enterEditMode}
-                  disabled={!canEditLayout}
-                  aria-label="Edit dashboard layout"
-                  title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
-                >
-                  <Pencil className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setCustomizeOpen(true)}
-                  aria-label="Customize dashboard widgets"
-                >
-                  <Settings2 className="h-4 w-4" />
-                  <span>Widgets</span>
-                </Button>
-              </>
-            )
-          }
-        />
+      <UtilityLayout
+        eyebrow="Workspace"
+        title="Dashboard"
+        description={
+          showManagerWidgets
+            ? 'Review urgent actions, live operational status, and reference insight from one workspace.'
+            : 'Start with today’s tasks, then scan status and reference updates from one workspace.'
+        }
+        metaSlot={
+          <>
+            <ContextChip>Role: {formatRoleLabel(role)}</ContextChip>
+            <ContextChip className="hidden sm:inline-flex">
+              Focus: {getScopeLabel(role, null)}
+            </ContextChip>
+          </>
+        }
+        actionsSlot={
+          editMode ? (
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <Button variant="ghost" size="sm" className="h-9 rounded-full" onClick={cancelEdit}>
+                <X className="mr-1 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button size="sm" className="h-9 rounded-full" onClick={handleSave} disabled={isSaving}>
+                <Save className="mr-1 h-4 w-4" />
+                {isSaving ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-full"
+                onClick={enterEditMode}
+                disabled={!canEditLayout}
+                aria-label="Edit dashboard layout"
+                title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
+              >
+                <Pencil className="h-4 w-4" />
+                <span>Edit</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-full"
+                onClick={() => setCustomizeOpen(true)}
+                aria-label="Customize dashboard widgets"
+              >
+                <Settings2 className="h-4 w-4" />
+                <span>Widgets</span>
+              </Button>
+            </div>
+          )
+        }
+        summarySlot={<DashboardGreeting role={role} headingLevel={2} />}
+      >
 
         {!isLoading && !editMode && showGettingStartedDashboard && (
           <DashboardGettingStarted />
@@ -329,7 +405,8 @@ export default function Dashboard() {
 
         {!isLoading && !editMode && !showGettingStartedDashboard && (
           <div className="space-y-6 md:space-y-7">
-            {dashboardSections.map((section) => {
+            {(() => {
+              const renderDashboardSection = (section: (typeof dashboardSections)[number]) => {
               const meta = DASHBOARD_SECTION_META[section.id];
               const hasContent = section.widgetIds.length > 0;
               const supportingWidgets =
@@ -384,7 +461,7 @@ export default function Dashboard() {
                   return (
                     <div className="space-y-4">
                       {supportingWidgets && supportingWidgets.featured.length > 0 ? (
-                        <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="grid gap-4 xl:grid-cols-2 [&_.group\\/widget]:shadow-sm">
                           {supportingWidgets.featured.map((id) => (
                             <DashboardWidgetRenderer
                               key={`${section.id}-featured-${id}`}
@@ -396,7 +473,7 @@ export default function Dashboard() {
                       ) : null}
 
                       {supportingWidgets && supportingWidgets.secondary.length > 0 ? (
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 [&_.group\\/widget]:border-border/60 [&_.group\\/widget]:bg-background/80 [&_.group\\/widget]:shadow-none">
                           {supportingWidgets.secondary.map((id) => (
                             <DashboardWidgetRenderer
                               key={`${section.id}-secondary-${id}`}
@@ -432,14 +509,42 @@ export default function Dashboard() {
               return (
                 <DashboardSection
                   key={section.id}
+                  eyebrow={getSectionEyebrow(section.id, hasPrioritySections)}
                   title={meta.title}
                   description={getSectionDescription(section.id, showManagerWidgets)}
-                  contentClassName="space-y-4"
+                  variant={getSectionVariant(section.id, hasPrioritySections)}
+                  contentClassName={getSectionContentClass(section.id, hasPrioritySections)}
                 >
                   {sectionContent}
                 </DashboardSection>
               );
-            })}
+              };
+
+              const prioritySections = dashboardSections.filter(
+                (section) => PRIORITY_SECTIONS.has(section.id) && section.widgetIds.length > 0,
+              );
+              const secondarySections = dashboardSections.filter(
+                (section) => !PRIORITY_SECTIONS.has(section.id) && section.widgetIds.length > 0,
+              );
+
+              return (
+                <>
+                  {prioritySections.length > 0 ? (
+                    <div
+                      className={
+                        prioritySections.length > 1
+                          ? 'grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]'
+                          : 'space-y-4'
+                      }
+                    >
+                      {prioritySections.map(renderDashboardSection)}
+                    </div>
+                  ) : null}
+
+                  {secondarySections.map(renderDashboardSection)}
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -502,7 +607,7 @@ export default function Dashboard() {
           isSaving={isSaving}
           isResetting={isResetting}
         />
-      </AppPageContainer>
+      </UtilityLayout>
     </DashboardDataProvider>
   );
 }

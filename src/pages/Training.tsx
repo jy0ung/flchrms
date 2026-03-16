@@ -21,10 +21,12 @@ export default function Training() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Training & Development"
       description="Training programs and enrollment status."
       summarySlot={!programsLoading && !enrollmentsLoading ? (
         <SummaryRail
+          variant="subtle"
           compactBreakpoint="xl"
           items={[
             {

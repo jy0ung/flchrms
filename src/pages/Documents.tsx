@@ -101,6 +101,7 @@ export default function Documents() {
 
   return (
     <UtilityLayout
+      eyebrow="Workspace"
       title="Document Management"
       description={
         canManageDocuments

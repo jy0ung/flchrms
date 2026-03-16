@@ -66,7 +66,7 @@ function PendingActionsWidgetInner({ role }: { role: AppRole }) {
               count={stats!.pendingLeaveRequests}
               tone="warning"
               onAction={() => navigate('/leave')}
-              actionLabel="Review Leaves"
+              actionLabel="Review Leave Queue"
             />
           )}
 
@@ -98,7 +98,7 @@ function PendingActionsWidgetInner({ role }: { role: AppRole }) {
                       className="h-7 shrink-0 rounded-full px-3 text-xs"
                       onClick={() => navigate('/performance')}
                     >
-                      Review
+                      Review Feedback
                     </Button>
                   </div>
                 ))}

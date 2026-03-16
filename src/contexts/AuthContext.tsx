@@ -2,6 +2,7 @@
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedRpc } from '@/integrations/supabase/untyped-client';
+import { resolveSupabaseUrl } from '@/integrations/supabase/resolve-url';
 import { AppRole, Profile } from '@/types/hrms';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { toast } from 'sonner';
@@ -39,7 +40,7 @@ function isBlockedAccountStatus(status: string | null | undefined): status is Ex
 }
 
 async function resolveLoginEmail(identifier: string) {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const supabaseUrl = resolveSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | undefined);
   const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
     import.meta.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
 

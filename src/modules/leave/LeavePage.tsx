@@ -325,7 +325,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
   return (
     <ModuleLayout maxWidth="7xl">
       <ModuleLayout.Header
-        eyebrow="Module Workspace"
+        eyebrow="Workspace"
         title="Leave Management"
         description={
           canViewTeamRequests

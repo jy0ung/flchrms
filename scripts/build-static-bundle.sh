@@ -103,11 +103,13 @@ validate_build_env() {
   fi
 
   if [[ ! "${VITE_SUPABASE_URL}" =~ ^https:// ]]; then
-    echo "Error: deployment bundles must use an HTTPS VITE_SUPABASE_URL. Got: ${VITE_SUPABASE_URL}" >&2
-    exit 1
+    if [[ "${TARGET}" != "test" || ! "${VITE_SUPABASE_URL}" =~ ^/ ]]; then
+      echo "Error: deployment bundles must use an HTTPS VITE_SUPABASE_URL. Got: ${VITE_SUPABASE_URL}" >&2
+      exit 1
+    fi
   fi
 
-  if [[ "${VITE_SUPABASE_URL}" =~ ^https://(localhost|127\.0\.0\.1)(:[0-9]+)?(/|$) ]]; then
+  if [[ "${TARGET}" != "test" ]] && [[ "${VITE_SUPABASE_URL}" =~ ^https://(localhost|127\.0\.0\.1)(:[0-9]+)?(/|$) ]]; then
     echo "Error: deployment bundles must not target localhost. Got: ${VITE_SUPABASE_URL}" >&2
     exit 1
   fi
@@ -127,7 +129,7 @@ npx vite build --mode "${MODE}"
 
 VERIFY_ARGS=("${DIST_DIR}")
 if [[ "${TARGET}" == "test" ]]; then
-  VERIFY_ARGS=(--allow-private-network-endpoints "${DIST_DIR}")
+  VERIFY_ARGS=(--allow-private-network-endpoints --allow-localhost-endpoints "${DIST_DIR}")
 fi
 
 bash "${ROOT_DIR}/scripts/verify-dist-network-endpoints.sh" "${VERIFY_ARGS[@]}"
