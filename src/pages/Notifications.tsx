@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, RefreshCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, ChevronRight, Loader2, RefreshCcw, SlidersHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,11 @@ function categoryLabel(category: string) {
   return 'System';
 }
 
+function categoryFilterLabel(category: NotificationCategoryFilter) {
+  if (category === 'all') return 'All Categories';
+  return categoryLabel(category);
+}
+
 function categoryBadgeVariant(category: string) {
   if (category === 'leave') return 'outline';
   if (category === 'admin') return 'secondary';
@@ -74,6 +79,18 @@ function readFilterOptions(): { value: NotificationReadFilter; label: string }[]
   ];
 }
 
+function readFilterLabel(readFilter: NotificationReadFilter) {
+  if (readFilter === 'unread') return 'Unread only';
+  if (readFilter === 'read') return 'Read only';
+  return 'All read states';
+}
+
+function primaryActionLabel(notification: UserNotification) {
+  if (notification.category === 'leave') return 'Open leave workflow';
+  if (notification.category === 'admin') return 'Open governance workspace';
+  return null;
+}
+
 function NotificationRow({
   notification,
   onMarkRead,
@@ -89,72 +106,91 @@ function NotificationRow({
 }) {
   const isUnread = !notification.read_at;
   const target = resolveNotificationTarget(notification);
+  const actionLabel = primaryActionLabel(notification);
+  const interactive = Boolean(target);
+  const handleOpen = () => {
+    if (!interactive || markingRead) return;
+    void onOpenRelated(notification);
+  };
 
   return (
     <div
       className={cn(
-        'rounded-lg border p-4 transition-colors shadow-sm',
-        isUnread ? 'bg-primary/5 border-primary/20' : 'bg-background border-border',
+        'rounded-xl border p-4 transition-all shadow-sm',
+        isUnread ? 'border-primary/20 bg-primary/5' : 'border-border bg-background',
+        interactive && 'cursor-pointer hover:border-primary/30 hover:bg-primary/[0.04] focus-within:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       )}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive && actionLabel ? `${actionLabel} for ${notification.title}` : undefined}
+      aria-disabled={interactive && markingRead ? true : undefined}
+      onClick={interactive ? handleOpen : undefined}
+      onKeyDown={interactive ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleOpen();
+        }
+      } : undefined}
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
-              {categoryLabel(notification.category)}
-            </Badge>
-            {isUnread && <StatusBadge status="unread" />}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
+                {categoryLabel(notification.category)}
+              </Badge>
+              {isUnread ? <StatusBadge status="unread" /> : null}
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-semibold text-sm text-foreground">{notification.title}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {notification.body}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{eventTypeLabel(notification)}</span>
+              <span aria-hidden="true">•</span>
+              <span>{categoryLabel(notification.category)}</span>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-sm">{notification.title}</p>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              {notification.body}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium uppercase tracking-[0.16em] text-foreground">
-              {eventTypeLabel(notification)}
-            </span>
-            <span aria-hidden="true">•</span>
-            <span>{formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}</span>
-          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 shrink-0 rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (isUnread) {
+                void onMarkRead(notification);
+                return;
+              }
+
+              void onMarkUnread(notification);
+            }}
+            disabled={markingRead}
+          >
+            {isUnread ? (
+              <>
+                <Check className="h-4 w-4" />
+                Mark read
+              </>
+            ) : (
+              'Mark unread'
+            )}
+          </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
-          {target && (
-            <Button
-              size="sm"
-              className="rounded-full"
-              onClick={() => void onOpenRelated(notification)}
-              disabled={markingRead}
-            >
-              <ExternalLink className="w-4 h-4 mr-1" />
-              Open
-            </Button>
-          )}
-          {isUnread ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full"
-              onClick={() => void onMarkRead(notification)}
-              disabled={markingRead}
-            >
-              <Check className="w-4 h-4 mr-1" />
-              Mark read
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full"
-              onClick={() => void onMarkUnread(notification)}
-              disabled={markingRead}
-            >
-              Mark unread
-            </Button>
-          )}
-        </div>
+        {actionLabel ? (
+          <div className="flex items-center gap-1 text-xs font-medium text-primary">
+            <span>{actionLabel}</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -166,6 +202,7 @@ export default function Notifications() {
   const [category, setCategory] = useState<NotificationCategoryFilter>('all');
   const [readFilter, setReadFilter] = useState<NotificationReadFilter>('all');
   const [cleanupDays, setCleanupDays] = useState(90);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const shellNotifications = useOptionalShellNotifications();
@@ -198,6 +235,7 @@ export default function Notifications() {
     return `Showing ${from}-${to} of ${totalCount}`;
   }, [page, totalCount]);
   const unreadCount = shellNotifications?.unreadCount ?? 0;
+  const activeFilterCount = [category !== 'all', readFilter !== 'all'].filter(Boolean).length;
   const summaryItems = useMemo(() => ([
     {
       id: 'unread-count',
@@ -216,13 +254,40 @@ export default function Notifications() {
       tone: 'info',
     },
     {
-      id: 'cleanup-window',
-      label: 'Cleanup Window',
-      value: `${cleanupDays} days`,
-      helper: 'Read notifications older than this can be cleared from maintenance.',
-      icon: Trash2,
+      id: 'focus',
+      label: 'Focus',
+      value: activeFilterCount > 0 ? `${activeFilterCount} active` : unreadCount > 0 ? 'Unread first' : 'All clear',
+      helper:
+        activeFilterCount > 0
+          ? `${categoryFilterLabel(category)} • ${readFilterLabel(readFilter)}`
+          : unreadCount > 0
+            ? 'Start with unread updates in the inbox below.'
+            : 'Maintenance tools stay below the inbox when you need them.',
+      icon: Bell,
+      tone: activeFilterCount > 0 || unreadCount > 0 ? 'info' : 'default',
     },
-  ]), [cleanupDays, pageLabel, totalCount, unreadCount]);
+  ]), [activeFilterCount, category, pageLabel, readFilter, totalCount, unreadCount]);
+  const headerContext = useMemo(() => {
+    const chips = [<ContextChip key="page-label" className="rounded-full">{pageLabel}</ContextChip>];
+
+    if (category !== 'all') {
+      chips.push(
+        <ContextChip key="category-filter" className="rounded-full">
+          {categoryLabel(category)}
+        </ContextChip>,
+      );
+    }
+
+    if (readFilter !== 'all') {
+      chips.push(
+        <ContextChip key="read-filter" className="rounded-full">
+          {readFilterLabel(readFilter)}
+        </ContextChip>,
+      );
+    }
+
+    return chips;
+  }, [category, pageLabel, readFilter]);
 
   const handleChangeCategory = (value: NotificationCategoryFilter) => {
     setCategory(value);
@@ -351,10 +416,14 @@ export default function Notifications() {
       }
     >
       <DataTableShell
-        title="Notification History"
-        description={unreadCount > 0 ? `${unreadCount} unread notification(s)` : 'All notifications are read'}
+        title="Inbox"
+        description={
+          unreadCount > 0
+            ? 'Unread items first, then the rest of your recent workflow activity.'
+            : 'Recent workflow and system updates in one reading flow.'
+        }
         hasData={notifications.length > 0}
-        headerActions={<ContextChip className="rounded-full">{pageLabel}</ContextChip>}
+        headerActions={<div className="flex flex-wrap gap-2">{headerContext}</div>}
         pagination={
           <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
@@ -421,6 +490,8 @@ export default function Notifications() {
         onCleanup={() => void handleCleanupReadNotifications()}
         onOpenSettings={() => navigate('/profile?tab=notifications')}
         isDeleting={isDeletingReadNotifications}
+        open={maintenanceOpen}
+        onOpenChange={setMaintenanceOpen}
       />
     </UtilityLayout>
   );

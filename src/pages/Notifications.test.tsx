@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as React from 'react';
 
@@ -110,15 +110,22 @@ describe('Notifications page header control relocation', () => {
     });
   });
 
-  it('renders notification filters in header controls and maintenance actions separately', () => {
+  it('keeps the inbox primary and hides maintenance tools until requested', () => {
     render(<Notifications />);
 
     expect(screen.getAllByText('Unread').length).toBeGreaterThan(0);
     expect(screen.getByText('Current View')).toBeInTheDocument();
-    expect(screen.getByText('Cleanup Window')).toBeInTheDocument();
+    expect(screen.getByText('Focus')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Notification history filters/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Inbox$/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Inbox maintenance/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mark All Read/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Show inbox tools/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Notification settings/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Show inbox tools/i }));
+
+    expect(screen.getByRole('button', { name: /Hide inbox tools/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Notification settings/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('option', { name: 'Leave Workflow' }));
@@ -130,5 +137,38 @@ describe('Notifications page header control relocation', () => {
     expect(useNotificationHistoryMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ category: 'leave', readFilter: 'unread' }),
     );
+  });
+
+  it('makes a leave notification card the primary navigation target', async () => {
+    useNotificationHistoryMock.mockReturnValue({
+      notifications: [
+        {
+          id: 'n-2',
+          category: 'leave',
+          metadata: { event_type: 'leave_request_submitted' },
+          title: 'Leave request submitted',
+          body: 'A leave request is waiting in the workflow queue.',
+          created_at: '2026-02-27T00:00:00Z',
+          read_at: null,
+        },
+      ],
+      totalCount: 1,
+      totalPages: 1,
+      isLoading: false,
+      isFetching: false,
+      isMarkingRead: false,
+      isMarkingUnread: false,
+      refetch: vi.fn(),
+      markNotificationRead: vi.fn(),
+      markNotificationUnread: vi.fn(),
+      markAllNotificationsRead: vi.fn(),
+      deleteReadNotifications: vi.fn(),
+      isDeletingReadNotifications: false,
+    });
+
+    render(<Notifications />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Open leave workflow for Leave request submitted/i }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/leave'));
   });
 });
