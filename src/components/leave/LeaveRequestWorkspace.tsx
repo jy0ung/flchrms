@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Filter } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { AppRole, LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
-import { DataTableShell, RecordSurfaceHeader, SectionToolbar } from '@/components/system';
+import { ContextChip, DataTableShell, RecordSurfaceHeader, SectionToolbar } from '@/components/system';
 import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
 import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
 import { isCancellationPending } from '@/lib/leave-utils';
@@ -182,6 +181,7 @@ export function LeaveRequestWorkspace({
     () => viewConfig[view].requests.filter((request) => matchesStatusFilter(request, statusFilter)),
     [view, viewConfig, statusFilter],
   );
+  const activeView = viewConfig[view];
 
   const emptyState = useMemo<EmptyStateConfig>(() => {
     if (statusFilter !== 'ALL') {
@@ -225,7 +225,38 @@ export function LeaveRequestWorkspace({
 
   return (
     <Tabs value={view} onValueChange={(value) => setView(value as LeaveViewOption)} className="space-y-4">
-        <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
+      <section
+        aria-label="Queue views"
+        className="space-y-4 rounded-xl border border-border/70 bg-muted/[0.18] p-4"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Queue views
+            </p>
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              {canViewTeamRequests
+                ? 'Choose which leave queue needs your attention'
+                : 'Choose which leave requests you want to review'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Navigation switches between request lists. Filters below only change the list you are currently viewing.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <ContextChip className="rounded-full">
+              Current view: {activeView.shortLabel}
+            </ContextChip>
+            {statusFilter !== 'ALL' ? (
+              <ContextChip className="rounded-full">
+                Filter: {activeFilterLabel}
+              </ContextChip>
+            ) : null}
+          </div>
+        </div>
+
+        <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl bg-background p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
           {availableViews.map((option) => (
             <TabsTrigger key={option} value={option} className="whitespace-nowrap text-xs sm:text-sm">
               <span className="lg:hidden">{viewConfig[option].shortLabel}</span>
@@ -233,6 +264,7 @@ export function LeaveRequestWorkspace({
             </TabsTrigger>
           ))}
         </TabsList>
+      </section>
 
       {availableViews.map((option) => {
         const currentView = viewConfig[option];
@@ -244,28 +276,18 @@ export function LeaveRequestWorkspace({
               description={currentView.summary}
               meta={(
                 <>
-                  <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  <ContextChip className="rounded-full">
                     {currentView.shortLabel}
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  </ContextChip>
+                  <ContextChip className="rounded-full">
                     {filteredRequests.length} visible
-                  </Badge>
-                  <Badge variant="outline" className="gap-1 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  </ContextChip>
+                  <ContextChip className="gap-1 rounded-full">
                     <Filter className="h-3 w-3" />
-                    Status: {activeFilterLabel}
-                  </Badge>
+                    {statusFilter === 'ALL' ? 'All statuses' : `Filtered: ${activeFilterLabel}`}
+                  </ContextChip>
                 </>
               )}
-              actions={statusFilter !== 'ALL' ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-8 rounded-full px-3 text-xs text-muted-foreground"
-                  onClick={() => setStatusFilter('ALL')}
-                >
-                  Clear filter
-                </Button>
-              ) : undefined}
             />
 
             <DataTableShell
@@ -274,6 +296,16 @@ export function LeaveRequestWorkspace({
                   variant="inline"
                   density="compact"
                   ariaLabel="Leave request filters"
+                  leadingSlot={(
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                        Queue controls
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Filter the current list without changing your queue view.
+                      </p>
+                    </div>
+                  )}
                   filters={[
                     {
                       id: 'leave-status-filter',
@@ -298,7 +330,18 @@ export function LeaveRequestWorkspace({
                       minWidthClassName: 'sm:min-w-[180px]',
                     },
                   ]}
+                  actions={statusFilter !== 'ALL' ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 rounded-full px-3 text-xs text-muted-foreground"
+                      onClick={() => setStatusFilter('ALL')}
+                    >
+                      Clear filter
+                    </Button>
+                  ) : undefined}
                   trailingSlot={workflowInfoPopover}
+                  collapseFiltersOnMobile={false}
                 />
               )}
               content={

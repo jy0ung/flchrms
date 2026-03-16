@@ -287,6 +287,7 @@ describe('LeaveRequestWorkspace', () => {
       />,
     );
 
+    expect(screen.getByText('Queue views')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My Current/ })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My History/ })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: /Team Current/ })).not.toBeInTheDocument();
@@ -400,14 +401,16 @@ describe('LeaveRequestWorkspace', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Pending' }));
 
     expect(getVisibleTable('my-requests-table')).toHaveTextContent('pending-cancellation-row');
-    expect(screen.getByText('Status: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Filter: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Filtered: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Queue controls')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /My History/ }));
 
     expect(
       screen.getByText('Try another status filter or clear it to return to your full request list.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Status: Pending')).toBeInTheDocument();
+    expect(screen.getByText('Filter: Pending')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /My Current/ }));
     expect(getVisibleTable('my-requests-table')).toHaveTextContent('pending-cancellation-row');
