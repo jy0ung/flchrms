@@ -37,7 +37,7 @@ Out of scope:
 
 ### Sprint 1: Leave Workspace Clarity
 
-Status: `In progress`
+Status: `Completed`
 
 Goals:
 - Make the leave queue the primary workspace on employee and reviewer views
@@ -55,6 +55,11 @@ Acceptance criteria:
 - View switching and status filtering read as separate controls
 - Balance/reference content is still available but visually secondary
 - Leave route tests, build, and browser QA pass
+
+Completion notes:
+- Employee and manager/reviewer desktop and mobile passes are complete.
+- Queue-first ordering and queue/filter separation are validated in code and browser QA.
+- No additional Sprint 1 follow-up polish is required. Any later leave refinements should be handled under Sprint 4 cross-app density and scanability work.
 
 ### Sprint 2: Attendance and Payroll Task Focus
 

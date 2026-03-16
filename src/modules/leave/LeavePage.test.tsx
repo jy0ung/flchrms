@@ -302,6 +302,9 @@ describe('LeavePage', () => {
     );
 
     expect(screen.getByText('Your leave requests, balances, and history in one workspace.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Start with your request queue. Balance and entitlement details stay nearby as supporting reference.'),
+    ).toBeInTheDocument();
 
     mockRole = 'manager';
     mockCanViewTeamRequests = true;
@@ -314,6 +317,9 @@ describe('LeavePage', () => {
     );
 
     expect(screen.getByText('Review team requests and work approval queues in context.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Review queue items first. Personal balances stay nearby as a secondary reference.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Open Team Calendar/i })).toBeInTheDocument();
   });
