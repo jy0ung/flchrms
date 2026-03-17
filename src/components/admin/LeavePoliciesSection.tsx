@@ -222,7 +222,8 @@ export function LeavePoliciesSection({
                                     aria-label={`Delete leave type ${leaveType.name}`}
                                     onClick={() => onDeleteLeaveType(leaveType)}
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Delete
                                   </RowActionButton>
                                 </>
                               )}

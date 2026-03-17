@@ -130,6 +130,7 @@ Completion notes:
 - Added shared subdued metadata badges and standardized row-action buttons, then applied them across employee, department, leave, and leave-policy table/card surfaces.
 - Reduced decorative badge prominence in leave-policy metadata, leave-request documents/workflow helpers, and mobile employee cards so record identity reads first.
 - Desktop and mobile browser passes are complete for `Employees`, `Leave`, and `Admin Leave Policies`, and targeted table tests plus `build:dev` are green.
+- Deep-dive review on 2026-03-17 closed the remaining Sprint 4 polish with explicit document-action labels in leave workspaces and fully labeled delete actions in leave policies. No additional Sprint 4 follow-up polish is required.
 
 ## Delivery Order
 
