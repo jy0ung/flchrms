@@ -1,9 +1,9 @@
 import { useAttendanceHistory, useTodayAttendance, useClockIn, useClockOut } from '@/hooks/useAttendance';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Calendar, Clock3, Play, Square } from 'lucide-react';
+import { Clock3, Play, Square } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTableShell, QueryErrorState, StatusBadge } from '@/components/system';
-import { SummaryRail } from '@/components/workspace/SummaryRail';
+import { Button } from '@/components/ui/button';
+import { ContextChip, DataTableShell, QueryErrorState, StatusBadge, SurfaceSection } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
 
@@ -17,90 +17,124 @@ export default function Attendance() {
   const todayStatus = today?.status ? today.status.replace(/_/g, ' ') : 'Not started';
   const clockInLabel = today?.clock_in ? format(new Date(today.clock_in), 'h:mm a') : '—';
   const clockOutLabel = today?.clock_out ? format(new Date(today.clock_out), 'h:mm a') : '—';
+  const todayAction = !today
+    ? {
+        label: 'Clock In',
+        icon: Play,
+        onClick: () => clockIn.mutate(),
+        disabled: clockIn.isPending,
+        variant: 'default' as const,
+      }
+    : !today.clock_out
+      ? {
+          label: 'Clock Out',
+          icon: Square,
+          onClick: () => clockOut.mutate(),
+          disabled: clockOut.isPending,
+          variant: 'destructive' as const,
+        }
+      : null;
+  const todayHeadline = !today
+    ? 'You have not started today’s attendance yet.'
+    : !today.clock_out
+      ? `You are clocked in${today.clock_in ? ` since ${clockInLabel}` : ' for today'}.`
+      : `Today’s attendance is complete${today.clock_out ? ` with clock-out at ${clockOutLabel}` : '.'}`;
+  const todayDescription = !today
+    ? 'Start your workday from this card. Recent sessions stay below for reference once you begin tracking time.'
+    : !today.clock_out
+      ? 'Your work session is active. Clock out here when you finish for the day.'
+      : 'Today is already recorded. Review recent sessions below if you need to confirm your latest workday.';
 
   return (
     <UtilityLayout
       eyebrow="Workspace"
       title="Attendance"
-      description="Clock in, review today’s status, and reference recent work sessions."
-      actions={
-        !today
-          ? [
-              {
-                id: 'clock-in',
-                label: 'Clock In',
-                icon: Play,
-                onClick: () => clockIn.mutate(),
-                disabled: clockIn.isPending,
-                variant: 'default',
-              },
-            ]
-          : !today.clock_out
-            ? [
-                {
-                  id: 'clock-out',
-                  label: 'Clock Out',
-                  icon: Square,
-                  onClick: () => clockOut.mutate(),
-                  disabled: clockOut.isPending,
-                  variant: 'destructive',
-                },
-            ]
-            : []
-      }
-      summarySlot={
-        <SummaryRail
-          variant="subtle"
-          compactBreakpoint="xl"
-          items={[
-            {
-              id: 'today-status',
-              label: 'Today Status',
-              value: todayStatus,
-              helper: format(new Date(), 'EEEE, MMM d'),
-              icon: Calendar,
-              tone: today ? 'success' : 'default',
-            },
-            {
-              id: 'clock-in',
-              label: 'Clock In',
-              value: clockInLabel,
-              helper: today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.',
-              icon: Play,
-              tone: today?.clock_in ? 'info' : 'default',
-            },
-            {
-              id: 'clock-out',
-              label: 'Clock Out',
-              value: clockOutLabel,
-              helper: today?.clock_out ? 'Work session completed.' : 'Clock-out pending.',
-              icon: Square,
-              tone: today?.clock_out ? 'success' : 'warning',
-            },
-            {
-              id: 'history-count',
-              label: 'History Records',
-              value: attendanceHistoryCount,
-              helper: 'Tracked attendance entries on file.',
-              icon: Clock3,
-            },
-          ]}
-        />
-      }
+      description="Start or finish today’s work session, then reference your recent attendance history."
+      metaSlot={(
+        <div className="flex flex-wrap gap-2">
+          <ContextChip className="rounded-full">
+            {format(new Date(), 'EEEE, MMM d')}
+          </ContextChip>
+          <ContextChip className="rounded-full">
+            {attendanceHistoryCount} recorded session{attendanceHistoryCount === 1 ? '' : 's'}
+          </ContextChip>
+        </div>
+      )}
     >
       {isError && (
         <QueryErrorState label="attendance records" onRetry={() => refetch()} />
       )}
 
+      <SurfaceSection
+        title="Today’s attendance"
+        description={todayDescription}
+        actions={todayAction ? (
+          <Button
+            type="button"
+            className="h-9 rounded-full"
+            variant={todayAction.variant}
+            onClick={todayAction.onClick}
+            disabled={todayAction.disabled}
+          >
+            <todayAction.icon className="mr-2 h-4 w-4" />
+            {todayAction.label}
+          </Button>
+        ) : null}
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {today ? (
+              <StatusBadge status={today.status} labelOverride={todayStatus} />
+            ) : (
+              <ContextChip className="rounded-full">No session started</ContextChip>
+            )}
+            <ContextChip className="rounded-full">
+              {todayHeadline}
+            </ContextChip>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Status
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{todayStatus}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {today ? 'Your current attendance state for today.' : 'Clock in when you start work.'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Clock In
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockInLabel}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Clock Out
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockOutLabel}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {today?.clock_out ? 'Work session completed.' : 'Clock-out pending.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </SurfaceSection>
+
       <DataTableShell
-        title="Attendance History"
-        description="Clock-in and clock-out history for your recent workdays."
+        title="Recent attendance history"
+        description="Your most recent clock-in and clock-out records."
+        headerActions={<ContextChip className="rounded-full">{attendanceHistoryCount} on file</ContextChip>}
         loading={isLoading}
         hasData={Boolean(history?.length)}
         emptyState={
           <WorkspaceStatePanel
-            title="No attendance records yet"
-            description="Your work sessions will appear here once attendance has been tracked."
+            title="No attendance history yet"
+            description="Your work sessions will appear here after you start tracking time from today’s attendance card."
             icon={Clock3}
           />
         }

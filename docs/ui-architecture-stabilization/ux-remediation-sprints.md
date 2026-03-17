@@ -63,7 +63,7 @@ Completion notes:
 
 ### Sprint 2: Attendance and Payroll Task Focus
 
-Status: `Planned`
+Status: `Completed`
 
 Goals:
 - Reframe attendance around the daily timekeeping action
@@ -78,6 +78,11 @@ Acceptance criteria:
 - Attendance shows the primary clock action in the first viewport
 - Payroll does not present misleading or over-prominent controls when data is absent
 - Empty states provide a clear next step
+
+Completion notes:
+- Attendance now centers the daily clock action inside a dedicated today panel instead of spreading it across summary cards.
+- Employee payroll removes the single-tab toolbar, hides the salary privacy control when there is nothing to mask, and uses clearer setup-state language.
+- Employee and HR browser passes are complete. No additional Sprint 2 follow-up polish is required before moving to Sprint 3.
 
 ### Sprint 3: Governance Hierarchy Harmonization
 

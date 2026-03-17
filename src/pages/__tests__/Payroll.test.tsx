@@ -7,6 +7,19 @@ import type { AppRole } from '@/types/hrms';
 
 // ── Mock variables ───────────────────────────────────────────────
 let mockRole: AppRole = 'employee';
+let mockPayrollPeriods: Array<{ status: string }> = [];
+let mockSalaryStructures: Array<unknown> = [];
+let mockDeductionTypes: Array<unknown> = [];
+let mockMyPayslips: Array<{ id: string; net_salary: number; created_at: string }> = [];
+let mockEmployeeSalary:
+  | {
+      basic_salary: number;
+      housing_allowance?: number;
+      transport_allowance?: number;
+      meal_allowance?: number;
+      other_allowances?: number;
+    }
+  | null = null;
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -21,11 +34,11 @@ vi.mock('@/hooks/usePageTitle', () => ({
 }));
 
 vi.mock('@/hooks/usePayroll', () => ({
-  usePayrollPeriods: () => ({ data: [], isLoading: false }),
-  useSalaryStructures: () => ({ data: [], isLoading: false }),
-  useDeductionTypes: () => ({ data: [], isLoading: false }),
-  useMyPayslips: () => ({ data: [], isLoading: false }),
-  useEmployeeSalaryStructure: () => ({ data: null, isLoading: false }),
+  usePayrollPeriods: () => ({ data: mockPayrollPeriods, isLoading: false }),
+  useSalaryStructures: () => ({ data: mockSalaryStructures, isLoading: false }),
+  useDeductionTypes: () => ({ data: mockDeductionTypes, isLoading: false }),
+  useMyPayslips: () => ({ data: mockMyPayslips, isLoading: false }),
+  useEmployeeSalaryStructure: () => ({ data: mockEmployeeSalary, isLoading: false }),
 }));
 
 // Mock child components to isolate page logic
@@ -53,6 +66,11 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 beforeEach(() => {
   mockRole = 'employee';
+  mockPayrollPeriods = [];
+  mockSalaryStructures = [];
+  mockDeductionTypes = [];
+  mockMyPayslips = [];
+  mockEmployeeSalary = null;
   window.localStorage.clear();
 });
 
@@ -62,17 +80,18 @@ describe('Payroll page', () => {
       mockRole = 'employee';
     });
 
-    it('only shows My Payslips tab', () => {
+    it('removes the single-tab toolbar and uses setup messaging when no employee payroll data exists', () => {
       render(<Payroll />, { wrapper });
-      // Employee should only have 1 tab
-      const tabs = screen.getAllByRole('tab');
-      expect(tabs.length).toBe(1);
+
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+      expect(screen.getByText(/payroll setup in progress/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /hide salary amounts/i })).not.toBeInTheDocument();
     });
 
     it('shows employee-facing description', () => {
       render(<Payroll />, { wrapper });
-      expect(screen.getByText(/review your payslips/i)).toBeInTheDocument();
-      expect(screen.getByText(/active view: my payslips/i)).toBeInTheDocument();
+      expect(screen.getByText(/review your payslips and salary information/i)).toBeInTheDocument();
+      expect(screen.getByText(/payroll setup in progress/i)).toBeInTheDocument();
     });
   });
 
@@ -96,6 +115,9 @@ describe('Payroll page', () => {
   describe('hide/show salary amounts toggle', () => {
     it('shows "Hide salary amounts" toggle on payslips tab', () => {
       mockRole = 'employee';
+      mockEmployeeSalary = {
+        basic_salary: 4200,
+      };
       render(<Payroll />, { wrapper });
       const toggle = screen.getByRole('button', { name: /hide salary amounts/i });
       expect(toggle).toBeInTheDocument();
@@ -103,6 +125,9 @@ describe('Payroll page', () => {
 
     it('toggles to "Show salary amounts" on click', () => {
       mockRole = 'employee';
+      mockEmployeeSalary = {
+        basic_salary: 4200,
+      };
       render(<Payroll />, { wrapper });
       const toggle = screen.getByRole('button', { name: /hide salary amounts/i });
       fireEvent.click(toggle);
@@ -111,6 +136,9 @@ describe('Payroll page', () => {
 
     it('persists hide preference to localStorage', () => {
       mockRole = 'employee';
+      mockMyPayslips = [
+        { id: 'pay-1', net_salary: 4200, created_at: '2026-02-01T00:00:00.000Z' },
+      ];
       render(<Payroll />, { wrapper });
       const toggle = screen.getByRole('button', { name: /hide salary amounts/i });
       fireEvent.click(toggle);

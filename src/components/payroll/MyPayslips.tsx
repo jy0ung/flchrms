@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useMyPayslips, useEmployeeSalaryStructure } from '@/hooks/usePayroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { AlertTriangle, FileText, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, FileText, Eye, EyeOff, Wallet } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
 import { CardHeaderStandard, StatusBadge, TaskEmptyState } from '@/components/system';
@@ -37,6 +37,8 @@ export function MyPayslips({
   });
   const hideAmounts = controlledHideAmounts ?? internalHideAmounts;
   const setHideAmounts = onHideAmountsChange ?? setInternalHideAmounts;
+  const hasPayslips = Boolean(payslips?.length);
+  const hasSalary = Boolean(salary);
 
   useEffect(() => {
     if (controlledHideAmounts !== undefined) return;
@@ -74,6 +76,16 @@ export function MyPayslips({
     return `RM ${Number(value).toLocaleString()}`;
   };
 
+  if (!hasSalary && !hasPayslips) {
+    return (
+      <TaskEmptyState
+        title="Payroll setup in progress"
+        description="Your salary structure and first payslip are not available yet. Once payroll is configured and published, this page will show your current pay and payslip history."
+        icon={Wallet}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {showVisibilityToggle ? (
@@ -99,7 +111,7 @@ export function MyPayslips({
       ) : null}
 
       {/* No salary structure warning */}
-      {!salary && (
+      {!hasSalary && (
         <Card className="border-warning/40 bg-warning/5 shadow-sm">
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
@@ -180,10 +192,14 @@ export function MyPayslips({
           className="p-4 pb-2"
         />
         <CardContent>
-          {!payslips?.length ? (
+          {!hasPayslips ? (
             <TaskEmptyState
               title="No payslips available yet"
-              description="Published payroll periods will appear here once payslips are generated for your account."
+              description={
+                hasSalary
+                  ? 'Your salary details are configured. Published payroll periods will appear here once your first payslip is generated.'
+                  : 'Published payroll periods will appear here once payslips are generated for your account.'
+              }
               icon={FileText}
             />
           ) : (

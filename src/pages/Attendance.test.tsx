@@ -37,11 +37,12 @@ vi.mock('@/hooks/useAttendance', () => ({
 }));
 
 describe('Attendance operational status badges', () => {
-  it('renders semantic status badges for today and history rows', () => {
+  it('renders a task-first today panel with semantic status badges for today and history rows', () => {
     render(<Attendance />);
 
-    expect(screen.getByText(/Attendance History/i)).toBeInTheDocument();
-    expect(screen.getByText(/Today Status/i)).toBeInTheDocument();
+    expect(screen.getByText(/Today’s attendance/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Recent attendance history/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Clock Out/i })).toBeInTheDocument();
     expect(screen.getAllByText(/Present/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Late/i).length).toBeGreaterThan(0);
   });

@@ -49,6 +49,8 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
   const { data: deductionTypes } = useDeductionTypes();
   const { data: myPayslips } = useMyPayslips();
   const { data: employeeSalary } = useEmployeeSalaryStructure(user?.id);
+  const hasEmployeePayrollData = Boolean(employeeSalary) || Boolean(myPayslips?.length);
+  const showPayrollPrivacyToggle = activeTab === 'payslips' && hasEmployeePayrollData;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -107,20 +109,28 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
       {
         id: 'basic-salary',
         label: 'Current basic',
-        value: formatCurrency(employeeSalary ? Number(employeeSalary.basic_salary) : null),
-        helper: 'Active base salary from your current salary structure.',
+        value: employeeSalary
+          ? formatCurrency(Number(employeeSalary.basic_salary))
+          : 'Not configured',
+        helper: employeeSalary
+          ? 'Active base salary from your current salary structure.'
+          : 'Your salary structure has not been configured yet.',
       },
       {
         id: 'latest-net-pay',
-        label: 'Latest net pay',
-        value: latestPayslip ? formatCurrency(Number(latestPayslip.net_salary)) : '—',
-        helper: 'Most recent net salary visible in your payslip history.',
+        label: 'Latest payslip',
+        value: latestPayslip ? formatCurrency(Number(latestPayslip.net_salary)) : 'No payslip yet',
+        helper: latestPayslip
+          ? 'Most recent net salary visible in your payslip history.'
+          : 'Your latest published payslip will appear here.',
       },
       {
         id: 'ytd-earnings',
         label: 'YTD earnings',
-        value: formatCurrency(ytdEarnings),
-        helper: `${year} earnings total based on your available payslips.`,
+        value: myPayslips?.length ? formatCurrency(ytdEarnings) : 'No records yet',
+        helper: myPayslips?.length
+          ? `${year} earnings total based on your available payslips.`
+          : `Published payslips will populate your ${year} total.`,
       },
       {
         id: 'payslips',
@@ -150,7 +160,6 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           : null
     : null;
 
-  const isPayslipsTab = activeTab === 'payslips';
   const activeTabLabel =
     activeTab === 'payroll'
       ? 'Payroll runs'
@@ -169,12 +178,16 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           description={
             canManagePayroll
               ? 'Manage payroll runs, salary structures, deduction rules, and published payslips.'
-              : 'Review your payslips, salary information, and current payroll records.'
+              : 'Review your payslips and salary information as soon as payroll records are available.'
           }
-          metaSlot={<ContextChip className="hidden sm:inline-flex">Active view: {activeTabLabel}</ContextChip>}
+          metaSlot={canManagePayroll ? (
+            <ContextChip className="hidden sm:inline-flex">Active view: {activeTabLabel}</ContextChip>
+          ) : !hasEmployeePayrollData ? (
+            <ContextChip className="hidden sm:inline-flex">Payroll setup in progress</ContextChip>
+          ) : undefined}
           actionsSlot={
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              {isPayslipsTab ? (
+              {showPayrollPrivacyToggle ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -200,40 +213,36 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           }
         />
 
-        <ModuleLayout.Toolbar
-          surfaceVariant="flat"
-          ariaLabel="Payroll workspace controls"
-        >
-          <TabsList
-            className={`grid h-auto w-full rounded-lg bg-muted/40 p-1 ${
-              canManagePayroll ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 max-w-sm'
-            }`}
+        {canManagePayroll ? (
+          <ModuleLayout.Toolbar
+            surfaceVariant="flat"
+            ariaLabel="Payroll workspace controls"
           >
-            {canManagePayroll ? (
-              <>
-                <TabsTrigger value="payroll" className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  <span className="hidden sm:inline">Payroll</span>
-                </TabsTrigger>
-                <TabsTrigger value="salaries" className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  <span className="hidden sm:inline">Salaries</span>
-                </TabsTrigger>
-                <TabsTrigger value="deductions" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Deductions</span>
-                </TabsTrigger>
-              </>
-            ) : null}
-            <TabsTrigger value="payslips" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">My Payslips</span>
-            </TabsTrigger>
-          </TabsList>
-        </ModuleLayout.Toolbar>
+            <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/40 p-1 lg:grid-cols-4">
+              <TabsTrigger value="payroll" className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                <span className="hidden sm:inline">Payroll</span>
+              </TabsTrigger>
+              <TabsTrigger value="salaries" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                <span className="hidden sm:inline">Salaries</span>
+              </TabsTrigger>
+              <TabsTrigger value="deductions" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Deductions</span>
+              </TabsTrigger>
+              <TabsTrigger value="payslips" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">My Payslips</span>
+              </TabsTrigger>
+            </TabsList>
+          </ModuleLayout.Toolbar>
+        ) : null}
 
         <ModuleLayout.Content>
-          <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+          {canManagePayroll || hasEmployeePayrollData ? (
+            <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+          ) : null}
 
           {canManagePayroll ? (
             <>
