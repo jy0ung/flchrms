@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Edit, FileText, GitBranch, History, Mail, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { DataTableShell, StatusBadge } from '@/components/system';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
@@ -26,7 +26,6 @@ import { LeaveSlaMonitorSection } from '@/components/leave/LeaveSlaMonitorSectio
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { useLeaveDisplayPrefs } from '@/hooks/useLeaveDisplayConfig';
 import type { Department, LeaveType } from '@/types/hrms';
-import type { LeavePolicySubTabKey } from '@/components/admin/admin-ui-constants';
 
 interface LeavePoliciesSectionProps {
   leaveTypes?: LeaveType[];
@@ -67,38 +66,7 @@ export function LeavePoliciesSection({
     format(new Date(leaveType.updated_at ?? leaveType.created_at), 'MMM d, yyyy');
 
   return (
-    <Tabs defaultValue={'leave-types' satisfies LeavePolicySubTabKey} className="space-y-4">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1 md:grid-cols-7">
-        <TabsTrigger value="leave-types" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <FileText className="w-4 h-4" />
-          <span className="truncate">Leave Types</span>
-        </TabsTrigger>
-        <TabsTrigger value="operations" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <History className="w-4 h-4" />
-          <span className="truncate">Operations</span>
-        </TabsTrigger>
-        <TabsTrigger value="workflow-builders" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <GitBranch className="w-4 h-4" />
-          <span className="truncate">Workflow Builders</span>
-        </TabsTrigger>
-        <TabsTrigger value="balance-adjustments" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <SlidersHorizontal className="w-4 h-4" />
-          <span className="truncate">Balance Adjustments</span>
-        </TabsTrigger>
-        <TabsTrigger value="workflow-audit" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <History className="w-4 h-4" />
-          <span className="truncate">Workflow Audit</span>
-        </TabsTrigger>
-        <TabsTrigger value="notification-queue" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <Mail className="w-4 h-4" />
-          <span className="truncate">Notification Queue</span>
-        </TabsTrigger>
-        <TabsTrigger value="analytics-simulation" className="flex h-auto items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm">
-          <BarChart3 className="w-4 h-4" />
-          <span className="truncate">Analytics</span>
-        </TabsTrigger>
-      </TabsList>
-
+    <>
       <TabsContent value="leave-types" className="space-y-4">
       <DataTableShell
         density="compact"
@@ -341,6 +309,6 @@ export function LeavePoliciesSection({
       <TabsContent value="analytics-simulation" className="space-y-4">
         <LeavePolicyAnalyticsSection departments={departments} />
       </TabsContent>
-    </Tabs>
+    </>
   );
 }

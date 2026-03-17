@@ -78,14 +78,16 @@ vi.mock('@/components/admin/AdminLeaveTrendChart', () => ({
 }));
 
 describe('AdminDashboardPage', () => {
-  it('renders the refactored governance summary without duplicated KPI sections', () => {
+  it('renders the decision-first governance hierarchy above reference analytics', () => {
     mockCapabilityLoading = false;
     render(<AdminDashboardPage />);
 
     expect(screen.getByText('Active Employees')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Governance Priorities', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reference Analytics', level: 2 })).toBeInTheDocument();
     expect(screen.getByText('Governance Coverage')).toBeInTheDocument();
     expect(screen.getByText('System Alerts')).toBeInTheDocument();
-    expect(screen.queryByText('Governance Status')).not.toBeInTheDocument();
+    expect(screen.getByText('Focus: operational oversight')).toBeInTheDocument();
   });
 
   it('renders an explicit loading state while governance capabilities are resolving', () => {

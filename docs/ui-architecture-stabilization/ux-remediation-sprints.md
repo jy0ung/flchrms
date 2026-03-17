@@ -87,7 +87,7 @@ Completion notes:
 
 ### Sprint 3: Governance Hierarchy Harmonization
 
-Status: `Planned`
+Status: `Completed`
 
 Goals:
 - Align governance/admin page hierarchy with the employee shell patterns already in place
@@ -102,6 +102,11 @@ Acceptance criteria:
 - Governance pages feel structurally aligned with the main app shell
 - Alerts and actions outrank reference analytics where appropriate
 - Dense policy/workflow surfaces scan more cleanly
+
+Completion notes:
+- Admin dashboard now uses the shared utility-route page rhythm and surfaces governance priorities ahead of reference analytics.
+- Leave policies now uses the shared module-route structure with a summary strip, a clear current-workspace callout, and horizontally scrollable workspace tabs.
+- Desktop and mobile browser passes are complete for `Admin Dashboard` and `Admin Leave Policies`, and targeted admin page tests plus `build:dev` are green.
 
 ### Sprint 4: Cross-App Density and Scanability Polish
 
