@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarDays, ChevronDown, ChevronUp, ClipboardCheck, Info, Plus, WalletCards } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DataTableShell, QueryErrorState } from '@/components/system';
+import { DataTableShell, MetaBadge, QueryErrorState } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { LeaveBalanceSection } from '@/components/leave/LeaveBalanceSection';
@@ -154,31 +153,31 @@ export function LeavePage({ initialView }: LeavePageProps) {
             <div className="space-y-1">
               <span className="font-medium text-foreground">Employee:</span>
               <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600">Submit</Badge>
+                <MetaBadge tone="warning">Submit</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Manager</Badge>
+                <MetaBadge tone="info">Manager</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <MetaBadge tone="info">GM</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                <MetaBadge tone="warning">Director</MetaBadge>
               </div>
             </div>
             <div className="space-y-1">
               <span className="font-medium text-foreground">Manager:</span>
               <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600">Submit</Badge>
+                <MetaBadge tone="info">Submit</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">GM</Badge>
+                <MetaBadge tone="info">GM</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                <MetaBadge tone="warning">Director</MetaBadge>
               </div>
             </div>
             <div className="space-y-1">
               <span className="font-medium text-foreground">GM:</span>
               <div className="flex items-center gap-1 flex-wrap">
-                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-600">Submit</Badge>
+                <MetaBadge tone="info">Submit</MetaBadge>
                 <span>→</span>
-                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Director</Badge>
+                <MetaBadge tone="warning">Director</MetaBadge>
               </div>
             </div>
           </div>

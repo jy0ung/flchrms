@@ -2,8 +2,6 @@ import { useMemo } from 'react';
 import { ChevronRight, Mail, Shield, UserSquare2 } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -14,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { StatusBadge } from '@/components/system';
+import { MetaBadge, RowActionButton, StatusBadge } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import type { AppRole, Department, Profile } from '@/types/hrms';
 
@@ -37,6 +35,15 @@ function formatRoleLabel(role: AppRole) {
   return role.replace(/_/g, ' ');
 }
 
+const roleBadgeTones: Record<AppRole, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
+  admin: 'danger',
+  hr: 'info',
+  director: 'warning',
+  general_manager: 'info',
+  manager: 'success',
+  employee: 'default',
+};
+
 function getInitials(employee: Pick<Profile, 'first_name' | 'last_name'>) {
   return `${employee.first_name[0] ?? ''}${employee.last_name[0] ?? ''}`;
 }
@@ -48,7 +55,7 @@ export function EmployeeTable({
   onSelectedIdsChange,
   onOpenEmployee,
   getUserRole,
-  roleColors,
+  roleColors: _roleColors,
   canSelectRows,
   canViewSensitiveIdentifiers,
   embedded = false,
@@ -168,20 +175,6 @@ export function EmployeeTable({
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full"
-                    aria-label={`Open employee record for ${employeeName}`}
-                    onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
-                  >
-                    Open record
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2">
                     <p className="text-muted-foreground">Department</p>
@@ -189,9 +182,9 @@ export function EmployeeTable({
                   </div>
                   <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2">
                     <p className="text-muted-foreground">Role</p>
-                    <Badge className={`mt-1 border ${roleColors[employeeRole]}`}>
+                    <MetaBadge tone={roleBadgeTones[employeeRole]} className="mt-1 capitalize">
                       {formatRoleLabel(employeeRole)}
-                    </Badge>
+                    </MetaBadge>
                   </div>
                 </div>
 
@@ -201,6 +194,17 @@ export function EmployeeTable({
                     {employee.username ? `@${employee.username}` : 'Username not set'}
                   </p>
                 ) : null}
+
+                <div className="flex justify-end">
+                  <RowActionButton
+                    type="button"
+                    aria-label={`Open employee record for ${employeeName}`}
+                    onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
+                  >
+                    Open record
+                    <ChevronRight className="h-4 w-4" />
+                  </RowActionButton>
+                </div>
               </CardContent>
             </Card>
           );
@@ -264,9 +268,9 @@ export function EmployeeTable({
                         </TableCell>
                         <TableCell>{employee.department?.name || 'Unassigned'}</TableCell>
                         <TableCell>
-                          <Badge className={`border ${roleColors[employeeRole]}`}>
+                          <MetaBadge tone={roleBadgeTones[employeeRole]} className="capitalize">
                             {formatRoleLabel(employeeRole)}
-                          </Badge>
+                          </MetaBadge>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-xs">
@@ -283,17 +287,14 @@ export function EmployeeTable({
                           <StatusBadge status={employee.status} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
+                          <RowActionButton
                             type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="rounded-full"
                             aria-label={`Open employee record for ${employeeName}`}
                             onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
                           >
                             Open
-                            <ChevronRight className="ml-1 h-4 w-4" />
-                          </Button>
+                            <ChevronRight className="h-4 w-4" />
+                          </RowActionButton>
                         </TableCell>
                       </TableRow>
                     );

@@ -110,7 +110,7 @@ Completion notes:
 
 ### Sprint 4: Cross-App Density and Scanability Polish
 
-Status: `Planned`
+Status: `Completed`
 
 Goals:
 - Reduce decorative chip weight where it competes with primary content
@@ -125,6 +125,11 @@ Acceptance criteria:
 - Primary row content is easier to scan than status decoration
 - Repeated action placement is consistent across tables and cards
 - Mobile first-view priority is stable across touched modules
+
+Completion notes:
+- Added shared subdued metadata badges and standardized row-action buttons, then applied them across employee, department, leave, and leave-policy table/card surfaces.
+- Reduced decorative badge prominence in leave-policy metadata, leave-request documents/workflow helpers, and mobile employee cards so record identity reads first.
+- Desktop and mobile browser passes are complete for `Employees`, `Leave`, and `Admin Leave Policies`, and targeted table tests plus `build:dev` are green.
 
 ## Delivery Order
 

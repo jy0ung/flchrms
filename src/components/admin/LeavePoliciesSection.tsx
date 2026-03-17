@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -12,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TabsContent } from '@/components/ui/tabs';
-import { DataTableShell, StatusBadge } from '@/components/system';
+import { DataTableShell, MetaBadge, RowActionButton, StatusBadge } from '@/components/system';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
@@ -100,14 +99,14 @@ export function LeavePoliciesSection({
                           <p className="text-sm text-muted-foreground">{leaveType.description}</p>
                         )}
                       </div>
-                      <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
+                      <MetaBadge>{leaveType.days_allowed} days/year</MetaBadge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                      <MetaBadge>{getPolicyVersion(leaveType)}</MetaBadge>
                       <StatusBadge status="success" labelOverride="Published" />
-                      <Badge variant="secondary">
+                      <MetaBadge>
                         {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
-                      </Badge>
+                      </MetaBadge>
                       <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
                       <StatusBadge
                         status={leaveType.requires_document ? 'warning' : 'info'}
@@ -119,24 +118,21 @@ export function LeavePoliciesSection({
                     </div>
                     {canManageLeaveTypes && (
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full"
+                        <RowActionButton
+                          type="button"
                           onClick={() => onEditLeaveType(leaveType)}
                         >
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full border-destructive/30 text-destructive hover:bg-destructive/10"
+                        </RowActionButton>
+                        <RowActionButton
+                          type="button"
+                          tone="danger"
                           onClick={() => onDeleteLeaveType(leaveType)}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           Delete
-                        </Button>
+                        </RowActionButton>
                       </div>
                     )}
                   </div>
@@ -178,7 +174,7 @@ export function LeavePoliciesSection({
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{getPolicyVersion(leaveType)}</Badge>
+                            <MetaBadge>{getPolicyVersion(leaveType)}</MetaBadge>
                           </TableCell>
                           <TableCell>
                             <StatusBadge status="success" labelOverride="Published" />
@@ -187,12 +183,12 @@ export function LeavePoliciesSection({
                             {getEffectiveDate(leaveType)}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{leaveType.days_allowed} days/year</Badge>
+                            <MetaBadge>{leaveType.days_allowed} days/year</MetaBadge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">
+                            <MetaBadge>
                               {leaveType.min_days === 0 ? 'No notice' : `${leaveType.min_days ?? 0} day(s) notice`}
-                            </Badge>
+                            </MetaBadge>
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={leaveType.is_paid ? 'paid' : 'unpaid'} />
@@ -204,7 +200,7 @@ export function LeavePoliciesSection({
                             />
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">System</Badge>
+                            <MetaBadge>System</MetaBadge>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {getLastModifiedDate(leaveType)}
@@ -213,24 +209,21 @@ export function LeavePoliciesSection({
                             <div className="flex items-center justify-end gap-2">
                               {canManageLeaveTypes && (
                                 <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full"
+                                  <RowActionButton
+                                    type="button"
                                     onClick={() => onEditLeaveType(leaveType)}
                                   >
                                     <Edit className="w-4 h-4 mr-2" />
                                     Edit
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                  </RowActionButton>
+                                  <RowActionButton
+                                    type="button"
+                                    tone="danger"
                                     aria-label={`Delete leave type ${leaveType.name}`}
                                     onClick={() => onDeleteLeaveType(leaveType)}
                                   >
                                     <Trash2 className="w-4 h-4" />
-                                  </Button>
+                                  </RowActionButton>
                                 </>
                               )}
                             </div>

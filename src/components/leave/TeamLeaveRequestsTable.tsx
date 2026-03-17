@@ -1,7 +1,5 @@
 import { format } from 'date-fns';
 import { Check, Eye, FileText, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import {
@@ -12,7 +10,7 @@ import type { LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
 import { canRequestLeaveSupportingDocument, canViewLeaveSupportingDocument } from '@/lib/permissions';
 import { getLeaveRequestEmployeeEmail, getLeaveRequestEmployeeName } from '@/lib/leave-request-display';
-import { StatusBadge } from '@/components/system';
+import { MetaBadge, RowActionButton, StatusBadge } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 type LeaveStatusDisplay = {
@@ -109,7 +107,7 @@ export function TeamLeaveRequestsTable({
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium">{request.leave_type?.name}</span>
                         {request.leave_type?.requires_document && (
-                          <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
+                          <MetaBadge tone="warning">Doc Required</MetaBadge>
                         )}
                         {workflowPresentation.secondaryStatus ? (
                           <StatusBadge
@@ -140,67 +138,60 @@ export function TeamLeaveRequestsTable({
 
                     <div className="flex flex-wrap gap-2">
                       {shouldShowLeaveDetailsButton(request) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-full"
+                        <RowActionButton
+                          type="button"
                           onClick={(event) => onOpenDetails(request, event.currentTarget)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Details
-                        </Button>
+                        </RowActionButton>
                       )}
                       {canApproveCancellation(request) ? (
                         <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                          <RowActionButton
+                            type="button"
+                            tone="success"
                             onClick={() => onCancellationReview(request, 'approve')}
                           >
                             Approve Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                          </RowActionButton>
+                          <RowActionButton
+                            type="button"
+                            tone="danger"
                             onClick={() => onCancellationReview(request, 'reject')}
                           >
                             Reject Cancel
-                          </Button>
+                          </RowActionButton>
                         </>
                       ) : canApprove(request) && (
                         <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                          <RowActionButton
+                            type="button"
+                            tone="success"
                             onClick={() => onAction(request, 'approve')}
                             aria-label="Approve"
                           >
                             <Check className="w-4 h-4 mr-1" />
                             Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                          </RowActionButton>
+                          <RowActionButton
+                            type="button"
+                            tone="danger"
                             onClick={() => onAction(request, 'reject')}
                             aria-label="Reject"
                           >
                             <X className="w-4 h-4 mr-1" />
                             Reject
-                          </Button>
+                          </RowActionButton>
                           {canRequestDocumentAtCurrentStage(request) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
+                            <RowActionButton
+                              type="button"
+                              tone="warning"
                               onClick={() => onAction(request, 'request_document')}
                             >
                               <FileText className="w-4 h-4 mr-1" />
                               Request Doc
-                            </Button>
+                            </RowActionButton>
                           )}
                         </>
                       )}
@@ -253,7 +244,7 @@ export function TeamLeaveRequestsTable({
                           <div>
                             <span className="font-medium">{request.leave_type?.name}</span>
                           {request.leave_type?.requires_document && (
-                            <Badge variant="outline" className="ml-2 text-xs">Doc Required</Badge>
+                            <MetaBadge tone="warning" className="ml-2">Doc Required</MetaBadge>
                           )}
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -293,67 +284,60 @@ export function TeamLeaveRequestsTable({
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
                           {shouldShowLeaveDetailsButton(request) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="rounded-full"
+                            <RowActionButton
+                              type="button"
                               onClick={(event) => onOpenDetails(request, event.currentTarget)}
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Details
-                            </Button>
+                            </RowActionButton>
                           )}
                           {canApproveCancellation(request) ? (
                             <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                              <RowActionButton
+                                type="button"
+                                tone="success"
                                 onClick={() => onCancellationReview(request, 'approve')}
                               >
                                 Approve Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                              </RowActionButton>
+                              <RowActionButton
+                                type="button"
+                                tone="danger"
                                 onClick={() => onCancellationReview(request, 'reject')}
                               >
                                 Reject Cancel
-                              </Button>
+                              </RowActionButton>
                             </>
                           ) : canApprove(request) && (
                             <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-full border-green-500/30 text-green-700 hover:bg-green-500/10"
+                              <RowActionButton
+                                type="button"
+                                tone="success"
                                 onClick={() => onAction(request, 'approve')}
                                 aria-label="Approve"
                               >
                                 <Check className="w-4 h-4 mr-1" />
                                 <span className="hidden lg:inline">Approve</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-full border-red-500/30 text-red-700 hover:bg-red-500/10"
+                              </RowActionButton>
+                              <RowActionButton
+                                type="button"
+                                tone="danger"
                                 onClick={() => onAction(request, 'reject')}
                                 aria-label="Reject"
                               >
                                 <X className="w-4 h-4 mr-1" />
                                 <span className="hidden lg:inline">Reject</span>
-                              </Button>
-                          {canRequestDocumentAtCurrentStage(request) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-orange-500/30 text-orange-700 hover:bg-orange-500/10"
-                              onClick={() => onAction(request, 'request_document')}
+                              </RowActionButton>
+                              {canRequestDocumentAtCurrentStage(request) && (
+                                <RowActionButton
+                                  type="button"
+                                  tone="warning"
+                                  onClick={() => onAction(request, 'request_document')}
                                 >
                                   <FileText className="w-4 h-4 mr-1" />
                                   <span className="hidden xl:inline">Request Doc</span>
-                                </Button>
+                                </RowActionButton>
                               )}
                             </>
                           )}

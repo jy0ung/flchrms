@@ -14,6 +14,8 @@ export * from "./ModalScaffold";
 export * from "./ModalSection";
 export * from "./ConfirmationDialog";
 export * from "./RouteLoadingState";
+export * from "./MetaBadge";
+export * from "./RowActionButton";
 export * from "./Skeletons";
 export * from "./QueryErrorState";
 export * from "./interaction-mode";

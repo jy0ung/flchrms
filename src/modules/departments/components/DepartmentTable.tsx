@@ -1,8 +1,6 @@
 import { format } from 'date-fns';
 import { Building2, ChevronRight, Users } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -12,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { MetaBadge, RowActionButton } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 import type { DepartmentRecord } from '../types';
@@ -94,7 +93,9 @@ export function DepartmentTable({
                       {department.description || 'No department description yet.'}
                     </p>
                   </div>
-                  <Badge variant="outline">{department.memberCount} members</Badge>
+                  <MetaBadge icon={<Users className="h-3 w-3" />}>
+                    {department.memberCount} members
+                  </MetaBadge>
                 </div>
               </div>
 
@@ -116,17 +117,14 @@ export function DepartmentTable({
               ) : null}
 
               <div className="flex justify-end">
-                <Button
+                <RowActionButton
                   type="button"
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full"
                   aria-label={`Open department record for ${department.name}`}
                   onClick={(event) => onOpenDepartment(department, event.currentTarget)}
                 >
                   Open record
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
+                  <ChevronRight className="h-4 w-4" />
+                </RowActionButton>
               </div>
             </CardContent>
           </Card>
@@ -171,24 +169,20 @@ export function DepartmentTable({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1">
-                          <Users className="h-3 w-3" />
-                          {department.memberCount}
-                        </Badge>
+                        <MetaBadge icon={<Users className="h-3 w-3" />}>
+                          {department.memberCount} members
+                        </MetaBadge>
                       </TableCell>
                       <TableCell>{formatDate(department.updated_at)}</TableCell>
                       <TableCell className="text-right">
-                        <Button
+                        <RowActionButton
                           type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-full"
                           aria-label={`Open department record for ${department.name}`}
                           onClick={(event) => onOpenDepartment(department, event.currentTarget)}
                         >
                           Open
-                          <ChevronRight className="ml-1 h-4 w-4" />
-                        </Button>
+                          <ChevronRight className="h-4 w-4" />
+                        </RowActionButton>
                       </TableCell>
                     </TableRow>
                   ))}

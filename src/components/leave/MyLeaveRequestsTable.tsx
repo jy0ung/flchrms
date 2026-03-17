@@ -1,7 +1,5 @@
 import { format } from 'date-fns';
 import { Eye, FileText, Upload } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { DocumentViewButton } from '@/components/leave/DocumentViewButton';
 import { LeaveRequestContextSummary } from '@/components/leave/LeaveRequestContextSummary';
 import {
@@ -9,7 +7,7 @@ import {
   getLeaveWorkflowPresentation,
 } from '@/components/leave/leave-request-context';
 import type { LeaveRequest } from '@/types/hrms';
-import { StatusBadge } from '@/components/system';
+import { MetaBadge, RowActionButton, StatusBadge } from '@/components/system';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 
 type LeaveStatusDisplay = {
@@ -87,7 +85,7 @@ export function MyLeaveRequestsTable({
                         <p className="font-semibold text-sm">{request.leave_type?.name}</p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {request.leave_type?.requires_document && (
-                            <Badge variant="outline" className="text-[11px]">Doc Required</Badge>
+                            <MetaBadge tone="warning">Doc Required</MetaBadge>
                           )}
                           {workflowPresentation.secondaryStatus ? (
                             <StatusBadge
@@ -129,32 +127,30 @@ export function MyLeaveRequestsTable({
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {shouldShowLeaveDetailsButton(request) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="rounded-full"
+                        <RowActionButton
+                          type="button"
                           onClick={(event) => onOpenDetails(request, event.currentTarget)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Details
-                        </Button>
+                        </RowActionButton>
                       )}
                       {request.document_url && <DocumentViewButton documentPath={request.document_url} />}
                       {canAmend(request) && (
-                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => onAmend(request)}>
+                        <RowActionButton type="button" onClick={() => onAmend(request)}>
                           <Upload className="w-4 h-4 mr-1" />
                           Amend
-                        </Button>
+                        </RowActionButton>
                       )}
                       {canCancelPendingRequest(request) && (
-                        <Button size="sm" variant="ghost" className="rounded-full text-destructive hover:text-destructive" onClick={() => onCancel(request)}>
+                        <RowActionButton type="button" tone="danger" onClick={() => onCancel(request)}>
                           Cancel
-                        </Button>
+                        </RowActionButton>
                       )}
                       {canRequestCancellation(request) && (
-                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => onCancel(request)}>
+                        <RowActionButton type="button" onClick={() => onCancel(request)}>
                           Request Cancellation
-                        </Button>
+                        </RowActionButton>
                       )}
                     </div>
                   </div>
@@ -195,7 +191,7 @@ export function MyLeaveRequestsTable({
                           <div>
                             <span className="font-medium">{request.leave_type?.name}</span>
                           {request.leave_type?.requires_document && (
-                            <Badge variant="outline" className="ml-2 text-xs">Doc Required</Badge>
+                            <MetaBadge tone="warning" className="ml-2">Doc Required</MetaBadge>
                           )}
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -235,34 +231,32 @@ export function MyLeaveRequestsTable({
                       <td className="p-4">
                         <div className="flex flex-wrap gap-2">
                           {shouldShowLeaveDetailsButton(request) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="rounded-full"
+                            <RowActionButton
+                              type="button"
                               onClick={(event) => onOpenDetails(request, event.currentTarget)}
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Details
-                            </Button>
+                            </RowActionButton>
                           )}
                           {request.document_url && (
                             <DocumentViewButton documentPath={request.document_url} />
                           )}
                           {canAmend(request) && (
-                            <Button size="sm" variant="outline" className="rounded-full" onClick={() => onAmend(request)}>
+                            <RowActionButton type="button" onClick={() => onAmend(request)}>
                               <Upload className="w-4 h-4 mr-1" />
                               Amend
-                            </Button>
+                            </RowActionButton>
                           )}
                           {canCancelPendingRequest(request) && (
-                            <Button size="sm" variant="ghost" className="rounded-full text-destructive hover:text-destructive" onClick={() => onCancel(request)}>
+                            <RowActionButton type="button" tone="danger" onClick={() => onCancel(request)}>
                               Cancel
-                            </Button>
+                            </RowActionButton>
                           )}
                           {canRequestCancellation(request) && (
-                            <Button size="sm" variant="outline" className="rounded-full" onClick={() => onCancel(request)}>
+                            <RowActionButton type="button" onClick={() => onCancel(request)}>
                               Request Cancellation
-                            </Button>
+                            </RowActionButton>
                           )}
                         </div>
                       </td>
