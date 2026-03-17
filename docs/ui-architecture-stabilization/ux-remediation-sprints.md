@@ -83,6 +83,7 @@ Completion notes:
 - Attendance now centers the daily clock action inside a dedicated today panel instead of spreading it across summary cards.
 - Employee payroll removes the single-tab toolbar, hides the salary privacy control when there is nothing to mask, and uses clearer setup-state language.
 - Employee and HR browser passes are complete. No additional Sprint 2 follow-up polish is required before moving to Sprint 3.
+- Deep-dive review on 2026-03-17 confirmed the sprint is ready to ship without further Sprint 2 polish.
 
 ### Sprint 3: Governance Hierarchy Harmonization
 
