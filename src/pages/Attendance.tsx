@@ -44,9 +44,71 @@ export default function Attendance() {
     : !today.clock_out
       ? 'Your work session is active. Clock out here when you finish for the day.'
       : 'Today is already recorded. Review recent sessions below if you need to confirm your latest workday.';
+  const todayPanel = (
+    <SurfaceSection
+      title="Today’s attendance"
+      description={todayDescription}
+      actions={todayAction ? (
+        <Button
+          type="button"
+          className="h-9 rounded-full"
+          variant={todayAction.variant}
+          onClick={todayAction.onClick}
+          disabled={todayAction.disabled}
+        >
+          <todayAction.icon className="mr-2 h-4 w-4" />
+          {todayAction.label}
+        </Button>
+      ) : null}
+    >
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {today ? (
+            <StatusBadge status={today.status} labelOverride={todayStatus} />
+          ) : (
+            <ContextChip className="rounded-full">No session started</ContextChip>
+          )}
+          <ContextChip className="rounded-full">
+            {todayHeadline}
+          </ContextChip>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Status
+            </p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{todayStatus}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {today ? 'Your current attendance state for today.' : 'Clock in when you start work.'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Clock In
+            </p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockInLabel}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Clock Out
+            </p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockOutLabel}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {today?.clock_out ? 'Work session completed.' : 'Clock-out pending.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </SurfaceSection>
+  );
 
   return (
     <UtilityLayout
+      archetype="task-dashboard"
       eyebrow="Workspace"
       title="Attendance"
       description="Start or finish today’s work session, then reference your recent attendance history."
@@ -55,75 +117,14 @@ export default function Attendance() {
           <ContextChip className="rounded-full">
             {format(new Date(), 'EEEE, MMM d')}
           </ContextChip>
-          <ContextChip className="rounded-full">
-            {attendanceHistoryCount} recorded session{attendanceHistoryCount === 1 ? '' : 's'}
-          </ContextChip>
         </div>
       )}
+      leadSlot={todayPanel}
+      leadSurface="none"
     >
       {isError && (
         <QueryErrorState label="attendance records" onRetry={() => refetch()} />
       )}
-
-      <SurfaceSection
-        title="Today’s attendance"
-        description={todayDescription}
-        actions={todayAction ? (
-          <Button
-            type="button"
-            className="h-9 rounded-full"
-            variant={todayAction.variant}
-            onClick={todayAction.onClick}
-            disabled={todayAction.disabled}
-          >
-            <todayAction.icon className="mr-2 h-4 w-4" />
-            {todayAction.label}
-          </Button>
-        ) : null}
-      >
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {today ? (
-              <StatusBadge status={today.status} labelOverride={todayStatus} />
-            ) : (
-              <ContextChip className="rounded-full">No session started</ContextChip>
-            )}
-            <ContextChip className="rounded-full">
-              {todayHeadline}
-            </ContextChip>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Status
-              </p>
-              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{todayStatus}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {today ? 'Your current attendance state for today.' : 'Clock in when you start work.'}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Clock In
-              </p>
-              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockInLabel}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {today?.clock_in ? 'Current work session started.' : 'No clock-in recorded yet.'}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                Clock Out
-              </p>
-              <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">{clockOutLabel}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {today?.clock_out ? 'Work session completed.' : 'Clock-out pending.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </SurfaceSection>
 
       <DataTableShell
         title="Recent attendance history"
