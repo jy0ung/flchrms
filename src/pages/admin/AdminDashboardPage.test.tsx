@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
@@ -78,22 +79,41 @@ vi.mock('@/components/admin/AdminLeaveTrendChart', () => ({
 }));
 
 describe('AdminDashboardPage', () => {
+  function renderPage() {
+    return render(
+      <MemoryRouter initialEntries={['/admin/dashboard']}>
+        <AdminDashboardPage />
+      </MemoryRouter>,
+    );
+  }
+
   it('renders the decision-first governance hierarchy above reference analytics', () => {
     mockCapabilityLoading = false;
-    render(<AdminDashboardPage />);
+    renderPage();
 
+    const prioritiesHeading = screen.getByRole('heading', { name: 'Governance Priorities', level: 2 });
+    const snapshotHeading = screen.getByRole('heading', { name: 'Operational Snapshot', level: 2 });
+    const analyticsHeading = screen.getByRole('heading', { name: 'Reference Analytics', level: 2 });
+
+    expect(
+      prioritiesHeading.compareDocumentPosition(snapshotHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      snapshotHeading.compareDocumentPosition(analyticsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByText('Active Employees')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Governance Priorities', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Reference Analytics', level: 2 })).toBeInTheDocument();
-    expect(screen.getByText('Governance Coverage')).toBeInTheDocument();
+    expect(screen.getByText('Open Governance Workspaces')).toBeInTheDocument();
     expect(screen.getByText('System Alerts')).toBeInTheDocument();
+    expect(screen.getByText('Roles')).toBeInTheDocument();
+    expect(screen.getByText('Leave Policies')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open Governance Hub/i })).toBeInTheDocument();
     expect(screen.getByText('Focus: operational oversight')).toBeInTheDocument();
   });
 
   it('renders an explicit loading state while governance capabilities are resolving', () => {
     mockCapabilityLoading = true;
 
-    render(<AdminDashboardPage />);
+    renderPage();
 
     expect(screen.getByText('Loading governance overview')).toBeInTheDocument();
   });

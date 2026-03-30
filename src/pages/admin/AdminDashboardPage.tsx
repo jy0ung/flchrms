@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   Building2,
@@ -15,7 +16,7 @@ import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { ContextChip, RouteLoadingState, StatusBadge, SurfaceSection } from '@/components/system';
+import { ActionTile, ContextChip, RouteLoadingState, StatusBadge, SurfaceSection } from '@/components/system';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
 import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
@@ -23,6 +24,7 @@ import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
+import { Button } from '@/components/ui/button';
 
 export default function AdminDashboardPage() {
   usePageTitle('Admin Dashboard');
@@ -40,20 +42,26 @@ export default function AdminDashboardPage() {
     const totalDepts = departments?.length ?? 0;
     const totalPolicies = leaveTypes?.length ?? 0;
     const roleAssignments = userRoles?.length ?? 0;
-    const admins = userRoles?.filter((r) => r.role === 'admin').length ?? 0;
-    const hrUsers = userRoles?.filter((r) => r.role === 'hr').length ?? 0;
 
-    return { activeEmployees, totalDepts, totalPolicies, roleAssignments, admins, hrUsers };
+    return { activeEmployees, totalDepts, totalPolicies, roleAssignments };
   }, [employees, departments, leaveTypes, userRoles]);
 
   const systemAlerts = useMemo(() => {
-    const alerts: { id: string; message: string; tone: 'warning' | 'success' | 'error' }[] = [];
+    const alerts: Array<{
+      id: string;
+      message: string;
+      tone: 'warning' | 'success' | 'error';
+      actionLabel?: string;
+      to?: string;
+    }> = [];
     const terminated = employees?.filter((e) => e.status === 'terminated').length ?? 0;
     if (terminated > 0) {
       alerts.push({
         id: 'terminated',
         message: `${terminated} archived employee account(s) require periodic review.`,
         tone: 'warning',
+        actionLabel: 'Open workforce',
+        to: '/employees',
       });
     }
     const onLeave = employees?.filter((e) => e.status === 'on_leave').length ?? 0;
@@ -62,6 +70,8 @@ export default function AdminDashboardPage() {
         id: 'on-leave',
         message: `${onLeave} employee(s) currently on leave.`,
         tone: 'success',
+        actionLabel: 'Review leave',
+        to: '/leave',
       });
     }
     if (alerts.length === 0) {
@@ -69,6 +79,8 @@ export default function AdminDashboardPage() {
         id: 'healthy',
         message: 'No governance alerts detected. All systems operational.',
         tone: 'success',
+        actionLabel: 'Open governance hub',
+        to: '/admin/quick-actions',
       });
     }
     return alerts;
@@ -112,6 +124,7 @@ export default function AdminDashboardPage() {
   if (capabilitiesLoading) {
     return (
       <UtilityLayout
+        archetype="task-dashboard"
         eyebrow="Governance"
         title="Admin Dashboard"
         description="Review governance health, operational exceptions, and organization analytics from one oversight workspace."
@@ -141,6 +154,7 @@ export default function AdminDashboardPage() {
 
   return (
     <UtilityLayout
+      archetype="task-dashboard"
       eyebrow="Governance"
       title="Admin Dashboard"
       description="Review governance health, operational exceptions, and organization analytics from one oversight workspace."
@@ -150,7 +164,43 @@ export default function AdminDashboardPage() {
           <ContextChip>Scope: organization-wide</ContextChip>
         </>
       )}
-      summarySlot={<SummaryRail items={kpiCards} />}
+      actionsSlot={(
+        <Button asChild variant="outline" className="h-9 rounded-full">
+          <Link to="/admin/quick-actions">Open Governance Hub</Link>
+        </Button>
+      )}
+      supportingSlot={(
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Reference
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Reference Analytics
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Workforce and leave trend context that supports planning after the priority checks are clear.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <SurfaceSection
+              title="Headcount by Department"
+              description="Current employee distribution across the organization."
+            >
+              <AdminDeptChart data={deptDistribution} />
+            </SurfaceSection>
+
+            <SurfaceSection
+              title="Leave Requests Trend"
+              description="Requests submitted over the last six months."
+            >
+              <AdminLeaveTrendChart data={leaveTrend} />
+            </SurfaceSection>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
     >
       <section className="space-y-4">
         <div className="space-y-1">
@@ -177,13 +227,25 @@ export default function AdminDashboardPage() {
                 icon={AlertTriangle}
                 align="start"
                 appearance="default"
+                action={systemAlerts[0].to ? (
+                  <Button asChild variant="outline" size="sm" className="rounded-full">
+                    <Link to={systemAlerts[0].to}>{systemAlerts[0].actionLabel}</Link>
+                  </Button>
+                ) : null}
               />
             ) : (
               <div className="space-y-3">
                 {systemAlerts.map((alert) => (
                   <div key={alert.id} className="rounded-xl border border-border bg-muted/30 p-4">
                     <StatusBadge status={alert.tone} labelOverride={alert.tone} className="mb-2" />
-                    <p className="text-sm text-foreground">{alert.message}</p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-foreground">{alert.message}</p>
+                      {alert.to && alert.actionLabel ? (
+                        <Button asChild variant="outline" size="sm" className="rounded-full">
+                          <Link to={alert.to}>{alert.actionLabel}</Link>
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -191,43 +253,34 @@ export default function AdminDashboardPage() {
           </SurfaceSection>
 
           <SurfaceSection
-            title="Governance Coverage"
-            description="Access, policy, and oversight counts that support admin operations."
+            title="Open Governance Workspaces"
+            description="Jump into the highest-value admin surfaces without leaving the oversight flow."
           >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="rounded-xl bg-muted p-2">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                      Role assignments
-                    </p>
-                    <p className="text-xl font-semibold tracking-tight">{stats.roleAssignments}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {stats.admins} admins • {stats.hrUsers} HR partners
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="rounded-xl bg-sky-500/10 p-2 text-sky-700">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                      Leave policies
-                    </p>
-                    <p className="text-xl font-semibold tracking-tight">{stats.totalPolicies}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Published leave types available to employees.
-                </p>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ActionTile
+                title="Roles"
+                description={`${stats.roleAssignments} active assignments across admin and HR coverage.`}
+                icon={Shield}
+                to="/admin/roles"
+                badgeLabel={`${stats.roleAssignments} assignments`}
+                size="compact"
+              />
+              <ActionTile
+                title="Leave Policies"
+                description={`${stats.totalPolicies} published leave types ready for workflow and policy review.`}
+                icon={FileText}
+                to="/admin/leave-policies"
+                badgeLabel={`${stats.totalPolicies} policies`}
+                size="compact"
+              />
+              <ActionTile
+                title="Employee Directory"
+                description={`${stats.activeEmployees} active records and archived staff oversight in one workspace.`}
+                icon={Users}
+                to="/employees"
+                badgeLabel={`${stats.activeEmployees} active`}
+                size="compact"
+              />
             </div>
           </SurfaceSection>
         </div>
@@ -236,31 +289,16 @@ export default function AdminDashboardPage() {
       <section className="space-y-4">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Monitor
+            Scan now
           </p>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            Reference Analytics
+            Operational Snapshot
           </h2>
           <p className="text-sm text-muted-foreground">
-            Workforce and leave trend context that supports planning after the priority checks are clear.
+            Lightweight counts that frame the current governance picture after the priority work is clear.
           </p>
         </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <SurfaceSection
-            title="Headcount by Department"
-            description="Current employee distribution across the organization."
-          >
-            <AdminDeptChart data={deptDistribution} />
-          </SurfaceSection>
-
-          <SurfaceSection
-            title="Leave Requests Trend"
-            description="Requests submitted over the last six months."
-          >
-            <AdminLeaveTrendChart data={leaveTrend} />
-          </SurfaceSection>
-        </div>
+        <SummaryRail items={kpiCards} variant="subtle" compactBreakpoint="lg" />
       </section>
     </UtilityLayout>
   );
