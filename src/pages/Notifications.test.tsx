@@ -122,6 +122,11 @@ describe('Notifications page header control relocation', () => {
     expect(screen.getByRole('button', { name: /Mark All Read/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Show inbox tools/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Notification settings/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /^Inbox$/i }).compareDocumentPosition(
+        screen.getByRole('heading', { name: /Inbox maintenance/i }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Show inbox tools/i }));
 

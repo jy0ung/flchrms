@@ -342,6 +342,7 @@ export default function Dashboard() {
   return (
     <DashboardDataProvider>
       <UtilityLayout
+        archetype="task-dashboard"
         eyebrow="Workspace"
         title="Dashboard"
         description={
@@ -396,7 +397,7 @@ export default function Dashboard() {
             </div>
           )
         }
-        summarySlot={<DashboardGreeting role={role} headingLevel={2} />}
+        leadSlot={<DashboardGreeting role={role} headingLevel={2} />}
       >
 
         {!isLoading && !editMode && showGettingStartedDashboard && (

@@ -70,17 +70,28 @@ vi.mock('@/components/admin/AdminLeaveTypeDialogs', () => ({
 }));
 
 describe('AdminLeavePoliciesPage', () => {
-  it('renders the governance summary and workspace toolbar ahead of the policy content', () => {
+  it('renders the governance workspace selector before content and keeps summary metrics secondary', () => {
     mockCapabilityLoading = false;
     mockCanManageLeaveTypes = true;
 
     render(<AdminLeavePoliciesPage />);
 
+    const workspaceHeading = screen.getByRole('heading', { name: 'Policy workspaces', level: 2 });
+    const content = screen.getByText('Mock leave policies section');
+    const summary = screen.getByText('Published leave types');
+
+    expect(workspaceHeading).toBeInTheDocument();
+    expect(
+      workspaceHeading.compareDocumentPosition(content) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      content.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByText('Published leave types')).toBeInTheDocument();
     expect(screen.getByText('Department scopes')).toBeInTheDocument();
     expect(screen.getByText('Access mode')).toBeInTheDocument();
     expect(screen.getByText('Current workspace')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Leave Types' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Leave Types/i })).toBeInTheDocument();
     expect(screen.getByText('Editable workspace')).toBeInTheDocument();
     expect(screen.getByText('Mock leave policies section')).toBeInTheDocument();
   });

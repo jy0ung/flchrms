@@ -338,10 +338,12 @@ export default function Notifications() {
 
   return (
     <UtilityLayout
+      archetype="inbox"
       eyebrow="Workspace"
       title="Notifications"
       description="Review updates, open related work, and keep track of workflow activity."
       summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      summarySurface="none"
       controlsSlot={
         <SectionToolbar
           variant="inline"
@@ -387,6 +389,7 @@ export default function Notifications() {
           ]}
         />
       }
+      controlsSurface="none"
       actionsSlot={
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <Button
@@ -414,6 +417,17 @@ export default function Notifications() {
           )}
         </div>
       }
+      supportingSlot={(
+        <NotificationMaintenancePanel
+          cleanupDays={cleanupDays}
+          onCleanupDaysChange={setCleanupDays}
+          onCleanup={() => void handleCleanupReadNotifications()}
+          onOpenSettings={() => navigate('/profile?tab=notifications')}
+          isDeleting={isDeletingReadNotifications}
+          open={maintenanceOpen}
+          onOpenChange={setMaintenanceOpen}
+        />
+      )}
     >
       <DataTableShell
         title="Inbox"
@@ -482,16 +496,6 @@ export default function Notifications() {
             </div>
           </ScrollArea>
         }
-      />
-
-      <NotificationMaintenancePanel
-        cleanupDays={cleanupDays}
-        onCleanupDaysChange={setCleanupDays}
-        onCleanup={() => void handleCleanupReadNotifications()}
-        onOpenSettings={() => navigate('/profile?tab=notifications')}
-        isDeleting={isDeletingReadNotifications}
-        open={maintenanceOpen}
-        onOpenChange={setMaintenanceOpen}
       />
     </UtilityLayout>
   );

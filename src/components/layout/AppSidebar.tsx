@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useShellNotifications } from '@/components/layout/ShellNotificationsProvider';
+import { buildBottomNavItems } from './mobile-bottom-nav-config';
 
 type SidebarNavItem = {
   name: string;
@@ -42,6 +43,11 @@ type SidebarNavItem = {
   danger?: boolean;
   badge?: number;
 };
+
+function filterHiddenNavItems(items: SidebarNavItem[], hiddenHrefs?: Set<string>) {
+  if (!hiddenHrefs?.size) return items;
+  return items.filter((item) => !hiddenHrefs.has(item.href));
+}
 
 const workNavigation: SidebarNavItem[] = [
   { name: ROUTE_LABELS.dashboard, href: '/dashboard', icon: LayoutDashboard },
@@ -158,38 +164,51 @@ function SidebarContent({
   collapsed,
   onNavigate,
   onToggle,
+  mobileOverflowOnly = false,
 }: {
   collapsed: boolean;
   onNavigate?: () => void;
   onToggle?: () => void;
+  mobileOverflowOnly?: boolean;
 }) {
   const { role } = useAuth();
   const { branding } = useBrandingContext();
   const { capabilityMap } = useMyAdminCapabilities(role);
   const { unreadCount } = useShellNotifications();
+  const mobilePrimaryItems = mobileOverflowOnly ? buildBottomNavItems(role) : [];
+  const hiddenMobileHrefs = mobileOverflowOnly
+    ? new Set(mobilePrimaryItems.map((item) => item.href))
+    : undefined;
 
-  const workWithBadge = workNavigation.map((item) =>
+  const workWithBadge = filterHiddenNavItems(workNavigation.map((item) =>
     item.href === '/notifications' ? { ...item, badge: unreadCount } : item,
-  );
+  ), hiddenMobileHrefs);
 
   // Filter nav items by role-based permissions
-  const scopedPlanning = planningNavigation.filter((item) => {
+  const scopedPlanning = filterHiddenNavItems(planningNavigation.filter((item) => {
     if (item.href === '/calendar') return hasRole(role, MANAGER_AND_ABOVE_ROLES);
     if (item.href === '/performance') return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
     return true;
-  });
+  }), hiddenMobileHrefs);
 
-  const scopedRecords = recordsNavigation.filter((item) => {
+  const scopedRecords = filterHiddenNavItems(recordsNavigation.filter((item) => {
     if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
     return true;
-  });
+  }), hiddenMobileHrefs);
 
-  const scopedAdmin = capabilityMap.access_admin_console ? adminNavigation : [];
-  const scopedPeople = peopleNavigation.filter((item) => {
+  const scopedAdmin = filterHiddenNavItems(capabilityMap.access_admin_console ? adminNavigation : [], hiddenMobileHrefs);
+  const scopedPeople = filterHiddenNavItems(peopleNavigation.filter((item) => {
     if (item.href === '/employees') return canViewEmployeeDirectory(role);
     if (item.href === '/departments') return capabilityMap.manage_departments;
     return true;
-  });
+  }), hiddenMobileHrefs);
+  const hasOverflowRoutes = [
+    workWithBadge,
+    scopedPeople,
+    scopedRecords,
+    scopedPlanning,
+    scopedAdmin,
+  ].some((group) => group.length > 0);
 
   return (
     <div className="flex h-full flex-col">
@@ -222,6 +241,30 @@ function SidebarContent({
         )}
       </div>
 
+      {mobileOverflowOnly ? (
+        <section
+          aria-label="Pinned mobile routes"
+          className="mx-3 mt-3 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 p-3"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/75">
+            Pinned to bottom bar
+          </p>
+          <p className="mt-1 text-sm text-sidebar-foreground/80">
+            Daily routes stay pinned below. This panel contains additional destinations for your role.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {mobilePrimaryItems.map((item) => (
+              <span
+                key={item.href}
+                className="rounded-full border border-sidebar-border/80 bg-sidebar/60 px-2.5 py-1 text-xs font-medium text-sidebar-foreground"
+              >
+                {item.name}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* Navigation */}
       <nav aria-label="Main navigation" className={cn('flex-1 overflow-y-auto scrollbar-thin py-3', collapsed ? 'px-2' : 'px-3')}>
         <div className="space-y-5">
@@ -232,6 +275,11 @@ function SidebarContent({
           {scopedAdmin.length > 0 && (
             <SidebarNavGroup items={scopedAdmin} collapsed={collapsed} onNavigate={onNavigate} label={SHELL_LABELS.governance} />
           )}
+          {mobileOverflowOnly && !hasOverflowRoutes ? (
+            <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 px-3 py-4 text-sm text-sidebar-foreground/80">
+              All of your common destinations are already available from the bottom bar.
+            </div>
+          ) : null}
         </div>
       </nav>
 
@@ -284,12 +332,12 @@ export function AppSidebar({
           className="w-[88vw] max-w-sm bg-sidebar p-0 text-sidebar-foreground border-sidebar-border"
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Mobile navigation menu</SheetTitle>
+            <SheetTitle>More navigation</SheetTitle>
             <SheetDescription>
-              Browse workspaces, records, and governance routes available to your current role.
+              Browse additional workspaces, records, and governance routes not pinned to the bottom bar.
             </SheetDescription>
           </SheetHeader>
-          <SidebarContent collapsed={false} onNavigate={() => setIsOpen(false)} />
+          <SidebarContent collapsed={false} onNavigate={() => setIsOpen(false)} mobileOverflowOnly />
         </SheetContent>
       </Sheet>
     );

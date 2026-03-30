@@ -4,10 +4,11 @@ import { render, screen } from '@testing-library/react';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 
 let mockIsMobile = false;
+let mockRole = 'admin';
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    role: 'admin',
+    role: mockRole,
   }),
 }));
 
@@ -43,6 +44,7 @@ vi.mock('@/components/layout/ShellNotificationsProvider', () => ({
 describe('AppSidebar', () => {
   beforeEach(() => {
     mockIsMobile = false;
+    mockRole = 'admin';
   });
 
   it('uses task-oriented group labels for the primary navigation', () => {
@@ -74,10 +76,30 @@ describe('AppSidebar', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Mobile navigation menu')).toBeInTheDocument();
+    expect(screen.getByText('More navigation')).toBeInTheDocument();
     expect(
-      screen.getByText('Browse workspaces, records, and governance routes available to your current role.'),
+      screen.getByText('Browse additional workspaces, records, and governance routes not pinned to the bottom bar.'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Pinned to bottom bar')).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toHaveClass('w-[88vw]', 'max-w-sm');
+  });
+
+  it('uses the mobile sheet for secondary routes instead of duplicating pinned employee destinations', () => {
+    mockIsMobile = true;
+    mockRole = 'employee';
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppSidebar collapsed={false} onToggle={vi.fn()} mobileOpen onMobileOpenChange={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Attendance')).toBeInTheDocument();
+    expect(screen.getByText('Leave')).toBeInTheDocument();
+    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Attendance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Payroll' })).toBeInTheDocument();
   });
 });

@@ -11,13 +11,20 @@ describe('ModuleLayout', () => {
     const onCreate = vi.fn();
 
     render(
-      <ModuleLayout>
+      <ModuleLayout archetype="governance-workspace">
         <ModuleLayout.Header
           eyebrow="Workspace"
           title="Employee Workspace"
           description="Manage employee records in context."
           metaSlot={<span>RBAC: HR</span>}
         />
+        <ModuleLayout.WorkspaceLead
+          eyebrow="Workspace selection"
+          title="Policy workspaces"
+          description="Choose the workspace before starting work."
+        >
+          <div>Workspace chooser</div>
+        </ModuleLayout.WorkspaceLead>
         <ModuleLayout.Toolbar
           ariaLabel="Employee workspace controls"
           search={{
@@ -35,6 +42,9 @@ describe('ModuleLayout', () => {
         <ModuleLayout.Content>
           <div>Directory content</div>
         </ModuleLayout.Content>
+        <ModuleLayout.Summary>
+          <div>Reference summary</div>
+        </ModuleLayout.Summary>
       </ModuleLayout>,
     );
 
@@ -45,9 +55,12 @@ describe('ModuleLayout', () => {
 
     expect(screen.getByText(/^Workspace$/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /employee workspace/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /policy workspaces/i })).toBeInTheDocument();
+    expect(screen.getByText(/workspace chooser/i)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /employee workspace controls/i })).toBeInTheDocument();
     expect(screen.getByText(/rbac: hr/i)).toBeInTheDocument();
     expect(screen.getByText(/directory content/i)).toBeInTheDocument();
+    expect(screen.getByText(/reference summary/i)).toBeInTheDocument();
     expect(onSearchChange).toHaveBeenCalledWith('Alicia');
     expect(onCreate).toHaveBeenCalledTimes(1);
   });

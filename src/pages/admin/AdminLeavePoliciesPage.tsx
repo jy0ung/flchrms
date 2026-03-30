@@ -136,7 +136,7 @@ export default function AdminLeavePoliciesPage() {
 
   if (capabilitiesLoading) {
     return (
-      <ModuleLayout maxWidth="7xl">
+      <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
         <ModuleLayout.Header
           eyebrow="Governance"
           title="Leave Policies"
@@ -151,7 +151,7 @@ export default function AdminLeavePoliciesPage() {
   }
 
   return (
-    <ModuleLayout maxWidth="7xl">
+    <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
       <ModuleLayout.Header
         eyebrow="Governance"
         title="Leave Policies"
@@ -170,28 +170,34 @@ export default function AdminLeavePoliciesPage() {
         )}
       />
 
-      <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="lg" />
-
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as LeavePolicySubTabKey)}
-        className="space-y-4"
+        className="space-y-5"
       >
-        <ModuleLayout.Toolbar
-          surfaceVariant="flat"
-          ariaLabel="Leave policy workspaces"
+        <ModuleLayout.WorkspaceLead
+          eyebrow="Workspace selection"
+          title="Policy workspaces"
+          description="Choose the governance area that matches your next admin task, then work within the active surface below."
         >
-          <TabsList className="flex h-auto w-full justify-start gap-2 overflow-x-auto rounded-xl bg-muted/40 p-1">
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 border-0 bg-transparent p-0 sm:grid-cols-2 xl:grid-cols-3">
             {LEAVE_POLICY_WORKSPACES.map((workspace) => {
               const Icon = workspace.icon;
               return (
                 <TabsTrigger
                   key={workspace.key}
                   value={workspace.key}
-                  className="flex h-auto shrink-0 items-center gap-2 px-3 py-2 text-xs sm:text-sm"
+                  className="flex h-auto min-h-[88px] items-start justify-start gap-3 whitespace-normal rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-left text-sm leading-5 data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{workspace.label}</span>
+                  <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-semibold text-foreground">{workspace.label}</p>
+                    <p className="text-xs text-muted-foreground sm:text-sm">
+                      {workspace.description}
+                    </p>
+                  </div>
                 </TabsTrigger>
               );
             })}
@@ -214,7 +220,7 @@ export default function AdminLeavePoliciesPage() {
               </ContextChip>
             </div>
           </div>
-        </ModuleLayout.Toolbar>
+        </ModuleLayout.WorkspaceLead>
 
         <ModuleLayout.Content>
           <LeavePoliciesSection
@@ -227,6 +233,10 @@ export default function AdminLeavePoliciesPage() {
             onDeleteLeaveType={openDeleteLeaveTypeDialog}
           />
         </ModuleLayout.Content>
+
+        <ModuleLayout.Summary surfaceVariant="flat">
+          <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="lg" />
+        </ModuleLayout.Summary>
       </Tabs>
 
       <AdminLeaveTypeDialogs

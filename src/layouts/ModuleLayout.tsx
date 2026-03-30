@@ -7,7 +7,14 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { cn } from "@/lib/utils";
 import { WorkspaceHeaderBlock } from "@/layouts/WorkspaceHeaderBlock";
 
+export type ModuleLayoutArchetype =
+  | "default"
+  | "queue-workspace"
+  | "directory"
+  | "governance-workspace";
+
 export interface ModuleLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+  archetype?: ModuleLayoutArchetype;
   spacing?: AppPageContainerProps["spacing"];
   maxWidth?: AppPageContainerProps["maxWidth"];
 }
@@ -45,7 +52,25 @@ export interface DetailDrawerProps {
   restoreFocusElement?: HTMLElement | null;
 }
 
+export interface ModuleSummaryProps extends React.HTMLAttributes<HTMLElement> {
+  surfaceVariant?: "card" | "flat" | "none";
+}
+
+export interface WorkspaceLeadProps extends React.HTMLAttributes<HTMLElement> {
+  eyebrow?: React.ReactNode;
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  metaSlot?: React.ReactNode;
+  contentClassName?: string;
+}
+
+const ModuleLayoutContext = React.createContext<{ archetype: ModuleLayoutArchetype }>({
+  archetype: "default",
+});
+
 function ModuleLayoutRoot({
+  archetype = "default",
   spacing = "comfortable",
   maxWidth = "7xl",
   className,
@@ -53,15 +78,18 @@ function ModuleLayoutRoot({
   ...props
 }: ModuleLayoutProps) {
   return (
-    <AppPageContainer
-      spacing={spacing}
-      maxWidth={maxWidth}
-      framePadding="none"
-      className={cn("w-full", className)}
-      {...props}
-    >
-      {children}
-    </AppPageContainer>
+    <ModuleLayoutContext.Provider value={{ archetype }}>
+      <AppPageContainer
+        spacing={spacing}
+        maxWidth={maxWidth}
+        framePadding="none"
+        className={cn("w-full", className)}
+        data-layout-archetype={archetype}
+        {...props}
+      >
+        {children}
+      </AppPageContainer>
+    </ModuleLayoutContext.Provider>
   );
 }
 
@@ -154,6 +182,87 @@ function ModuleToolbar({
         {body}
       </CardContent>
     </Card>
+  );
+}
+
+function ModuleSummary({
+  surfaceVariant = "flat",
+  className,
+  children,
+  ...props
+}: ModuleSummaryProps) {
+  if (!children) {
+    return null;
+  }
+
+  if (surfaceVariant === "none") {
+    return (
+      <section className={className} {...props}>
+        {children}
+      </section>
+    );
+  }
+
+  if (surfaceVariant === "card") {
+    return (
+      <Card className={cn("border-border/80 shadow-sm", className)} {...props}>
+        <CardContent className="p-3 sm:p-4">{children}</CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <section
+      className={cn("rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4", className)}
+      {...props}
+    >
+      {children}
+    </section>
+  );
+}
+
+function WorkspaceLead({
+  eyebrow,
+  title,
+  description,
+  actions,
+  metaSlot,
+  className,
+  contentClassName,
+  children,
+  ...props
+}: WorkspaceLeadProps) {
+  const titleId = React.useId();
+
+  return (
+    <section
+      aria-labelledby={titleId}
+      className={cn(
+        "space-y-4 rounded-3xl border border-border/70 bg-gradient-to-br from-muted/35 via-background to-background p-4 shadow-sm md:p-5",
+        className,
+      )}
+      {...props}
+    >
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-6">
+        <div className="min-w-0 space-y-1">
+          {eyebrow ? (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2 id={titleId} className="text-lg font-semibold tracking-tight text-foreground">
+            {title}
+          </h2>
+          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        </div>
+
+        {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-end">{actions}</div> : null}
+      </div>
+
+      {metaSlot ? <div className="flex flex-wrap items-center gap-2">{metaSlot}</div> : null}
+
+      <div className={cn("space-y-4", contentClassName)}>{children}</div>
+    </section>
   );
 }
 
@@ -259,6 +368,8 @@ function DetailDrawer({
 interface ModuleLayoutComponent extends React.FC<ModuleLayoutProps> {
   Header: typeof ModuleHeader;
   Toolbar: typeof ModuleToolbar;
+  Summary: typeof ModuleSummary;
+  WorkspaceLead: typeof WorkspaceLead;
   Content: typeof ContentArea;
   DetailDrawer: typeof DetailDrawer;
 }
@@ -266,8 +377,10 @@ interface ModuleLayoutComponent extends React.FC<ModuleLayoutProps> {
 export const ModuleLayout = Object.assign(ModuleLayoutRoot, {
   Header: ModuleHeader,
   Toolbar: ModuleToolbar,
+  Summary: ModuleSummary,
+  WorkspaceLead: WorkspaceLead,
   Content: ContentArea,
   DetailDrawer: DetailDrawer,
 }) as ModuleLayoutComponent;
 
-export { ContentArea, DetailDrawer, ModuleHeader, ModuleToolbar };
+export { ContentArea, DetailDrawer, ModuleHeader, ModuleSummary, ModuleToolbar, WorkspaceLead };

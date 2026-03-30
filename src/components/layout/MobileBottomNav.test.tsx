@@ -28,9 +28,10 @@ describe('MobileBottomNav', () => {
     );
 
     expect(screen.getByRole('link', { name: /dashboard/i })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /attendance/i })).toHaveAttribute('href', '/attendance');
     expect(screen.getByRole('link', { name: /leave/i })).toHaveAttribute('href', '/leave');
-    expect(screen.getByRole('link', { name: /payroll/i })).toHaveAttribute('href', '/payroll');
     expect(screen.getByRole('link', { name: /notifications/i })).toHaveAttribute('href', '/notifications');
+    expect(screen.queryByRole('link', { name: /payroll/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /more navigation/i })).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
   });
@@ -63,8 +64,8 @@ describe('MobileBottomNav', () => {
   it('uses the governance journey for admin roles', () => {
     expect(buildBottomNavItems('admin').map((item) => item.href)).toEqual([
       '/dashboard',
-      '/employees',
       '/admin',
+      '/employees',
       '/notifications',
     ]);
   });

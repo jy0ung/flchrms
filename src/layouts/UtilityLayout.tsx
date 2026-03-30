@@ -4,19 +4,53 @@ import { AppPageContainer, type PageHeaderAction } from "@/components/system";
 import { cn } from "@/lib/utils";
 import { WorkspaceHeaderBlock } from "@/layouts/WorkspaceHeaderBlock";
 
+export type UtilityLayoutArchetype = "default" | "task-dashboard" | "inbox";
+type UtilityLayoutSurface = "flat" | "none";
+
 export interface UtilityLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+  archetype?: UtilityLayoutArchetype;
   eyebrow?: React.ReactNode;
   title: string;
   description?: string;
   actions?: PageHeaderAction[];
   actionsSlot?: React.ReactNode;
   metaSlot?: React.ReactNode;
+  leadSlot?: React.ReactNode;
+  leadSurface?: UtilityLayoutSurface;
   summarySlot?: React.ReactNode;
+  summarySurface?: UtilityLayoutSurface;
   controlsSlot?: React.ReactNode;
-  controlsSurface?: "flat" | "none";
+  controlsSurface?: UtilityLayoutSurface;
+  supportingSlot?: React.ReactNode;
+  supportingSurface?: UtilityLayoutSurface;
   maxWidth?: "none" | "6xl" | "7xl" | "full";
   spacing?: "compact" | "comfortable" | "relaxed";
   contentClassName?: string;
+}
+
+function LayoutSurface({
+  surface,
+  className,
+  children,
+}: {
+  surface: UtilityLayoutSurface;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (surface === "none") {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <section
+      className={cn(
+        "rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4",
+        className,
+      )}
+    >
+      {children}
+    </section>
+  );
 }
 
 /**
@@ -25,15 +59,21 @@ export interface UtilityLayoutProps extends React.HTMLAttributes<HTMLDivElement>
  * header -> optional summary -> optional controls -> primary surface.
  */
 export function UtilityLayout({
+  archetype = "default",
   eyebrow,
   title,
   description,
   actions,
   actionsSlot,
   metaSlot,
+  leadSlot,
+  leadSurface = "none",
   summarySlot,
+  summarySurface = "none",
   controlsSlot,
-  controlsSurface = "flat",
+  controlsSurface,
+  supportingSlot,
+  supportingSurface = "none",
   maxWidth = "7xl",
   spacing = "comfortable",
   className,
@@ -41,12 +81,16 @@ export function UtilityLayout({
   children,
   ...props
 }: UtilityLayoutProps) {
+  const resolvedControlsSurface =
+    controlsSurface ?? (archetype === "inbox" ? "none" : "flat");
+
   return (
     <AppPageContainer
       maxWidth={maxWidth}
       spacing={spacing}
       framePadding="none"
       className={cn("w-full", className)}
+      data-layout-archetype={archetype}
       {...props}
     >
       <WorkspaceHeaderBlock
@@ -58,18 +102,21 @@ export function UtilityLayout({
         metaSlot={metaSlot}
       />
 
-      {summarySlot ? <div className="pt-1">{summarySlot}</div> : null}
-      {controlsSlot ? (
-        controlsSurface === "none" ? (
-          <div className="pt-1">{controlsSlot}</div>
-        ) : (
-          <section className="rounded-2xl border border-border/60 bg-background/50 p-3 sm:p-4">
-            {controlsSlot}
-          </section>
-        )
-      ) : null}
+      {leadSlot ? <div className="pt-1"><LayoutSurface surface={leadSurface}>{leadSlot}</LayoutSurface></div> : null}
+      {summarySlot ? <div className="pt-1"><LayoutSurface surface={summarySurface}>{summarySlot}</LayoutSurface></div> : null}
+      {controlsSlot ? <div className="pt-1"><LayoutSurface surface={resolvedControlsSurface}>{controlsSlot}</LayoutSurface></div> : null}
 
-      <div className={cn("space-y-4 md:space-y-5", contentClassName)}>{children}</div>
+      <div
+        className={cn(
+          "space-y-4 md:space-y-5",
+          archetype === "task-dashboard" && "space-y-5 md:space-y-6",
+          contentClassName,
+        )}
+      >
+        {children}
+      </div>
+
+      {supportingSlot ? <div className="pt-1"><LayoutSurface surface={supportingSurface}>{supportingSlot}</LayoutSurface></div> : null}
     </AppPageContainer>
   );
 }
