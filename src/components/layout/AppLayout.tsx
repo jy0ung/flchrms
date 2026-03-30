@@ -1,4 +1,4 @@
-﻿import { useState, type MouseEvent } from 'react';
+﻿import { Suspense, useState, type MouseEvent } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,7 +40,7 @@ export function AppLayout() {
     target.scrollIntoView({ block: 'start' });
   };
 
-  if (isLoading) {
+  if (isLoading && !user) {
     return (
       <RouteLoadingState
         fullScreen
@@ -89,9 +89,25 @@ export function AppLayout() {
                 isMobile && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
               )}
             >
-              <InteractionModeProvider resetKeys={[user?.id ?? null]}>
-                <Outlet />
-              </InteractionModeProvider>
+              <Suspense
+                fallback={(
+                  <RouteLoadingState
+                    title="Loading workspace"
+                    description="Preparing the next page while keeping your workspace shell in place."
+                  />
+                )}
+              >
+                <InteractionModeProvider resetKeys={[user?.id ?? null]}>
+                  {isLoading ? (
+                    <RouteLoadingState
+                      title="Refreshing workspace access"
+                      description="Updating your role, profile, and shell context without interrupting the current layout."
+                    />
+                  ) : (
+                    <Outlet />
+                  )}
+                </InteractionModeProvider>
+              </Suspense>
             </AppPageContainer>
           </main>
         </div>

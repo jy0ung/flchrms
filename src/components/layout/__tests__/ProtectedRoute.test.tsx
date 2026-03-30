@@ -59,6 +59,18 @@ describe('ProtectedRoute', () => {
     mockIsLoading = false;
   });
 
+  it('keeps authenticated content mounted while auth context is still hydrating', () => {
+    mockIsLoading = true;
+    mockUser = { id: 'u1' };
+    mockRole = null;
+
+    renderProtected(['employee']);
+
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
+
+    mockIsLoading = false;
+  });
+
   it('redirects to /auth when no user', () => {
     mockUser = null;
     mockRole = null;

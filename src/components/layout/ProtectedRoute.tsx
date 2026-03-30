@@ -14,6 +14,10 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
   const location = useLocation();
 
   if (isLoading) {
+    if (user) {
+      return children ? <>{children}</> : <Outlet />;
+    }
+
     return (
       <RouteLoadingState
         fullScreen

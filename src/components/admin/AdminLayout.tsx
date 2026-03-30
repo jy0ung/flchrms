@@ -1,4 +1,4 @@
-import { Fragment, type MouseEvent } from 'react';
+import { Fragment, Suspense, type MouseEvent } from 'react';
 import { Navigate, Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminCapabilities } from '@/lib/admin-permissions';
@@ -28,7 +28,7 @@ export function AdminLayout() {
   const { capabilityMap, isLoading: capabilityLoading } = useMyAdminCapabilities(role);
   const capabilities = getAdminCapabilities(role, capabilityMap);
 
-  if (isLoading || capabilityLoading) {
+  if (isLoading && !user) {
     return (
       <RouteLoadingState
         fullScreen
@@ -48,7 +48,7 @@ export function AdminLayout() {
     );
   }
 
-  if (!capabilities.canAccessAdminPage) {
+  if (!isLoading && !capabilityLoading && !capabilities.canAccessAdminPage) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -135,7 +135,23 @@ export function AdminLayout() {
             >
               <div className="mx-auto w-full max-w-7xl">
                 <InteractionModeProvider resetKeys={[user?.id ?? null]}>
-                  <Outlet />
+                  <Suspense
+                    fallback={(
+                      <RouteLoadingState
+                        title="Loading governance workspace"
+                        description="Preparing the next governance page while keeping the shell in place."
+                      />
+                    )}
+                  >
+                    {isLoading || capabilityLoading ? (
+                      <RouteLoadingState
+                        title="Loading governance workspace"
+                        description="Checking your admin capabilities and preparing the governance shell."
+                      />
+                    ) : (
+                      <Outlet />
+                    )}
+                  </Suspense>
                 </InteractionModeProvider>
               </div>
             </AppPageContainer>

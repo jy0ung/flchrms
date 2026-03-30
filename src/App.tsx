@@ -2,14 +2,13 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/layout/RouteErrorBoundary";
-import { Loader2 } from "lucide-react";
 import Auth from "./pages/Auth";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Employees = lazy(() => import("./pages/Employees"));
@@ -58,12 +57,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-[50vh]">
-    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-  </div>
-);
-
 /** Passes location.pathname as resetKey so the error boundary clears on navigation. */
 function LocationAwareErrorBoundary({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -79,7 +72,6 @@ const App = () => (
           <BrowserRouter>
             <AuthProvider>
             <LocationAwareErrorBoundary>
-              <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/auth" element={<Auth />} />
@@ -126,7 +118,6 @@ const App = () => (
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Suspense>
           </LocationAwareErrorBoundary>
             </AuthProvider>
           </BrowserRouter>
