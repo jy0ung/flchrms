@@ -217,7 +217,12 @@ vi.mock('@/layouts/ModuleLayout', () => {
 
 vi.mock('@/components/system', () => ({
   DataTableShell: ({ content }: { content?: ReactNode }) => <div>{content}</div>,
+  MetaBadge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   QueryErrorState: () => null,
+}));
+
+vi.mock('@/components/workspace/SummaryRail', () => ({
+  SummaryRail: () => <div data-testid="leave-summary-rail">summary-rail</div>,
 }));
 
 vi.mock('@/components/leave/LeaveBalanceSection', () => ({
@@ -322,5 +327,20 @@ describe('LeavePage', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Open Team Calendar/i })).toBeInTheDocument();
+  });
+
+  it('renders the request workspace ahead of the supporting summary rail', () => {
+    render(
+      <MemoryRouter initialEntries={['/leave']}>
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    const workspace = screen.getByText('default-view:MY_CURRENT');
+    const summaryRail = screen.getByTestId('leave-summary-rail');
+
+    expect(
+      workspace.compareDocumentPosition(summaryRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

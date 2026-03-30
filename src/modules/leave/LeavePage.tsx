@@ -322,7 +322,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
   );
 
   return (
-    <ModuleLayout maxWidth="7xl">
+    <ModuleLayout maxWidth="7xl" archetype="queue-workspace">
       <ModuleLayout.Header
         eyebrow="Workspace"
         title="Leave Management"
@@ -361,79 +361,75 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <ModuleLayout.Content>
-        <div className="flex flex-col gap-6">
-          <div className="order-2 xl:order-1">
-            <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
-          </div>
-
-          <div className="order-1 xl:order-2">
-            {isLoading ? (
-              <DataTableShell
-                surfaceVariant="flat"
-                title="Leave Requests"
-                loading
-                loadingSkeleton={(
-                  <div className="p-4 text-center text-muted-foreground">
-                    Loading leave requests...
-                  </div>
-                )}
-              />
-            ) : (
-              <div className={canViewTeamRequests ? 'grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]' : 'space-y-6'}>
-                <div className="space-y-6">
-                  <Card className="border-border/70 shadow-sm">
-                    <CardHeader className="space-y-1 pb-3">
-                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-                        {workflowContextTitle}
-                      </div>
-                      <CardTitle className="text-base">
-                        {canViewTeamRequests ? 'Leave approval queue' : 'Leave request tracker'}
-                      </CardTitle>
-                      <CardDescription>{workflowContextDescription}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <LeaveRequestWorkspace
-                        role={role}
-                        canViewTeamRequests={pageActions.canViewTeamRequests}
-                        myCurrentRequests={myCurrentRequests}
-                        myHistoryRequests={myHistoryRequests}
-                        teamCurrentRequests={teamCurrentRequests}
-                        teamHistoryRequests={teamHistoryRequests}
-                        defaultView={effectiveWorkspaceView}
-                        getStatusDisplay={getStatusDisplay}
-                        getCancellationBadge={getCancellationBadge}
-                        canAmend={(request) => getRowPermissions(request).canAmend}
-                        canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
-                        canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
-                        canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
-                        canApprove={(request) => getRowPermissions(request).canApprove}
-                        shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
-                        onAmend={controller.openAmendDialog}
-                        onCancel={controller.openCancellationDialog}
-                        onOpenDetails={(request, trigger) => {
-                          rememberTrigger(trigger);
-                          drawer.openRequest(request.id);
-                        }}
-                        onCancellationReview={controller.openCancellationReviewDialog}
-                        onAction={controller.openActionDialog}
-                        workflowInfoPopover={workflowInfoPopover}
-                      />
-                    </CardContent>
-                  </Card>
-
-                  {!canViewTeamRequests ? personalReferencePanel : null}
-                </div>
-
-                {canViewTeamRequests ? (
-                  <aside className="space-y-4 xl:sticky xl:top-24">
-                    {personalReferencePanel}
-                  </aside>
-                ) : null}
+        {isLoading ? (
+          <DataTableShell
+            surfaceVariant="flat"
+            title="Leave Requests"
+            loading
+            loadingSkeleton={(
+              <div className="p-4 text-center text-muted-foreground">
+                Loading leave requests...
               </div>
             )}
+          />
+        ) : (
+          <div className="space-y-6">
+            <div className={canViewTeamRequests ? 'grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]' : 'space-y-6'}>
+              <div className="space-y-6">
+                <Card className="border-border/70 shadow-sm">
+                  <CardHeader className="space-y-1 pb-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                      {workflowContextTitle}
+                    </div>
+                    <CardTitle className="text-base">
+                      {canViewTeamRequests ? 'Leave approval queue' : 'Leave request tracker'}
+                    </CardTitle>
+                    <CardDescription>{workflowContextDescription}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <LeaveRequestWorkspace
+                      role={role}
+                      canViewTeamRequests={pageActions.canViewTeamRequests}
+                      myCurrentRequests={myCurrentRequests}
+                      myHistoryRequests={myHistoryRequests}
+                      teamCurrentRequests={teamCurrentRequests}
+                      teamHistoryRequests={teamHistoryRequests}
+                      defaultView={effectiveWorkspaceView}
+                      getStatusDisplay={getStatusDisplay}
+                      getCancellationBadge={getCancellationBadge}
+                      canAmend={(request) => getRowPermissions(request).canAmend}
+                      canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
+                      canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
+                      canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
+                      canApprove={(request) => getRowPermissions(request).canApprove}
+                      shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
+                      onAmend={controller.openAmendDialog}
+                      onCancel={controller.openCancellationDialog}
+                      onOpenDetails={(request, trigger) => {
+                        rememberTrigger(trigger);
+                        drawer.openRequest(request.id);
+                      }}
+                      onCancellationReview={controller.openCancellationReviewDialog}
+                      onAction={controller.openActionDialog}
+                      workflowInfoPopover={workflowInfoPopover}
+                    />
+                  </CardContent>
+                </Card>
+
+                {!canViewTeamRequests ? personalReferencePanel : null}
+              </div>
+
+              {canViewTeamRequests ? (
+                <aside className="space-y-4 xl:sticky xl:top-24">
+                  {personalReferencePanel}
+                </aside>
+              ) : null}
+            </div>
+
+            <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
           </div>
-        </div>
+        )}
       </ModuleLayout.Content>
 
       <LeaveDetailDrawer
