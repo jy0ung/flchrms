@@ -55,9 +55,28 @@ vi.mock('@/components/payroll/DeductionManagement', () => ({
 }));
 
 vi.mock('@/components/payroll/MyPayslips', () => ({
-  MyPayslips: ({ hideAmounts }: { hideAmounts: boolean }) => (
-    <div data-testid="my-payslips">MyPayslips {hideAmounts ? 'hidden' : 'visible'}</div>
+  MyPayslips: ({
+    hideAmounts,
+    onHideAmountsChange,
+    showVisibilityToggle,
+  }: {
+    hideAmounts: boolean;
+    onHideAmountsChange?: (value: boolean) => void;
+    showVisibilityToggle?: boolean;
+  }) => (
+    <div data-testid="my-payslips">
+      <div>MyPayslips {hideAmounts ? 'hidden' : 'visible'}</div>
+      {showVisibilityToggle ? (
+        <button type="button" onClick={() => onHideAmountsChange?.(!hideAmounts)}>
+          {hideAmounts ? 'Show salary amounts' : 'Hide salary amounts'}
+        </button>
+      ) : null}
+    </div>
   ),
+}));
+
+vi.mock('@/components/workspace/SummaryRail', () => ({
+  SummaryRail: () => <div data-testid="summary-rail">SummaryRail</div>,
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -86,6 +105,7 @@ describe('Payroll page', () => {
       expect(screen.queryByRole('tab')).not.toBeInTheDocument();
       expect(screen.getByText(/payroll setup in progress/i)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /hide salary amounts/i })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('summary-rail')).not.toBeInTheDocument();
     });
 
     it('shows employee-facing description', () => {
@@ -109,6 +129,15 @@ describe('Payroll page', () => {
     it('shows management description', () => {
       render(<Payroll />, { wrapper });
       expect(screen.getByText(/manage payroll runs/i)).toBeInTheDocument();
+    });
+
+    it('shows an active workspace lead ahead of the management surface', () => {
+      render(<Payroll />, { wrapper });
+
+      expect(screen.getByText(/active workspace/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/run payroll periods, monitor processing, and open generated payslips/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -143,6 +172,22 @@ describe('Payroll page', () => {
       const toggle = screen.getByRole('button', { name: /hide salary amounts/i });
       fireEvent.click(toggle);
       expect(window.localStorage.getItem('hrms.payroll.hideAmounts')).toBe('1');
+    });
+
+    it('renders payslips ahead of the trailing summary rail for employee records', () => {
+      mockRole = 'employee';
+      mockMyPayslips = [
+        { id: 'pay-1', net_salary: 4200, created_at: '2026-02-01T00:00:00.000Z' },
+      ];
+
+      render(<Payroll />, { wrapper });
+
+      const payslips = screen.getByTestId('my-payslips');
+      const summaryRail = screen.getByTestId('summary-rail');
+
+      expect(
+        payslips.compareDocumentPosition(summaryRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
   });
 });

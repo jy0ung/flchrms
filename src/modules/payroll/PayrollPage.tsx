@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Calculator, Eye, EyeOff, FileText, Plus, Settings, Wallet } from 'lucide-react';
+import { Calculator, FileText, Plus, Settings, Wallet } from 'lucide-react';
 
 import { MyPayslips } from '@/components/payroll/MyPayslips';
 import { DeductionManagement } from '@/components/payroll/DeductionManagement';
@@ -169,9 +169,18 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           ? 'Deduction rules'
           : 'My payslips';
 
+  const activeWorkspaceDescription =
+    activeTab === 'payroll'
+      ? 'Run payroll periods, monitor processing, and open generated payslips from one operational queue.'
+      : activeTab === 'salaries'
+        ? 'Review employee compensation records and keep salary structures current.'
+        : activeTab === 'deductions'
+          ? 'Maintain statutory and company deductions that shape each payroll run.'
+          : 'Review the employee-facing payslip workspace without leaving payroll operations.';
+
   return (
     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PayrollWorkspaceTab)} className="space-y-6">
-      <ModuleLayout maxWidth="7xl">
+      <ModuleLayout maxWidth="7xl" archetype="directory">
         <ModuleLayout.Header
           eyebrow="Workspace"
           title="Payroll"
@@ -180,29 +189,11 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
               ? 'Manage payroll runs, salary structures, deduction rules, and published payslips.'
               : 'Review your payslips and salary information as soon as payroll records are available.'
           }
-          metaSlot={canManagePayroll ? (
-            <ContextChip className="hidden sm:inline-flex">Active view: {activeTabLabel}</ContextChip>
-          ) : !hasEmployeePayrollData ? (
+          metaSlot={!canManagePayroll && !hasEmployeePayrollData ? (
             <ContextChip className="hidden sm:inline-flex">Payroll setup in progress</ContextChip>
           ) : undefined}
           actionsSlot={
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              {showPayrollPrivacyToggle ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 rounded-full"
-                  onClick={() => setHidePayslipAmounts((current) => !current)}
-                  aria-pressed={hidePayslipAmounts}
-                >
-                  {hidePayslipAmounts ? (
-                    <EyeOff className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Eye className="mr-2 h-4 w-4" />
-                  )}
-                  {hidePayslipAmounts ? 'Show salary amounts' : 'Hide salary amounts'}
-                </Button>
-              ) : null}
               {headerAction ? (
                 <Button type="button" className="h-9 rounded-full" onClick={headerAction.onClick}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -240,8 +231,15 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
         ) : null}
 
         <ModuleLayout.Content>
-          {canManagePayroll || hasEmployeePayrollData ? (
-            <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+          {canManagePayroll ? (
+            <ModuleLayout.WorkspaceLead
+              eyebrow="Active workspace"
+              title={activeTabLabel}
+              description={activeWorkspaceDescription}
+              metaSlot={<ContextChip>Payroll operations</ContextChip>}
+            >
+              <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+            </ModuleLayout.WorkspaceLead>
           ) : null}
 
           {canManagePayroll ? (
@@ -276,10 +274,14 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
             <MyPayslips
               hideAmounts={hidePayslipAmounts}
               onHideAmountsChange={setHidePayslipAmounts}
-              showVisibilityToggle={false}
+              showVisibilityToggle={showPayrollPrivacyToggle}
               showSummaryCards={false}
             />
           </TabsContent>
+
+          {!canManagePayroll && hasEmployeePayrollData ? (
+            <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+          ) : null}
         </ModuleLayout.Content>
       </ModuleLayout>
     </Tabs>
