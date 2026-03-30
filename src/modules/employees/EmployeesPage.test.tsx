@@ -106,8 +106,12 @@ vi.mock('@/layouts/ModuleLayout', () => {
 
 vi.mock('@/components/system', () => ({
   DataTableShell: ({ content }: { content: ReactNode }) => <div>{content}</div>,
-  RecordSurfaceHeader: () => null,
+  RecordSurfaceHeader: ({ title }: { title: string }) => <div>{`record-surface:${title}`}</div>,
   ContextChip: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('@/components/workspace/SummaryRail', () => ({
+  SummaryRail: () => <div>summary-rail</div>,
 }));
 
 vi.mock('@/components/employees/OrgChart', () => ({
@@ -143,6 +147,21 @@ vi.mock('@/modules/employees/hooks/useEmployeeManagementController', () => ({
 }));
 
 describe('EmployeesPage', () => {
+  it('places the directory record context ahead of the summary rail', () => {
+    render(
+      <MemoryRouter initialEntries={['/employees']}>
+        <EmployeesPage entryContext="module" />
+      </MemoryRouter>,
+    );
+
+    const recordSurface = screen.getByText('record-surface:Employees');
+    const summaryRail = screen.getByText('summary-rail');
+
+    expect(
+      recordSurface.compareDocumentPosition(summaryRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('opens the detail drawer with the default profile tab from the table surface', () => {
     render(
       <MemoryRouter initialEntries={['/employees']}>

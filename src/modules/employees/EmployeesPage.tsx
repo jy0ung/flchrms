@@ -315,7 +315,7 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
   }
 
   return (
-    <ModuleLayout maxWidth="7xl">
+    <ModuleLayout archetype="directory" maxWidth="7xl">
       <ModuleLayout.Header
         eyebrow={entryContext === 'admin' ? 'Governance' : 'Workspace'}
         title="Employee Directory"
@@ -482,6 +482,44 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
       </ModuleLayout.Toolbar>
 
       <ModuleLayout.Content>
+        <RecordSurfaceHeader
+          title={viewType === 'org' ? 'Organization Chart' : 'Employees'}
+          description={
+            viewType === 'org'
+              ? 'Read-only hierarchy view for the employee directory.'
+              : 'Filtered directory records in the current workspace view.'
+          }
+          actions={activeFilterLabels.length > 0 ? (
+            <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+              {activeFilterLabels.length} active filter{activeFilterLabels.length === 1 ? '' : 's'}
+            </Badge>
+          ) : null}
+          meta={(
+            <>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {viewType === 'org'
+                  ? `${filteredEmployees.length} result${filteredEmployees.length === 1 ? '' : 's'}`
+                  : filteredEmployees.length === 0
+                    ? '0 results'
+                    : `${visibleStart}-${visibleEnd} of ${filteredEmployees.length}`}
+              </Badge>
+              {pageActions.canBulkActions ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                  {bulkSelection.selectedCount} selected
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
+                {viewType === 'org' ? 'Org chart view' : 'Table view'}
+              </Badge>
+              {activeFilterLabels.map((label) => (
+                <Badge key={label} variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] lg:inline-flex">
+                  {label}
+                </Badge>
+              ))}
+            </>
+          )}
+        />
+
         <SummaryRail
           variant="subtle"
           compactBreakpoint="xl"
@@ -511,44 +549,6 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
               helper: 'Distinct departments represented in the directory.',
             },
           ]}
-        />
-
-        <RecordSurfaceHeader
-          title={viewType === 'org' ? 'Organization Chart' : 'Employees'}
-          description={
-            viewType === 'org'
-              ? 'Read-only hierarchy view for the employee directory.'
-              : 'Filtered directory records in the current workspace view.'
-          }
-          meta={(
-            <>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                {viewType === 'org'
-                  ? `${filteredEmployees.length} result${filteredEmployees.length === 1 ? '' : 's'}`
-                  : filteredEmployees.length === 0
-                    ? '0 results'
-                    : `${visibleStart}-${visibleEnd} of ${filteredEmployees.length}`}
-              </Badge>
-              {pageActions.canBulkActions ? (
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em]">
-                  {bulkSelection.selectedCount} selected
-                </Badge>
-              ) : null}
-              <Badge variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
-                {viewType === 'org' ? 'Org chart view' : 'Table view'}
-              </Badge>
-              {activeFilterLabels.length > 0 ? (
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:hidden">
-                  {activeFilterLabels.length} filter{activeFilterLabels.length === 1 ? '' : 's'}
-                </Badge>
-              ) : null}
-              {activeFilterLabels.map((label) => (
-                <Badge key={label} variant="outline" className="hidden rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.18em] md:inline-flex">
-                  {label}
-                </Badge>
-              ))}
-            </>
-          )}
         />
 
         {viewType === 'org' ? (
