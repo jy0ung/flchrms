@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useWorkflowConfigEvents } from '@/hooks/useWorkflowConfigEvents';
+import { AdminTableLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, RouteLoadingState, TaskEmptyState } from '@/components/system';
+import { PageHeader, TableRowSkeleton, TaskEmptyState } from '@/components/system';
 
 interface AuditEntry {
   id: string;
@@ -151,9 +152,11 @@ export default function AdminAuditLogPage() {
           title="Audit Log"
           description="Recent system activity across workflows, leave requests, and profile changes."
         />
-        <RouteLoadingState
+        <AdminTableLoadingSkeleton
           title="Loading audit log"
           description="Checking audit-log access and preparing the latest governance history."
+          sectionTitle="Recent governance history"
+          sectionDescription="Preparing workflow changes, leave activity, and profile updates from the last 30 days."
         />
       </div>
     );
@@ -178,8 +181,14 @@ export default function AdminAuditLogPage() {
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-              Loading audit entries...
+            <div className="space-y-4 p-4">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-foreground">Recent governance history</h2>
+                <p className="text-sm text-muted-foreground">
+                  Loading workflow, leave, and profile activity for the current governance review window.
+                </p>
+              </div>
+              <TableRowSkeleton rows={6} columns={5} />
             </div>
           ) : entries.length === 0 ? (
             <div className="p-6">

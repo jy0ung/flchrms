@@ -15,9 +15,10 @@ import { useDepartments } from '@/hooks/useEmployees';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
+import { AdminWorkspaceLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
-import { ContextChip, RouteLoadingState } from '@/components/system';
+import { ContextChip } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -137,12 +138,12 @@ export default function AdminLeavePoliciesPage() {
   if (capabilitiesLoading) {
     return (
       <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
-        <ModuleLayout.Header
+      <ModuleLayout.Header
           eyebrow="Governance"
           title="Leave Policies"
           description="Manage leave types, workflows, notifications, analytics, and balance operations from one governance workspace."
         />
-        <RouteLoadingState
+        <AdminWorkspaceLoadingSkeleton
           title="Loading leave policies"
           description="Checking leave-policy capabilities and preparing the latest policy data."
         />

@@ -83,5 +83,7 @@ describe('AdminQuickActionsPage', () => {
 
     expect(screen.getByText('Governance Hub')).toBeInTheDocument();
     expect(screen.getByText('Loading governance hub')).toBeInTheDocument();
+    expect(screen.getByText('Operational Workspaces')).toBeInTheDocument();
+    expect(screen.getByText('Governance Controls')).toBeInTheDocument();
   });
 });

@@ -116,5 +116,7 @@ describe('AdminDashboardPage', () => {
     renderPage();
 
     expect(screen.getByText('Loading governance overview')).toBeInTheDocument();
+    expect(screen.getByText('Governance Priorities')).toBeInTheDocument();
+    expect(screen.getByText('Reference Analytics')).toBeInTheDocument();
   });
 });

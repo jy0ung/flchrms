@@ -13,8 +13,9 @@ import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAuth } from '@/contexts/AuthContext';
 import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { AdminQuickActionsLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
-import { ActionTile, PageHeader, RouteLoadingState } from '@/components/system';
+import { ActionTile, PageHeader } from '@/components/system';
 import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 interface QuickAction {
@@ -42,7 +43,7 @@ export default function AdminQuickActionsPage() {
           title={SHELL_LABELS.governanceHub}
           description="Launch the right workspace or governance control without leaving the admin shell."
         />
-        <RouteLoadingState
+        <AdminQuickActionsLoadingSkeleton
           title="Loading governance hub"
           description="Checking available governance actions and workspace routes for your account."
         />

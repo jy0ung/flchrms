@@ -16,11 +16,12 @@ import { useEmployees, useDepartments } from '@/hooks/useEmployees';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { ActionTile, ContextChip, RouteLoadingState, StatusBadge, SurfaceSection } from '@/components/system';
+import { ActionTile, ContextChip, StatusBadge, SurfaceSection } from '@/components/system';
 import { useAdminAnalytics } from '@/hooks/admin/useAdminAnalytics';
 import { AdminDeptChart } from '@/components/admin/AdminDeptChart';
 import { AdminLeaveTrendChart } from '@/components/admin/AdminLeaveTrendChart';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
+import { AdminDashboardLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { WorkspaceStatePanel } from '@/components/workspace/WorkspaceStatePanel';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
@@ -135,7 +136,7 @@ export default function AdminDashboardPage() {
           </>
         )}
       >
-        <RouteLoadingState
+        <AdminDashboardLoadingSkeleton
           title="Loading governance overview"
           description="Checking capabilities and preparing the latest admin analytics."
         />

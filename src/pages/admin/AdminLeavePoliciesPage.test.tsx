@@ -102,5 +102,7 @@ describe('AdminLeavePoliciesPage', () => {
     render(<AdminLeavePoliciesPage />);
 
     expect(screen.getByText('Loading leave policies')).toBeInTheDocument();
+    expect(screen.getByText('Policy workspaces')).toBeInTheDocument();
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
   });
 });

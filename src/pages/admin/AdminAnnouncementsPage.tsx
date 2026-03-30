@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAnnouncements, useCreateAnnouncement } from '@/hooks/useAnnouncements';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
+import { AdminTableLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
-import { RouteLoadingState } from '@/components/system';
+import { TableRowSkeleton } from '@/components/system';
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -155,9 +156,11 @@ export default function AdminAnnouncementsPage() {
           title="Announcement Management"
           description="Create, edit, and manage company-wide announcements."
         />
-        <RouteLoadingState
+        <AdminTableLoadingSkeleton
           title="Loading announcements"
           description="Checking announcement-management capabilities and preparing the latest entries."
+          sectionTitle="Announcement queue"
+          sectionDescription="Preparing the published announcements list and management actions."
         />
       </div>
     );
@@ -240,8 +243,14 @@ export default function AdminAnnouncementsPage() {
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-              Loading announcements...
+            <div className="space-y-4 p-4">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-foreground">Announcement queue</h2>
+                <p className="text-sm text-muted-foreground">
+                  Loading published announcements and their management actions.
+                </p>
+              </div>
+              <TableRowSkeleton rows={5} columns={5} />
             </div>
           ) : sortedAnnouncements.length === 0 ? (
             <div className="p-6">

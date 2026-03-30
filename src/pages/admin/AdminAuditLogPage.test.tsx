@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import AdminAuditLogPage from '@/pages/admin/AdminAuditLogPage';
 
 let mockCapabilityLoading = false;
+let mockAuditDataLoading = false;
 let mockWorkflowEvents: Array<{
   id: string;
   workflow_type: string;
@@ -43,18 +44,18 @@ vi.mock('@/hooks/useEmployees', () => ({
 vi.mock('@/hooks/useWorkflowConfigEvents', () => ({
   useWorkflowConfigEvents: () => ({
     data: mockWorkflowEvents,
-    isLoading: false,
+    isLoading: mockAuditDataLoading,
   }),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey }: { queryKey: string[] }) => {
     if (queryKey[0] === 'admin-audit-leaves') {
-      return { data: [], isLoading: false };
+      return { data: [], isLoading: mockAuditDataLoading };
     }
 
     if (queryKey[0] === 'admin-audit-profiles') {
-      return { data: [], isLoading: false };
+      return { data: [], isLoading: mockAuditDataLoading };
     }
 
     return { data: [], isLoading: false };
@@ -62,8 +63,13 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 describe('AdminAuditLogPage', () => {
-  it('renders workflow config events without querying the legacy audit table directly', () => {
+  beforeEach(() => {
     mockCapabilityLoading = false;
+    mockAuditDataLoading = false;
+    mockWorkflowEvents = [];
+  });
+
+  it('renders workflow config events without querying the legacy audit table directly', () => {
     mockWorkflowEvents = [
       {
         id: 'wf-1',
@@ -88,11 +94,28 @@ describe('AdminAuditLogPage', () => {
   });
 
   it('renders a task-state empty view when there are no audit entries', () => {
-    mockCapabilityLoading = false;
-    mockWorkflowEvents = [];
-
     render(<AdminAuditLogPage />);
 
     expect(screen.getByText('No audit entries in the last 30 days')).toBeInTheDocument();
+  });
+
+  it('renders a structured loading preview while governance audit access resolves', () => {
+    mockCapabilityLoading = true;
+
+    render(<AdminAuditLogPage />);
+
+    expect(screen.getByText('Loading audit log')).toBeInTheDocument();
+    expect(screen.getByText('Recent governance history')).toBeInTheDocument();
+  });
+
+  it('keeps the audit table shape visible while audit entries are still loading', () => {
+    mockAuditDataLoading = true;
+
+    render(<AdminAuditLogPage />);
+
+    expect(screen.getByText('Recent governance history')).toBeInTheDocument();
+    expect(
+      screen.getByText('Loading workflow, leave, and profile activity for the current governance review window.'),
+    ).toBeInTheDocument();
   });
 });
