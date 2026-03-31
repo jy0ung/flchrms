@@ -2,7 +2,6 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Settings2, Pencil, Save, X, GripHorizontal } from 'lucide-react';
 import {
   ReactGridLayout,
-  useContainerWidth,
   verticalCompactor,
   type Layout,
 } from 'react-grid-layout';
@@ -15,6 +14,7 @@ import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { useMyEnrollments } from '@/hooks/useTraining';
 import { useMyReviews } from '@/hooks/usePerformance';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMeasuredContainerWidth } from '@/hooks/useMeasuredContainerWidth';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
 import { GRID_COLUMNS, compactLayoutVertically } from '@/lib/dashboard-layout';
@@ -239,7 +239,7 @@ export default function Dashboard() {
     resetLayout,
   } = useDashboardLayout();
 
-  const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1200 });
+  const { width, containerRef, mounted } = useMeasuredContainerWidth({ initialWidth: 1200 });
   const isMobile = useIsMobile();
   const showManagerWidgets = canViewManagerDashboardWidgets(role);
   const currentCols = useMemo(() => getGridColumns(width), [width]);
@@ -563,7 +563,7 @@ export default function Dashboard() {
         {/* Edit-mode widget grid — react-grid-layout */}
         {!isLoading && editMode && (
           <div ref={containerRef} className="w-full">
-            {mounted && (
+            {mounted && width > 0 && (
               <ReactGridLayout
                 width={width}
                 layout={projectedLayout}
@@ -585,12 +585,12 @@ export default function Dashboard() {
                 }}
                 onLayoutChange={onLayoutChange}
                 autoSize
-                className="relative rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 transition-colors duration-200"
+                className="dashboard-edit-grid"
               >
                 {visibleIds.map((id) => (
                   <div
                     key={id}
-                    className="overflow-hidden rounded-lg ring-1 ring-primary/20 shadow-sm"
+                    className="dashboard-edit-widget overflow-hidden rounded-lg ring-1 ring-primary/20 shadow-sm"
                   >
                     <div className="rgl-drag-handle flex h-6 cursor-grab items-center justify-center gap-1 border-b bg-muted/80 text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing">
                       <GripHorizontal className="h-3.5 w-3.5" />

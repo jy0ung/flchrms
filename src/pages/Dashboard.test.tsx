@@ -149,13 +149,16 @@ vi.mock('react-grid-layout', () => ({
     capturedResizeConfig = resizeConfig;
     return <div data-testid="rgl-grid" className={className}>{children}</div>;
   },
-  useContainerWidth: () => ({
+  verticalCompactor: { type: 'vertical', allowOverlap: false },
+}));
+
+vi.mock('@/hooks/useMeasuredContainerWidth', () => ({
+  useMeasuredContainerWidth: () => ({
     width: 1200,
     mounted: true,
-    containerRef: { current: null },
+    containerRef: vi.fn(),
     measureWidth: vi.fn(),
   }),
-  verticalCompactor: { type: 'vertical', allowOverlap: false },
 }));
 
 vi.mock('@/hooks/useAnnouncements', () => ({
@@ -429,6 +432,7 @@ describe('Dashboard widget rendering', () => {
 
     const grid = screen.getByTestId('rgl-grid');
     expect(grid).toBeInTheDocument();
+    expect(grid).toHaveClass('dashboard-edit-grid');
     expect(grid.children.length).toBe(2);
   });
 

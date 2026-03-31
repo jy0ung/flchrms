@@ -171,6 +171,96 @@
   .table-row-hover {
     @apply hover:bg-muted/50 transition-colors duration-100;
   }
+
+  .dashboard-edit-grid {
+    @apply relative rounded-lg border-2 border-dashed border-primary/30 bg-muted/20 transition-colors duration-200;
+  }
+
+  .dashboard-edit-grid > .react-grid-item {
+    @apply transition-shadow duration-150;
+  }
+
+  .dashboard-edit-grid .dashboard-edit-widget {
+    @apply bg-background;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle {
+    background-image: none;
+    padding: 0;
+    opacity: 0;
+    z-index: 20;
+    transition: opacity 0.15s ease;
+  }
+
+  .dashboard-edit-grid .react-grid-item:hover .react-resizable-handle,
+  .dashboard-edit-grid .react-grid-item.react-draggable-dragging .react-resizable-handle,
+  .dashboard-edit-grid .react-grid-item.react-resizable-resizing .react-resizable-handle {
+    opacity: 1;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-e,
+  .dashboard-edit-grid .react-resizable-handle-w {
+    top: 0;
+    bottom: 0;
+    width: 0.875rem;
+    height: auto;
+    margin-top: 0;
+    transform: none;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-e {
+    right: -0.4375rem;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-w {
+    left: -0.4375rem;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-se,
+  .dashboard-edit-grid .react-resizable-handle-sw {
+    bottom: -0.5rem;
+    width: 1rem;
+    height: 1rem;
+    transform: none;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-se {
+    right: -0.5rem;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-sw {
+    left: -0.5rem;
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-e::before,
+  .dashboard-edit-grid .react-resizable-handle-w::before {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    border-radius: 9999px;
+    background: hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 0 3px hsl(var(--background) / 0.92);
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-e::before {
+    left: calc(50% - 1px);
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-w::before {
+    left: calc(50% - 1px);
+  }
+
+  .dashboard-edit-grid .react-resizable-handle-se::before,
+  .dashboard-edit-grid .react-resizable-handle-sw::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: hsl(var(--primary) / 0.22);
+    box-shadow: 0 0 0 3px hsl(var(--background) / 0.92);
+  }
 }
 
 @layer utilities {
