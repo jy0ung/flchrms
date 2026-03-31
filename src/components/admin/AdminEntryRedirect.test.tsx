@@ -31,6 +31,25 @@ vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
 }));
 
 describe('AdminEntryRedirect', () => {
+  it('shows a governance-hub loading preview while capabilities are still resolving', () => {
+    mockUseMyAdminCapabilities.mockReturnValue({
+      capabilityMap: buildCapabilities({}),
+      isLoading: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/admin']}>
+        <Routes>
+          <Route path="/admin" element={<AdminEntryRedirect />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Loading governance hub')).toBeInTheDocument();
+    expect(screen.getByText('Operational Workspaces')).toBeInTheDocument();
+    expect(screen.getByText('Governance Controls')).toBeInTheDocument();
+  });
+
   it('prefers system governance destinations before compatibility CRUD routes', () => {
     mockUseMyAdminCapabilities.mockReturnValue({
       capabilityMap: buildCapabilities({

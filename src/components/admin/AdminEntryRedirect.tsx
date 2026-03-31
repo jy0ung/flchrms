@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
-import { RouteLoadingState } from '@/components/system';
+import { AdminQuickActionsLoadingSkeleton } from './AdminLoadingSkeletons';
 
 const ADMIN_LANDING_ORDER: Array<{ path: string; capability: AdminCapabilityKey }> = [
   { path: '/admin/dashboard', capability: 'view_admin_dashboard' },
@@ -22,7 +22,7 @@ export function AdminEntryRedirect() {
 
   if (isLoading) {
     return (
-      <RouteLoadingState
+      <AdminQuickActionsLoadingSkeleton
         title="Loading governance hub"
         description="Checking available governance destinations for your role."
       />

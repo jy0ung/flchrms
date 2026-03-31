@@ -5,11 +5,12 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminEmployeeManagement } from '@/hooks/admin/useAdminEmployeeManagement';
 import { useAdminPageViewModel } from '@/hooks/admin/useAdminPageViewModel';
+import { AdminRolesLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { RolesTabSection } from '@/components/admin/RolesTabSection';
 import { AdminCapabilityMatrixSection } from '@/components/admin/AdminCapabilityMatrixSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, RouteLoadingState } from '@/components/system';
+import { PageHeader } from '@/components/system';
 import { AppRole } from '@/types/hrms';
 
 export default function AdminRolesPage() {
@@ -45,7 +46,7 @@ export default function AdminRolesPage() {
           title="Role Management"
           description="Assign and manage user roles with authority-tier safeguards."
         />
-        <RouteLoadingState
+        <AdminRolesLoadingSkeleton
           title="Loading role management"
           description="Checking role-governance capabilities and preparing the latest assignments."
         />

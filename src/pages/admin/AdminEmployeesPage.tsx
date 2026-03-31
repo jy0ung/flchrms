@@ -1,10 +1,11 @@
 import { AdminWorkspaceBridge } from '@/components/admin/AdminWorkspaceBridge';
+import { AdminDirectoryLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { ADMIN_WORKSPACE_BRIDGES } from '@/components/admin/admin-workspace-bridges';
 import { EmployeesPage } from '@/modules/employees';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, RouteLoadingState } from '@/components/system';
+import { PageHeader } from '@/components/system';
 
 export default function AdminEmployeesPage() {
   const { role } = useAuth();
@@ -17,9 +18,11 @@ export default function AdminEmployeesPage() {
           title="Employee Workspace"
           description="Preparing the employee workspace bridge and capability checks."
         />
-        <RouteLoadingState
+        <AdminDirectoryLoadingSkeleton
           title="Loading employee workspace"
           description="Checking employee-management capabilities and preparing the workspace bridge."
+          workspaceTitle="Employee directory"
+          workspaceDescription="Preparing the canonical people workspace, filters, and record list."
         />
       </div>
     );

@@ -3,6 +3,7 @@ import { Save, Building2, Bell, Shield, Palette, X, ImageIcon, Loader2 } from 'l
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
+import { AdminSettingsLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, RouteLoadingState } from '@/components/system';
+import { PageHeader } from '@/components/system';
 import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
 
@@ -264,7 +265,7 @@ export default function AdminSettingsPage() {
           title="System Settings"
           description="Manage branding, notifications, and governance-level application settings."
         />
-        <RouteLoadingState
+        <AdminSettingsLoadingSkeleton
           title="Loading system settings"
           description="Checking settings capabilities and preparing the latest platform configuration."
         />
