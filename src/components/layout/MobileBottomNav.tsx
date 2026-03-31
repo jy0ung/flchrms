@@ -20,7 +20,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center gap-1 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-[4.25rem] items-center gap-1 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
       aria-label="Mobile navigation"
     >
       {bottomNavItems.map((item) => {
@@ -40,7 +40,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
             )}
           >
             <item.icon className="h-5 w-5" />
-            <span>{item.name}</span>
+            <span className="max-w-full truncate leading-none">{item.name}</span>
             {item.href === '/notifications' && unreadCount > 0 && (
               <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
                 {unreadCount > 99 ? '99+' : unreadCount}
@@ -57,7 +57,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
         aria-label="More navigation"
       >
         <MoreHorizontal className="h-5 w-5" />
-        <span>{SHELL_LABELS.more}</span>
+        <span className="max-w-full truncate leading-none">{SHELL_LABELS.more}</span>
       </button>
     </nav>
   );

@@ -7,6 +7,7 @@ import Notifications from '@/pages/Notifications';
 const navigateMock = vi.fn();
 
 const useNotificationHistoryMock = vi.fn();
+let mockIsMobile = false;
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
@@ -18,6 +19,10 @@ vi.mock('@/hooks/useNotifications', () => ({
 
 vi.mock('@/components/layout/ShellNotificationsProvider', () => ({
   useOptionalShellNotifications: () => ({ unreadCount: 2 }),
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => mockIsMobile,
 }));
 
 vi.mock('@/components/ui/select', () => {
@@ -83,6 +88,7 @@ vi.mock('@/components/ui/select', () => {
 describe('Notifications page header control relocation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsMobile = false;
     useNotificationHistoryMock.mockReturnValue({
       notifications: [
         {
@@ -114,8 +120,9 @@ describe('Notifications page header control relocation', () => {
     render(<Notifications />);
 
     expect(screen.getAllByText('Unread').length).toBeGreaterThan(0);
-    expect(screen.getByText('Current View')).toBeInTheDocument();
-    expect(screen.getByText('Focus')).toBeInTheDocument();
+    expect(screen.getByText('In view')).toBeInTheDocument();
+    expect(screen.getByText('Priority')).toBeInTheDocument();
+    expect(screen.getByText('Phase 7 test unread')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /Notification history filters/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^Inbox$/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Inbox maintenance/i })).toBeInTheDocument();
@@ -175,5 +182,17 @@ describe('Notifications page header control relocation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Open leave workflow for Leave request submitted/i }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/leave'));
+  });
+
+  it('compresses summary and actions on mobile while keeping the inbox primary', () => {
+    mockIsMobile = true;
+
+    render(<Notifications />);
+
+    expect(screen.queryByText('Current View')).not.toBeInTheDocument();
+    expect(screen.getByText('2 unread')).toBeInTheDocument();
+    expect(screen.getByText('Unread first')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open inbox actions/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Inbox$/i })).toBeInTheDocument();
   });
 });

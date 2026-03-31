@@ -46,6 +46,6 @@ describe('Attendance operational status badges', () => {
     expect(screen.getAllByText(/Present/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Late/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/recorded session/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/1 on file/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 session/i)).toBeInTheDocument();
   });
 });

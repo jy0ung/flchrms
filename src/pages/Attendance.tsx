@@ -68,10 +68,8 @@ export default function Attendance() {
           ) : (
             <ContextChip className="rounded-full">No session started</ContextChip>
           )}
-          <ContextChip className="rounded-full">
-            {todayHeadline}
-          </ContextChip>
         </div>
+        <p className="text-sm text-muted-foreground">{todayHeadline}</p>
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-border/60 bg-muted/25 px-4 py-3">
@@ -129,7 +127,7 @@ export default function Attendance() {
       <DataTableShell
         title="Recent attendance history"
         description="Your most recent clock-in and clock-out records."
-        headerActions={<ContextChip className="rounded-full">{attendanceHistoryCount} on file</ContextChip>}
+        headerActions={<ContextChip className="rounded-full">{attendanceHistoryCount} session{attendanceHistoryCount === 1 ? '' : 's'}</ContextChip>}
         loading={isLoading}
         hasData={Boolean(history?.length)}
         emptyState={

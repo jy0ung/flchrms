@@ -1,11 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, ChevronRight, Loader2, RefreshCcw, SlidersHorizontal } from 'lucide-react';
+import { Bell, Check, CheckCheck, ChevronRight, Loader2, MoreHorizontal, RefreshCcw, SlidersHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -59,7 +67,17 @@ function eventTypeLabel(notification: UserNotification) {
       ? notification.metadata.event_type
       : null;
 
-  return eventType ?? notification.category;
+  if (!eventType) {
+    return categoryLabel(notification.category);
+  }
+
+  return eventType
+    .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+    .replace(/(\d)([a-zA-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (value) => value.toUpperCase());
 }
 
 function categoryOptions(): { value: NotificationCategoryFilter; label: string }[] {
@@ -154,8 +172,6 @@ function NotificationRow({
 
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">{eventTypeLabel(notification)}</span>
-              <span aria-hidden="true">•</span>
-              <span>{categoryLabel(notification.category)}</span>
             </div>
           </div>
 
@@ -199,6 +215,7 @@ function NotificationRow({
 export default function Notifications() {
   usePageTitle('Notifications');
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [category, setCategory] = useState<NotificationCategoryFilter>('all');
   const [readFilter, setReadFilter] = useState<NotificationReadFilter>('all');
   const [cleanupDays, setCleanupDays] = useState(90);
@@ -247,7 +264,7 @@ export default function Notifications() {
     },
     {
       id: 'current-view',
-      label: 'Current View',
+      label: 'In view',
       value: totalCount,
       helper: pageLabel,
       icon: SlidersHorizontal,
@@ -255,20 +272,22 @@ export default function Notifications() {
     },
     {
       id: 'focus',
-      label: 'Focus',
+      label: 'Priority',
       value: activeFilterCount > 0 ? `${activeFilterCount} active` : unreadCount > 0 ? 'Unread first' : 'All clear',
       helper:
         activeFilterCount > 0
           ? `${categoryFilterLabel(category)} • ${readFilterLabel(readFilter)}`
           : unreadCount > 0
-            ? 'Start with unread updates in the inbox below.'
-            : 'Maintenance tools stay below the inbox when you need them.',
+            ? 'Unread updates lead the inbox below.'
+            : 'Cleanup tools stay below the inbox when you need them.',
       icon: Bell,
       tone: activeFilterCount > 0 || unreadCount > 0 ? 'info' : 'default',
     },
   ]), [activeFilterCount, category, pageLabel, readFilter, totalCount, unreadCount]);
   const headerContext = useMemo(() => {
-    const chips = [<ContextChip key="page-label" className="rounded-full">{pageLabel}</ContextChip>];
+    const chips = isMobile
+      ? []
+      : [<ContextChip key="page-label" className="rounded-full">{pageLabel}</ContextChip>];
 
     if (category !== 'all') {
       chips.push(
@@ -287,7 +306,25 @@ export default function Notifications() {
     }
 
     return chips;
-  }, [category, pageLabel, readFilter]);
+  }, [category, isMobile, pageLabel, readFilter]);
+
+  const mobileStatusStrip = useMemo(() => (
+    <div className="flex flex-wrap gap-1.5">
+      <ContextChip className="rounded-full">
+        {unreadCount > 0 ? `${unreadCount} unread` : 'All read'}
+      </ContextChip>
+      <ContextChip className="rounded-full">
+        {activeFilterCount > 0
+          ? `${activeFilterCount} active filter${activeFilterCount > 1 ? 's' : ''}`
+          : unreadCount > 0
+            ? 'Unread first'
+            : 'Inbox clear'}
+      </ContextChip>
+      <ContextChip className="rounded-full">
+        {totalCount > 0 ? `${totalCount} shown` : 'No notifications'}
+      </ContextChip>
+    </div>
+  ), [activeFilterCount, totalCount, unreadCount]);
 
   const handleChangeCategory = (value: NotificationCategoryFilter) => {
     setCategory(value);
@@ -342,7 +379,11 @@ export default function Notifications() {
       eyebrow="Workspace"
       title="Notifications"
       description="Review updates, open related work, and keep track of workflow activity."
-      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      summarySlot={
+        isMobile
+          ? mobileStatusStrip
+          : <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+      }
       summarySurface="none"
       controlsSlot={
         <SectionToolbar
@@ -391,31 +432,69 @@ export default function Notifications() {
       }
       controlsSurface="none"
       actionsSlot={
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <Button
-            variant="outline"
-            className="h-9 rounded-full"
-            onClick={() => void refetch()}
-            aria-busy={isFetching}
-          >
-            {isFetching ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
-            {isFetching ? 'Refreshing…' : 'Refresh'}
-          </Button>
-          {unreadCount > 0 ? (
+        isMobile ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-9 rounded-full"
+                aria-label="Open inbox actions"
+              >
+                <MoreHorizontal className="mr-2 h-4 w-4" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  void refetch();
+                }}
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                {isFetching ? 'Refreshing…' : 'Refresh inbox'}
+              </DropdownMenuItem>
+              {unreadCount > 0 ? (
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    void markAllNotificationsRead();
+                  }}
+                  disabled={isMarkingRead}
+                >
+                  <CheckCheck className="mr-2 h-4 w-4" />
+                  Mark all read
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <Button
+              variant="outline"
               className="h-9 rounded-full"
-              onClick={() => void markAllNotificationsRead()}
-              disabled={isMarkingRead}
+              onClick={() => void refetch()}
+              aria-busy={isFetching}
             >
-              <CheckCheck className="w-4 h-4 mr-2" />
-              Mark All Read
+              {isFetching ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
+              {isFetching ? 'Refreshing…' : 'Refresh inbox'}
             </Button>
-          ) : (
-            <ContextChip className="justify-center rounded-full sm:justify-start">
-              All notifications read
-            </ContextChip>
-          )}
-        </div>
+            {unreadCount > 0 ? (
+              <Button
+                className="h-9 rounded-full"
+                onClick={() => void markAllNotificationsRead()}
+                disabled={isMarkingRead}
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark All Read
+              </Button>
+            ) : (
+              <ContextChip className="justify-center rounded-full sm:justify-start">
+                All notifications read
+              </ContextChip>
+            )}
+          </div>
+        )
       }
       supportingSlot={(
         <NotificationMaintenancePanel
@@ -434,10 +513,12 @@ export default function Notifications() {
         description={
           unreadCount > 0
             ? 'Unread items first, then the rest of your recent workflow activity.'
-            : 'Recent workflow and system updates in one reading flow.'
+            : isMobile
+              ? 'Recent updates in one reading flow.'
+              : 'Recent workflow and system updates in one reading flow.'
         }
         hasData={notifications.length > 0}
-        headerActions={<div className="flex flex-wrap gap-2">{headerContext}</div>}
+        headerActions={headerContext.length > 0 ? <div className="flex flex-wrap gap-2">{headerContext}</div> : undefined}
         pagination={
           <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
@@ -467,9 +548,25 @@ export default function Notifications() {
         }
         loading={isLoading}
         loadingSkeleton={
-          <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Loading notifications...
+          <div className="space-y-3">
+            {Array.from({ length: isMobile ? 3 : 4 }, (_, index) => (
+              <div key={index} className="rounded-xl border border-border bg-background p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-1/2 rounded" />
+                      <Skeleton className="h-3 w-full rounded" />
+                      <Skeleton className="h-3 w-5/6 rounded" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-24 rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         }
         emptyState={

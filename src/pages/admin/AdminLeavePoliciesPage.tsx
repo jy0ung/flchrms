@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useDepartments } from '@/hooks/useEmployees';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeManagement';
 import { AdminWorkspaceLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
@@ -22,6 +23,13 @@ import { ContextChip } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { LeavePolicySubTabKey } from '@/components/admin/admin-ui-constants';
 
 const LEAVE_POLICY_WORKSPACES: Array<{
@@ -74,8 +82,17 @@ const LEAVE_POLICY_WORKSPACES: Array<{
   },
 ];
 
+const CORE_WORKSPACE_KEYS: LeavePolicySubTabKey[] = ['leave-types', 'operations', 'workflow-builders'];
+const EXTENDED_WORKSPACE_KEYS: LeavePolicySubTabKey[] = [
+  'balance-adjustments',
+  'workflow-audit',
+  'notification-queue',
+  'analytics-simulation',
+];
+
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
+  const isMobile = useIsMobile();
   const { role } = useAuth();
   const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: departments } = useDepartments();
@@ -96,6 +113,8 @@ export default function AdminLeavePoliciesPage() {
   const activeWorkspace =
     LEAVE_POLICY_WORKSPACES.find((workspace) => workspace.key === activeTab) ??
     LEAVE_POLICY_WORKSPACES[0];
+  const coreWorkspaces = LEAVE_POLICY_WORKSPACES.filter((workspace) => CORE_WORKSPACE_KEYS.includes(workspace.key));
+  const extendedWorkspaces = LEAVE_POLICY_WORKSPACES.filter((workspace) => EXTENDED_WORKSPACE_KEYS.includes(workspace.key));
 
   const summaryItems = useMemo<SummaryRailItem[]>(
     () => [
@@ -114,25 +133,8 @@ export default function AdminLeavePoliciesPage() {
         helper: 'Department workspaces available for routing and oversight.',
         icon: Building2,
       },
-      {
-        id: 'access-mode',
-        label: 'Access mode',
-        value: capabilities.canManageLeaveTypes ? 'Editable' : 'Read only',
-        helper: capabilities.canManageLeaveTypes
-          ? 'Changes can be published from this governance workspace.'
-          : 'Policy state is visible here, but edits are locked for your role.',
-        icon: Settings2,
-        tone: capabilities.canManageLeaveTypes ? 'success' : 'warning',
-      },
-      {
-        id: 'active-workspace',
-        label: 'Active workspace',
-        value: activeWorkspace.label,
-        helper: activeWorkspace.description,
-        icon: activeWorkspace.icon,
-      },
     ],
-    [activeWorkspace, capabilities.canManageLeaveTypes, departments, leaveTypes],
+    [departments, leaveTypes],
   );
 
   if (capabilitiesLoading) {
@@ -156,17 +158,13 @@ export default function AdminLeavePoliciesPage() {
       <ModuleLayout.Header
         eyebrow="Governance"
         title="Leave Policies"
-        description={
-          capabilities.canManageLeaveTypes
-            ? 'Manage leave types, approval workflows, notification rules, analytics simulations, and balance adjustments from one governance workspace.'
-            : 'Review leave policy, workflow, and balance adjustment state. Editing requires leave-policy management capability.'
-        }
+        description="Manage leave types, workflows, notifications, analytics, and balance adjustments from one governance workspace."
         metaSlot={(
           <>
             <ContextChip tone={capabilities.canManageLeaveTypes ? 'success' : 'warning'}>
               {capabilities.canManageLeaveTypes ? 'Mode: editable governance' : 'Mode: read-only governance'}
             </ContextChip>
-            <ContextChip>Scope: organization-wide</ContextChip>
+            <ContextChip className="hidden sm:inline-flex">Scope: organization-wide</ContextChip>
           </>
         )}
       />
@@ -181,28 +179,81 @@ export default function AdminLeavePoliciesPage() {
           title="Policy workspaces"
           description="Choose the governance area that matches your next admin task, then work within the active surface below."
         >
-          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 border-0 bg-transparent p-0 sm:grid-cols-2 xl:grid-cols-3">
-            {LEAVE_POLICY_WORKSPACES.map((workspace) => {
-              const Icon = workspace.icon;
-              return (
-                <TabsTrigger
-                  key={workspace.key}
-                  value={workspace.key}
-                  className="flex h-auto min-h-[88px] items-start justify-start gap-3 whitespace-normal rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-left text-sm leading-5 data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <p className="font-semibold text-foreground">{workspace.label}</p>
-                    <p className="text-xs text-muted-foreground sm:text-sm">
-                      {workspace.description}
-                    </p>
-                  </div>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+          {isMobile ? (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Choose workspace</p>
+                <p className="text-sm text-muted-foreground">
+                  Core policy work stays first, while extended governance tools stay available without crowding the page.
+                </p>
+              </div>
+              <Select value={activeTab} onValueChange={(value) => setActiveTab(value as LeavePolicySubTabKey)}>
+                <SelectTrigger aria-label="Select leave policy workspace" className="rounded-2xl">
+                  <SelectValue placeholder="Select a workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAVE_POLICY_WORKSPACES.map((workspace) => (
+                    <SelectItem key={workspace.key} value={workspace.key}>
+                      {workspace.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <section className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Core workspaces</p>
+                  <p className="text-sm text-muted-foreground">
+                    The most common policy, operations, and routing surfaces stay front and center.
+                  </p>
+                </div>
+                <TabsList className="grid h-auto w-full grid-cols-1 gap-2 border-0 bg-transparent p-0 lg:grid-cols-3">
+                  {coreWorkspaces.map((workspace) => {
+                    const Icon = workspace.icon;
+                    return (
+                      <TabsTrigger
+                        key={workspace.key}
+                        value={workspace.key}
+                        className="flex h-auto min-h-[88px] items-start justify-start gap-3 whitespace-normal rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-left text-sm leading-5 data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                      >
+                        <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <p className="font-semibold text-foreground">{workspace.label}</p>
+                          <p className="text-xs text-muted-foreground sm:text-sm">
+                            {workspace.description}
+                          </p>
+                        </div>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </section>
+
+              <section className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Extended governance areas</p>
+                  <p className="text-sm text-muted-foreground">
+                    Secondary oversight surfaces stay available without competing with the core policy workflow.
+                  </p>
+                </div>
+                <TabsList className="flex h-auto w-full flex-wrap gap-2 border-0 bg-transparent p-0">
+                  {extendedWorkspaces.map((workspace) => (
+                    <TabsTrigger
+                      key={workspace.key}
+                      value={workspace.key}
+                      className="h-10 rounded-full border border-border/70 bg-muted/25 px-4 text-sm font-medium data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    >
+                      {workspace.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </section>
+            </div>
+          )}
 
           <div className="rounded-xl border border-border/60 bg-background/70 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">

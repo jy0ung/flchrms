@@ -136,7 +136,9 @@ describe('Payroll page', () => {
 
       expect(screen.getByText(/active workspace/i)).toBeInTheDocument();
       expect(
-        screen.getByText(/run payroll periods, monitor processing, and open generated payslips/i),
+        screen.getByText(
+          /run payroll periods, monitor processing, and open published records from one operational queue/i,
+        ),
       ).toBeInTheDocument();
     });
   });

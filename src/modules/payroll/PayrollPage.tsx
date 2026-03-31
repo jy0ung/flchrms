@@ -171,12 +171,12 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
 
   const activeWorkspaceDescription =
     activeTab === 'payroll'
-      ? 'Run payroll periods, monitor processing, and open generated payslips from one operational queue.'
+      ? 'Run payroll periods, monitor processing, and open published records from one operational queue.'
       : activeTab === 'salaries'
         ? 'Review employee compensation records and keep salary structures current.'
         : activeTab === 'deductions'
           ? 'Maintain statutory and company deductions that shape each payroll run.'
-          : 'Review the employee-facing payslip workspace without leaving payroll operations.';
+          : 'Review the employee payslip workspace without leaving payroll operations.';
 
   return (
     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PayrollWorkspaceTab)} className="space-y-6">
@@ -236,9 +236,8 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
               eyebrow="Active workspace"
               title={activeTabLabel}
               description={activeWorkspaceDescription}
-              metaSlot={<ContextChip>Payroll operations</ContextChip>}
             >
-              <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+              <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="lg" />
             </ModuleLayout.WorkspaceLead>
           ) : null}
 
@@ -280,7 +279,7 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           </TabsContent>
 
           {!canManagePayroll && hasEmployeePayrollData ? (
-            <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />
+            <SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="lg" />
           ) : null}
         </ModuleLayout.Content>
       </ModuleLayout>

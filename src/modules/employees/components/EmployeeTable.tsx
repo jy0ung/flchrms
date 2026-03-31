@@ -182,7 +182,7 @@ export function EmployeeTable({
                     aria-label={`Open employee record for ${employeeName}`}
                     onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
                   >
-                    Open employee
+                    Open record
                     <ChevronRight className="h-4 w-4" />
                   </RowActionButton>
                 </div>
@@ -248,27 +248,23 @@ export function EmployeeTable({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium text-foreground">
-                              {employee.department?.name || 'Unassigned'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Department</p>
-                          </div>
+                          <p className="text-sm font-medium text-foreground">
+                            {employee.department?.name || 'Unassigned'}
+                          </p>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium capitalize text-foreground">
-                              {formatRoleLabel(employeeRole)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Access role</p>
-                          </div>
+                          <p className="text-sm font-medium capitalize text-foreground">
+                            {formatRoleLabel(employeeRole)}
+                          </p>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-xs">
                             <p className="font-mono text-foreground">
                               {canViewSensitiveIdentifiers ? employee.employee_id || 'Not assigned' : 'Restricted'}
                             </p>
-                            <p className="text-muted-foreground">@{employee.username || 'not-set'}</p>
+                            {employee.username ? (
+                              <p className="text-muted-foreground">@{employee.username}</p>
+                            ) : null}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -280,7 +276,7 @@ export function EmployeeTable({
                             aria-label={`Open employee record for ${employeeName}`}
                             onClick={(event) => onOpenEmployee(employee, event.currentTarget)}
                           >
-                            Open employee
+                            Open record
                             <ChevronRight className="h-4 w-4" />
                           </RowActionButton>
                         </TableCell>

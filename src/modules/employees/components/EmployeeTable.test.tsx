@@ -91,6 +91,6 @@ describe('EmployeeTable', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Open employee record for Jane Doe/i })[0]);
 
     expect(onOpenEmployee).toHaveBeenCalledWith(employees[0], expect.any(HTMLElement));
-    expect(screen.getAllByText('Open employee').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Open record').length).toBeGreaterThan(0);
   });
 });

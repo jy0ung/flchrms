@@ -5,6 +5,7 @@ import AdminLeavePoliciesPage from '@/pages/admin/AdminLeavePoliciesPage';
 
 let mockCapabilityLoading = false;
 let mockCanManageLeaveTypes = true;
+let mockIsMobile = false;
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -14,6 +15,10 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 vi.mock('@/hooks/usePageTitle', () => ({
   usePageTitle: vi.fn(),
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => mockIsMobile,
 }));
 
 vi.mock('@/hooks/useEmployees', () => ({
@@ -73,6 +78,7 @@ describe('AdminLeavePoliciesPage', () => {
   it('renders the governance workspace selector before content and keeps summary metrics secondary', () => {
     mockCapabilityLoading = false;
     mockCanManageLeaveTypes = true;
+    mockIsMobile = false;
 
     render(<AdminLeavePoliciesPage />);
 
@@ -89,8 +95,10 @@ describe('AdminLeavePoliciesPage', () => {
     ).toBeTruthy();
     expect(screen.getByText('Published leave types')).toBeInTheDocument();
     expect(screen.getByText('Department scopes')).toBeInTheDocument();
-    expect(screen.getByText('Access mode')).toBeInTheDocument();
     expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Core workspaces')).toBeInTheDocument();
+    expect(screen.getByText('Extended governance areas')).toBeInTheDocument();
+    expect(screen.queryByText('Access mode')).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Leave Types/i })).toBeInTheDocument();
     expect(screen.getByText('Editable workspace')).toBeInTheDocument();
     expect(screen.getByText('Mock leave policies section')).toBeInTheDocument();
@@ -104,5 +112,16 @@ describe('AdminLeavePoliciesPage', () => {
     expect(screen.getByText('Loading leave policies')).toBeInTheDocument();
     expect(screen.getByText('Policy workspaces')).toBeInTheDocument();
     expect(screen.getByText('Current workspace')).toBeInTheDocument();
+  });
+
+  it('uses a compact workspace picker on mobile', () => {
+    mockCapabilityLoading = false;
+    mockCanManageLeaveTypes = true;
+    mockIsMobile = true;
+
+    render(<AdminLeavePoliciesPage />);
+
+    expect(screen.getByRole('combobox', { name: /select leave policy workspace/i })).toBeInTheDocument();
+    expect(screen.queryByText('Core workspaces')).not.toBeInTheDocument();
   });
 });

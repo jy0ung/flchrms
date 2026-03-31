@@ -19,6 +19,7 @@ let mockLeaveBalances: Array<{
 }> = [];
 let mockEnrollments: Array<{ id: string }> = [];
 let mockReviews: Array<{ id: string }> = [];
+let mockIsMobile = false;
 
 // ── Mocks ────────────────────────────────────────────────────────
 
@@ -29,6 +30,90 @@ vi.mock('@/contexts/AuthContext', () => ({
     role: mockRole,
   }),
 }));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => mockIsMobile,
+}));
+
+vi.mock('@/components/ui/dropdown-menu', async () => {
+  const React = await import('react');
+  const DropdownMenuContext = React.createContext<{
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  } | null>(null);
+
+  function useDropdownMenuContext() {
+    const context = React.useContext(DropdownMenuContext);
+    if (!context) {
+      throw new Error('DropdownMenu mock must be used within DropdownMenu');
+    }
+    return context;
+  }
+
+  return {
+    DropdownMenu: ({ children }: { children: React.ReactNode }) => {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <DropdownMenuContext.Provider value={{ open, setOpen }}>
+          {children}
+        </DropdownMenuContext.Provider>
+      );
+    },
+    DropdownMenuTrigger: ({
+      asChild,
+      children,
+    }: {
+      asChild?: boolean;
+      children: React.ReactElement;
+    }) => {
+      const { setOpen } = useDropdownMenuContext();
+      if (asChild) {
+        return React.cloneElement(children, {
+          onClick: (event: React.MouseEvent) => {
+            children.props.onClick?.(event);
+            setOpen(true);
+          },
+        });
+      }
+
+      return (
+        <button type="button" onClick={() => setOpen(true)}>
+          {children}
+        </button>
+      );
+    },
+    DropdownMenuContent: ({ children }: { children: React.ReactNode }) => {
+      const { open } = useDropdownMenuContext();
+      return open ? <div role="menu">{children}</div> : null;
+    },
+    DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DropdownMenuSeparator: () => <hr />,
+    DropdownMenuItem: ({
+      children,
+      onSelect,
+      disabled,
+    }: {
+      children: React.ReactNode;
+      onSelect?: (event: { preventDefault: () => void }) => void;
+      disabled?: boolean;
+    }) => {
+      const { setOpen } = useDropdownMenuContext();
+      return (
+        <button
+          type="button"
+          role="menuitem"
+          disabled={disabled}
+          onClick={() => {
+            onSelect?.({ preventDefault: () => undefined });
+            setOpen(false);
+          }}
+        >
+          {children}
+        </button>
+      );
+    },
+  };
+});
 
 // Mock useDashboardLayout to return deterministic layout
 const mockSaveLayout = vi.fn();
@@ -162,11 +247,18 @@ function renderDashboard() {
   );
 }
 
+function openDashboardCustomizeMenu() {
+  const trigger = screen.getByRole('button', { name: /customize dashboard/i });
+  fireEvent.click(trigger);
+  return trigger;
+}
+
 describe('Dashboard widget rendering', () => {
   beforeEach(() => {
     mockSaveLayout.mockClear();
     mockResetLayout.mockClear();
     capturedResizeConfig = undefined;
+    mockIsMobile = false;
     mockTodayAttendance = null;
     mockLeaveBalances = [];
     mockEnrollments = [];
@@ -190,7 +282,7 @@ describe('Dashboard widget rendering', () => {
     expect(screen.getByText(/Evelyn/)).toBeInTheDocument();
   });
 
-  it('renders labeled dashboard utility actions', () => {
+  it('demotes dashboard utilities into a single customize control', async () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -200,8 +292,11 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    expect(screen.getByRole('button', { name: /edit dashboard layout/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /customize dashboard widgets/i })).toBeInTheDocument();
+    openDashboardCustomizeMenu();
+
+    expect(await screen.findByText('Dashboard tools')).toBeInTheDocument();
+    expect(await screen.findByRole('menuitem', { name: /edit layout/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /manage widgets/i })).toBeInTheDocument();
   });
 
   it('renders a task-first onboarding dashboard for low-data employee accounts', () => {
@@ -316,7 +411,7 @@ describe('Dashboard widget rendering', () => {
     expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 
-  it('enters edit mode and renders the react-grid-layout container', () => {
+  it('enters edit mode and renders the react-grid-layout container', async () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -329,14 +424,15 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /edit dashboard layout/i }));
+    openDashboardCustomizeMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: /edit layout/i }));
 
     const grid = screen.getByTestId('rgl-grid');
     expect(grid).toBeInTheDocument();
     expect(grid.children.length).toBe(2);
   });
 
-  it('provides east/west plus corner resize handles in edit mode', () => {
+  it('provides east/west plus corner resize handles in edit mode', async () => {
     mockRole = 'employee';
     mockLayoutState = {
       version: 2,
@@ -349,7 +445,8 @@ describe('Dashboard widget rendering', () => {
     };
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: /edit dashboard layout/i }));
+    openDashboardCustomizeMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: /edit layout/i }));
 
     expect(capturedResizeConfig).toBeDefined();
     expect(capturedResizeConfig!.handles).toContain('e');

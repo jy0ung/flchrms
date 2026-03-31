@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ChevronDown, ChevronUp, ClipboardCheck, Info, Plus, WalletCards } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronUp, Info, Plus, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -244,7 +244,6 @@ export function LeavePage({ initialView }: LeavePageProps) {
     teamCurrentRequests,
   ]);
 
-  const workflowContextTitle = canViewTeamRequests ? 'Approval inbox' : 'My request workspace';
   const workflowContextDescription = canViewTeamRequests
     ? 'Review queue items first. Personal balances stay nearby as a secondary reference.'
     : 'Start with your request queue. Balance and entitlement details stay nearby as supporting reference.';
@@ -261,10 +260,6 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const personalReferencePanel = (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="space-y-1 pb-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <WalletCards className="h-4 w-4 text-muted-foreground" />
-          Personal balance reference
-        </div>
         <CardTitle className="text-base">My leave balances</CardTitle>
         <CardDescription>
           Keep your own entitlement nearby while you review or track requests.
@@ -298,12 +293,12 @@ export function LeavePage({ initialView }: LeavePageProps) {
                 {showNarrowBalanceDetails ? (
                   <>
                     <ChevronUp className="mr-2 h-3.5 w-3.5" />
-                    Hide full balance details
+                    Hide balance details
                   </>
                 ) : (
                   <>
                     <ChevronDown className="mr-2 h-3.5 w-3.5" />
-                    Show full balance details
+                    More balance details
                   </>
                 )}
               </Button>
@@ -378,12 +373,8 @@ export function LeavePage({ initialView }: LeavePageProps) {
               <div className="space-y-6">
                 <Card className="border-border/70 shadow-sm">
                   <CardHeader className="space-y-1 pb-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-                      {workflowContextTitle}
-                    </div>
                     <CardTitle className="text-base">
-                      {canViewTeamRequests ? 'Leave approval queue' : 'Leave request tracker'}
+                      {canViewTeamRequests ? 'Leave approval queue' : 'Leave request queue'}
                     </CardTitle>
                     <CardDescription>{workflowContextDescription}</CardDescription>
                   </CardHeader>

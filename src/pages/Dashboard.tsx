@@ -14,6 +14,7 @@ import { useTodayAttendance } from '@/hooks/useAttendance';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import { useMyEnrollments } from '@/hooks/useTraining';
 import { useMyReviews } from '@/hooks/usePerformance';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { canViewManagerDashboardWidgets } from '@/lib/permissions';
 import type { DashboardWidgetId } from '@/lib/dashboard-layout';
 import { GRID_COLUMNS, compactLayoutVertically } from '@/lib/dashboard-layout';
@@ -23,12 +24,17 @@ import {
   DASHBOARD_SECTION_META,
   DASHBOARD_SECTION_ORDER,
   DASHBOARD_SECTION_WIDGETS,
-  formatRoleLabel,
-  getScopeLabel,
 } from '@/components/dashboard/dashboard-config';
 
-import { ContextChip } from '@/components/system';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   ChartsWidget,
   CriticalInsightsWidget,
@@ -234,6 +240,7 @@ export default function Dashboard() {
   } = useDashboardLayout();
 
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1200 });
+  const isMobile = useIsMobile();
   const showManagerWidgets = canViewManagerDashboardWidgets(role);
   const currentCols = useMemo(() => getGridColumns(width), [width]);
   const canEditLayout = currentCols === GRID_COLUMNS;
@@ -350,14 +357,6 @@ export default function Dashboard() {
             ? 'Review urgent actions, live operational status, and reference insight from one workspace.'
             : 'Start with today’s tasks, then scan status and reference updates from one workspace.'
         }
-        metaSlot={
-          <>
-            <ContextChip>Role: {formatRoleLabel(role)}</ContextChip>
-            <ContextChip className="hidden sm:inline-flex">
-              Focus: {getScopeLabel(role, null)}
-            </ContextChip>
-          </>
-        }
         actionsSlot={
           editMode ? (
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -371,30 +370,42 @@ export default function Dashboard() {
               </Button>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 rounded-full"
-                onClick={enterEditMode}
-                disabled={!canEditLayout}
-                aria-label="Edit dashboard layout"
-                title={!canEditLayout ? 'Expand browser width to edit dashboard layout.' : undefined}
-              >
-                <Pencil className="h-4 w-4" />
-                <span>Edit</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 rounded-full"
-                onClick={() => setCustomizeOpen(true)}
-                aria-label="Customize dashboard widgets"
-              >
-                <Settings2 className="h-4 w-4" />
-                <span>Widgets</span>
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5 rounded-full"
+                  aria-label="Customize dashboard"
+                >
+                  <Settings2 className="h-4 w-4" />
+                  <span>Customize</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Dashboard tools</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    enterEditMode();
+                  }}
+                  disabled={!canEditLayout}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit layout
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setCustomizeOpen(true);
+                  }}
+                >
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  Manage widgets
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )
         }
         leadSlot={<DashboardGreeting role={role} headingLevel={2} />}
