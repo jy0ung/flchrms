@@ -131,82 +131,86 @@ function NotificationRow({
     void onOpenRelated(notification);
   };
 
+  const content = (
+    <div className="min-w-0 space-y-3">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
+            {categoryLabel(notification.category)}
+          </Badge>
+          {isUnread ? <StatusBadge status="unread" /> : null}
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
+          </span>
+        </div>
+
+        <div className="space-y-1">
+          <p className="font-semibold text-sm text-foreground">{notification.title}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {notification.body}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{eventTypeLabel(notification)}</span>
+        </div>
+      </div>
+
+      {actionLabel ? (
+        <div className="flex items-center gap-1 text-xs font-medium text-primary">
+          <span>{actionLabel}</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
     <div
       className={cn(
         'rounded-xl border p-4 transition-all shadow-sm',
         isUnread ? 'border-primary/20 bg-primary/5' : 'border-border bg-background',
-        interactive && 'cursor-pointer hover:border-primary/30 hover:bg-primary/[0.04] focus-within:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        interactive && 'hover:border-primary/30 hover:bg-primary/[0.04] focus-within:border-primary/30',
       )}
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive && actionLabel ? `${actionLabel} for ${notification.title}` : undefined}
-      aria-disabled={interactive && markingRead ? true : undefined}
-      onClick={interactive ? handleOpen : undefined}
-      onKeyDown={interactive ? (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          handleOpen();
-        }
-      } : undefined}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={categoryBadgeVariant(notification.category) as 'outline' | 'secondary'}>
-                {categoryLabel(notification.category)}
-              </Badge>
-              {isUnread ? <StatusBadge status="unread" /> : null}
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(notification.created_at || Date.now()), { addSuffix: true })}
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <p className="font-semibold text-sm text-foreground">{notification.title}</p>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {notification.body}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{eventTypeLabel(notification)}</span>
-            </div>
-          </div>
-
+      <div className="flex items-start gap-3">
+        {interactive ? (
           <Button
+            type="button"
             variant="ghost"
-            size="sm"
-            className="h-8 shrink-0 rounded-full px-2.5 text-muted-foreground hover:text-foreground"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (isUnread) {
-                void onMarkRead(notification);
-                return;
-              }
-
-              void onMarkUnread(notification);
-            }}
+            className="h-auto min-w-0 flex-1 justify-start rounded-xl px-3 py-2 text-left whitespace-normal hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={actionLabel ? `${actionLabel} for ${notification.title}` : notification.title}
+            onClick={handleOpen}
             disabled={markingRead}
           >
-            {isUnread ? (
-              <>
-                <Check className="h-4 w-4" />
-                Mark read
-              </>
-            ) : (
-              'Mark unread'
-            )}
+            {content}
           </Button>
-        </div>
-
-        {actionLabel ? (
-          <div className="flex items-center gap-1 text-xs font-medium text-primary">
-            <span>{actionLabel}</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </div>
         ) : null}
+        {!interactive ? <div className="min-w-0 flex-1 px-1">{content}</div> : null}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            if (isUnread) {
+              void onMarkRead(notification);
+              return;
+            }
+
+            void onMarkUnread(notification);
+          }}
+          disabled={markingRead}
+        >
+          {isUnread ? (
+            <>
+              <Check className="h-4 w-4" />
+              Mark read
+            </>
+          ) : (
+            'Mark unread'
+          )}
+        </Button>
       </div>
     </div>
   );
