@@ -155,6 +155,8 @@ $$;
 REVOKE ALL ON FUNCTION public.create_leave_balance_adjustment(uuid, uuid, numeric, date, text, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_leave_balance_adjustment(uuid, uuid, numeric, date, text, jsonb) TO authenticated, service_role;
 
+DROP FUNCTION IF EXISTS public.get_leave_balance_adjustments(uuid, uuid, date, date);
+
 CREATE OR REPLACE FUNCTION public.get_leave_balance_adjustments(
   _employee_id uuid,
   _leave_type_id uuid DEFAULT NULL,
