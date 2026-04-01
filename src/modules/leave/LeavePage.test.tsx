@@ -77,6 +77,13 @@ const leaveRecord = {
   },
 };
 
+function labelFromView(view: string) {
+  return view
+    .split('_')
+    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .join(' ');
+}
+
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'user-1' }, role: mockRole }),
 }));
@@ -205,7 +212,16 @@ vi.mock('@/layouts/ModuleLayout', () => {
       {trailingSlot}
     </div>
   );
+  const WorkspaceLead = ({ title, description, metaSlot, children }: { title: string; description?: string; metaSlot?: ReactNode; children?: ReactNode }) => (
+    <section>
+      <div>{title}</div>
+      {description ? <div>{description}</div> : null}
+      {metaSlot}
+      {children}
+    </section>
+  );
   const Content = ({ children }: { children: ReactNode }) => <div>{children}</div>;
+  const Summary = ({ children }: { children: ReactNode }) => <div>{children}</div>;
   const DetailDrawer = ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div>{children}</div> : null;
 
@@ -213,13 +229,16 @@ vi.mock('@/layouts/ModuleLayout', () => {
     ModuleLayout: Object.assign(Root, {
       Header,
       Toolbar,
+      WorkspaceLead,
       Content,
+      Summary,
       DetailDrawer,
     }),
   };
 });
 
 vi.mock('@/components/system', () => ({
+  ContextChip: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   DataTableShell: ({ content }: { content?: ReactNode }) => <div>{content}</div>,
   MetaBadge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   QueryErrorState: () => null,
@@ -322,9 +341,10 @@ describe('LeavePage', () => {
     );
 
     expect(screen.getByText('Your leave requests, balances, and history in one workspace.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Start with your request queue. Balance and entitlement details stay nearby as supporting reference.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Self-service workspace')).toBeInTheDocument();
+    expect(screen.getByText('My current requests')).toBeInTheDocument();
+    expect(screen.getByText('Balance context')).toBeInTheDocument();
+    expect(screen.getByText(`Current view: ${labelFromView('MY_CURRENT')}`)).toBeInTheDocument();
 
     mockRole = 'manager';
     mockCanViewTeamRequests = true;
@@ -337,9 +357,9 @@ describe('LeavePage', () => {
     );
 
     expect(screen.getByText('Review team requests and work approval queues in context.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Review queue items first. Personal balances stay nearby as a secondary reference.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Approval workspace')).toBeInTheDocument();
+    expect(screen.getByText('Team approval queue')).toBeInTheDocument();
+    expect(screen.getByText('Personal balance reference')).toBeInTheDocument();
     expect(screen.getByText('default-view:TEAM_CURRENT')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Open Team Calendar/i })).toBeInTheDocument();
   });
@@ -359,7 +379,7 @@ describe('LeavePage', () => {
     ).toBeTruthy();
   });
 
-  it('keeps personal balances prominent for employees and secondary for approvers', () => {
+  it('keeps personal balances in the shared leave lead across employee and approver workspaces', () => {
     const { rerender } = render(
       <MemoryRouter initialEntries={['/leave']}>
         <LeavePage />
@@ -370,7 +390,7 @@ describe('LeavePage', () => {
     const employeeQueue = screen.getByText('default-view:MY_CURRENT');
 
     expect(
-      employeeQueue.compareDocumentPosition(employeeBalancePanel) & Node.DOCUMENT_POSITION_FOLLOWING,
+      employeeBalancePanel.compareDocumentPosition(employeeQueue) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
     mockRole = 'manager';

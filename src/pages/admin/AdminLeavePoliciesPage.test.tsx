@@ -87,7 +87,7 @@ describe('AdminLeavePoliciesPage', () => {
       </MemoryRouter>,
     );
 
-    const workspaceHeading = screen.getByRole('heading', { name: 'Policy workspaces', level: 2 });
+    const workspaceHeading = screen.getByRole('heading', { name: 'Governance workspace', level: 2 });
     const content = screen.getByText('Mock leave policies section');
     const summary = screen.getByText('Published leave types');
 
@@ -100,12 +100,13 @@ describe('AdminLeavePoliciesPage', () => {
     ).toBeTruthy();
     expect(screen.getByText('Published leave types')).toBeInTheDocument();
     expect(screen.getByText('Department scopes')).toBeInTheDocument();
-    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Primary work')).toBeInTheDocument();
+    expect(screen.getByText('Supporting context')).toBeInTheDocument();
     expect(screen.getByText('Core workspaces')).toBeInTheDocument();
     expect(screen.getByText('Extended governance areas')).toBeInTheDocument();
     expect(screen.queryByText('Access mode')).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Leave Types/i })).toBeInTheDocument();
-    expect(screen.getByText('Editable workspace')).toBeInTheDocument();
+    expect(screen.getByText('Editable governance')).toBeInTheDocument();
     expect(screen.getByText('Mock leave policies section')).toBeInTheDocument();
   });
 

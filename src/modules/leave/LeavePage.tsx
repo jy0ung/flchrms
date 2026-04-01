@@ -4,9 +4,10 @@ import { CalendarDays, Info, Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DataTableShell, MetaBadge, QueryErrorState } from '@/components/system';
+import { ContextChip, DataTableShell, MetaBadge, QueryErrorState } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { LeaveBalancePanel } from '@/components/leave/LeaveBalancePanel';
+import { LeaveWorkspaceLead } from '@/components/leave/LeaveWorkspaceLead';
 import { LeaveRequestWorkspace } from '@/components/leave/LeaveRequestWorkspace';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -252,6 +253,48 @@ export function LeavePage({ initialView }: LeavePageProps) {
   const canOpenBalanceAdjustments =
     leaveBalancePermissions.adjust_leave_balance && canAccessAdminPage(role);
 
+  const workspaceFocus = useMemo(() => {
+    switch (effectiveWorkspaceView) {
+      case 'MY_HISTORY':
+        return {
+          title: 'My leave history',
+          description: 'Review resolved requests, completed leave, and prior cancellations without leaving the module.',
+        };
+      case 'TEAM_CURRENT':
+        return {
+          title: 'Team approval queue',
+          description: 'Start with requests that currently need your review, delegated action, or document follow-up.',
+        };
+      case 'TEAM_HISTORY':
+        return {
+          title: 'Resolved team decisions',
+          description: 'Use completed team decisions for audit context, reference, and follow-up.',
+        };
+      case 'MY_CURRENT':
+      default:
+        return {
+          title: 'My current requests',
+          description: 'Track active requests, approvals, amendments, and cancellations from one queue.',
+        };
+    }
+  }, [effectiveWorkspaceView]);
+
+  const workspaceLeadDescription = canViewTeamRequests
+    ? 'Review team approvals first, then keep your own leave balances visible as supporting reference.'
+    : 'Submit leave, monitor approvals, and keep entitlement context visible without leaving the module.';
+
+  const supportingContext = canViewTeamRequests
+    ? {
+        title: 'Personal balance reference',
+        description: canOpenBalanceAdjustments
+          ? 'Your balances stay visible while you review team requests, and authorized roles can jump straight to balance adjustments.'
+          : 'Your balances stay visible while you review team requests so entitlement context stays close to the queue.',
+      }
+    : {
+        title: 'Balance context',
+        description: 'Keep entitlement, pending balances, and remaining days visible before you submit or review leave.',
+      };
+
   const leaveBalancePanel = leaveBalancePermissions.view_own_leave_balance ? (
     <LeaveBalancePanel
       balances={visibleBalances}
@@ -282,7 +325,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
   return (
     <ModuleLayout maxWidth="7xl" archetype="queue-workspace">
       <ModuleLayout.Header
-        eyebrow="Workspace"
+        eyebrow="Leave"
         title="Leave Management"
         description={
           canViewTeamRequests
@@ -318,6 +361,27 @@ export function LeavePage({ initialView }: LeavePageProps) {
         <QueryErrorState label="leave requests" onRetry={() => refetch()} />
       ) : null}
 
+      <LeaveWorkspaceLead
+        title={canViewTeamRequests ? 'Approval workspace' : 'Self-service workspace'}
+        description={workspaceLeadDescription}
+        modeLabel={canViewTeamRequests ? 'Approver mode' : 'Self-service mode'}
+        primaryTitle={workspaceFocus.title}
+        primaryDescription={workspaceFocus.description}
+        secondaryTitle={supportingContext.title}
+        secondaryDescription={supportingContext.description}
+        metaSlot={(
+          <>
+            <ContextChip className="rounded-full">Current view: {effectiveWorkspaceView.replace('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())}</ContextChip>
+            {canViewTeamRequests ? (
+              <ContextChip className="rounded-full">Team queue visibility</ContextChip>
+            ) : (
+              <ContextChip className="rounded-full">Personal leave visibility</ContextChip>
+            )}
+          </>
+        )}
+        supportingPanel={leaveBalancePanel}
+      />
+
       <ModuleLayout.Content>
         {isLoading ? (
           <DataTableShell
@@ -332,8 +396,6 @@ export function LeavePage({ initialView }: LeavePageProps) {
           />
         ) : (
           <div className="space-y-6">
-            {canViewTeamRequests ? leaveBalancePanel : null}
-
             <Card className="border-border/70 shadow-sm">
               <CardHeader className="space-y-1 pb-3">
                 <CardTitle className="text-base">
@@ -370,13 +432,15 @@ export function LeavePage({ initialView }: LeavePageProps) {
                 />
               </CardContent>
             </Card>
-
-            {!canViewTeamRequests ? leaveBalancePanel : null}
-
-            <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
           </div>
         )}
       </ModuleLayout.Content>
+
+      {!isLoading ? (
+        <ModuleLayout.Summary surfaceVariant="flat">
+          <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
+        </ModuleLayout.Summary>
+      ) : null}
 
       <LeaveDetailDrawer
         open={drawer.isDrawerOpen}

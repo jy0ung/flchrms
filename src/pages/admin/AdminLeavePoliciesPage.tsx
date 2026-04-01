@@ -20,6 +20,7 @@ import { useAdminLeaveTypeManagement } from '@/hooks/admin/useAdminLeaveTypeMana
 import { AdminWorkspaceLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { LeavePoliciesSection } from '@/components/admin/LeavePoliciesSection';
 import { AdminLeaveTypeDialogs } from '@/components/admin/AdminLeaveTypeDialogs';
+import { LeaveWorkspaceLead } from '@/components/leave/LeaveWorkspaceLead';
 import { ContextChip } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
@@ -166,8 +167,8 @@ export default function AdminLeavePoliciesPage() {
   if (capabilitiesLoading) {
     return (
       <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
-      <ModuleLayout.Header
-          eyebrow="Governance"
+        <ModuleLayout.Header
+          eyebrow="Leave"
           title="Leave Policies"
           description="Manage leave types, workflows, notifications, analytics, and balance operations from one governance workspace."
         />
@@ -182,7 +183,7 @@ export default function AdminLeavePoliciesPage() {
   return (
     <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
       <ModuleLayout.Header
-        eyebrow="Governance"
+        eyebrow="Leave"
         title="Leave Policies"
         description="Manage leave types, workflows, notifications, analytics, and balance adjustments from one governance workspace."
         metaSlot={(
@@ -200,12 +201,21 @@ export default function AdminLeavePoliciesPage() {
         onValueChange={handleTabChange}
         className="space-y-5"
       >
-        <ModuleLayout.WorkspaceLead
-          eyebrow="Workspace selection"
-          title="Policy workspaces"
-          description="Choose the governance area that matches your next admin task, then work within the active surface below."
-        >
-          {isMobile ? (
+        <LeaveWorkspaceLead
+          title="Governance workspace"
+          description="Choose the governance area that matches your next admin task, then work within the active leave surface below."
+          modeLabel={capabilities.canManageLeaveTypes ? 'Editable governance' : 'Read-only governance'}
+          primaryTitle={activeWorkspace.label}
+          primaryDescription={activeWorkspace.description}
+          secondaryTitle="Governance scope"
+          secondaryDescription="Organization-wide policy, operations, routing, and audit controls stay in one leave module with supporting metrics kept secondary."
+          metaSlot={(
+            <>
+              <ContextChip className="rounded-full">7 workspaces</ContextChip>
+              <ContextChip className="rounded-full">Scope: organization-wide</ContextChip>
+            </>
+          )}
+          navigation={isMobile ? (
             <div className="space-y-3">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">Choose workspace</p>
@@ -280,25 +290,7 @@ export default function AdminLeavePoliciesPage() {
               </section>
             </div>
           )}
-
-          <div className="rounded-xl border border-border/60 bg-background/70 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Current workspace
-            </p>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold text-foreground">{activeWorkspace.label}</p>
-                <p className="text-sm text-muted-foreground">{activeWorkspace.description}</p>
-              </div>
-              <ContextChip
-                tone={capabilities.canManageLeaveTypes ? 'success' : 'warning'}
-                className="shrink-0"
-              >
-                {capabilities.canManageLeaveTypes ? 'Editable workspace' : 'Read-only workspace'}
-              </ContextChip>
-            </div>
-          </div>
-        </ModuleLayout.WorkspaceLead>
+        />
 
         <ModuleLayout.Content>
           <LeavePoliciesSection
