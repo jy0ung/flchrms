@@ -8,7 +8,7 @@ const fallbackCreds = {
 
 async function signIn(page: import('@playwright/test').Page, creds: { identifier: string; password: string }, target = '/dashboard') {
   await page.goto(`/auth?redirect=${encodeURIComponent(target)}`);
-  await page.getByLabel('Email, Username, or Employee ID').fill(creds.identifier);
+  await page.getByLabel(/Email, username, or ID/i).fill(creds.identifier);
   await page.locator('#signin-password').fill(creds.password);
   await page.getByRole('button', { name: /^Sign In$/ }).click();
   await expect(page).toHaveURL((url) => !url.pathname.startsWith('/auth'), { timeout: 20_000 });
@@ -22,8 +22,8 @@ test.describe.serial('Phase 4 - Shell accessibility smoke @phase4 @a11y', () => 
     const mobileNav = page.getByRole('navigation', { name: /Mobile navigation/i });
     const navTargets = [
       mobileNav.locator('a[href="/dashboard"]'),
+      mobileNav.locator('a[href="/attendance"]'),
       mobileNav.locator('a[href="/leave"]'),
-      mobileNav.locator('a[href="/payroll"]'),
       mobileNav.locator('a[href="/notifications"]'),
       mobileNav.getByRole('button', { name: /More navigation/i }),
     ];

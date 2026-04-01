@@ -48,7 +48,7 @@ test.describe.serial('Leave Core V2 Preview @leave @phase1', () => {
 
     await page.getByTestId('leave-wizard-next').click();
 
-    const requestDate = offsetIsoDate(21);
+    const requestDate = offsetIsoDate(60);
     await page.getByTestId('leave-start-date-input').fill(requestDate);
     await page.getByTestId('leave-end-date-input').fill(requestDate);
     await page.getByTestId('leave-wizard-next').click();
@@ -56,9 +56,9 @@ test.describe.serial('Leave Core V2 Preview @leave @phase1', () => {
     const fileInput = page.locator('input[type="file"]').first();
     if (await fileInput.count()) {
       await fileInput.setInputFiles({
-        name: 'leave-proof.txt',
-        mimeType: 'text/plain',
-        buffer: Buffer.from('phase1 preview test'),
+        name: 'leave-proof.pdf',
+        mimeType: 'application/pdf',
+        buffer: Buffer.from('%PDF-1.4 phase1 preview test'),
       });
     }
 

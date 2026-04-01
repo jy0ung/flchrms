@@ -15,7 +15,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
   const creds = resolveAdminCredentials();
 
   await page.goto('/auth');
-  await page.getByLabel('Email, Username, or Employee ID').fill(creds.identifier);
+  await page.getByLabel(/Email, username, or ID/i).fill(creds.identifier);
   await page.locator('#signin-password').fill(creds.password);
   await page.getByRole('button', { name: /^Sign In$/ }).click();
 

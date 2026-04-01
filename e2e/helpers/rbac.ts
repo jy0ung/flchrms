@@ -12,6 +12,15 @@ export interface RbacE2EConfig {
   targetLeaveRowText?: string;
 }
 
+export type AdminLeavePolicyWorkspace =
+  | 'leave-types'
+  | 'operations'
+  | 'workflow-builders'
+  | 'balance-adjustments'
+  | 'workflow-audit'
+  | 'notification-queue'
+  | 'analytics-simulation';
+
 const leaveWorkspaceSelections = new WeakMap<Page, 'My Leave' | 'Team Leave'>();
 
 function envName(role: RbacRole, field: 'IDENTIFIER' | 'PASSWORD') {
@@ -44,7 +53,7 @@ export async function login(page: Page, role: RbacRole) {
     await signInTab.click();
   }
 
-  await page.getByLabel('Email, Username, or Employee ID').fill(creds.identifier);
+  await page.getByLabel(/Email, username, or ID/i).fill(creds.identifier);
   await page.locator('#signin-password').fill(creds.password);
   await page.getByRole('button', { name: /^Sign In$/ }).click();
 
@@ -132,6 +141,14 @@ export async function openAdminTab(page: Page, tabName: 'Employee Profiles' | 'D
   };
 
   await page.goto(routeByTab[tabName]);
+}
+
+export async function openAdminLeavePoliciesWorkspace(
+  page: Page,
+  workspace: AdminLeavePolicyWorkspace,
+) {
+  await page.goto(`/admin/leave-policies?workspace=${workspace}`);
+  await expect(page.getByRole('heading', { name: /Leave Policies/i })).toBeVisible();
 }
 
 export async function findDayCellWithLeaveEvent(page: Page) {

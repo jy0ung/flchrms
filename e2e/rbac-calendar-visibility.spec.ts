@@ -27,7 +27,7 @@ test.describe.serial('RBAC Phase 3B - Team Calendar Visibility @rbac @phase3b', 
     await login(page, 'manager');
     await openCalendarPage(page);
 
-    const seededLeaveDay = page.getByRole('button', { name: /View events for March 20, 2026/i });
+    const seededLeaveDay = page.getByRole('button', { name: /View events for April 15, 2026/i });
     await expect(seededLeaveDay).toBeVisible();
     await seededLeaveDay.click();
 

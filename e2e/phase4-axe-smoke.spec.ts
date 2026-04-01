@@ -16,7 +16,7 @@ async function signIn(page: Page, role: 'admin' | 'employee', target: string) {
   const creds = resolveCreds(role);
 
   await page.goto(`/auth?redirect=${encodeURIComponent(target)}`);
-  await page.getByLabel('Email, Username, or Employee ID').fill(creds.identifier);
+  await page.getByLabel(/Email, username, or ID/i).fill(creds.identifier);
   await page.locator('#signin-password').fill(creds.password);
   await page.getByRole('button', { name: /^Sign In$/ }).click();
   await expect(page).toHaveURL((url) => !url.pathname.startsWith('/auth'), { timeout: 20_000 });

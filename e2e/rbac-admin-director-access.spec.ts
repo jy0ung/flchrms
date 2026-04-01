@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   getRoleCredentials,
   login,
+  openAdminLeavePoliciesWorkspace,
   openAdminPage,
   openAdminTab,
   RbacRole,
@@ -20,8 +21,7 @@ test.describe.serial('RBAC Phase 3B - Admin & Director Access @rbac @phase3b', (
     await openAdminPage(page);
     await expect(page).toHaveURL(/\/admin(\/.*)?$/);
 
-    await openAdminTab(page, 'Leave Policies');
-    await page.getByRole('tab', { name: /^Workflow Builders$/i }).click();
+    await openAdminLeavePoliciesWorkspace(page, 'workflow-builders');
 
     await expect(page.getByText('Leave Approval Workflow Builder')).toBeVisible();
     await expect(page.getByText('Leave Cancellation Workflow Builder')).toBeVisible();

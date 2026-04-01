@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { getRoleCredentials, login, type RbacRole } from './helpers/rbac';
+import {
+  getRoleCredentials,
+  login,
+  openAdminLeavePoliciesWorkspace,
+  type RbacRole,
+} from './helpers/rbac';
 
 type RoleVisibilityCase = {
   role: RbacRole;
@@ -41,10 +46,7 @@ test.describe('Leave Phase 2 Operations Visibility @leave @phase2', () => {
       test.skip(!getRoleCredentials(role), `Missing ${role} E2E credentials.`);
 
       await login(page, role);
-      await page.goto('/admin/leave-policies');
-      await expect(page.getByRole('heading', { name: /Leave Policies/i })).toBeVisible();
-
-      await page.getByRole('tab', { name: /^Operations$/i }).click();
+      await openAdminLeavePoliciesWorkspace(page, 'operations');
       await expect(page.getByRole('heading', { name: /Approval Delegations/i })).toBeVisible();
       await expect(page.getByRole('heading', { name: /Approval SLA Monitor/i })).toBeVisible();
       await expect(page.getByTestId('leave-period-ops-section')).toBeVisible();

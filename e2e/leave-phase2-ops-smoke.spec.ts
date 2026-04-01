@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { getRoleCredentials, login } from './helpers/rbac';
+import { getRoleCredentials, login, openAdminLeavePoliciesWorkspace } from './helpers/rbac';
 
 test.describe('Leave Phase 2 Ops Smoke @leave @phase2', () => {
   test('manager does not see settings controls on leave page', async ({ page }) => {
@@ -17,8 +17,7 @@ test.describe('Leave Phase 2 Ops Smoke @leave @phase2', () => {
     test.skip(!getRoleCredentials('admin'), 'Missing admin E2E credentials.');
 
     await login(page, 'admin');
-    await page.goto('/admin/leave-policies');
-    await page.getByRole('tab', { name: /^Operations$/i }).click();
+    await openAdminLeavePoliciesWorkspace(page, 'operations');
 
     await expect(page.getByTestId('leave-period-ops-section')).toBeVisible();
     await expect(page.getByTestId('leave-period-dry-run-switch')).toBeVisible();
