@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import AdminLeavePoliciesPage from '@/pages/admin/AdminLeavePoliciesPage';
@@ -80,7 +81,11 @@ describe('AdminLeavePoliciesPage', () => {
     mockCanManageLeaveTypes = true;
     mockIsMobile = false;
 
-    render(<AdminLeavePoliciesPage />);
+    render(
+      <MemoryRouter>
+        <AdminLeavePoliciesPage />
+      </MemoryRouter>,
+    );
 
     const workspaceHeading = screen.getByRole('heading', { name: 'Policy workspaces', level: 2 });
     const content = screen.getByText('Mock leave policies section');
@@ -107,7 +112,11 @@ describe('AdminLeavePoliciesPage', () => {
   it('renders an explicit loading state while leave-policy capabilities are resolving', () => {
     mockCapabilityLoading = true;
 
-    render(<AdminLeavePoliciesPage />);
+    render(
+      <MemoryRouter>
+        <AdminLeavePoliciesPage />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByText('Loading leave policies')).toBeInTheDocument();
     expect(screen.getByText('Policy workspaces')).toBeInTheDocument();
@@ -119,9 +128,30 @@ describe('AdminLeavePoliciesPage', () => {
     mockCanManageLeaveTypes = true;
     mockIsMobile = true;
 
-    render(<AdminLeavePoliciesPage />);
+    render(
+      <MemoryRouter>
+        <AdminLeavePoliciesPage />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByRole('combobox', { name: /select leave policy workspace/i })).toBeInTheDocument();
     expect(screen.queryByText('Core workspaces')).not.toBeInTheDocument();
+  });
+
+  it('honors a workspace query parameter for balance adjustments', () => {
+    mockCapabilityLoading = false;
+    mockCanManageLeaveTypes = true;
+    mockIsMobile = false;
+
+    render(
+      <MemoryRouter initialEntries={['/admin/leave-policies?workspace=balance-adjustments']}>
+        <AdminLeavePoliciesPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Balance Adjustments' })).toHaveAttribute('data-state', 'active');
+    expect(
+      screen.getByText('Apply auditable manual balance corrections and review snapshots.'),
+    ).toBeInTheDocument();
   });
 });

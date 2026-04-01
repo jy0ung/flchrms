@@ -18,6 +18,7 @@ import {
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useEmployee } from '@/hooks/useEmployees';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
+import { LeaveBalancePanel } from '@/components/leave/LeaveBalancePanel';
 import {
   useEmployeeProfile,
   useEmployeeLifecycle,
@@ -288,7 +289,7 @@ export default function EmployeeProfile() {
 
   const { data: basicProfile, isLoading: profileLoading } = useEmployee(employeeId ?? '');
   const { data: extProfile } = useEmployeeProfile(employeeId);
-  const { data: balances } = useLeaveBalance(employeeId);
+  const { data: balances, isLoading: balancesLoading } = useLeaveBalance(employeeId);
   const { data: lifecycleEvents } = useEmployeeLifecycle(employeeId);
   const { data: checklistItems } = useOnboardingChecklist(employeeId);
 
@@ -509,46 +510,16 @@ export default function EmployeeProfile() {
 
         {/* ── Leave ─────────────────────────────────────────────────── */}
         <TabsContent value="leave" className="space-y-4">
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Leave Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {balances?.length ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {balances.map((b) => (
-                    <div
-                      key={b.leave_type_id}
-                      className="flex items-center gap-3 rounded-lg border border-border p-3"
-                    >
-                      <MiniBalanceRing
-                        remaining={b.days_remaining}
-                        total={b.days_allowed}
-                        isUnlimited={b.is_unlimited}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{b.leave_type_name}</p>
-                        <div className="flex items-baseline gap-1 mt-0.5">
-                          <span className="text-xs text-muted-foreground">
-                            {b.days_used} used · {b.is_unlimited ? 'Unlimited' : `${b.days_remaining} remaining`}
-                          </span>
-                        </div>
-                        {b.days_pending > 0 && (
-                          <p className="text-[11px] text-amber-600">{b.days_pending} pending</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <TaskEmptyState
-                  title="No leave balance data available"
-                  description="Leave balances will appear here after entitlements are configured for this employee."
-                  compact
-                />
-              )}
-            </CardContent>
-          </Card>
+          <LeaveBalancePanel
+            balances={balances}
+            isLoading={balancesLoading}
+            title="Leave Balance"
+            description="Current entitlement, pending requests, and remaining balance across this employee's leave types."
+            emptyDescription="Leave balances will appear here after entitlements are configured for this employee."
+            variant="prominent"
+            maxPrimaryCards={6}
+            defaultCollapsedSecondary={false}
+          />
         </TabsContent>
 
         {/* ── Timeline ──────────────────────────────────────────────── */}

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LeavePage } from '@/modules/leave/LeavePage';
 
 const openRequestWizard = vi.fn();
-let mockRole: 'employee' | 'manager' = 'employee';
+let mockRole: 'employee' | 'manager' | 'admin' = 'employee';
 let mockCanViewTeamRequests = false;
 let mockCanOpenTeamCalendarLink = false;
 
@@ -95,6 +95,10 @@ vi.mock('@/hooks/useLeaveTypes', () => ({
 
 vi.mock('@/hooks/useLeaveBalance', () => ({
   useLeaveBalance: () => ({ data: [], isLoading: false, error: null }),
+}));
+
+vi.mock('@/hooks/useLeaveDisplayConfig', () => ({
+  useLeaveDisplayPrefs: () => ({ visibleBalances: [] }),
 }));
 
 vi.mock('@/modules/leave/hooks/useLeaveCapabilities', () => ({
@@ -225,8 +229,19 @@ vi.mock('@/components/workspace/SummaryRail', () => ({
   SummaryRail: () => <div data-testid="leave-summary-rail">summary-rail</div>,
 }));
 
-vi.mock('@/components/leave/LeaveBalanceSection', () => ({
-  LeaveBalanceSection: () => null,
+vi.mock('@/components/leave/LeaveBalancePanel', () => ({
+  LeaveBalancePanel: ({
+    title,
+    action,
+  }: {
+    title: string;
+    action?: ReactNode;
+  }) => (
+    <section data-testid="leave-balance-panel">
+      <div>{title}</div>
+      {action}
+    </section>
+  ),
 }));
 
 vi.mock('@/components/leave/LeaveRequestWorkspace', () => ({
@@ -341,6 +356,37 @@ describe('LeavePage', () => {
 
     expect(
       workspace.compareDocumentPosition(summaryRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('keeps personal balances prominent for employees and secondary for approvers', () => {
+    const { rerender } = render(
+      <MemoryRouter initialEntries={['/leave']}>
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    const employeeBalancePanel = screen.getByTestId('leave-balance-panel');
+    const employeeQueue = screen.getByText('default-view:MY_CURRENT');
+
+    expect(
+      employeeQueue.compareDocumentPosition(employeeBalancePanel) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    mockRole = 'manager';
+    mockCanViewTeamRequests = true;
+
+    rerender(
+      <MemoryRouter initialEntries={['/leave']}>
+        <LeavePage />
+      </MemoryRouter>,
+    );
+
+    const managerBalancePanel = screen.getByTestId('leave-balance-panel');
+    const managerQueue = screen.getByText('default-view:TEAM_CURRENT');
+
+    expect(
+      managerBalancePanel.compareDocumentPosition(managerQueue) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 });

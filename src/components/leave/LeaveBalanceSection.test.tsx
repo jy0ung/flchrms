@@ -47,7 +47,7 @@ describe('LeaveBalanceSection', () => {
 
     const toggle = screen.getByRole('button', { name: 'Show 2 more leave types' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveAttribute('aria-controls', 'leave-balance-secondary-region');
+    expect(toggle.getAttribute('aria-controls')).toMatch(/^leave-balance-secondary-region-/);
   });
 
   it('expands secondary balances inline and updates accessibility state', () => {
@@ -86,5 +86,20 @@ describe('LeaveBalanceSection', () => {
     expect(screen.queryByText('Personal Leave')).not.toBeInTheDocument();
     expect(screen.queryByText('Unpaid Leave')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show 2 more leave types' })).toBeInTheDocument();
+  });
+
+  it('uses compact sizing for summary layouts', () => {
+    render(
+      <LeaveBalanceSection
+        balances={[
+          makeBalance({ leave_type_id: '1', leave_type_name: 'Annual Leave' }),
+          makeBalance({ leave_type_id: '2', leave_type_name: 'Sick Leave' }),
+        ]}
+        variant="summary"
+      />,
+    );
+
+    const annualCard = screen.getByText('Annual Leave').closest('[class*=\"min-h-\"]');
+    expect(annualCard).toHaveClass('min-h-[112px]');
   });
 });

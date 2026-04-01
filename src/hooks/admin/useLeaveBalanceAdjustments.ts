@@ -23,6 +23,16 @@ function normalizeAdjustmentRows(rows: unknown): LeaveBalanceAdjustmentEntry[] {
       leave_type_id: String(payload.leave_type_id ?? ''),
       leave_type_name: String(payload.leave_type_name ?? ''),
       adjustment_days: Number(payload.adjustment_days ?? 0),
+      previous_balance_days:
+        payload.previous_balance_days === null || payload.previous_balance_days === undefined
+          ? null
+          : Number(payload.previous_balance_days),
+      new_balance_days:
+        payload.new_balance_days === null || payload.new_balance_days === undefined
+          ? null
+          : Number(payload.new_balance_days),
+      previous_is_unlimited: Boolean(payload.previous_is_unlimited),
+      new_is_unlimited: Boolean(payload.new_is_unlimited),
       effective_date: String(payload.effective_date ?? ''),
       reason: String(payload.reason ?? ''),
       created_by: String(payload.created_by ?? ''),

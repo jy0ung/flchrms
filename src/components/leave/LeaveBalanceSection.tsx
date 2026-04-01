@@ -1,12 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { LeaveBalance } from '@/hooks/useLeaveBalance';
 import { Button } from '@/components/ui/button';
 import { LeaveBalanceMetricCard } from '@/components/leave/LeaveBalanceMetricCard';
+import { cn } from '@/lib/utils';
+
+export type LeaveBalanceSectionVariant = 'prominent' | 'summary';
 
 export interface LeaveBalanceSectionProps {
   balances: LeaveBalance[];
   maxPrimaryCards?: number;
   defaultCollapsedSecondary?: boolean;
+  variant?: LeaveBalanceSectionVariant;
+  className?: string;
 }
 
 /**
@@ -20,8 +25,11 @@ export function LeaveBalanceSection({
   balances,
   maxPrimaryCards = 4,
   defaultCollapsedSecondary = true,
+  variant = 'prominent',
+  className,
 }: LeaveBalanceSectionProps) {
   const [secondaryCollapsed, setSecondaryCollapsed] = useState(defaultCollapsedSecondary);
+  const regionId = useId();
 
   const { showPrimary, showSecondary } = useMemo(() => {
     return {
@@ -30,17 +38,28 @@ export function LeaveBalanceSection({
     };
   }, [balances, maxPrimaryCards]);
 
-  const secondaryRegionId = 'leave-balance-secondary-region';
+  const secondaryRegionId = `leave-balance-secondary-region-${regionId}`;
+  const gridClassName = cn(
+    'grid min-w-0',
+    variant === 'summary'
+      ? 'gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]'
+      : 'gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]',
+  );
+  const cardSize = variant === 'summary' ? 'compact' : 'default';
 
   if (!balances.length) {
     return null;
   }
 
   return (
-    <section aria-label="Leave balance overview" className="space-y-3">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <section aria-label="Leave balance overview" className={cn('space-y-3 min-w-0', className)}>
+      <div className={gridClassName}>
         {showPrimary.map((balance) => (
-          <LeaveBalanceMetricCard key={balance.leave_type_id} balance={balance} />
+          <LeaveBalanceMetricCard
+            key={balance.leave_type_id}
+            balance={balance}
+            size={cardSize}
+          />
         ))}
       </div>
 
@@ -60,9 +79,13 @@ export function LeaveBalanceSection({
           </Button>
 
           {!secondaryCollapsed ? (
-            <div id={secondaryRegionId} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div id={secondaryRegionId} className={gridClassName}>
               {showSecondary.map((balance) => (
-                <LeaveBalanceMetricCard key={balance.leave_type_id} balance={balance} />
+                <LeaveBalanceMetricCard
+                  key={balance.leave_type_id}
+                  balance={balance}
+                  size={cardSize}
+                />
               ))}
             </div>
           ) : null}

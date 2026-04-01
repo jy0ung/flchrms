@@ -37,6 +37,16 @@ export const TEAM_LEAVE_VIEWER_ROLES: AppRole[] = [
   'admin',
 ];
 
+export const LEAVE_BALANCE_ADJUSTER_ROLES: AppRole[] = ['admin', 'hr', 'director'];
+
+export const LEAVE_BALANCE_PERMISSION_KEYS = [
+  'view_own_leave_balance',
+  'view_team_leave_balance',
+  'adjust_leave_balance',
+] as const;
+
+export type LeaveBalancePermissionKey = (typeof LEAVE_BALANCE_PERMISSION_KEYS)[number];
+
 export const EXECUTIVE_SUMMARY_VIEWER_ROLES: AppRole[] = [
   'manager',
   'general_manager',
@@ -152,6 +162,26 @@ export function canViewCalendarLeaveTypeLabel(role: MaybeRole) {
 
 export function canViewTeamLeaveRequests(role: MaybeRole) {
   return hasRole(role, TEAM_LEAVE_VIEWER_ROLES);
+}
+
+export function canViewOwnLeaveBalance(role: MaybeRole) {
+  return !!role && AUTHENTICATED_APP_ROLES.includes(role);
+}
+
+export function canViewTeamLeaveBalance(role: MaybeRole) {
+  return canViewTeamLeaveRequests(role);
+}
+
+export function canAdjustLeaveBalance(role: MaybeRole) {
+  return hasRole(role, LEAVE_BALANCE_ADJUSTER_ROLES);
+}
+
+export function getLeaveBalancePermissions(role: MaybeRole) {
+  return {
+    view_own_leave_balance: canViewOwnLeaveBalance(role),
+    view_team_leave_balance: canViewTeamLeaveBalance(role),
+    adjust_leave_balance: canAdjustLeaveBalance(role),
+  } as const;
 }
 
 export function canRequestLeaveSupportingDocument(role: MaybeRole) {

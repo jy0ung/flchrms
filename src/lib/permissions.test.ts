@@ -3,6 +3,7 @@ import {
   ADMIN_PAGE_ALLOWED_ROLES,
   EMPLOYEE_DIRECTORY_ALLOWED_ROLES,
   canAccessAdminPage,
+  canAdjustLeaveBalance,
   canManageDepartmentEvents,
   canManageDocuments,
   canManageHolidays,
@@ -11,11 +12,15 @@ import {
   canViewSensitiveEmployeeContact,
   canViewSensitiveEmployeeIdentifiers,
   canViewEmployeeDirectory,
+  canViewOwnLeaveBalance,
+  canViewTeamLeaveBalance,
   canViewManagerDashboardWidgets,
   canViewTeamLeaveRequests,
   canViewLeaveSupportingDocument,
   canRequestLeaveSupportingDocument,
   canConductPerformanceReviews,
+  getLeaveBalancePermissions,
+  LEAVE_BALANCE_PERMISSION_KEYS,
 } from '@/lib/permissions';
 
 describe('permissions', () => {
@@ -88,6 +93,35 @@ describe('permissions', () => {
     expect(canViewLeaveSupportingDocument('employee')).toBe(true);
     expect(canViewLeaveSupportingDocument('admin')).toBe(true);
     expect(canViewLeaveSupportingDocument(null)).toBe(false);
+  });
+
+  it('matches leave balance visibility and adjustment rules', () => {
+    expect(LEAVE_BALANCE_PERMISSION_KEYS).toEqual([
+      'view_own_leave_balance',
+      'view_team_leave_balance',
+      'adjust_leave_balance',
+    ]);
+
+    expect(canViewOwnLeaveBalance('employee')).toBe(true);
+    expect(canViewOwnLeaveBalance('manager')).toBe(true);
+    expect(canViewOwnLeaveBalance(null)).toBe(false);
+
+    expect(canViewTeamLeaveBalance('manager')).toBe(true);
+    expect(canViewTeamLeaveBalance('general_manager')).toBe(true);
+    expect(canViewTeamLeaveBalance('employee')).toBe(false);
+
+    expect(canAdjustLeaveBalance('admin')).toBe(true);
+    expect(canAdjustLeaveBalance('hr')).toBe(true);
+    expect(canAdjustLeaveBalance('director')).toBe(true);
+    expect(canAdjustLeaveBalance('general_manager')).toBe(false);
+    expect(canAdjustLeaveBalance('manager')).toBe(false);
+    expect(canAdjustLeaveBalance('employee')).toBe(false);
+
+    expect(getLeaveBalancePermissions('director')).toEqual({
+      view_own_leave_balance: true,
+      view_team_leave_balance: true,
+      adjust_leave_balance: true,
+    });
   });
 
   it('matches calendar privacy and performance-review rules', () => {

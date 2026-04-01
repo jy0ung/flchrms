@@ -211,6 +211,10 @@ export interface LeaveBalanceAdjustmentEntry {
   leave_type_id: string;
   leave_type_name: string;
   adjustment_days: number;
+  previous_balance_days: number | null;
+  new_balance_days: number | null;
+  previous_is_unlimited: boolean;
+  new_is_unlimited: boolean;
   effective_date: string;
   reason: string;
   created_by: string;

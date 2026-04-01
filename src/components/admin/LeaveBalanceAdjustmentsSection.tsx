@@ -22,12 +22,14 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTableShell } from '@/components/system';
+import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useLeaveBalance } from '@/hooks/useLeaveBalance';
 import {
   useCreateLeaveBalanceAdjustment,
   useLeaveBalanceAdjustments,
 } from '@/hooks/admin/useLeaveBalanceAdjustments';
+import { canAdjustLeaveBalance } from '@/lib/permissions';
 import type { LeaveType } from '@/types/hrms';
 
 interface LeaveBalanceAdjustmentsSectionProps {
@@ -40,10 +42,17 @@ function formatDayValue(value: number, isUnlimited: boolean): string {
   return `${value}`;
 }
 
+function formatBalanceSnapshot(value: number | null, isUnlimited: boolean): string {
+  if (isUnlimited) return 'Unlimited';
+  if (value === null || Number.isNaN(value)) return '—';
+  return Number.isInteger(value) ? `${value}` : value.toFixed(2).replace(/\.?0+$/, '');
+}
+
 export function LeaveBalanceAdjustmentsSection({
   leaveTypes,
   canManageLeavePolicies,
 }: LeaveBalanceAdjustmentsSectionProps) {
+  const { role } = useAuth();
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [selectedLeaveTypeFilter, setSelectedLeaveTypeFilter] = useState<string>('all');
@@ -76,9 +85,10 @@ export function LeaveBalanceAdjustmentsSection({
   });
 
   const createAdjustment = useCreateLeaveBalanceAdjustment();
+  const canCreateAdjustments = canManageLeavePolicies && canAdjustLeaveBalance(role);
 
   const onSubmitAdjustment = async () => {
-    if (!selectedEmployeeId || !formLeaveTypeId) return;
+    if (!canCreateAdjustments || !selectedEmployeeId || !formLeaveTypeId) return;
 
     const parsed = Number(formDays);
     if (!Number.isFinite(parsed) || parsed === 0) return;
@@ -100,7 +110,7 @@ export function LeaveBalanceAdjustmentsSection({
   };
 
   const isSubmitDisabled =
-    !canManageLeavePolicies ||
+    !canCreateAdjustments ||
     createAdjustment.isPending ||
     !selectedEmployeeId ||
     !formLeaveTypeId ||
@@ -134,7 +144,7 @@ export function LeaveBalanceAdjustmentsSection({
               type="button"
               className="rounded-full"
               onClick={() => setDialogOpen(true)}
-              disabled={!canManageLeavePolicies || !selectedEmployeeId}
+              disabled={!canCreateAdjustments || !selectedEmployeeId}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Adjustment
@@ -143,9 +153,9 @@ export function LeaveBalanceAdjustmentsSection({
         }
         content={
           <div className="space-y-4">
-            {!canManageLeavePolicies ? (
+            {!canCreateAdjustments ? (
               <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-                Read-only mode. You can review balance snapshots and adjustment history, but cannot create new adjustments.
+                Read-only mode. You can review balance snapshots and adjustment history, but only authorized governance roles can create balance adjustments.
               </div>
             ) : null}
 
@@ -256,6 +266,8 @@ export function LeaveBalanceAdjustmentsSection({
                       <TableHead>Effective Date</TableHead>
                       <TableHead>Leave Type</TableHead>
                       <TableHead className="text-right">Delta Days</TableHead>
+                      <TableHead className="text-right">Before</TableHead>
+                      <TableHead className="text-right">After</TableHead>
                       <TableHead>Reason</TableHead>
                       <TableHead>Created By</TableHead>
                       <TableHead>Created At</TableHead>
@@ -269,6 +281,12 @@ export function LeaveBalanceAdjustmentsSection({
                         <TableCell className="text-right font-medium">
                           {item.adjustment_days > 0 ? `+${item.adjustment_days}` : item.adjustment_days}
                         </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatBalanceSnapshot(item.previous_balance_days, item.previous_is_unlimited)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatBalanceSnapshot(item.new_balance_days, item.new_is_unlimited)}
+                        </TableCell>
                         <TableCell className="max-w-[420px] truncate" title={item.reason}>{item.reason}</TableCell>
                         <TableCell>{item.created_by_name ?? 'Unknown'}</TableCell>
                         <TableCell>{item.created_at ? format(new Date(item.created_at), 'yyyy-MM-dd HH:mm') : '—'}</TableCell>
@@ -276,7 +294,7 @@ export function LeaveBalanceAdjustmentsSection({
                     ))}
                     {!adjustmentsQuery.isLoading && (adjustmentsQuery.data?.length ?? 0) === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center text-muted-foreground">
                           No adjustments recorded yet.
                         </TableCell>
                       </TableRow>

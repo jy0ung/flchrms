@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
   Building2,
@@ -90,14 +91,22 @@ const EXTENDED_WORKSPACE_KEYS: LeavePolicySubTabKey[] = [
   'analytics-simulation',
 ];
 
+function isLeavePolicyWorkspaceKey(value: string | null): value is LeavePolicySubTabKey {
+  return LEAVE_POLICY_WORKSPACES.some((workspace) => workspace.key === value);
+}
+
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
   const isMobile = useIsMobile();
   const { role } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { data: departments } = useDepartments();
   const { data: leaveTypes, isLoading: leaveTypesLoading } = useLeaveTypes();
-  const [activeTab, setActiveTab] = useState<LeavePolicySubTabKey>('leave-types');
+  const [activeTab, setActiveTab] = useState<LeavePolicySubTabKey>(() => {
+    const requestedWorkspace = searchParams.get('workspace');
+    return isLeavePolicyWorkspaceKey(requestedWorkspace) ? requestedWorkspace : 'leave-types';
+  });
 
   const {
     editLeaveTypeDialogOpen, setEditLeaveTypeDialogOpen,
@@ -137,6 +146,23 @@ export default function AdminLeavePoliciesPage() {
     [departments, leaveTypes],
   );
 
+  useEffect(() => {
+    const requestedWorkspace = searchParams.get('workspace');
+    if (isLeavePolicyWorkspaceKey(requestedWorkspace) && requestedWorkspace !== activeTab) {
+      setActiveTab(requestedWorkspace);
+    }
+  }, [activeTab, searchParams]);
+
+  const handleTabChange = (value: string) => {
+    const nextTab = isLeavePolicyWorkspaceKey(value) ? value : 'leave-types';
+    setActiveTab(nextTab);
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams);
+      nextParams.set('workspace', nextTab);
+      return nextParams;
+    }, { replace: true });
+  };
+
   if (capabilitiesLoading) {
     return (
       <ModuleLayout archetype="governance-workspace" maxWidth="7xl">
@@ -171,7 +197,7 @@ export default function AdminLeavePoliciesPage() {
 
       <Tabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as LeavePolicySubTabKey)}
+        onValueChange={handleTabChange}
         className="space-y-5"
       >
         <ModuleLayout.WorkspaceLead
@@ -187,7 +213,7 @@ export default function AdminLeavePoliciesPage() {
                   Core policy work stays first, while extended governance tools stay available without crowding the page.
                 </p>
               </div>
-              <Select value={activeTab} onValueChange={(value) => setActiveTab(value as LeavePolicySubTabKey)}>
+              <Select value={activeTab} onValueChange={handleTabChange}>
                 <SelectTrigger aria-label="Select leave policy workspace" className="rounded-2xl">
                   <SelectValue placeholder="Select a workspace" />
                 </SelectTrigger>
