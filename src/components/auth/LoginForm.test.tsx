@@ -7,7 +7,7 @@ describe('LoginForm', () => {
   it('renders associated labels for identifier and password fields', () => {
     render(<LoginForm onSubmit={vi.fn().mockResolvedValue({ error: null })} />);
 
-    expect(screen.getByLabelText(/Email, Username, or Employee ID/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email, username, or ID/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument();
   });
 
@@ -15,7 +15,7 @@ describe('LoginForm', () => {
     const onSubmit = vi.fn().mockResolvedValue({ error: new Error('Invalid login credentials') });
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'someone' },
     });
     fireEvent.change(screen.getByLabelText(/^Password$/i), {
@@ -40,7 +40,7 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'emp-001' },
     });
     fireEvent.change(screen.getByLabelText(/^Password$/i), {
@@ -96,7 +96,7 @@ describe('LoginForm', () => {
     const onSubmit = vi.fn().mockResolvedValue({ error: null });
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'employee@company.com' },
     });
     const passwordInput = screen.getByLabelText(/^Password$/i);
@@ -115,7 +115,7 @@ describe('LoginForm', () => {
     const onSubmit = vi.fn().mockResolvedValue({ error: new Error('Invalid login credentials') });
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'someone' },
     });
     fireEvent.change(screen.getByLabelText(/^Password$/i), {
@@ -125,7 +125,7 @@ describe('LoginForm', () => {
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'someone-else' },
     });
 
@@ -138,7 +138,7 @@ describe('LoginForm', () => {
     const onSubmit = vi.fn().mockResolvedValue({ error: new Error('Failed to fetch') });
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText(/Email, Username, or Employee ID/i), {
+    fireEvent.change(screen.getByLabelText(/Email, username, or ID/i), {
       target: { value: 'employee@company.com' },
     });
     fireEvent.change(screen.getByLabelText(/^Password$/i), {

@@ -164,34 +164,34 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
     }
   };
 
-  const identifierHintId = 'signin-identifier-hint';
   const identifierErrorId = 'signin-identifier-error';
-  const passwordHintId = 'signin-password-hint';
   const passwordCapsId = 'signin-password-caps';
   const passwordErrorId = 'signin-password-error';
   const formErrorId = 'signin-form-error';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {errorModel ? (
         <div
           id={formErrorId}
           role="alert"
           aria-live="assertive"
-          className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-3 text-sm text-destructive"
+          className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
           <div className="flex items-start gap-2">
             <ShieldAlert className="mt-0.5 h-4 w-4" aria-hidden="true" />
             <div>
-              <p className="font-medium">Sign-in error</p>
+              <p className="font-medium">Couldn't sign in</p>
               <p>{errorModel.message}</p>
             </div>
           </div>
         </div>
       ) : null}
 
-      <div className="space-y-2.5">
-        <Label htmlFor="signin-identifier">Email, Username, or Employee ID</Label>
+      <div className="space-y-2">
+        <Label htmlFor="signin-identifier" className="text-sm font-medium text-foreground">
+          Email, username, or ID
+        </Label>
         <Input
           id="signin-identifier"
           name="identifier"
@@ -201,35 +201,36 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
             setIdentifier(event.target.value);
             clearError();
           }}
-          placeholder="you@company.com, username, or EMP-001"
+          placeholder="you@company.com or EMP-001"
           autoComplete="username"
           required
           aria-invalid={fieldErrorSet.has('identifier')}
           aria-describedby={cn(
-            identifierHintId,
             fieldErrorSet.has('identifier') && identifierErrorId,
             errorModel && !fieldErrorSet.size && formErrorId,
           )}
-          className={cn('h-11 rounded-lg', fieldErrorSet.has('identifier') && 'border-destructive/70 focus-visible:ring-destructive')}
+          className={cn(
+            'h-12 rounded-2xl border-border/70 bg-background px-4 shadow-sm transition-shadow focus-visible:ring-primary/30',
+            fieldErrorSet.has('identifier') && 'border-destructive/70 focus-visible:ring-destructive',
+          )}
         />
-        <p id={identifierHintId} className="text-xs text-muted-foreground">
-          Use your account email, username alias, or employee ID.
-        </p>
         {fieldErrorSet.has('identifier') ? (
-          <p id={identifierErrorId} className="text-xs text-destructive">Check your sign-in identifier.</p>
+          <p id={identifierErrorId} className="text-xs text-destructive">Check your identifier.</p>
         ) : null}
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="signin-password">Password</Label>
+          <Label htmlFor="signin-password" className="text-sm font-medium text-foreground">
+            Password
+          </Label>
           <Button
             type="button"
             variant="link"
-            className="h-auto px-0 text-xs font-semibold"
+            className="h-auto px-0 text-xs font-medium text-primary"
             onClick={onForgotPassword}
           >
-            Forgot password?
+            Reset password
           </Button>
         </div>
 
@@ -250,18 +251,20 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
             required
             aria-invalid={fieldErrorSet.has('password')}
             aria-describedby={cn(
-              passwordHintId,
               capsLockOn && passwordCapsId,
               fieldErrorSet.has('password') && passwordErrorId,
               errorModel && !fieldErrorSet.size && formErrorId,
             )}
-            className={cn('h-11 rounded-lg pr-11', fieldErrorSet.has('password') && 'border-destructive/70 focus-visible:ring-destructive')}
+            className={cn(
+              'h-12 rounded-2xl border-border/70 bg-background px-4 pr-12 shadow-sm transition-shadow focus-visible:ring-primary/30',
+              fieldErrorSet.has('password') && 'border-destructive/70 focus-visible:ring-destructive',
+            )}
           />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 rounded-lg"
+            className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-xl text-muted-foreground"
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}
@@ -270,9 +273,6 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
           </Button>
         </div>
 
-        <p id={passwordHintId} className="text-xs text-muted-foreground">
-          Passwords are case sensitive.
-        </p>
         {capsLockOn ? (
           <p id={passwordCapsId} className="text-xs text-warning">
             Caps Lock is on.
@@ -283,13 +283,13 @@ export function LoginForm({ onSubmit, onForgotPassword, disabled = false }: Logi
         ) : null}
       </div>
 
-      <Button type="submit" className="h-11 w-full rounded-lg" disabled={isDisabled}>
+      <Button type="submit" className="h-12 w-full rounded-2xl shadow-sm" disabled={isDisabled}>
         <Loader2 className={cn('mr-2 h-4 w-4', isSubmitting ? 'animate-spin opacity-100' : 'opacity-0')} aria-hidden="true" />
         {isSubmitting ? 'Signing in…' : 'Sign In'}
       </Button>
 
       <p className="pt-1 text-center text-[11px] text-muted-foreground">
-        All access is logged and monitored.
+        Secure, monitored access.
       </p>
     </form>
   );

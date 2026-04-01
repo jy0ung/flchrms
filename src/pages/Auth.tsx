@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModalScaffold } from '@/components/system';
 import { AuthCard, type AuthFlowStage } from '@/components/auth/AuthCard';
 import { LoginForm, type LoginFormPayload, type LoginFormSubmitResult } from '@/components/auth/LoginForm';
@@ -26,13 +25,12 @@ function hasRecoveryParams() {
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const postAuthTarget = resolvePostAuthTarget({
     state: location.state,
     search: location.search,
   });
 
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
 
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
@@ -44,7 +42,6 @@ export default function Auth() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isUpdatingRecoveryPassword, setIsUpdatingRecoveryPassword] = useState(false);
 
-  const [isSignUpLoading, setIsSignUpLoading] = useState(false);
   const [recoveryError, setRecoveryError] = useState('');
   const [resetError, setResetError] = useState('');
 
@@ -84,33 +81,6 @@ export default function Auth() {
             ? error
             : new Error('Unable to reach authentication service.'),
       };
-    }
-  };
-
-  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSignUpLoading(true);
-
-    try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-      const firstName = formData.get('firstName') as string;
-      const lastName = formData.get('lastName') as string;
-
-      const { error } = await signUp(email, password, firstName, lastName);
-
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success('Account created successfully!');
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      console.error('Unhandled sign-up error:', error);
-      toast.error('Unable to create account at the moment. Please try again.');
-    } finally {
-      setIsSignUpLoading(false);
     }
   };
 
@@ -187,17 +157,22 @@ export default function Auth() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.08),_transparent_36%),linear-gradient(180deg,hsl(var(--background)),hsl(var(--muted)/0.35))] px-4 py-8">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-16 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/8 blur-3xl" />
+          <div className="absolute bottom-16 left-10 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+        </div>
+        <div className="relative w-full max-w-[27rem]">
           <AuthCard
             stage={stage}
-            className="w-full max-w-md"
+            className="w-full rounded-[2rem] px-1 py-2 md:px-2"
           >
               {isRecoveryMode ? (
                 <div className="space-y-5">
-                  <div className="rounded-lg border border-border bg-muted/50 p-4">
-                    <p className="font-medium">Reset your password</p>
+                  <div className="rounded-2xl border border-border/70 bg-muted/35 p-4">
+                    <p className="font-medium">Choose a new password</p>
                     <p className="text-sm text-muted-foreground">
-                      Enter a new password for your account. After updating, you will be signed out and can log in again.
+                      Update it now, then sign in again.
                     </p>
                   </div>
 
@@ -217,13 +192,13 @@ export default function Auth() {
                           autoComplete="new-password"
                           minLength={8}
                           required
-                          className="pr-10"
+                          className="h-12 rounded-2xl border-border/70 bg-background px-4 pr-12 shadow-sm"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
+                          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-xl text-muted-foreground"
                           onClick={() => setShowRecoveryPassword((value) => !value)}
                           aria-label={showRecoveryPassword ? 'Hide password' : 'Show password'}
                           aria-pressed={showRecoveryPassword}
@@ -248,14 +223,14 @@ export default function Auth() {
                         autoComplete="new-password"
                         minLength={8}
                         required
-                        
+                        className="h-12 rounded-2xl border-border/70 bg-background px-4 shadow-sm"
                       />
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Button
                         type="submit"
-                        className="w-full"
+                        className="h-12 w-full rounded-2xl shadow-sm"
                         disabled={isUpdatingRecoveryPassword}
                       >
                         {isUpdatingRecoveryPassword ? (
@@ -266,7 +241,7 @@ export default function Auth() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full"
+                        className="h-12 w-full rounded-2xl"
                         onClick={async () => {
                           await signOutLocalSession();
                           clearRecoveryState();
@@ -287,13 +262,14 @@ export default function Auth() {
                 </div>
               )}
           </AuthCard>
+        </div>
       </div>
 
       <ModalScaffold
         open={forgotPasswordOpen}
         onOpenChange={setForgotPasswordOpen}
         title="Reset Password"
-        description="Enter your account email. If it exists, we will send a password reset link."
+        description="Enter your email to receive a reset link."
         maxWidth="md"
         body={(
           <form
@@ -314,6 +290,7 @@ export default function Auth() {
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
+                className="h-12 rounded-2xl"
               />
             </div>
           </form>
@@ -323,6 +300,7 @@ export default function Auth() {
             <Button
               type="button"
               variant="outline"
+              className="rounded-2xl"
               onClick={() => setForgotPasswordOpen(false)}
             >
               Cancel
@@ -330,6 +308,7 @@ export default function Auth() {
             <Button
               type="submit"
               form="forgot-password-form"
+              className="rounded-2xl"
               disabled={isResetRequestLoading}
             >
               {isResetRequestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
