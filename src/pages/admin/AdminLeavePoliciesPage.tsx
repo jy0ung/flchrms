@@ -6,6 +6,7 @@ import {
   FileText,
   GitBranch,
   History,
+  Layers3,
   Mail,
   Settings2,
   SlidersHorizontal,
@@ -96,6 +97,47 @@ function isLeavePolicyWorkspaceKey(value: string | null): value is LeavePolicySu
   return LEAVE_POLICY_WORKSPACES.some((workspace) => workspace.key === value);
 }
 
+function isCoreWorkspace(value: LeavePolicySubTabKey) {
+  return CORE_WORKSPACE_KEYS.includes(value);
+}
+
+function WorkspaceNavTrigger({
+  value,
+  label,
+  description,
+  icon: Icon,
+  compact = false,
+}: {
+  value: LeavePolicySubTabKey;
+  label: string;
+  description: string;
+  icon: typeof FileText;
+  compact?: boolean;
+}) {
+  return (
+    <TabsTrigger
+      value={value}
+      className={
+        compact
+          ? 'flex h-10 w-full items-center justify-start rounded-full border border-border/70 bg-muted/25 px-4 text-sm font-medium data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm'
+          : 'flex h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-left text-sm leading-5 data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm'
+      }
+    >
+      <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 space-y-1">
+        <p className="font-semibold text-foreground">{label}</p>
+        {!compact ? (
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            {description}
+          </p>
+        ) : null}
+      </div>
+    </TabsTrigger>
+  );
+}
+
 export default function AdminLeavePoliciesPage() {
   usePageTitle('Admin · Leave Policies');
   const isMobile = useIsMobile();
@@ -123,6 +165,7 @@ export default function AdminLeavePoliciesPage() {
   const activeWorkspace =
     LEAVE_POLICY_WORKSPACES.find((workspace) => workspace.key === activeTab) ??
     LEAVE_POLICY_WORKSPACES[0];
+  const ActiveWorkspaceIcon = activeWorkspace.icon;
   const coreWorkspaces = LEAVE_POLICY_WORKSPACES.filter((workspace) => CORE_WORKSPACE_KEYS.includes(workspace.key));
   const extendedWorkspaces = LEAVE_POLICY_WORKSPACES.filter((workspace) => EXTENDED_WORKSPACE_KEYS.includes(workspace.key));
 
@@ -185,7 +228,7 @@ export default function AdminLeavePoliciesPage() {
       <ModuleLayout.Header
         eyebrow="Leave"
         title="Leave Policies"
-        description="Manage leave types, workflows, notifications, analytics, and balance adjustments from one governance workspace."
+        description="Manage leave policies, routing, notifications, analytics, and balance adjustments."
         metaSlot={(
           <>
             <ContextChip tone={capabilities.canManageLeaveTypes ? 'success' : 'warning'}>
@@ -202,17 +245,17 @@ export default function AdminLeavePoliciesPage() {
         className="space-y-5"
       >
         <LeaveWorkspaceLead
+          variant="governance"
           title="Governance workspace"
-          description="Choose the governance area that matches your next admin task, then work within the active leave surface below."
+          description="Choose a governance area, then work inside the active workspace below."
           modeLabel={capabilities.canManageLeaveTypes ? 'Editable governance' : 'Read-only governance'}
-          primaryTitle={activeWorkspace.label}
-          primaryDescription={activeWorkspace.description}
-          secondaryTitle="Governance scope"
-          secondaryDescription="Organization-wide policy, operations, routing, and audit controls stay in one leave module with supporting metrics kept secondary."
+          showOverviewCards={false}
           metaSlot={(
             <>
               <ContextChip className="rounded-full">7 workspaces</ContextChip>
-              <ContextChip className="rounded-full">Scope: organization-wide</ContextChip>
+              <ContextChip className="rounded-full">
+                {isCoreWorkspace(activeTab) ? 'Core governance' : 'Extended governance'}
+              </ContextChip>
             </>
           )}
           navigation={isMobile ? (
@@ -220,7 +263,7 @@ export default function AdminLeavePoliciesPage() {
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">Choose workspace</p>
                 <p className="text-sm text-muted-foreground">
-                  Core policy work stays first, while extended governance tools stay available without crowding the page.
+                  Keep the active task in view without scanning every workspace at once.
                 </p>
               </div>
               <Select value={activeTab} onValueChange={handleTabChange}>
@@ -235,58 +278,102 @@ export default function AdminLeavePoliciesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <div className="rounded-2xl border border-border/70 bg-background/75 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
+                    <ActiveWorkspaceIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Current workspace
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">{activeWorkspace.label}</p>
+                    <p className="text-sm text-muted-foreground">{activeWorkspace.description}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <section className="space-y-3">
+            <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
+              <section className="space-y-4 rounded-2xl border border-border/70 bg-background/75 p-4 shadow-sm">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">Core workspaces</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Governance navigation
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    The most common policy, operations, and routing surfaces stay front and center.
+                    Core workspaces stay pinned first. Extended oversight stays nearby without crowding the active workspace.
                   </p>
                 </div>
-                <TabsList className="grid h-auto w-full grid-cols-1 gap-2 border-0 bg-transparent p-0 lg:grid-cols-3">
-                  {coreWorkspaces.map((workspace) => {
-                    const Icon = workspace.icon;
-                    return (
-                      <TabsTrigger
+
+                <section className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Core workspaces</p>
+                  <TabsList className="flex h-auto w-full flex-col gap-2 border-0 bg-transparent p-0">
+                    {coreWorkspaces.map((workspace) => (
+                      <WorkspaceNavTrigger
                         key={workspace.key}
                         value={workspace.key}
-                        className="flex h-auto min-h-[88px] items-start justify-start gap-3 whitespace-normal rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-left text-sm leading-5 data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                      >
-                        <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 space-y-1">
-                          <p className="font-semibold text-foreground">{workspace.label}</p>
-                          <p className="text-xs text-muted-foreground sm:text-sm">
-                            {workspace.description}
-                          </p>
-                        </div>
-                      </TabsTrigger>
-                    );
-                  })}
-                </TabsList>
+                        label={workspace.label}
+                        description={workspace.description}
+                        icon={workspace.icon}
+                      />
+                    ))}
+                  </TabsList>
+                </section>
+
+                <section className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Extended governance</p>
+                  <TabsList className="flex h-auto w-full flex-col gap-2 border-0 bg-transparent p-0">
+                    {extendedWorkspaces.map((workspace) => (
+                      <WorkspaceNavTrigger
+                        key={workspace.key}
+                        value={workspace.key}
+                        label={workspace.label}
+                        description={workspace.description}
+                        icon={workspace.icon}
+                        compact
+                      />
+                    ))}
+                  </TabsList>
+                </section>
               </section>
 
-              <section className="space-y-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">Extended governance areas</p>
-                  <p className="text-sm text-muted-foreground">
-                    Secondary oversight surfaces stay available without competing with the core policy workflow.
-                  </p>
+              <section className="space-y-4 rounded-2xl border border-border/70 bg-background/75 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-muted/70 p-2 text-muted-foreground">
+                    <ActiveWorkspaceIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Current workspace
+                    </p>
+                    <h3 className="text-base font-semibold text-foreground">{activeWorkspace.label}</h3>
+                    <p className="text-sm text-muted-foreground">{activeWorkspace.description}</p>
+                  </div>
                 </div>
-                <TabsList className="flex h-auto w-full flex-wrap gap-2 border-0 bg-transparent p-0">
-                  {extendedWorkspaces.map((workspace) => (
-                    <TabsTrigger
-                      key={workspace.key}
-                      value={workspace.key}
-                      className="h-10 rounded-full border border-border/70 bg-muted/25 px-4 text-sm font-medium data-[state=active]:border-primary/35 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                    >
-                      {workspace.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Scope
+                    </p>
+                    <div className="mt-2 flex items-start gap-2">
+                      <Layers3 className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                        Organization-wide controls for policy, routing, notification, and audit.
+                    </p>
+                  </div>
+                </div>
+                  <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Access
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {capabilities.canManageLeaveTypes
+                        ? 'You can edit configuration and operational settings in authorized workspaces.'
+                        : 'You can review governance data here, but editing remains restricted.'}
+                    </p>
+                  </div>
+                </div>
               </section>
             </div>
           )}

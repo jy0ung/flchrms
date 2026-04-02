@@ -100,10 +100,10 @@ describe('AdminLeavePoliciesPage', () => {
     ).toBeTruthy();
     expect(screen.getByText('Published leave types')).toBeInTheDocument();
     expect(screen.getByText('Department scopes')).toBeInTheDocument();
-    expect(screen.getByText('Primary work')).toBeInTheDocument();
-    expect(screen.getByText('Supporting context')).toBeInTheDocument();
+    expect(screen.getByText('Governance navigation')).toBeInTheDocument();
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
     expect(screen.getByText('Core workspaces')).toBeInTheDocument();
-    expect(screen.getByText('Extended governance areas')).toBeInTheDocument();
+    expect(screen.getByText('Extended governance')).toBeInTheDocument();
     expect(screen.queryByText('Access mode')).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Leave Types/i })).toBeInTheDocument();
     expect(screen.getByText('Editable governance')).toBeInTheDocument();
@@ -151,6 +151,7 @@ describe('AdminLeavePoliciesPage', () => {
     );
 
     expect(screen.getByRole('tab', { name: 'Balance Adjustments' })).toHaveAttribute('data-state', 'active');
+    expect(screen.getAllByText('Current workspace')[0]).toBeInTheDocument();
     expect(
       screen.getByText('Apply auditable manual balance corrections and review snapshots.'),
     ).toBeInTheDocument();

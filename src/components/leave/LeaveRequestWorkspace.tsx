@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { AppRole, LeaveRequest } from '@/types/hrms';
 import type { LeaveActionDialogAction } from '@/components/leave/LeaveActionDialog';
-import { ContextChip, DataTableShell, RecordSurfaceHeader, SectionToolbar } from '@/components/system';
+import { ContextChip, DataTableShell, SectionToolbar } from '@/components/system';
 import { MyLeaveRequestsTable } from '@/components/leave/MyLeaveRequestsTable';
 import { TeamLeaveRequestsTable } from '@/components/leave/TeamLeaveRequestsTable';
 import { isCancellationPending } from '@/lib/leave-utils';
@@ -148,28 +148,28 @@ export function LeaveRequestWorkspace({
         label: `My Current (${myCurrentRequests.length})`,
         shortLabel: 'My Current',
         title: 'My Active Requests',
-        summary: 'Track active requests, amendments, documents, and approval progress from one list.',
+        summary: 'Track active requests, approvals, amendments, and cancellations from one list.',
         requests: myCurrentRequests,
       },
       MY_HISTORY: {
         label: `My History (${myHistoryRequests.length})`,
         shortLabel: 'My History',
         title: 'My Request History',
-        summary: 'Resolved requests and completed leave entries kept for reference.',
+        summary: 'Resolved requests and completed leave kept for reference.',
         requests: myHistoryRequests,
       },
       TEAM_CURRENT: {
         label: `Team Current (${teamCurrentRequests.length})`,
         shortLabel: 'Team Current',
         title: 'Approval Inbox',
-        summary: 'Requests currently waiting on your review, delegated action, or document follow-up.',
+        summary: 'Requests currently waiting on your review or delegated action.',
         requests: teamCurrentRequests,
       },
       TEAM_HISTORY: {
         label: `Team History (${teamHistoryRequests.length})`,
         shortLabel: 'Team History',
         title: 'Resolved Team Requests',
-        summary: 'Completed team decisions retained for traceability, follow-up, and audit context.',
+        summary: 'Completed team decisions retained for follow-up and audit reference.',
         requests: teamHistoryRequests,
       },
     };
@@ -227,33 +227,18 @@ export function LeaveRequestWorkspace({
     <Tabs value={view} onValueChange={(value) => setView(value as LeaveViewOption)} className="space-y-4">
       <section
         aria-label="Queue views"
-        className="space-y-4 rounded-xl border border-border/70 bg-muted/[0.18] p-4"
+        className="space-y-3 rounded-xl border border-border/70 bg-muted/[0.18] p-4"
       >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Queue views
+              Workspace view
             </p>
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              {canViewTeamRequests
-                ? 'Choose which leave queue needs your attention'
-                : 'Choose which leave requests you want to review'}
-            </h2>
             <p className="text-sm text-muted-foreground">
-              Navigation switches between request lists. Filters below only change the list you are currently viewing.
+              Switch queues without leaving the leave module.
             </p>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <ContextChip className="rounded-full">
-              Current view: {activeView.shortLabel}
-            </ContextChip>
-            {statusFilter !== 'ALL' ? (
-              <ContextChip className="rounded-full">
-                Filter: {activeFilterLabel}
-              </ContextChip>
-            ) : null}
-          </div>
+          <div className="sm:shrink-0">{workflowInfoPopover}</div>
         </div>
 
         <TabsList className="grid h-auto w-full auto-cols-[minmax(10.5rem,1fr)] grid-flow-col gap-1 overflow-x-auto rounded-xl bg-background p-1 md:w-auto md:min-w-[560px] md:grid-cols-4 md:grid-flow-row md:overflow-visible">
@@ -271,11 +256,11 @@ export function LeaveRequestWorkspace({
 
         return (
           <TabsContent key={option} value={option} className="mt-0 space-y-3">
-            <RecordSurfaceHeader
+            <DataTableShell
               title={currentView.title}
               description={currentView.summary}
-              meta={(
-                <>
+              headerActions={(
+                <div className="flex flex-wrap items-center gap-2">
                   <ContextChip className="rounded-full">
                     {currentView.shortLabel}
                   </ContextChip>
@@ -286,26 +271,13 @@ export function LeaveRequestWorkspace({
                     <Filter className="h-3 w-3" />
                     {statusFilter === 'ALL' ? 'All statuses' : `Filtered: ${activeFilterLabel}`}
                   </ContextChip>
-                </>
+                </div>
               )}
-            />
-
-            <DataTableShell
               toolbar={(
                 <SectionToolbar
                   variant="inline"
                   density="compact"
                   ariaLabel="Leave request filters"
-                  leadingSlot={(
-                    <div className="space-y-1">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                        Queue controls
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Filter the current list without changing your queue view.
-                      </p>
-                    </div>
-                  )}
                   filters={[
                     {
                       id: 'leave-status-filter',
@@ -340,7 +312,6 @@ export function LeaveRequestWorkspace({
                       Clear filter
                     </Button>
                   ) : undefined}
-                  trailingSlot={workflowInfoPopover}
                   collapseFiltersOnMobile={false}
                 />
               )}

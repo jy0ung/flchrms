@@ -8,10 +8,12 @@ interface LeaveWorkspaceLeadProps {
   title: string;
   description: string;
   modeLabel: string;
-  primaryTitle: string;
-  primaryDescription: string;
-  secondaryTitle: string;
-  secondaryDescription: string;
+  primaryTitle?: string;
+  primaryDescription?: string;
+  secondaryTitle?: string;
+  secondaryDescription?: string;
+  variant?: 'operational' | 'governance';
+  showOverviewCards?: boolean;
   metaSlot?: ReactNode;
   navigation?: ReactNode;
   supportingPanel?: ReactNode;
@@ -49,6 +51,8 @@ export function LeaveWorkspaceLead({
   primaryDescription,
   secondaryTitle,
   secondaryDescription,
+  variant = 'operational',
+  showOverviewCards = true,
   metaSlot,
   navigation,
   supportingPanel,
@@ -57,7 +61,7 @@ export function LeaveWorkspaceLead({
 }: LeaveWorkspaceLeadProps) {
   return (
     <ModuleLayout.WorkspaceLead
-      eyebrow="Leave workspace"
+      eyebrow={variant === 'governance' ? 'Leave governance' : 'Leave workspace'}
       title={title}
       description={description}
       actions={actions}
@@ -70,7 +74,7 @@ export function LeaveWorkspaceLead({
       className={className}
     >
       {navigation ? (
-        <section className="space-y-3">
+        <section className={cn('space-y-3', variant === 'operational' && 'space-y-2')}>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Workspace navigation
           </p>
@@ -78,23 +82,31 @@ export function LeaveWorkspaceLead({
         </section>
       ) : null}
 
-      <div className={cn('grid gap-3 lg:grid-cols-2', !navigation && !supportingPanel && 'lg:grid-cols-2')}>
-        <OverviewCard
-          label="Primary work"
-          title={primaryTitle}
-          description={primaryDescription}
-        />
-        <OverviewCard
-          label="Supporting context"
-          title={secondaryTitle}
-          description={secondaryDescription}
-        />
-      </div>
+      {showOverviewCards && primaryTitle && primaryDescription && secondaryTitle && secondaryDescription ? (
+        <div
+          className={cn(
+            'grid gap-3 lg:grid-cols-2',
+            variant === 'operational' && 'gap-2.5',
+            !navigation && !supportingPanel && 'lg:grid-cols-2',
+          )}
+        >
+          <OverviewCard
+            label={variant === 'governance' ? 'Primary work' : 'Current focus'}
+            title={primaryTitle}
+            description={primaryDescription}
+          />
+          <OverviewCard
+            label="Supporting context"
+            title={secondaryTitle}
+            description={secondaryDescription}
+          />
+        </div>
+      ) : null}
 
       {supportingPanel ? (
-        <section className="space-y-3">
+        <section className={cn('space-y-3', variant === 'operational' && 'space-y-2')}>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Supporting reference
+            {variant === 'governance' ? 'Supporting reference' : 'Balance reference'}
           </p>
           {supportingPanel}
         </section>

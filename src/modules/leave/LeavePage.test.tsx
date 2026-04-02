@@ -245,7 +245,17 @@ vi.mock('@/components/system', () => ({
 }));
 
 vi.mock('@/components/workspace/SummaryRail', () => ({
-  SummaryRail: () => <div data-testid="leave-summary-rail">summary-rail</div>,
+  SummaryRail: ({
+    items,
+  }: {
+    items?: Array<{ id: string; label: string; value: string | number }>;
+  }) => (
+    <div data-testid="leave-summary-rail">
+      {items?.map((item) => (
+        <div key={item.id}>{`${item.label}:${item.value}`}</div>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('@/components/leave/LeaveBalancePanel', () => ({
@@ -340,7 +350,7 @@ describe('LeavePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Your leave requests, balances, and history in one workspace.')).toBeInTheDocument();
+    expect(screen.getByText('Requests, balances, and history in one place.')).toBeInTheDocument();
     expect(screen.getByText('Self-service workspace')).toBeInTheDocument();
     expect(screen.getByText('My current requests')).toBeInTheDocument();
     expect(screen.getByText('Balance context')).toBeInTheDocument();
@@ -356,7 +366,7 @@ describe('LeavePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Review team requests and work approval queues in context.')).toBeInTheDocument();
+    expect(screen.getByText('Review team requests and move approvals forward.')).toBeInTheDocument();
     expect(screen.getByText('Approval workspace')).toBeInTheDocument();
     expect(screen.getByText('Team approval queue')).toBeInTheDocument();
     expect(screen.getByText('Personal balance reference')).toBeInTheDocument();
@@ -364,18 +374,27 @@ describe('LeavePage', () => {
     expect(screen.getByRole('button', { name: /Open Team Calendar/i })).toBeInTheDocument();
   });
 
-  it('renders the request workspace ahead of the supporting summary rail', () => {
+  it('keeps action-driving metrics near the queue and reference metrics in the secondary summary rail', () => {
     render(
       <MemoryRouter initialEntries={['/leave']}>
         <LeavePage />
       </MemoryRouter>,
     );
 
+    expect(screen.getByText('Active requests:1')).toBeInTheDocument();
+    expect(screen.getByText('Awaiting decision:1')).toBeInTheDocument();
+    expect(screen.getByText('Balance buckets:0')).toBeInTheDocument();
+    expect(screen.getByText('Request history:0')).toBeInTheDocument();
+
+    const activeMetrics = screen.getByText('Active requests:1');
     const workspace = screen.getByText('default-view:MY_CURRENT');
-    const summaryRail = screen.getByTestId('leave-summary-rail');
+    const referenceMetric = screen.getByText('Balance buckets:0');
 
     expect(
-      workspace.compareDocumentPosition(summaryRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+      activeMetrics.compareDocumentPosition(workspace) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      workspace.compareDocumentPosition(referenceMetric) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 

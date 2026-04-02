@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarDays, Info, Plus, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ContextChip, DataTableShell, MetaBadge, QueryErrorState } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { LeaveBalancePanel } from '@/components/leave/LeaveBalancePanel';
@@ -188,7 +187,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
     </Popover>
   );
 
-  const metricItems = useMemo(() => {
+  const operationalMetricItems = useMemo(() => {
     if (canViewTeamRequests) {
       const cancellationReviews = teamCurrentRequests.filter((request) =>
         isCancellationPending(request),
@@ -225,6 +224,32 @@ export function LeavePage({ initialView }: LeavePageProps) {
         value: pendingDecisions,
         helper: 'Requests still moving through the approval route.',
       },
+    ];
+  }, [
+    canViewTeamRequests,
+    myCurrentRequests,
+    teamCurrentRequests,
+  ]);
+
+  const referenceMetricItems = useMemo(() => {
+    if (canViewTeamRequests) {
+      return [
+        {
+          id: 'resolved-team-decisions',
+          label: 'Resolved team decisions',
+          value: teamHistoryRequests.length,
+          helper: 'Completed approvals retained for follow-up and audit reference.',
+        },
+        {
+          id: 'balance-buckets',
+          label: 'Balance buckets',
+          value: balances?.length ?? 0,
+          helper: 'Leave types currently tracking an accrued balance.',
+        },
+      ];
+    }
+
+    return [
       {
         id: 'balance-buckets',
         label: 'Balance buckets',
@@ -241,14 +266,9 @@ export function LeavePage({ initialView }: LeavePageProps) {
   }, [
     balances?.length,
     canViewTeamRequests,
-    myCurrentRequests,
     myHistoryRequests.length,
-    teamCurrentRequests,
+    teamHistoryRequests.length,
   ]);
-
-  const workflowContextDescription = canViewTeamRequests
-    ? 'Review queue items first. Personal balances stay nearby as a secondary reference.'
-    : 'Start with your request queue. Balance and entitlement details stay nearby as supporting reference.';
 
   const canOpenBalanceAdjustments =
     leaveBalancePermissions.adjust_leave_balance && canAccessAdminPage(role);
@@ -280,19 +300,19 @@ export function LeavePage({ initialView }: LeavePageProps) {
   }, [effectiveWorkspaceView]);
 
   const workspaceLeadDescription = canViewTeamRequests
-    ? 'Review team approvals first, then keep your own leave balances visible as supporting reference.'
-    : 'Submit leave, monitor approvals, and keep entitlement context visible without leaving the module.';
+    ? 'Start with the approval queue and keep your own balances nearby for quick entitlement checks.'
+    : 'Request leave, track approvals, and keep entitlement context close.';
 
   const supportingContext = canViewTeamRequests
     ? {
         title: 'Personal balance reference',
         description: canOpenBalanceAdjustments
-          ? 'Your balances stay visible while you review team requests, and authorized roles can jump straight to balance adjustments.'
-          : 'Your balances stay visible while you review team requests so entitlement context stays close to the queue.',
+          ? 'Keep your own balances visible while you review team requests, with quick access to balance adjustments when authorized.'
+          : 'Keep your own balances visible while you review team requests.',
       }
     : {
         title: 'Balance context',
-        description: 'Keep entitlement, pending balances, and remaining days visible before you submit or review leave.',
+        description: 'Keep entitlement and remaining days visible before you submit or review leave.',
       };
 
   const leaveBalancePanel = leaveBalancePermissions.view_own_leave_balance ? (
@@ -329,10 +349,10 @@ export function LeavePage({ initialView }: LeavePageProps) {
         title="Leave Management"
         description={
           canViewTeamRequests
-            ? 'Review team requests and work approval queues in context.'
+            ? 'Review team requests and move approvals forward.'
             : isEmployee(role)
-              ? 'Your leave requests, balances, and history in one workspace.'
-              : 'Manage leave requests and approvals in context.'
+              ? 'Requests, balances, and history in one place.'
+              : 'Work leave requests and approvals in one place.'
         }
         actions={pageActions.canCreateRequest ? [
           {
@@ -362,6 +382,7 @@ export function LeavePage({ initialView }: LeavePageProps) {
       ) : null}
 
       <LeaveWorkspaceLead
+        variant="operational"
         title={canViewTeamRequests ? 'Approval workspace' : 'Self-service workspace'}
         description={workspaceLeadDescription}
         modeLabel={canViewTeamRequests ? 'Approver mode' : 'Self-service mode'}
@@ -395,50 +416,41 @@ export function LeavePage({ initialView }: LeavePageProps) {
             )}
           />
         ) : (
-          <div className="space-y-6">
-            <Card className="border-border/70 shadow-sm">
-              <CardHeader className="space-y-1 pb-3">
-                <CardTitle className="text-base">
-                  {canViewTeamRequests ? 'Leave approval queue' : 'Leave request queue'}
-                </CardTitle>
-                <CardDescription>{workflowContextDescription}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <LeaveRequestWorkspace
-                  role={role}
-                  canViewTeamRequests={pageActions.canViewTeamRequests}
-                  myCurrentRequests={myCurrentRequests}
-                  myHistoryRequests={myHistoryRequests}
-                  teamCurrentRequests={teamCurrentRequests}
-                  teamHistoryRequests={teamHistoryRequests}
-                  defaultView={effectiveWorkspaceView}
-                  getStatusDisplay={getStatusDisplay}
-                  getCancellationBadge={getCancellationBadge}
-                  canAmend={(request) => getRowPermissions(request).canAmend}
-                  canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
-                  canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
-                  canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
-                  canApprove={(request) => getRowPermissions(request).canApprove}
-                  shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
-                  onAmend={controller.openAmendDialog}
-                  onCancel={controller.openCancellationDialog}
-                  onOpenDetails={(request, trigger) => {
-                    rememberTrigger(trigger);
-                    drawer.openRequest(request.id);
-                  }}
-                  onCancellationReview={controller.openCancellationReviewDialog}
-                  onAction={controller.openActionDialog}
-                  workflowInfoPopover={workflowInfoPopover}
-                />
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <SummaryRail items={operationalMetricItems} variant="subtle" compactBreakpoint="xl" />
+            <LeaveRequestWorkspace
+              role={role}
+              canViewTeamRequests={pageActions.canViewTeamRequests}
+              myCurrentRequests={myCurrentRequests}
+              myHistoryRequests={myHistoryRequests}
+              teamCurrentRequests={teamCurrentRequests}
+              teamHistoryRequests={teamHistoryRequests}
+              defaultView={effectiveWorkspaceView}
+              getStatusDisplay={getStatusDisplay}
+              getCancellationBadge={getCancellationBadge}
+              canAmend={(request) => getRowPermissions(request).canAmend}
+              canCancelPendingRequest={(request) => getRowPermissions(request).canCancelPending}
+              canRequestCancellation={(request) => getRowPermissions(request).canRequestCancellation}
+              canApproveCancellation={(request) => getRowPermissions(request).canApproveCancellation}
+              canApprove={(request) => getRowPermissions(request).canApprove}
+              shouldShowLeaveDetailsButton={(request) => getRowPermissions(request).canOpenDrawer}
+              onAmend={controller.openAmendDialog}
+              onCancel={controller.openCancellationDialog}
+              onOpenDetails={(request, trigger) => {
+                rememberTrigger(trigger);
+                drawer.openRequest(request.id);
+              }}
+              onCancellationReview={controller.openCancellationReviewDialog}
+              onAction={controller.openActionDialog}
+              workflowInfoPopover={workflowInfoPopover}
+            />
           </div>
         )}
       </ModuleLayout.Content>
 
-      {!isLoading ? (
+      {!isLoading && referenceMetricItems.length > 0 ? (
         <ModuleLayout.Summary surfaceVariant="flat">
-          <SummaryRail items={metricItems} variant="subtle" compactBreakpoint="xl" />
+          <SummaryRail items={referenceMetricItems} variant="subtle" compactBreakpoint="xl" />
         </ModuleLayout.Summary>
       ) : null}
 
