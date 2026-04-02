@@ -11,8 +11,7 @@ import { AlertTriangle, FileText, Eye, EyeOff, Wallet } from 'lucide-react';
 import { PayslipDetailDialog } from './PayslipDetailDialog';
 import { Payslip } from '@/types/payroll';
 import { CardHeaderStandard, StatusBadge, TaskEmptyState } from '@/components/system';
-
-const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
+import { getPayrollHideAmountsPreference, setPayrollHideAmountsPreference } from '@/lib/ui-preferences';
 
 interface MyPayslipsProps {
   hideAmounts?: boolean;
@@ -27,14 +26,13 @@ export function MyPayslips({
   showVisibilityToggle = true,
   showSummaryCards = true,
 }: MyPayslipsProps = {}) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { data: payslips, isLoading: payslipsLoading } = useMyPayslips();
   const { data: salary, isLoading: salaryLoading } = useEmployeeSalaryStructure(user?.id);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
-  const [internalHideAmounts, setInternalHideAmounts] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
-  });
+  const [internalHideAmounts, setInternalHideAmounts] = useState<boolean>(() =>
+    getPayrollHideAmountsPreference(user?.id, role),
+  );
   const hideAmounts = controlledHideAmounts ?? internalHideAmounts;
   const setHideAmounts = onHideAmountsChange ?? setInternalHideAmounts;
   const hasPayslips = Boolean(payslips?.length);
@@ -42,9 +40,13 @@ export function MyPayslips({
 
   useEffect(() => {
     if (controlledHideAmounts !== undefined) return;
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hideAmounts ? '1' : '0');
-  }, [controlledHideAmounts, hideAmounts]);
+    setPayrollHideAmountsPreference(user?.id, role, hideAmounts);
+  }, [controlledHideAmounts, hideAmounts, role, user?.id]);
+
+  useEffect(() => {
+    if (controlledHideAmounts !== undefined) return;
+    setInternalHideAmounts(getPayrollHideAmountsPreference(user?.id, role));
+  }, [controlledHideAmounts, role, user?.id]);
 
   if (payslipsLoading || salaryLoading) {
     return (

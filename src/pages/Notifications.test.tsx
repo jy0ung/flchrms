@@ -5,6 +5,8 @@ import * as React from 'react';
 import Notifications from '@/pages/Notifications';
 
 const navigateMock = vi.fn();
+const toastSuccessMock = vi.fn();
+const toastErrorMock = vi.fn();
 
 const useNotificationHistoryMock = vi.fn();
 let mockIsMobile = false;
@@ -15,6 +17,13 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('@/hooks/useNotifications', () => ({
   useNotificationHistory: (params: unknown) => useNotificationHistoryMock(params),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: (...args: unknown[]) => toastSuccessMock(...args),
+    error: (...args: unknown[]) => toastErrorMock(...args),
+  },
 }));
 
 vi.mock('@/components/layout/ShellNotificationsProvider', () => ({
@@ -152,6 +161,8 @@ describe('Notifications page header control relocation', () => {
   });
 
   it('makes a leave notification card the primary navigation target', async () => {
+    const markNotificationRead = vi.fn().mockResolvedValue(undefined);
+    const markNotificationUnread = vi.fn().mockResolvedValue(undefined);
     useNotificationHistoryMock.mockReturnValue({
       notifications: [
         {
@@ -171,8 +182,8 @@ describe('Notifications page header control relocation', () => {
       isMarkingRead: false,
       isMarkingUnread: false,
       refetch: vi.fn(),
-      markNotificationRead: vi.fn(),
-      markNotificationUnread: vi.fn(),
+      markNotificationRead,
+      markNotificationUnread,
       markAllNotificationsRead: vi.fn(),
       deleteReadNotifications: vi.fn(),
       isDeletingReadNotifications: false,
@@ -181,7 +192,20 @@ describe('Notifications page header control relocation', () => {
     render(<Notifications />);
 
     fireEvent.click(screen.getByRole('button', { name: /Open leave workflow for Leave request submitted/i }));
+    await waitFor(() => expect(markNotificationRead).toHaveBeenCalledWith('n-2'));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/leave'));
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      'Notification marked as read',
+      expect.objectContaining({
+        description: 'Leave request submitted',
+        action: expect.objectContaining({ label: 'Undo' }),
+      }),
+    );
+
+    const toastCall = toastSuccessMock.mock.calls[0]?.[1] as { action?: { onClick?: () => void } } | undefined;
+    toastCall?.action?.onClick?.();
+
+    await waitFor(() => expect(markNotificationUnread).toHaveBeenCalledWith('n-2'));
   });
 
   it('compresses summary and actions on mobile while keeping the inbox primary', () => {

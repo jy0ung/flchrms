@@ -18,9 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader } from '@/components/system';
+import { ContextChip } from '@/components/system';
 import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 // ── Local settings (non-branding) ────────────────────────────────────────────
 const SETTINGS_STORAGE_KEY = 'hrms.admin.settings';
@@ -258,18 +260,52 @@ export default function AdminSettingsPage() {
     toast.info('Settings reset to defaults');
   };
 
+  const brandingAssetCount = Number(Boolean(effectiveBranding.logo_url)) + Number(Boolean(effectiveBranding.favicon_url));
+  const summaryItems: SummaryRailItem[] = [
+    {
+      id: 'branding-assets',
+      label: 'Branding assets',
+      value: brandingAssetCount,
+      helper: brandingAssetCount > 0 ? 'Logo and favicon currently configured.' : 'No uploaded branding assets yet.',
+    },
+    {
+      id: 'email-defaults',
+      label: 'Email defaults',
+      value: settings.emailNotifications ? 'Enabled' : 'Paused',
+      helper: 'System-wide default notification behavior.',
+    },
+    {
+      id: 'session-timeout',
+      label: 'Session timeout',
+      value: `${settings.sessionTimeoutMinutes} min`,
+      helper: 'Automatic inactivity timeout for signed-in sessions.',
+    },
+    {
+      id: 'maintenance-mode',
+      label: 'Maintenance mode',
+      value: settings.maintenanceMode ? 'On' : 'Off',
+      helper: 'Current platform availability control.',
+    },
+  ];
+
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="System Settings"
-          description="Manage branding, notifications, and governance-level application settings."
-        />
+      <UtilityLayout
+        eyebrow="Governance"
+        title="System Settings"
+        description="Manage branding, notifications, and governance-level platform settings from one control surface."
+        metaSlot={(
+          <>
+            <ContextChip tone="info">Scope: tenant-wide</ContextChip>
+            <ContextChip>Mode: governance controls</ContextChip>
+          </>
+        )}
+      >
         <AdminSettingsLoadingSkeleton
           title="Loading system settings"
           description="Checking settings capabilities and preparing the latest platform configuration."
         />
-      </div>
+      </UtilityLayout>
     );
   }
 
@@ -283,20 +319,68 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="System Settings"
-        description="Configure application-wide settings, branding, and preferences."
-        actionsSlot={(
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button variant="outline" onClick={handleReset}>Reset Defaults</Button>
-            <Button onClick={handleSave} disabled={!dirty}>
-              <Save className="mr-2 h-4 w-4" />
-              Save Settings
-            </Button>
+    <UtilityLayout
+      eyebrow="Governance"
+      title="System Settings"
+      description="Manage branding, notifications, and governance-level platform settings from one control surface."
+      metaSlot={(
+        <>
+          <ContextChip tone="info">Scope: tenant-wide</ContextChip>
+          <ContextChip>Mode: editable governance</ContextChip>
+        </>
+      )}
+      actionsSlot={(
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button variant="outline" onClick={handleReset}>Reset Defaults</Button>
+          <Button onClick={handleSave} disabled={!dirty}>
+            <Save className="mr-2 h-4 w-4" />
+            Save Settings
+          </Button>
+        </div>
+      )}
+      leadSlot={(
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <section className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Current workspace
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Platform identity and default controls
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Update company branding, locale defaults, notifications, and security-sensitive system behavior without leaving governance settings.
+            </p>
+          </section>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Change impact
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Tenant-wide changes apply here
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Branding updates affect the live identity, while notification, timeout, and maintenance defaults shape the broader platform experience.
+            </p>
           </div>
-        )}
-      />
+        </div>
+      )}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      supportingSlot={(
+        <section className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Governance notes
+          </p>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-sm font-medium text-foreground">Save deliberately</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These controls affect the full tenant. Review branding and security changes as governance decisions, not just local UI preferences.
+            </p>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
+    >
+      <section className="space-y-6">
 
       {/* ── Branding Section ─────────────────────────────────────────────── */}
       <Card className="border-border shadow-sm">
@@ -570,6 +654,7 @@ export default function AdminSettingsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </section>
+    </UtilityLayout>
   );
 }

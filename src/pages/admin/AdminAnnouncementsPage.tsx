@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ModalScaffold, PageHeader, TaskEmptyState } from '@/components/system';
+import { ContextChip, ModalScaffold, TaskEmptyState } from '@/components/system';
 import {
   Table,
   TableBody,
@@ -33,6 +33,8 @@ import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { TableRowSkeleton } from '@/components/system';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -148,21 +150,59 @@ export default function AdminAnnouncementsPage() {
     ),
     [announcements],
   );
+  const summaryItems = useMemo((): SummaryRailItem[] => {
+    const now = Date.now();
+    const urgentCount = sortedAnnouncements.filter((announcement) => announcement.priority === 'urgent').length;
+    const publishedCount = sortedAnnouncements.filter((announcement) => Boolean(announcement.published_at)).length;
+    const expiringSoonCount = sortedAnnouncements.filter((announcement) => {
+      if (!announcement.expires_at) return false;
+      const expiresAt = new Date(announcement.expires_at).getTime();
+      const sevenDaysFromNow = now + (7 * 24 * 60 * 60 * 1000);
+      return expiresAt >= now && expiresAt <= sevenDaysFromNow;
+    }).length;
+
+    return [
+      {
+        id: 'published',
+        label: 'Published announcements',
+        value: publishedCount,
+        helper: 'Organization-wide announcements currently in the managed queue.',
+      },
+      {
+        id: 'urgent',
+        label: 'Urgent priority',
+        value: urgentCount,
+        helper: 'High-visibility announcements requiring deliberate governance review.',
+      },
+      {
+        id: 'expiring-soon',
+        label: 'Expiring within 7 days',
+        value: expiringSoonCount,
+        helper: 'Announcements that may need extension, replacement, or retirement soon.',
+      },
+    ];
+  }, [sortedAnnouncements]);
 
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Announcement Management"
-          description="Create, edit, and manage company-wide announcements."
-        />
+      <UtilityLayout
+        eyebrow="Governance"
+        title="Announcement Management"
+        description="Create, edit, and manage company-wide announcements."
+        metaSlot={(
+          <>
+            <ContextChip tone="info">Scope: organization communications</ContextChip>
+            <ContextChip>Mode: announcement governance</ContextChip>
+          </>
+        )}
+      >
         <AdminTableLoadingSkeleton
           title="Loading announcements"
           description="Checking announcement-management capabilities and preparing the latest entries."
           sectionTitle="Announcement queue"
           sectionDescription="Preparing the published announcements list and management actions."
         />
-      </div>
+      </UtilityLayout>
     );
   }
 
@@ -228,17 +268,64 @@ export default function AdminAnnouncementsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Announcement Management"
-        description="Create, edit, and manage company-wide announcements."
-        actionsSlot={(
-          <Button onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Announcement
-          </Button>
-        )}
-      />
+    <UtilityLayout
+      eyebrow="Governance"
+      title="Announcement Management"
+      description="Create, edit, and manage company-wide announcements."
+      metaSlot={(
+        <>
+          <ContextChip tone="info">Scope: organization communications</ContextChip>
+          <ContextChip>Mode: announcement governance</ContextChip>
+        </>
+      )}
+      actionsSlot={(
+        <Button onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Announcement
+        </Button>
+      )}
+      leadSlot={(
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <section className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Current workspace
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Announcement queue and publication controls
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review active announcements, adjust priority or expiry, and publish new organization-wide updates from one governed communication workspace.
+            </p>
+          </section>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Communication caution
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Publish only verified organization updates
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Changes in this workspace affect what employees see across the app. Reserve urgent priority for time-sensitive updates that require immediate attention.
+            </p>
+          </div>
+        </div>
+      )}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      supportingSlot={(
+        <section className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Governance notes
+          </p>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-sm font-medium text-foreground">Review priority and expiry together</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use priority to communicate urgency, then confirm the expiry window still matches the intended communication lifecycle before publishing changes.
+            </p>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
+    >
 
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">
@@ -384,6 +471,6 @@ export default function AdminAnnouncementsPage() {
           </p>
         }
       />
-    </div>
+    </UtilityLayout>
   );
 }

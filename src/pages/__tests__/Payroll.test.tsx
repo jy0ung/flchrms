@@ -113,6 +113,18 @@ describe('Payroll page', () => {
       expect(screen.getByText(/review your payslips and salary information/i)).toBeInTheDocument();
       expect(screen.getByText(/payroll setup in progress/i)).toBeInTheDocument();
     });
+
+    it('shows an explicit self-service note when payroll data is available', () => {
+      mockRole = 'employee';
+      mockEmployeeSalary = {
+        basic_salary: 4200,
+      };
+
+      render(<Payroll />, { wrapper });
+
+      expect(screen.getByText(/payroll is read-only here/i)).toBeInTheDocument();
+      expect(screen.getByText(/self-service access/i)).toBeInTheDocument();
+    });
   });
 
   describe('hr role (can manage payroll)', () => {
@@ -173,7 +185,7 @@ describe('Payroll page', () => {
       render(<Payroll />, { wrapper });
       const toggle = screen.getByRole('button', { name: /hide salary amounts/i });
       fireEvent.click(toggle);
-      expect(window.localStorage.getItem('hrms.payroll.hideAmounts')).toBe('1');
+      expect(window.localStorage.getItem('hrms.ui.payroll.hideAmounts.u1.employee')).toBe('1');
     });
 
     it('renders payslips ahead of the trailing summary rail for employee records', () => {

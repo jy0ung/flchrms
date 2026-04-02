@@ -15,6 +15,7 @@ let mockSalary: {
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1' },
+    role: 'employee',
   }),
 }));
 

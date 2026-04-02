@@ -15,7 +15,9 @@ import type { AdminCapabilityKey } from '@/lib/admin-capabilities';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { AdminQuickActionsLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { ADMIN_WORKSPACE_BRIDGE_LIST } from '@/components/admin/admin-workspace-bridges';
-import { ActionTile, PageHeader } from '@/components/system';
+import { ActionTile, ContextChip } from '@/components/system';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 import { SHELL_LABELS } from '@/lib/navigation-labels';
 
 interface QuickAction {
@@ -38,16 +40,22 @@ export default function AdminQuickActionsPage() {
 
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-4">
-        <PageHeader
-          title={SHELL_LABELS.governanceHub}
-          description="Launch the right workspace or governance control without leaving the admin shell."
-        />
+      <UtilityLayout
+        eyebrow="Governance"
+        title={SHELL_LABELS.governanceHub}
+        description="Launch the right workspace or governance control without leaving the admin shell."
+        metaSlot={(
+          <>
+            <ContextChip tone="info">Scope: governance entry</ContextChip>
+            <ContextChip>Mode: workspace launcher</ContextChip>
+          </>
+        )}
+      >
         <AdminQuickActionsLoadingSkeleton
           title="Loading governance hub"
           description="Checking available governance actions and workspace routes for your account."
         />
-      </div>
+      </UtilityLayout>
     );
   }
 
@@ -132,13 +140,81 @@ export default function AdminQuickActionsPage() {
   const visibleQuickActions = quickActions.filter((action) => capabilityMap[action.capability]);
   const workspaceActions = visibleQuickActions.filter((action) => action.surface === 'Workspace');
   const adminActions = visibleQuickActions.filter((action) => action.surface === 'Governance');
+  const summaryItems: SummaryRailItem[] = [
+    {
+      id: 'workspace-count',
+      label: 'Operational workspaces',
+      value: workspaceActions.length,
+      helper: 'Canonical module workspaces available from this governance hub.',
+    },
+    {
+      id: 'governance-count',
+      label: 'Governance controls',
+      value: adminActions.length,
+      helper: 'Policy, audit, communication, and configuration surfaces in scope.',
+    },
+    {
+      id: 'total-routes',
+      label: 'Available launch points',
+      value: visibleQuickActions.length,
+      helper: 'Governance destinations filtered to your current admin capabilities.',
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title={SHELL_LABELS.governanceHub}
-        description="Launch the right workspace or governance control without leaving the admin shell."
-      />
+    <UtilityLayout
+      eyebrow="Governance"
+      title={SHELL_LABELS.governanceHub}
+      description="Launch the right workspace or governance control without leaving the admin shell."
+      metaSlot={(
+        <>
+          <ContextChip tone="info">Scope: governance entry</ContextChip>
+          <ContextChip>Mode: workspace launcher</ContextChip>
+        </>
+      )}
+      leadSlot={(
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <section className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Current workspace
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Governance hub and workspace launcher
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Start with the operational workspace that matches the task at hand, then move into policy, audit, or system-control surfaces when governance action is required.
+            </p>
+          </section>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Governance pattern
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Workspaces first, controls second
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use module workspaces for day-to-day operations. Open governance controls when you need to adjust policy, audit history, communications, or platform settings.
+            </p>
+          </div>
+        </div>
+      )}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      supportingSlot={(
+        <section className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Governance notes
+          </p>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-sm font-medium text-foreground">Launch with the right level of authority</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Operational workspaces preserve record-level context. Governance controls are better suited to policy review, audit oversight, and system-wide updates.
+            </p>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
+    >
+      <section className="space-y-6">
 
       {[
         {
@@ -185,6 +261,7 @@ export default function AdminQuickActionsPage() {
           </div>
         </section>
       ))}
-    </div>
+      </section>
+    </UtilityLayout>
   );
 }

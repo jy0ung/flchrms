@@ -88,6 +88,9 @@ describe('AdminAuditLogPage', () => {
     render(<AdminAuditLogPage />);
 
     expect(screen.getByText('Audit Log')).toBeInTheDocument();
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Governance review window and audit history')).toBeInTheDocument();
+    expect(screen.getByText('Workflow changes')).toBeInTheDocument();
     expect(screen.getByText('Workflow Config Change')).toBeInTheDocument();
     expect(screen.getByText('leave approval: updated')).toBeInTheDocument();
     expect(screen.getByText('Amy Admin')).toBeInTheDocument();
@@ -104,6 +107,7 @@ describe('AdminAuditLogPage', () => {
 
     render(<AdminAuditLogPage />);
 
+    expect(screen.getByText('Audit Log')).toBeInTheDocument();
     expect(screen.getByText('Loading audit log')).toBeInTheDocument();
     expect(screen.getByText('Recent governance history')).toBeInTheDocument();
   });

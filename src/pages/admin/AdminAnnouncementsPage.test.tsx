@@ -69,6 +69,7 @@ describe('AdminAnnouncementsPage', () => {
 
     render(<AdminAnnouncementsPage />);
 
+    expect(screen.getByText('Announcement Management')).toBeInTheDocument();
     expect(screen.getByText('Loading announcements')).toBeInTheDocument();
     expect(screen.getByText('Announcement queue')).toBeInTheDocument();
   });
@@ -78,6 +79,9 @@ describe('AdminAnnouncementsPage', () => {
 
     render(<AdminAnnouncementsPage />);
 
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Announcement queue and publication controls')).toBeInTheDocument();
+    expect(screen.getByText('Published announcements')).toBeInTheDocument();
     expect(screen.getByText('Announcement queue')).toBeInTheDocument();
     expect(screen.getByText('Loading published announcements and their management actions.')).toBeInTheDocument();
   });

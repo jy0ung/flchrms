@@ -15,6 +15,8 @@ const DASHBOARD_WIDGETS_STORAGE_KEY_PREFIX = 'hrms.ui.dashboard.widgets';
 const DASHBOARD_WIDGET_SPANS_STORAGE_KEY_PREFIX = 'hrms.ui.dashboard.widgetSpans';
 const ADMIN_STATS_CARDS_STORAGE_KEY_PREFIX = 'hrms.ui.admin.stats.cards';
 const ADMIN_STATS_LAYOUT_STORAGE_KEY_PREFIX = 'hrms.ui.admin.stats.layout';
+const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY_PREFIX = 'hrms.ui.payroll.hideAmounts';
+const LEGACY_PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -153,6 +155,45 @@ export function resetAdminStatsLayoutState(userId: string, role: string): void {
   const key = `${ADMIN_STATS_LAYOUT_STORAGE_KEY_PREFIX}.${userId}.${role}`;
   window.localStorage.removeItem(key);
   dispatchPrefsEvent(key, null);
+}
+
+// ── Payroll Privacy Preferences ─────────────────────────────────
+
+function payrollHideAmountsKey(userId: string, role: string) {
+  return `${PAYROLL_HIDE_AMOUNTS_STORAGE_KEY_PREFIX}.${userId}.${role}`;
+}
+
+export function getPayrollHideAmountsPreference(
+  userId: string | undefined,
+  role: string | undefined,
+): boolean {
+  if (typeof window === 'undefined') return false;
+
+  if (userId && role) {
+    const scopedValue = window.localStorage.getItem(payrollHideAmountsKey(userId, role));
+    if (scopedValue !== null) return scopedValue === '1';
+  }
+
+  return window.localStorage.getItem(LEGACY_PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
+}
+
+export function setPayrollHideAmountsPreference(
+  userId: string | undefined,
+  role: string | undefined,
+  hidden: boolean,
+): void {
+  if (typeof window === 'undefined') return;
+
+  if (userId && role) {
+    const key = payrollHideAmountsKey(userId, role);
+    window.localStorage.setItem(key, hidden ? '1' : '0');
+    window.localStorage.removeItem(LEGACY_PAYROLL_HIDE_AMOUNTS_STORAGE_KEY);
+    dispatchPrefsEvent(key, hidden);
+    return;
+  }
+
+  window.localStorage.setItem(LEGACY_PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hidden ? '1' : '0');
+  dispatchPrefsEvent(LEGACY_PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hidden);
 }
 
 // ── Leave Display Preferences ────────────────────────────────────

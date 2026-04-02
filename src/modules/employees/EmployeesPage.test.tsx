@@ -1,11 +1,28 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { cloneElement, isValidElement, type ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 import { EmployeesPage } from '@/modules/employees/EmployeesPage';
 
 const openCreateEmployeeDialog = vi.fn();
+const capabilityState = {
+  canAccessAdminPage: true,
+  canViewAdminDashboard: true,
+  canViewAdminQuickActions: true,
+  canViewAdminAuditLog: false,
+  canManageEmployeeProfiles: true,
+  canCreateEmployee: true,
+  canManageDepartments: false,
+  canManageLeaveTypes: false,
+  canManageAnnouncements: false,
+  canManageRoles: true,
+  canResetEmployeePasswords: true,
+  canManageAdminSettings: false,
+  canOpenAccountProfileEditor: true,
+  isAdminLimitedProfileEditor: false,
+  canViewSensitiveEmployeeIdentifiers: true,
+};
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'hr-1' }, role: 'hr' }),
@@ -17,23 +34,7 @@ vi.mock('@/hooks/usePageTitle', () => ({
 
 vi.mock('@/hooks/admin/useAdminCapabilities', () => ({
   useAdminPageCapabilities: () => ({
-    capabilities: {
-      canAccessAdminPage: true,
-      canViewAdminDashboard: true,
-      canViewAdminQuickActions: true,
-      canViewAdminAuditLog: false,
-      canManageEmployeeProfiles: true,
-      canCreateEmployee: true,
-      canManageDepartments: false,
-      canManageLeaveTypes: false,
-      canManageAnnouncements: false,
-      canManageRoles: true,
-      canResetEmployeePasswords: true,
-      canManageAdminSettings: false,
-      canOpenAccountProfileEditor: true,
-      isAdminLimitedProfileEditor: false,
-      canViewSensitiveEmployeeIdentifiers: true,
-    },
+    capabilities: capabilityState,
     isLoading: false,
     capabilityMap: {},
     isError: false,
@@ -88,8 +89,33 @@ vi.mock('@/hooks/useUserRoles', () => ({
 
 vi.mock('@/layouts/ModuleLayout', () => {
   const Root = ({ children }: { children: ReactNode }) => <div>{children}</div>;
-  const Header = ({ title }: { title: string }) => <div>{title}</div>;
-  const Toolbar = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+  const Header = ({
+    title,
+    actionsSlot,
+  }: {
+    title: string;
+    actionsSlot?: ReactNode;
+  }) => (
+    <div>
+      <div>{title}</div>
+      {actionsSlot}
+    </div>
+  );
+  const Toolbar = ({
+    children,
+    actions,
+    trailingSlot,
+  }: {
+    children?: ReactNode;
+    actions?: ReactNode;
+    trailingSlot?: ReactNode;
+  }) => (
+    <div>
+      {actions}
+      {trailingSlot}
+      {children}
+    </div>
+  );
   const Content = ({ children }: { children: ReactNode }) => <div>{children}</div>;
   const DetailDrawer = ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div>{children}</div> : null;
@@ -108,6 +134,16 @@ vi.mock('@/components/system', () => ({
   DataTableShell: ({ content }: { content: ReactNode }) => <div>{content}</div>,
   RecordSurfaceHeader: ({ title }: { title: string }) => <div>{`record-surface:${title}`}</div>,
   ContextChip: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  PermissionAction: ({
+    allowed,
+    children,
+  }: {
+    allowed: boolean;
+    children: ReactNode;
+  }) => {
+    if (allowed || !isValidElement(children)) return <>{children}</>;
+    return cloneElement(children, { disabled: true });
+  },
 }));
 
 vi.mock('@/components/workspace/SummaryRail', () => ({
@@ -147,6 +183,14 @@ vi.mock('@/modules/employees/hooks/useEmployeeManagementController', () => ({
 }));
 
 describe('EmployeesPage', () => {
+  beforeEach(() => {
+    capabilityState.canManageEmployeeProfiles = true;
+    capabilityState.canCreateEmployee = true;
+    capabilityState.isAdminLimitedProfileEditor = false;
+    capabilityState.canViewSensitiveEmployeeIdentifiers = true;
+    openCreateEmployeeDialog.mockClear();
+  });
+
   it('places the directory record context ahead of the summary rail', () => {
     render(
       <MemoryRouter initialEntries={['/employees']}>
@@ -182,5 +226,22 @@ describe('EmployeesPage', () => {
     );
 
     expect(openCreateEmployeeDialog).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows disabled employee administration actions with a reason in admin read-only mode', () => {
+    capabilityState.canManageEmployeeProfiles = true;
+    capabilityState.canCreateEmployee = true;
+    capabilityState.isAdminLimitedProfileEditor = true;
+
+    render(
+      <MemoryRouter initialEntries={['/admin/employees']}>
+        <EmployeesPage entryContext="admin" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /add employee/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^import$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /export filtered/i })).toBeDisabled();
+    expect(screen.getByText(/read-only directory actions/i)).toBeInTheDocument();
   });
 });

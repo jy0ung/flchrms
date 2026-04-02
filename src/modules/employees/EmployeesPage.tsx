@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Download, GitBranch, MoreHorizontal, Plus, Upload, Users } from 'lucide-react';
+import { Download, GitBranch, Plus, Upload, Users } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
@@ -8,12 +8,6 @@ import { BulkActionBar } from '@/components/bulk-actions/BulkActionBar';
 import { OrgChart } from '@/components/employees/OrgChart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -28,7 +22,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useDrawerFocusReturn } from '@/hooks/useDrawerFocusReturn';
-import { ContextChip, DataTableShell, RecordSurfaceHeader } from '@/components/system';
+import { ContextChip, DataTableShell, PermissionAction, RecordSurfaceHeader } from '@/components/system';
 import { SummaryRail } from '@/components/workspace/SummaryRail';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import type { AppRole, EmployeeStatus } from '@/types/hrms';
@@ -301,6 +295,17 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
     return labels;
   }, [departmentFilter, departments, statusFilter]);
 
+  const showPermissionHints = entryContext === 'admin';
+  const createEmployeeReason = capabilities.isAdminLimitedProfileEditor
+    ? 'Limited profile editors can review employee records but cannot add new employees.'
+    : 'Requires employee creation permission';
+  const employeeDataOpsReason = capabilities.isAdminLimitedProfileEditor
+    ? 'Limited profile editors cannot import or export employee records.'
+    : 'Requires employee profile management permission';
+  const shouldRenderCreateEmployeeAction = showPermissionHints || pageActions.canCreateEmployee;
+  const shouldRenderEmployeeDataActions =
+    showPermissionHints || pageActions.canImportEmployees || pageActions.canExportEmployees;
+
   if (entryContext === 'admin' && capabilitiesLoading && !adminCapabilitiesOverride) {
     return null;
   }
@@ -320,15 +325,16 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         eyebrow={entryContext === 'admin' ? 'Governance' : 'Workspace'}
         title="Employee Directory"
         description="Contextual employee management is now anchored in the employee module."
-        actions={pageActions.canCreateEmployee ? [
-          {
-            id: 'create-employee',
-            label: 'Add Employee',
-            icon: Plus,
-            onClick: controller.openCreateEmployeeDialog,
-            variant: 'default',
-          },
-        ] : undefined}
+        actionsSlot={
+          shouldRenderCreateEmployeeAction ? (
+            <PermissionAction allowed={pageActions.canCreateEmployee} reason={createEmployeeReason}>
+              <Button type="button" className="h-9 rounded-full" onClick={controller.openCreateEmployeeDialog}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </Button>
+            </PermissionAction>
+          ) : undefined
+        }
         metaSlot={
           <>
             <ContextChip className="capitalize">
@@ -397,44 +403,25 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
         ]}
         actions={(
           <div className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
-            <div className="hidden md:flex md:flex-wrap md:gap-2">
-              {pageActions.canImportEmployees ? (
-                <Button variant="outline" className="h-9 rounded-full" onClick={() => setBatchUpdateDialogOpen(true)}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import
-                </Button>
-              ) : null}
-
-              {pageActions.canExportEmployees ? (
-                <Button variant="outline" className="h-9 rounded-full" onClick={handleExportFiltered}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Filtered
-                </Button>
-              ) : null}
-            </div>
-
-            {(pageActions.canImportEmployees || pageActions.canExportEmployees) ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-9 rounded-full md:hidden" aria-label="More employee actions">
-                    <MoreHorizontal className="h-4 w-4" />
+            {shouldRenderEmployeeDataActions ? (
+              <>
+                <PermissionAction allowed={pageActions.canImportEmployees} reason={employeeDataOpsReason}>
+                  <Button
+                    variant="outline"
+                    className="h-9 rounded-full"
+                    onClick={() => setBatchUpdateDialogOpen(true)}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {pageActions.canImportEmployees ? (
-                    <DropdownMenuItem onClick={() => setBatchUpdateDialogOpen(true)}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import employees
-                    </DropdownMenuItem>
-                  ) : null}
-                  {pageActions.canExportEmployees ? (
-                    <DropdownMenuItem onClick={handleExportFiltered}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Export filtered
-                    </DropdownMenuItem>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </PermissionAction>
+                <PermissionAction allowed={pageActions.canExportEmployees} reason={employeeDataOpsReason}>
+                  <Button variant="outline" className="h-9 rounded-full" onClick={handleExportFiltered}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Filtered
+                  </Button>
+                </PermissionAction>
+              </>
             ) : null}
           </div>
         )}
@@ -455,6 +442,11 @@ export function EmployeesPage({ entryContext = 'module', adminCapabilitiesOverri
           </ToggleGroup>
         }
       >
+        {showPermissionHints && !pageActions.canBulkActions ? (
+          <div className="rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            Read-only directory actions. Bulk updates require employee profile management permission.
+          </div>
+        ) : null}
         {pageActions.canBulkActions && bulkSelection.selectedCount > 0 ? (
           <div className="space-y-3">
             <BulkActionBar

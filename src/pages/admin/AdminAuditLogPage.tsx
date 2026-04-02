@@ -19,7 +19,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader, TableRowSkeleton, TaskEmptyState } from '@/components/system';
+import { ContextChip, TableRowSkeleton, TaskEmptyState } from '@/components/system';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 
 interface AuditEntry {
   id: string;
@@ -144,21 +146,59 @@ export default function AdminAuditLogPage() {
   const { role } = useAuth();
   const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
   const { entries, isLoading } = useAuditLog();
+  const summaryItems = useMemo((): SummaryRailItem[] => {
+    const workflowChanges = entries.filter((entry) => entry.action === 'Workflow Config Change').length;
+    const leaveEvents = entries.filter((entry) => entry.action === 'Leave Request').length;
+    const profileUpdates = entries.filter((entry) => entry.action === 'Profile Update').length;
+
+    return [
+      {
+        id: 'review-window',
+        label: 'Review window',
+        value: '30 days',
+        helper: 'Governance history currently summarized across the last 30 days.',
+      },
+      {
+        id: 'workflow-events',
+        label: 'Workflow changes',
+        value: workflowChanges,
+        helper: 'Workflow configuration activity captured during the current review period.',
+      },
+      {
+        id: 'leave-events',
+        label: 'Leave events',
+        value: leaveEvents,
+        helper: 'Leave-request activity included in the governance review feed.',
+      },
+      {
+        id: 'profile-updates',
+        label: 'Profile updates',
+        value: profileUpdates,
+        helper: 'Employee profile changes visible in this review window.',
+      },
+    ];
+  }, [entries]);
 
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Audit Log"
-          description="Recent system activity across workflows, leave requests, and profile changes."
-        />
+      <UtilityLayout
+        eyebrow="Governance"
+        title="Audit Log"
+        description="Recent system activity across workflows, leave requests, and profile changes."
+        metaSlot={(
+          <>
+            <ContextChip tone="info">Scope: governance review</ContextChip>
+            <ContextChip>Mode: audit history</ContextChip>
+          </>
+        )}
+      >
         <AdminTableLoadingSkeleton
           title="Loading audit log"
           description="Checking audit-log access and preparing the latest governance history."
           sectionTitle="Recent governance history"
           sectionDescription="Preparing workflow changes, leave activity, and profile updates from the last 30 days."
         />
-      </div>
+      </UtilityLayout>
     );
   }
 
@@ -172,11 +212,58 @@ export default function AdminAuditLogPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Audit Log"
-        description="Recent system activity across workflows, leave requests, and profile changes."
-      />
+    <UtilityLayout
+      eyebrow="Governance"
+      title="Audit Log"
+      description="Recent system activity across workflows, leave requests, and profile changes."
+      metaSlot={(
+        <>
+          <ContextChip tone="info">Scope: governance review</ContextChip>
+          <ContextChip>Mode: audit history</ContextChip>
+        </>
+      )}
+      leadSlot={(
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <section className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Current workspace
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Governance review window and audit history
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review the latest workflow changes, leave activity, and profile updates in one ordered audit stream before you move into deeper investigation.
+            </p>
+          </section>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Review guidance
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Audit by sequence, then by target
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start with the newest events to identify emerging governance issues, then use the actor and target columns to trace the exact record or policy surface involved.
+            </p>
+          </div>
+        </div>
+      )}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      supportingSlot={(
+        <section className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Governance notes
+          </p>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-sm font-medium text-foreground">Use audit history for verification</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The audit stream helps verify operational changes after the fact. Pair it with the live governance workspace when a record or policy needs active correction.
+            </p>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
+    >
 
       <Card className="border-border shadow-sm">
         <CardContent className="p-0">
@@ -237,6 +324,6 @@ export default function AdminAuditLogPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </UtilityLayout>
   );
 }

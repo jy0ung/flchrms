@@ -52,6 +52,9 @@ describe('AdminQuickActionsPage', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Governance hub and workspace launcher')).toBeInTheDocument();
+    expect(screen.getByText('Available launch points')).toBeInTheDocument();
     expect(screen.getByText('Open Employee Workspace')).toBeInTheDocument();
     expect(screen.getByText('Open Department Workspace')).toBeInTheDocument();
     expect(screen.getByText('Operational Workspaces')).toBeInTheDocument();
@@ -83,6 +86,7 @@ describe('AdminQuickActionsPage', () => {
 
     expect(screen.getByText('Governance Hub')).toBeInTheDocument();
     expect(screen.getByText('Loading governance hub')).toBeInTheDocument();
+    expect(screen.getByText('Scope: governance entry')).toBeInTheDocument();
     expect(screen.getByText('Operational Workspaces')).toBeInTheDocument();
     expect(screen.getByText('Governance Controls')).toBeInTheDocument();
   });

@@ -18,11 +18,10 @@ import {
 } from '@/hooks/usePayroll';
 import { ModuleLayout } from '@/layouts/ModuleLayout';
 import { canManagePayroll as canManagePayrollPermission } from '@/lib/permissions';
+import { getPayrollHideAmountsPreference, setPayrollHideAmountsPreference } from '@/lib/ui-preferences';
 import { ContextChip } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import type { PayrollPageProps, PayrollWorkspaceTab } from './types';
-
-const PAYROLL_HIDE_AMOUNTS_STORAGE_KEY = 'hrms.payroll.hideAmounts';
 
 function formatCurrency(value: number | null | undefined) {
   if (value === null || value === undefined) return '—';
@@ -39,10 +38,9 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
   const [payrollCreateOpen, setPayrollCreateOpen] = useState(false);
   const [salaryCreateOpen, setSalaryCreateOpen] = useState(false);
   const [deductionCreateOpen, setDeductionCreateOpen] = useState(false);
-  const [hidePayslipAmounts, setHidePayslipAmounts] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY) === '1';
-  });
+  const [hidePayslipAmounts, setHidePayslipAmounts] = useState<boolean>(() =>
+    getPayrollHideAmountsPreference(user?.id, role),
+  );
 
   const { data: payrollPeriods } = usePayrollPeriods();
   const { data: salaryStructures } = useSalaryStructures();
@@ -53,9 +51,12 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
   const showPayrollPrivacyToggle = activeTab === 'payslips' && hasEmployeePayrollData;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(PAYROLL_HIDE_AMOUNTS_STORAGE_KEY, hidePayslipAmounts ? '1' : '0');
-  }, [hidePayslipAmounts]);
+    setHidePayslipAmounts(getPayrollHideAmountsPreference(user?.id, role));
+  }, [role, user?.id]);
+
+  useEffect(() => {
+    setPayrollHideAmountsPreference(user?.id, role, hidePayslipAmounts);
+  }, [hidePayslipAmounts, role, user?.id]);
 
   useEffect(() => {
     if (!canManagePayroll && activeTab !== 'payslips') {
@@ -189,9 +190,13 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
               ? 'Manage payroll runs, salary structures, deduction rules, and published payslips.'
               : 'Review your payslips and salary information as soon as payroll records are available.'
           }
-          metaSlot={!canManagePayroll && !hasEmployeePayrollData ? (
-            <ContextChip className="hidden sm:inline-flex">Payroll setup in progress</ContextChip>
-          ) : undefined}
+          metaSlot={
+            !canManagePayroll && !hasEmployeePayrollData ? (
+              <ContextChip className="hidden sm:inline-flex">Payroll setup in progress</ContextChip>
+            ) : !canManagePayroll ? (
+              <ContextChip className="hidden sm:inline-flex">Self-service access</ContextChip>
+            ) : undefined
+          }
           actionsSlot={
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               {headerAction ? (
@@ -270,6 +275,13 @@ export function PayrollPage({ initialTab }: PayrollPageProps = {}) {
           ) : null}
 
           <TabsContent value="payslips" className="mt-0">
+            {!canManagePayroll && hasEmployeePayrollData ? (
+              <ModuleLayout.Summary surfaceVariant="flat" className="mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Payroll is read-only here. Published payslips and salary details are visible in this workspace, while payroll runs, salary structures, and deduction rules are managed by authorized HR and finance roles.
+                </p>
+              </ModuleLayout.Summary>
+            ) : null}
             <MyPayslips
               hideAmounts={hidePayslipAmounts}
               onHideAmountsChange={setHidePayslipAmounts}

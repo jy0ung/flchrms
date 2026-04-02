@@ -64,11 +64,17 @@ describe('AdminSettingsPage', () => {
     expect(screen.getByText('Loading system settings')).toBeInTheDocument();
     expect(screen.getByText('Company Branding')).toBeInTheDocument();
     expect(screen.getByText('General settings')).toBeInTheDocument();
+    expect(screen.getByText('System Settings')).toBeInTheDocument();
   });
 
-  it('renders the settings workspace after capability checks complete', () => {
+  it('renders the settings workspace with a current-workspace lead and governance notes', () => {
     render(<AdminSettingsPage />);
 
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Platform identity and default controls')).toBeInTheDocument();
+    expect(screen.getByText('Governance notes')).toBeInTheDocument();
+    expect(screen.getByText('Branding assets')).toBeInTheDocument();
+    expect(screen.getByText('Session timeout')).toBeInTheDocument();
     expect(screen.getByText('Company Branding')).toBeInTheDocument();
     expect(screen.getByText('General')).toBeInTheDocument();
     expect(screen.getByText('Notifications')).toBeInTheDocument();

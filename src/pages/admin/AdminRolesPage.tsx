@@ -10,7 +10,9 @@ import { RolesTabSection } from '@/components/admin/RolesTabSection';
 import { AdminCapabilityMatrixSection } from '@/components/admin/AdminCapabilityMatrixSection';
 import { AdminAccountDialogs } from '@/components/admin/AdminAccountDialogs';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { PageHeader } from '@/components/system';
+import { ContextChip } from '@/components/system';
+import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
+import { UtilityLayout } from '@/layouts/UtilityLayout';
 import { AppRole } from '@/types/hrms';
 
 export default function AdminRolesPage() {
@@ -39,18 +41,53 @@ export default function AdminRolesPage() {
     adminResetUserPasswordPending, updateUserRolePending, deleteUserRolePending,
   } = useAdminEmployeeManagement({ getUserRole, isAdminLimitedProfileEditor: capabilities.isAdminLimitedProfileEditor });
 
+  const summaryItems: SummaryRailItem[] = [
+    {
+      id: 'accounts',
+      label: 'Accounts in scope',
+      value: filteredEmployeesBySearch?.length ?? 0,
+      helper: 'Employee records currently visible in role governance.',
+    },
+    {
+      id: 'assignments',
+      label: 'Role assignments',
+      value: userRoles?.length ?? 0,
+      helper: 'Stored role mappings available for review.',
+    },
+    {
+      id: 'departments',
+      label: 'Departments',
+      value: departments?.length ?? 0,
+      helper: 'Department coverage available for role oversight.',
+    },
+    {
+      id: 'edit-mode',
+      label: 'Edit mode',
+      value: capabilities.isAdminLimitedProfileEditor ? 'Limited' : 'Full',
+      helper: capabilities.isAdminLimitedProfileEditor
+        ? 'Profile changes are constrained to limited admin editing.'
+        : 'Role governance can perform full role-management actions.',
+    },
+  ];
+
   if (capabilitiesLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Role Management"
-          description="Assign and manage user roles with authority-tier safeguards."
-        />
+      <UtilityLayout
+        eyebrow="Governance"
+        title="Role Management"
+        description="Assign and manage user roles with authority-tier safeguards."
+        metaSlot={(
+          <>
+            <ContextChip tone="info">Scope: role governance</ContextChip>
+            <ContextChip>Mode: role administration</ContextChip>
+          </>
+        )}
+      >
         <AdminRolesLoadingSkeleton
           title="Loading role management"
           description="Checking role-governance capabilities and preparing the latest assignments."
         />
-      </div>
+      </UtilityLayout>
     );
   }
 
@@ -64,11 +101,61 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Role Management"
-        description="Assign and manage user roles with authority-tier safeguards."
-      />
+    <UtilityLayout
+      eyebrow="Governance"
+      title="Role Management"
+      description="Assign and manage user roles with authority-tier safeguards."
+      metaSlot={(
+        <>
+          <ContextChip tone="info">Scope: role governance</ContextChip>
+          <ContextChip>
+            {capabilities.isAdminLimitedProfileEditor ? 'Mode: limited editor' : 'Mode: editable governance'}
+          </ContextChip>
+        </>
+      )}
+      leadSlot={(
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <section className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Current workspace
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Role assignments and capability safeguards
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review assigned roles first, then validate the capability matrix that governs what each authority tier can do.
+            </p>
+          </section>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Governance caution
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Role changes take effect immediately
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use the role roster to review who is impacted before changing authority, then confirm the matrix still matches your intended governance policy.
+            </p>
+          </div>
+        </div>
+      )}
+      summarySlot={<SummaryRail items={summaryItems} variant="subtle" compactBreakpoint="xl" />}
+      supportingSlot={(
+        <section className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Governance notes
+          </p>
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <p className="text-sm font-medium text-foreground">Review roster before matrix</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start with the employee role roster when handling day-to-day access decisions. Use the capability matrix to confirm or refine broader governance policy after the target account and authority tier are clear.
+            </p>
+          </div>
+        </section>
+      )}
+      supportingSurface="none"
+    >
+      <section className="space-y-6">
 
       <RolesTabSection
         rolesLoading={rolesLoading}
@@ -82,6 +169,7 @@ export default function AdminRolesPage() {
       />
 
       <AdminCapabilityMatrixSection />
+      </section>
 
       <AdminAccountDialogs
         selectedEmployee={selectedEmployee}
@@ -110,6 +198,6 @@ export default function AdminRolesPage() {
         updateRolePending={updateUserRolePending}
         deleteRolePending={deleteUserRolePending}
       />
-    </div>
+    </UtilityLayout>
   );
 }

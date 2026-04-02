@@ -291,9 +291,14 @@ describe('Dashboard widget rendering', () => {
       version: 2,
       presetVersion: 6,
       role: 'employee',
-      widgets: [],
+      widgets: [
+        { id: 'attendanceToday', x: 0, y: 0, w: 8, h: 4, visible: true },
+      ],
     };
     renderDashboard();
+
+    expect(screen.getByText('View preferences')).toBeInTheDocument();
+    expect(screen.getByText(/Personalize the dashboard after you review today's priorities/i)).toBeInTheDocument();
 
     openDashboardCustomizeMenu();
 
@@ -345,6 +350,7 @@ describe('Dashboard widget rendering', () => {
     expect(screen.getByRole('heading', { name: 'Supporting Information' })).toBeInTheDocument();
     expect(screen.getByText('Recent Activity')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open Inbox' })).toBeInTheDocument();
+    expect(screen.getByText('View preferences')).toBeInTheDocument();
     expect(screen.queryByTestId('rgl-grid')).not.toBeInTheDocument();
   });
 

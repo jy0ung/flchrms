@@ -96,14 +96,20 @@ describe('AdminRolesPage', () => {
 
     render(<AdminRolesPage />);
 
+    expect(screen.getByText('Role Management')).toBeInTheDocument();
     expect(screen.getByText('Loading role management')).toBeInTheDocument();
     expect(screen.getByText('Role assignments')).toBeInTheDocument();
     expect(screen.getByText('Capability matrix')).toBeInTheDocument();
   });
 
-  it('renders the role workspace after capability checks complete', () => {
+  it('renders the role workspace with governance lead and summary context', () => {
     render(<AdminRolesPage />);
 
+    expect(screen.getByText('Current workspace')).toBeInTheDocument();
+    expect(screen.getByText('Role assignments and capability safeguards')).toBeInTheDocument();
+    expect(screen.getByText('Governance notes')).toBeInTheDocument();
+    expect(screen.getByText('Accounts in scope')).toBeInTheDocument();
+    expect(screen.getByText('Role assignments')).toBeInTheDocument();
     expect(screen.getByText('Mock roles tab section')).toBeInTheDocument();
     expect(screen.getByText('Mock capability matrix')).toBeInTheDocument();
   });

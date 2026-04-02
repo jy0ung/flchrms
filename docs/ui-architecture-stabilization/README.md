@@ -26,6 +26,8 @@ These documents are intended to be used before and during Phase 1+ work (shared 
   - Route-archetype and information hierarchy contract for the next UI/UX architecture pass.
 - `sprint1-shell-navigation-execution-plan.md`
   - First implementation sprint for shell and navigation rationalization.
+- `whole-app-enterprise-ux-remediation-backlog.md`
+  - Prioritized whole-app UX backlog with behavior changes, module order, and acceptance criteria.
 - `.github/PULL_REQUEST_TEMPLATE/ui-architecture-stabilization.md`
   - PR checklist template for UI migration PRs.
 

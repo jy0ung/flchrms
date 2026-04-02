@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TabsContent } from '@/components/ui/tabs';
-import { DataTableShell, MetaBadge, RowActionButton, StatusBadge } from '@/components/system';
+import { DataTableShell, MetaBadge, PermissionAction, RowActionButton, StatusBadge } from '@/components/system';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeaveWorkflowBuildersSection } from '@/components/admin/LeaveWorkflowBuildersSection';
 import { NotificationQueueOpsSection } from '@/components/admin/NotificationQueueOpsSection';
@@ -63,6 +63,7 @@ export function LeavePoliciesSection({
   const getEffectiveDate = (leaveType: LeaveType) => format(new Date(leaveType.created_at), 'MMM d, yyyy');
   const getLastModifiedDate = (leaveType: LeaveType) =>
     format(new Date(leaveType.updated_at ?? leaveType.created_at), 'MMM d, yyyy');
+  const leavePolicyEditReason = 'Requires leave policy edit permission';
 
   return (
     <>
@@ -72,12 +73,12 @@ export function LeavePoliciesSection({
         title="Leave Policy Configuration"
         description="Configure leave types, advance notice, and document requirements"
         headerActions={
-          canManageLeaveTypes ? (
+          <PermissionAction allowed={canManageLeaveTypes} reason={leavePolicyEditReason}>
             <Button className="w-full rounded-full sm:w-auto" onClick={onCreateLeaveType}>
               <Plus className="w-4 h-4 mr-2" />
               Add Leave Type
             </Button>
-          ) : null
+          </PermissionAction>
         }
         loading={leaveTypesLoading}
         loadingSkeleton={
@@ -116,8 +117,8 @@ export function LeavePoliciesSection({
                     <div className="mt-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
                       Effective {getEffectiveDate(leaveType)} · Last modified {getLastModifiedDate(leaveType)} · by System
                     </div>
-                    {canManageLeaveTypes && (
-                      <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <PermissionAction allowed={canManageLeaveTypes} reason={leavePolicyEditReason}>
                         <RowActionButton
                           type="button"
                           onClick={() => onEditLeaveType(leaveType)}
@@ -125,6 +126,8 @@ export function LeavePoliciesSection({
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
                         </RowActionButton>
+                      </PermissionAction>
+                      <PermissionAction allowed={canManageLeaveTypes} reason={leavePolicyEditReason}>
                         <RowActionButton
                           type="button"
                           tone="danger"
@@ -133,8 +136,8 @@ export function LeavePoliciesSection({
                           <Trash2 className="w-4 h-4 mr-1" />
                           Delete
                         </RowActionButton>
-                      </div>
-                    )}
+                      </PermissionAction>
+                    </div>
                   </div>
                 ))}
                 {(!leaveTypes || leaveTypes.length === 0) && (
@@ -207,26 +210,26 @@ export function LeavePoliciesSection({
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {canManageLeaveTypes && (
-                                <>
-                                  <RowActionButton
-                                    type="button"
-                                    onClick={() => onEditLeaveType(leaveType)}
-                                  >
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Edit
-                                  </RowActionButton>
-                                  <RowActionButton
-                                    type="button"
-                                    tone="danger"
-                                    aria-label={`Delete leave type ${leaveType.name}`}
-                                    onClick={() => onDeleteLeaveType(leaveType)}
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-1" />
-                                    Delete
-                                  </RowActionButton>
-                                </>
-                              )}
+                              <PermissionAction allowed={canManageLeaveTypes} reason={leavePolicyEditReason}>
+                                <RowActionButton
+                                  type="button"
+                                  onClick={() => onEditLeaveType(leaveType)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </RowActionButton>
+                              </PermissionAction>
+                              <PermissionAction allowed={canManageLeaveTypes} reason={leavePolicyEditReason}>
+                                <RowActionButton
+                                  type="button"
+                                  tone="danger"
+                                  aria-label={`Delete leave type ${leaveType.name}`}
+                                  onClick={() => onDeleteLeaveType(leaveType)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  Delete
+                                </RowActionButton>
+                              </PermissionAction>
                             </div>
                           </TableCell>
                         </TableRow>

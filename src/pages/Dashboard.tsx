@@ -346,6 +346,45 @@ export default function Dashboard() {
     }
   }, [editMode, canEditLayout]);
 
+  const customizeMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5 rounded-full"
+          aria-label="Customize dashboard"
+        >
+          <Settings2 className="h-4 w-4" />
+          <span>Customize view</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Dashboard tools</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            enterEditMode();
+          }}
+          disabled={!canEditLayout}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit layout
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            setCustomizeOpen(true);
+          }}
+        >
+          <Settings2 className="mr-2 h-4 w-4" />
+          Manage widgets
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <DashboardDataProvider>
       <UtilityLayout
@@ -369,46 +408,28 @@ export default function Dashboard() {
                 {isSaving ? 'Saving…' : 'Save'}
               </Button>
             </div>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-full"
-                  aria-label="Customize dashboard"
-                >
-                  <Settings2 className="h-4 w-4" />
-                  <span>Customize</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Dashboard tools</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    enterEditMode();
-                  }}
-                  disabled={!canEditLayout}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit layout
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    setCustomizeOpen(true);
-                  }}
-                >
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  Manage widgets
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
+          ) : undefined
         }
         leadSlot={<DashboardGreeting role={role} headingLevel={2} />}
+        supportingSlot={!isLoading && !editMode ? (
+          <section className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                View preferences
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                Personalize the dashboard after you review today&apos;s priorities.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Adjust widgets or edit the layout without competing with the main work surface.
+              </p>
+            </div>
+            <div className="sm:shrink-0">
+              {customizeMenu}
+            </div>
+          </section>
+        ) : undefined}
+        supportingSurface="none"
       >
 
         {!isLoading && !editMode && showGettingStartedDashboard && (

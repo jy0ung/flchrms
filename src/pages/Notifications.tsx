@@ -109,6 +109,24 @@ function primaryActionLabel(notification: UserNotification) {
   return null;
 }
 
+function showReadUndoToast({
+  notification,
+  onUndo,
+}: {
+  notification: UserNotification;
+  onUndo: () => Promise<void>;
+}) {
+  toast.success('Notification marked as read', {
+    description: notification.title,
+    action: {
+      label: 'Undo',
+      onClick: () => {
+        void onUndo();
+      },
+    },
+  });
+}
+
 function NotificationRow({
   notification,
   onMarkRead,
@@ -351,12 +369,27 @@ export default function Notifications() {
   };
 
   const handleOpenRelated = async (notification: UserNotification) => {
+    const target = resolveNotificationTarget(notification);
+    if (!target) return;
+
     if (!notification.read_at) {
-      await markNotificationRead(notification.id);
+      try {
+        await markNotificationRead(notification.id);
+        showReadUndoToast({
+          notification,
+          onUndo: async () => {
+            await markNotificationUnread(notification.id);
+          },
+        });
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+        toast.error('Unable to update notification state', {
+          description: 'The notification will stay unread until the update succeeds.',
+        });
+      }
     }
 
-    const target = resolveNotificationTarget(notification);
-    if (target) navigate(target);
+    navigate(target);
   };
 
   const handleCleanupReadNotifications = async () => {
