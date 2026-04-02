@@ -6,9 +6,11 @@ import { lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
+import { TenantSettingsProvider } from "@/contexts/TenantSettingsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/layout/RouteErrorBoundary";
+import { TenantMaintenanceGate } from "@/components/layout/TenantMaintenanceGate";
 import Auth from "./pages/Auth";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Employees = lazy(() => import("./pages/Employees"));
@@ -66,63 +68,67 @@ function LocationAwareErrorBoundary({ children }: { children: React.ReactNode })
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrandingProvider>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        <TooltipProvider>
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-            <LocationAwareErrorBoundary>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/leave" element={<Leave />} />
-                  <Route path="/departments" element={<Departments />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/training" element={<Training />} />
-                  <Route path="/announcements" element={<Announcements />} />
-                  <Route path="/profile" element={<Profile />} />
-                  {/* Protected routes — role-gated sensitive pages */}
-                  <Route element={<ProtectedRoute allowedRoles={PERFORMANCE_REVIEW_CONDUCTOR_ROLES} />}>
-                    <Route path="/performance" element={<Performance />} />
-                  </Route>
-                  <Route element={<ProtectedRoute allowedRoles={MANAGER_AND_ABOVE_ROLES} />}>
-                    <Route path="/calendar" element={<TeamCalendar />} />
-                  </Route>
-                  <Route element={<ProtectedRoute allowedRoles={DOCUMENT_MANAGER_ROLES} />}>
-                    <Route path="/documents" element={<Documents />} />
-                  </Route>
-                  <Route path="/payroll" element={<Payroll />} />
-                  {/* Protected routes - Admin/HR/Manager/GM/Director only */}
-                  <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
-                    <Route path="/employees" element={<Employees />} />
-                    <Route path="/employees/:employeeId" element={<EmployeeProfile />} />
-                  </Route>
-                </Route>
-                {/* Admin panel — dedicated layout with its own sidebar */}
-                <Route element={<ProtectedRoute allowedRoles={AUTHENTICATED_APP_ROLES} />}>
-                  <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<AdminEntryRedirect />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                    <Route path="/admin/employees" element={<AdminEmployeesPage />} />
-                    <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
-                    <Route path="/admin/roles" element={<AdminRolesPage />} />
-                    <Route path="/admin/leave-policies" element={<AdminLeavePoliciesPage />} />
-                    <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
-                    <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
-                    <Route path="/admin/settings" element={<AdminSettingsPage />} />
-                    <Route path="/admin/quick-actions" element={<AdminQuickActionsPage />} />
-                  </Route>
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-          </LocationAwareErrorBoundary>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
+      <TenantSettingsProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <TooltipProvider>
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <TenantMaintenanceGate>
+                  <LocationAwareErrorBoundary>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route element={<AppLayout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/leave" element={<Leave />} />
+                        <Route path="/departments" element={<Departments />} />
+                        <Route path="/notifications" element={<Notifications />} />
+                        <Route path="/attendance" element={<Attendance />} />
+                        <Route path="/training" element={<Training />} />
+                        <Route path="/announcements" element={<Announcements />} />
+                        <Route path="/profile" element={<Profile />} />
+                        {/* Protected routes — role-gated sensitive pages */}
+                        <Route element={<ProtectedRoute allowedRoles={PERFORMANCE_REVIEW_CONDUCTOR_ROLES} />}>
+                          <Route path="/performance" element={<Performance />} />
+                        </Route>
+                        <Route element={<ProtectedRoute allowedRoles={MANAGER_AND_ABOVE_ROLES} />}>
+                          <Route path="/calendar" element={<TeamCalendar />} />
+                        </Route>
+                        <Route element={<ProtectedRoute allowedRoles={DOCUMENT_MANAGER_ROLES} />}>
+                          <Route path="/documents" element={<Documents />} />
+                        </Route>
+                        <Route path="/payroll" element={<Payroll />} />
+                        {/* Protected routes - Admin/HR/Manager/GM/Director only */}
+                        <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
+                          <Route path="/employees" element={<Employees />} />
+                          <Route path="/employees/:employeeId" element={<EmployeeProfile />} />
+                        </Route>
+                      </Route>
+                      {/* Admin panel — dedicated layout with its own sidebar */}
+                      <Route element={<ProtectedRoute allowedRoles={AUTHENTICATED_APP_ROLES} />}>
+                        <Route element={<AdminLayout />}>
+                          <Route path="/admin" element={<AdminEntryRedirect />} />
+                          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                          <Route path="/admin/employees" element={<AdminEmployeesPage />} />
+                          <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
+                          <Route path="/admin/roles" element={<AdminRolesPage />} />
+                          <Route path="/admin/leave-policies" element={<AdminLeavePoliciesPage />} />
+                          <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+                          <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
+                          <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                          <Route path="/admin/quick-actions" element={<AdminQuickActionsPage />} />
+                        </Route>
+                      </Route>
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </LocationAwareErrorBoundary>
+                </TenantMaintenanceGate>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </TenantSettingsProvider>
     </BrandingProvider>
   </QueryClientProvider>
 );

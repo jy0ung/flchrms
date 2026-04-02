@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { AppRole } from '@/types/hrms';
 import { toast } from 'sonner';
 import { sanitizeErrorMessage } from '@/lib/error-utils';
@@ -30,38 +31,15 @@ export function useUpdateUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      // First, check if user already has a role
-      const { data: existing, error: fetchError } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+    mutationFn: async ({ userId, newRole, reason }: { userId: string; newRole: AppRole; reason: string }) => {
+      const { data, error } = await untypedRpc('admin_upsert_user_role', {
+        _user_id: userId,
+        _new_role: newRole,
+        _reason: reason,
+      });
 
-      if (fetchError) throw fetchError;
-
-      if (existing) {
-        // Update existing role
-        const { data, error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole })
-          .eq('user_id', userId)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return data;
-      } else {
-        // Insert new role
-        const { data, error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: newRole })
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return data;
-      }
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
@@ -78,11 +56,11 @@ export function useDeleteUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId }: { userId: string }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      const { error } = await untypedRpc('admin_remove_user_role', {
+        _user_id: userId,
+        _reason: reason,
+      });
 
       if (error) throw error;
     },

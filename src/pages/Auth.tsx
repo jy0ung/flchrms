@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantSettingsContext } from '@/contexts/TenantSettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user } = useAuth();
+  const { settings } = useTenantSettingsContext();
   const postAuthTarget = resolvePostAuthTarget({
     state: location.state,
     search: location.search,
@@ -167,6 +169,11 @@ export default function Auth() {
             stage={stage}
             className="w-full rounded-[2rem] px-1 py-2 md:px-2"
           >
+              {settings.maintenanceMode ? (
+                <div className="mb-5 rounded-2xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-sm text-amber-800">
+                  System maintenance is active. Only admin accounts can sign in until the maintenance window ends.
+                </div>
+              ) : null}
               {isRecoveryMode ? (
                 <div className="space-y-5">
                   <div className="rounded-2xl border border-border/70 bg-muted/35 p-4">

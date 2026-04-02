@@ -9,10 +9,12 @@ const {
   signInMock,
   updateUserMock,
   signOutLocalSessionMock,
+  maintenanceModeState,
 } = vi.hoisted(() => ({
   signInMock: vi.fn(),
   updateUserMock: vi.fn(),
   signOutLocalSessionMock: vi.fn(),
+  maintenanceModeState: { enabled: false },
 }));
 
 vi.mock('sonner', () => ({
@@ -27,6 +29,15 @@ vi.mock('@/contexts/AuthContext', () => ({
     signIn: signInMock,
     signUp: vi.fn(),
     user: null,
+  }),
+}));
+
+vi.mock('@/contexts/TenantSettingsContext', () => ({
+  useTenantSettingsContext: () => ({
+    settings: {
+      maintenanceMode: maintenanceModeState.enabled,
+    },
+    isLoading: false,
   }),
 }));
 
@@ -75,6 +86,7 @@ vi.mock('@/components/auth/LoginForm', () => ({
 describe('Auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    maintenanceModeState.enabled = false;
   });
 
   it('returns users to the requested route after sign-in', async () => {
@@ -140,5 +152,21 @@ describe('Auth', () => {
     await waitFor(() => {
       expect(signOutLocalSessionMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows the maintenance access notice when tenant maintenance mode is active', () => {
+    maintenanceModeState.enabled = true;
+
+    render(
+      <MemoryRouter initialEntries={['/auth']}>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByText('System maintenance is active. Only admin accounts can sign in until the maintenance window ends.'),
+    ).toBeInTheDocument();
   });
 });

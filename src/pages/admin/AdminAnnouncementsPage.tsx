@@ -2,7 +2,12 @@ import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Megaphone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useAnnouncements, useCreateAnnouncement } from '@/hooks/useAnnouncements';
+import {
+  useAnnouncements,
+  useCreateAnnouncement,
+  useDeleteAnnouncement,
+  useUpdateAnnouncement,
+} from '@/hooks/useAnnouncements';
 import { useAdminPageCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { AdminTableLoadingSkeleton } from '@/components/admin/AdminLoadingSkeletons';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ContextChip, ModalScaffold, TaskEmptyState } from '@/components/system';
+import { ContextChip, ModalScaffold, ModalSection, TaskEmptyState } from '@/components/system';
 import {
   Table,
   TableBody,
@@ -27,11 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
-import { toast } from 'sonner';
-import { sanitizeErrorMessage } from '@/lib/error-utils';
 import { TableRowSkeleton } from '@/components/system';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
@@ -43,40 +44,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-50 text-red-700 border-red-200',
 };
 
-function useUpdateAnnouncement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...update }: { id: string; title?: string; content?: string; priority?: string; is_active?: boolean; expires_at?: string | null }) => {
-      const { error } = await supabase.from('announcements').update(update).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      toast.success('Announcement updated');
-    },
-    onError: (error: Error) => {
-      toast.error('Failed to update announcement', { description: sanitizeErrorMessage(error) });
-    },
-  });
-}
-
-function useDeleteAnnouncement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('announcements').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      toast.success('Announcement deleted');
-    },
-    onError: (error: Error) => {
-      toast.error('Failed to delete announcement', { description: sanitizeErrorMessage(error) });
-    },
-  });
-}
-
 interface AnnouncementForm {
   title: string;
   content: string;
@@ -85,6 +52,8 @@ interface AnnouncementForm {
 }
 
 const emptyForm: AnnouncementForm = { title: '', content: '', priority: 'normal', expires_at: '' };
+const emptyReason = '';
+const minimumGovernanceReasonLength = 5;
 
 export default function AdminAnnouncementsPage() {
   usePageTitle('Admin · Announcements');
@@ -100,6 +69,39 @@ export default function AdminAnnouncementsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<AnnouncementForm>(emptyForm);
+  const [changeReason, setChangeReason] = useState(emptyReason);
+  const [deleteReason, setDeleteReason] = useState(emptyReason);
+
+  const hasValidChangeReason = changeReason.trim().length >= minimumGovernanceReasonLength;
+  const hasValidDeleteReason = deleteReason.trim().length >= minimumGovernanceReasonLength;
+
+  const resetFormState = () => {
+    setForm(emptyForm);
+    setChangeReason(emptyReason);
+  };
+
+  const closeCreateDialog = (open: boolean) => {
+    setCreateOpen(open);
+    if (!open) {
+      resetFormState();
+    }
+  };
+
+  const closeEditDialog = (open: boolean) => {
+    setEditOpen(open);
+    if (!open) {
+      resetFormState();
+      setEditId(null);
+    }
+  };
+
+  const closeDeleteDialog = (open: boolean) => {
+    setDeleteOpen(open);
+    if (!open) {
+      setDeleteReason(emptyReason);
+      setEditId(null);
+    }
+  };
 
   const handleCreate = async () => {
     await createMutation.mutateAsync({
@@ -107,9 +109,10 @@ export default function AdminAnnouncementsPage() {
       content: form.content,
       priority: form.priority,
       expires_at: form.expires_at || undefined,
+      reason: changeReason.trim(),
     });
     setCreateOpen(false);
-    setForm(emptyForm);
+    resetFormState();
   };
 
   const handleEdit = (ann: { id: string; title: string; content: string; priority: string; expires_at: string | null }) => {
@@ -120,6 +123,7 @@ export default function AdminAnnouncementsPage() {
       priority: (ann.priority as AnnouncementForm['priority']) || 'normal',
       expires_at: ann.expires_at?.slice(0, 10) ?? '',
     });
+    setChangeReason(emptyReason);
     setEditOpen(true);
   };
 
@@ -131,17 +135,19 @@ export default function AdminAnnouncementsPage() {
       content: form.content,
       priority: form.priority,
       expires_at: form.expires_at || null,
+      reason: changeReason.trim(),
     });
     setEditOpen(false);
     setEditId(null);
-    setForm(emptyForm);
+    resetFormState();
   };
 
   const handleDelete = async () => {
     if (!editId) return;
-    await deleteMutation.mutateAsync(editId);
+    await deleteMutation.mutateAsync({ id: editId, reason: deleteReason.trim() });
     setDeleteOpen(false);
     setEditId(null);
+    setDeleteReason(emptyReason);
   };
 
   const sortedAnnouncements = useMemo(
@@ -217,53 +223,76 @@ export default function AdminAnnouncementsPage() {
 
   const formFields = (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="ann-title">Title</Label>
-        <Input
-          id="ann-title"
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          placeholder="Announcement title"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="ann-content">Content</Label>
-        <Textarea
-          id="ann-content"
-          value={form.content}
-          onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-          placeholder="Write announcement content..."
-          rows={4}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Priority</Label>
-          <Select
-            value={form.priority}
-            onValueChange={(v) => setForm((f) => ({ ...f, priority: v as AnnouncementForm['priority'] }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="normal">Normal</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
-            </SelectContent>
-          </Select>
+      <ModalSection title="Announcement Details">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ann-title">Title</Label>
+            <Input
+              id="ann-title"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="Announcement title"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ann-content">Content</Label>
+            <Textarea
+              id="ann-content"
+              value={form.content}
+              onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+              placeholder="Write announcement content..."
+              rows={4}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select
+                value={form.priority}
+                onValueChange={(v) => setForm((f) => ({ ...f, priority: v as AnnouncementForm['priority'] }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ann-expires">Expires At</Label>
+              <Input
+                id="ann-expires"
+                type="date"
+                value={form.expires_at}
+                onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
+              />
+            </div>
+          </div>
         </div>
+      </ModalSection>
+      <ModalSection
+        title="Governance Reason"
+        description="Required for the audit trail. Explain why this announcement change is needed."
+        tone="muted"
+      >
         <div className="space-y-2">
-          <Label htmlFor="ann-expires">Expires At</Label>
-          <Input
-            id="ann-expires"
-            type="date"
-            value={form.expires_at}
-            onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
+          <Label htmlFor="ann-reason">Change reason</Label>
+          <Textarea
+            id="ann-reason"
+            value={changeReason}
+            onChange={(e) => setChangeReason(e.target.value)}
+            placeholder="Explain why this announcement should be published or changed..."
+            rows={3}
           />
+          <p className="text-xs text-muted-foreground">
+            Minimum {minimumGovernanceReasonLength} characters. This reason is captured in the governance audit trail.
+          </p>
         </div>
-      </div>
+      </ModalSection>
     </div>
   );
 
@@ -279,7 +308,7 @@ export default function AdminAnnouncementsPage() {
         </>
       )}
       actionsSlot={(
-        <Button onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
+        <Button onClick={() => { resetFormState(); setCreateOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           New Announcement
         </Button>
@@ -346,7 +375,7 @@ export default function AdminAnnouncementsPage() {
                 description="Create your first announcement to publish updates to the organization."
                 icon={Megaphone}
                 action={(
-                  <Button variant="outline" className="rounded-full" onClick={() => { setForm(emptyForm); setCreateOpen(true); }}>
+                  <Button variant="outline" className="rounded-full" onClick={() => { resetFormState(); setCreateOpen(true); }}>
                     Create First Announcement
                   </Button>
                 )}
@@ -400,7 +429,7 @@ export default function AdminAnnouncementsPage() {
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           aria-label={`Delete announcement ${ann.title}`}
                           title={`Delete announcement ${ann.title}`}
-                          onClick={() => { setEditId(ann.id); setDeleteOpen(true); }}
+                          onClick={() => { setEditId(ann.id); setDeleteReason(emptyReason); setDeleteOpen(true); }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -417,14 +446,14 @@ export default function AdminAnnouncementsPage() {
       {/* Create Dialog */}
       <ModalScaffold
         open={createOpen}
-        onOpenChange={setCreateOpen}
+        onOpenChange={closeCreateDialog}
         title="Create Announcement"
         description="Publish a new announcement visible to all employees."
         maxWidth="lg"
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!form.title.trim() || !form.content.trim() || createMutation.isPending}>
+            <Button variant="outline" onClick={() => closeCreateDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={!form.title.trim() || !form.content.trim() || !hasValidChangeReason || createMutation.isPending}>
               {createMutation.isPending ? 'Publishing...' : 'Publish'}
             </Button>
           </div>
@@ -435,14 +464,14 @@ export default function AdminAnnouncementsPage() {
       {/* Edit Dialog */}
       <ModalScaffold
         open={editOpen}
-        onOpenChange={setEditOpen}
+        onOpenChange={closeEditDialog}
         title="Edit Announcement"
         description="Update the announcement details."
         maxWidth="lg"
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={!form.title.trim() || !form.content.trim() || updateMutation.isPending}>
+            <Button variant="outline" onClick={() => closeEditDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={!form.title.trim() || !form.content.trim() || !hasValidChangeReason || updateMutation.isPending}>
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -453,22 +482,43 @@ export default function AdminAnnouncementsPage() {
       {/* Delete Confirmation */}
       <ModalScaffold
         open={deleteOpen}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={closeDeleteDialog}
         title="Delete Announcement"
-        description="This action cannot be undone. The announcement will be permanently removed."
-        maxWidth="sm"
+        description="This action cannot be undone. The announcement will be permanently removed and captured in the governance audit trail."
+        maxWidth="md"
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+            <Button variant="outline" onClick={() => closeDeleteDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={!hasValidDeleteReason || deleteMutation.isPending}>
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         }
         body={
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete this announcement? This will remove it for all employees.
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this announcement? This will remove it for all employees.
+            </p>
+            <ModalSection
+              title="Governance Reason"
+              description="Required for the audit trail before this announcement can be deleted."
+              tone="danger"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="ann-delete-reason">Deletion reason</Label>
+                <Textarea
+                  id="ann-delete-reason"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  placeholder="Explain why this announcement must be removed..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Minimum {minimumGovernanceReasonLength} characters. This reason is captured in the governance audit trail.
+                </p>
+              </div>
+            </ModalSection>
+          </div>
         }
       />
     </UtilityLayout>

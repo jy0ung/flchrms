@@ -131,11 +131,40 @@ describe('useEmployeeManagementController', () => {
     });
 
     await act(async () => {
-      await result.current.handleSaveRole();
+      await result.current.handleSaveRole('Needed for delegation');
     });
 
     expect(updateUserRoleMutateAsync).not.toHaveBeenCalled();
     expect(toastError).toHaveBeenCalledWith('You do not have permission to manage employee roles.');
+  });
+
+  it('passes the governance reason through when saving a role change', async () => {
+    const { result } = renderHook(() =>
+      useEmployeeManagementController({
+        getUserRole: () => 'employee',
+        resolveEditAccessMode: () => 'full',
+        resolveRowPermissions: () => ({
+          canResetPassword: false,
+          canManageRole: true,
+          canArchiveRestore: false,
+        }),
+      }),
+    );
+
+    act(() => {
+      result.current.handleEditProfile(employee);
+      result.current.setSelectedRole('manager');
+    });
+
+    await act(async () => {
+      await result.current.handleSaveRole('Promoted after assuming team oversight.');
+    });
+
+    expect(updateUserRoleMutateAsync).toHaveBeenCalledWith({
+      userId: 'emp-1',
+      newRole: 'manager',
+      reason: 'Promoted after assuming team oversight.',
+    });
   });
 
   it('blocks archive and restore when row permissions do not allow it', async () => {

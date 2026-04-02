@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import AdminAnnouncementsPage from '@/pages/admin/AdminAnnouncementsPage';
@@ -41,21 +41,15 @@ vi.mock('@/hooks/useAnnouncements', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useUpdateAnnouncement: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useDeleteAnnouncement: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
 }));
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
-  return {
-    ...actual,
-    useQueryClient: () => ({
-      invalidateQueries: vi.fn(),
-    }),
-    useMutation: () => ({
-      mutateAsync: vi.fn(),
-      isPending: false,
-    }),
-  };
-});
 
 describe('AdminAnnouncementsPage', () => {
   beforeEach(() => {
@@ -84,5 +78,15 @@ describe('AdminAnnouncementsPage', () => {
     expect(screen.getByText('Published announcements')).toBeInTheDocument();
     expect(screen.getByText('Announcement queue')).toBeInTheDocument();
     expect(screen.getByText('Loading published announcements and their management actions.')).toBeInTheDocument();
+  });
+
+  it('requires a governance reason before publishing a new announcement', () => {
+    render(<AdminAnnouncementsPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /new announcement/i }));
+
+    expect(screen.getByText('Governance Reason')).toBeInTheDocument();
+    expect(screen.getByLabelText('Change reason')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeDisabled();
   });
 });

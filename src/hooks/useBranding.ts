@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/integrations/supabase/untyped-client';
 import { toast } from 'sonner';
 
 export interface TenantBranding {
@@ -66,26 +67,13 @@ export function useUpdateBranding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (updates: BrandingUpdate) => {
-      // Upsert: try to update the singleton row first
-      const { data: existing } = await supabase
-        .from('tenant_branding')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
+    mutationFn: async ({ updates, reason }: { updates: BrandingUpdate; reason: string }) => {
+      const { error } = await untypedRpc('admin_upsert_tenant_branding', {
+        _updates: updates,
+        _reason: reason,
+      });
 
-      if (existing) {
-        const { error } = await supabase
-          .from('tenant_branding')
-          .update(updates)
-          .eq('id', existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('tenant_branding')
-          .insert(updates);
-        if (error) throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BRANDING_QUERY_KEY });

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Save, Building2, Bell, Shield, Palette, X, ImageIcon, Loader2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -19,44 +20,21 @@ import {
 } from '@/components/ui/select';
 import { AdminAccessDenied } from '@/components/admin/AdminAccessDenied';
 import { ContextChip } from '@/components/system';
-import { toast } from 'sonner';
 import { useBranding, useUpdateBranding, useUploadBrandingAsset, type BrandingUpdate } from '@/hooks/useBranding';
+import {
+  TENANT_SETTINGS_DEFAULTS,
+  useTenantSettings,
+  useUpdateTenantSettings,
+  type TenantSettings,
+} from '@/hooks/useTenantSettings';
 import { SummaryRail, type SummaryRailItem } from '@/components/workspace/SummaryRail';
 import { UtilityLayout } from '@/layouts/UtilityLayout';
 
-// ── Local settings (non-branding) ────────────────────────────────────────────
-const SETTINGS_STORAGE_KEY = 'hrms.admin.settings';
+type AppSettings = TenantSettings;
 
-interface AppSettings {
-  timezone: string;
-  dateFormat: string;
-  emailNotifications: boolean;
-  sessionTimeoutMinutes: number;
-  maintenanceMode: boolean;
-}
+const defaultSettings: AppSettings = TENANT_SETTINGS_DEFAULTS;
 
-const defaultSettings: AppSettings = {
-  timezone: 'Asia/Kuala_Lumpur',
-  dateFormat: 'DD/MM/YYYY',
-  emailNotifications: true,
-  sessionTimeoutMinutes: 30,
-  maintenanceMode: false,
-};
-
-function loadSettings(): AppSettings {
-  if (typeof window === 'undefined') return defaultSettings;
-  try {
-    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) return defaultSettings;
-    return { ...defaultSettings, ...JSON.parse(raw) };
-  } catch {
-    return defaultSettings;
-  }
-}
-
-function saveSettings(settings: AppSettings) {
-  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-}
+const minimumGovernanceReasonLength = 5;
 
 // ── Color presets ────────────────────────────────────────────────────────────
 const COLOR_PRESETS = [
@@ -183,8 +161,11 @@ export default function AdminSettingsPage() {
   usePageTitle('Admin · Settings');
   const { role } = useAuth();
   const { capabilities, isLoading: capabilitiesLoading } = useAdminPageCapabilities(role);
-  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const { data: tenantSettings } = useTenantSettings();
+  const updateTenantSettings = useUpdateTenantSettings();
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [dirty, setDirty] = useState(false);
+  const [settingsReason, setSettingsReason] = useState('');
 
   // ── Branding state ───────────────────────────────────────────────────────
   const { data: branding } = useBranding();
@@ -192,6 +173,7 @@ export default function AdminSettingsPage() {
   const uploadAsset = useUploadBrandingAsset();
   const [brandingDraft, setBrandingDraft] = useState<BrandingUpdate | null>(null);
   const [brandingDirty, setBrandingDirty] = useState(false);
+  const [brandingReason, setBrandingReason] = useState('');
 
   // Initialize draft from fetched branding
   const effectiveBranding = {
@@ -233,34 +215,64 @@ export default function AdminSettingsPage() {
 
   const handleSaveBranding = () => {
     if (!brandingDraft) return;
-    updateBranding.mutate(brandingDraft, {
+    updateBranding.mutate({ updates: brandingDraft, reason: brandingReason.trim() }, {
       onSuccess: () => {
         setBrandingDraft(null);
         setBrandingDirty(false);
+        setBrandingReason('');
       },
     });
   };
 
-  // ── Local settings ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!dirty && tenantSettings) {
+      setSettings((current) => (
+        current.id === tenantSettings.id
+        && current.timezone === tenantSettings.timezone
+        && current.dateFormat === tenantSettings.dateFormat
+        && current.emailNotificationsEnabled === tenantSettings.emailNotificationsEnabled
+        && current.sessionTimeoutMinutes === tenantSettings.sessionTimeoutMinutes
+        && current.maintenanceMode === tenantSettings.maintenanceMode
+      ) ? current : tenantSettings);
+    }
+  }, [tenantSettings, dirty]);
+
+  // ── Tenant settings ──────────────────────────────────────────────────────
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
   };
 
   const handleSave = () => {
-    saveSettings(settings);
-    setDirty(false);
-    toast.success('Settings saved successfully');
+    updateTenantSettings.mutate(
+      {
+        updates: {
+          timezone: settings.timezone,
+          dateFormat: settings.dateFormat,
+          emailNotificationsEnabled: settings.emailNotificationsEnabled,
+          sessionTimeoutMinutes: settings.sessionTimeoutMinutes,
+          maintenanceMode: settings.maintenanceMode,
+        },
+        reason: settingsReason.trim(),
+      },
+      {
+        onSuccess: () => {
+          setDirty(false);
+          setSettingsReason('');
+        },
+      },
+    );
   };
 
   const handleReset = () => {
     setSettings(defaultSettings);
-    saveSettings(defaultSettings);
-    setDirty(false);
-    toast.info('Settings reset to defaults');
+    setDirty(true);
+    setSettingsReason('');
   };
 
   const brandingAssetCount = Number(Boolean(effectiveBranding.logo_url)) + Number(Boolean(effectiveBranding.favicon_url));
+  const hasValidBrandingReason = brandingReason.trim().length >= minimumGovernanceReasonLength;
+  const hasValidSettingsReason = settingsReason.trim().length >= minimumGovernanceReasonLength;
   const summaryItems: SummaryRailItem[] = [
     {
       id: 'branding-assets',
@@ -271,20 +283,20 @@ export default function AdminSettingsPage() {
     {
       id: 'email-defaults',
       label: 'Email defaults',
-      value: settings.emailNotifications ? 'Enabled' : 'Paused',
-      helper: 'System-wide default notification behavior.',
+      value: settings.emailNotificationsEnabled ? 'Enabled' : 'Paused',
+      helper: 'Tenant-wide notification default for governed workflows.',
     },
     {
       id: 'session-timeout',
       label: 'Session timeout',
       value: `${settings.sessionTimeoutMinutes} min`,
-      helper: 'Automatic inactivity timeout for signed-in sessions.',
+      helper: 'Applied to authenticated sessions across the web app.',
     },
     {
       id: 'maintenance-mode',
       label: 'Maintenance mode',
       value: settings.maintenanceMode ? 'On' : 'Off',
-      helper: 'Current platform availability control.',
+      helper: 'Restricts the app to admin-only access while active.',
     },
   ];
 
@@ -293,7 +305,7 @@ export default function AdminSettingsPage() {
       <UtilityLayout
         eyebrow="Governance"
         title="System Settings"
-        description="Manage branding, notifications, and governance-level platform settings from one control surface."
+        description="Manage tenant branding and platform defaults from one governance surface."
         metaSlot={(
           <>
             <ContextChip tone="info">Scope: tenant-wide</ContextChip>
@@ -303,7 +315,7 @@ export default function AdminSettingsPage() {
       >
         <AdminSettingsLoadingSkeleton
           title="Loading system settings"
-          description="Checking settings capabilities and preparing the latest platform configuration."
+          description="Checking settings capabilities and preparing the latest tenant configuration."
         />
       </UtilityLayout>
     );
@@ -322,7 +334,7 @@ export default function AdminSettingsPage() {
     <UtilityLayout
       eyebrow="Governance"
       title="System Settings"
-      description="Manage branding, notifications, and governance-level platform settings from one control surface."
+      description="Manage tenant branding and platform defaults from one governance surface."
       metaSlot={(
         <>
           <ContextChip tone="info">Scope: tenant-wide</ContextChip>
@@ -331,10 +343,14 @@ export default function AdminSettingsPage() {
       )}
       actionsSlot={(
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Button variant="outline" onClick={handleReset}>Reset Defaults</Button>
-          <Button onClick={handleSave} disabled={!dirty}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Settings
+          <Button variant="outline" onClick={handleReset}>Reset Tenant Defaults</Button>
+          <Button onClick={handleSave} disabled={!dirty || !hasValidSettingsReason || updateTenantSettings.isPending}>
+            {updateTenantSettings.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Tenant Settings
           </Button>
         </div>
       )}
@@ -345,10 +361,10 @@ export default function AdminSettingsPage() {
               Current workspace
             </p>
             <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              Platform identity and default controls
+              Tenant identity and platform defaults
             </h2>
             <p className="text-sm text-muted-foreground">
-              Update company branding, locale defaults, notifications, and security-sensitive system behavior without leaving governance settings.
+              Update company branding and the tenant-wide defaults that govern locale guidance, notification defaults, session policy, and maintenance access.
             </p>
           </section>
           <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
@@ -359,7 +375,7 @@ export default function AdminSettingsPage() {
               Tenant-wide changes apply here
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Branding updates affect the live identity, while notification, timeout, and maintenance defaults shape the broader platform experience.
+              Branding updates affect the live tenant identity. Session timeout and maintenance mode are enforced across the application, while locale and notification defaults provide the governed baseline for the tenant.
             </p>
           </div>
         </div>
@@ -373,7 +389,7 @@ export default function AdminSettingsPage() {
           <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
             <p className="text-sm font-medium text-foreground">Save deliberately</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              These controls affect the full tenant. Review branding and security changes as governance decisions, not just local UI preferences.
+              Branding and tenant settings are audited governance actions. Record a concise reason before saving so future reviewers understand why the tenant-wide default changed.
             </p>
           </div>
         </section>
@@ -397,7 +413,7 @@ export default function AdminSettingsPage() {
               <Button
                 size="sm"
                 onClick={handleSaveBranding}
-                disabled={updateBranding.isPending}
+                disabled={updateBranding.isPending || !hasValidBrandingReason}
               >
                 {updateBranding.isPending ? (
                   <Loader2 className="mr-2 h-3 w-3 animate-spin" />
@@ -410,6 +426,20 @@ export default function AdminSettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-4">
+            <Label htmlFor="branding-governance-reason">Governance reason</Label>
+            <Textarea
+              id="branding-governance-reason"
+              value={brandingReason}
+              onChange={(e) => setBrandingReason(e.target.value)}
+              placeholder="Explain why this branding change is needed..."
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required for the audit trail. Minimum {minimumGovernanceReasonLength} characters before branding changes can be saved.
+            </p>
+          </div>
+
           {/* Company Identity */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -552,9 +582,22 @@ export default function AdminSettingsPage() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
             General
           </CardTitle>
-          <CardDescription>Locale and display settings.</CardDescription>
+          <CardDescription>Tenant-wide locale and display defaults that administrators govern centrally.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-4">
+            <Label htmlFor="tenant-settings-governance-reason">Governance reason for tenant defaults</Label>
+            <Textarea
+              id="tenant-settings-governance-reason"
+              value={settingsReason}
+              onChange={(e) => setSettingsReason(e.target.value)}
+              placeholder="Explain why these tenant-wide settings need to change..."
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required for the audit trail. Minimum {minimumGovernanceReasonLength} characters before tenant settings can be saved.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
@@ -595,7 +638,7 @@ export default function AdminSettingsPage() {
             <Bell className="h-4 w-4 text-muted-foreground" />
             Notifications
           </CardTitle>
-          <CardDescription>Configure default notification behavior for the system.</CardDescription>
+          <CardDescription>Governed notification defaults that define the tenant baseline for email-enabled workflows.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-border p-4">
@@ -606,8 +649,8 @@ export default function AdminSettingsPage() {
               </p>
             </div>
             <Switch
-              checked={settings.emailNotifications}
-              onCheckedChange={(v) => update('emailNotifications', v)}
+              checked={settings.emailNotificationsEnabled}
+              onCheckedChange={(v) => update('emailNotificationsEnabled', v)}
             />
           </div>
         </CardContent>
@@ -620,7 +663,7 @@ export default function AdminSettingsPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
             Security
           </CardTitle>
-          <CardDescription>Session and access control settings.</CardDescription>
+          <CardDescription>Tenant-wide session and maintenance controls enforced across the live application.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

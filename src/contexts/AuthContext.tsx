@@ -8,6 +8,7 @@ import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { toast } from 'sonner';
 import { signOutLocalSession } from '@/lib/auth-signout';
 import { withAuthReadRetry } from '@/lib/auth-bootstrap';
+import { useTenantSettingsContext } from '@/contexts/TenantSettingsContext';
 
 interface AuthContextType {
   user: User | null;
@@ -75,6 +76,7 @@ async function resolveLoginEmail(identifier: string) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { settings } = useTenantSettingsContext();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -280,8 +282,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, signOut]);
 
-  // Auto sign-out after 30 minutes of inactivity
-  useIdleTimeout(handleIdleTimeout, 30 * 60 * 1000, !!user);
+  const sessionTimeoutMs = Math.max(5, settings.sessionTimeoutMinutes) * 60 * 1000;
+
+  // Auto sign-out after the tenant-governed inactivity threshold.
+  useIdleTimeout(handleIdleTimeout, sessionTimeoutMs, !!user);
 
   const value = useMemo<AuthContextType>(() => ({
     user,

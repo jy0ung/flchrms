@@ -262,7 +262,7 @@ export function useEmployeeManagementController({
     closeResetPasswordDialog(false);
   };
 
-  const handleSaveRole = async () => {
+  const handleSaveRole = async (reason: string) => {
     if (!selectedEmployee) return;
     if (!ensureRowPermission(selectedEmployee, 'canManageRole', 'You do not have permission to manage employee roles.')) {
       return;
@@ -271,17 +271,18 @@ export function useEmployeeManagementController({
     await updateUserRole.mutateAsync({
       userId: selectedEmployee.id,
       newRole: selectedRole,
+      reason,
     });
     setEditRoleDialogOpen(false);
   };
 
-  const handleDeleteRole = async () => {
+  const handleDeleteRole = async (reason: string) => {
     if (!selectedEmployee) return;
     if (!ensureRowPermission(selectedEmployee, 'canManageRole', 'You do not have permission to manage employee roles.')) {
       return;
     }
 
-    await deleteUserRole.mutateAsync({ userId: selectedEmployee.id });
+    await deleteUserRole.mutateAsync({ userId: selectedEmployee.id, reason });
     setEditRoleDialogOpen(false);
     setSelectedRole('employee');
   };

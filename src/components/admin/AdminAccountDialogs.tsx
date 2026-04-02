@@ -45,11 +45,13 @@ interface AdminAccountDialogsProps {
   currentAssignedRole: AppRole;
   selectedRole: AppRole;
   onSelectedRoleChange: (role: AppRole) => void;
-  onSaveRole: () => void;
-  onDeleteRole: () => void;
+  onSaveRole: (reason: string) => void;
+  onDeleteRole: (reason: string) => void;
   updateRolePending: boolean;
   deleteRolePending: boolean;
 }
+
+const minimumGovernanceReasonLength = 5;
 
 function ReadonlyField({ label, value }: { label: string; value: string | null | undefined }) {
   return (
@@ -130,10 +132,12 @@ export function AdminAccountDialogs({
   deleteRolePending,
 }: AdminAccountDialogsProps) {
   const [confirmRoleChange, setConfirmRoleChange] = useState(false);
+  const [roleChangeReason, setRoleChangeReason] = useState('');
 
   useEffect(() => {
     if (!editRoleDialogOpen) {
       setConfirmRoleChange(false);
+      setRoleChangeReason('');
     }
   }, [editRoleDialogOpen]);
 
@@ -153,6 +157,7 @@ export function AdminAccountDialogs({
       nextTier,
     };
   }, [currentAssignedRole, selectedRole]);
+  const hasValidRoleReason = roleChangeReason.trim().length >= minimumGovernanceReasonLength;
 
   return (
     <>
@@ -529,6 +534,24 @@ export function AdminAccountDialogs({
               </div>
             </ModalSection>
 
+            <ModalSection
+              title="Governance Reason"
+              description="Required for the audit trail before publishing or removing a role assignment."
+            >
+              <div className="space-y-2">
+                <Label htmlFor="role-change-reason">Reason</Label>
+                <Input
+                  id="role-change-reason"
+                  value={roleChangeReason}
+                  onChange={(event) => setRoleChangeReason(event.target.value)}
+                  placeholder="Explain why this role change is needed..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Minimum {minimumGovernanceReasonLength} characters. This reason is captured in the governance audit trail.
+                </p>
+              </div>
+            </ModalSection>
+
             <ModalSection tone="warning" compact>
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
                 <p className="flex items-start gap-2 text-sm text-amber-400">
@@ -551,15 +574,15 @@ export function AdminAccountDialogs({
             <Button
               variant="destructive"
               className="w-full sm:w-auto"
-              onClick={onDeleteRole}
-              disabled={deleteRolePending || !selectedEmployee || !confirmRoleChange}
+              onClick={() => onDeleteRole(roleChangeReason.trim())}
+              disabled={deleteRolePending || !selectedEmployee || !confirmRoleChange || !hasValidRoleReason}
             >
               {deleteRolePending ? 'Removing...' : 'Delete Role (Revert to Employee)'}
             </Button>
             <Button
               className="w-full sm:w-auto"
-              onClick={onSaveRole}
-              disabled={updateRolePending || !roleChangePreview.hasRoleChange || !confirmRoleChange}
+              onClick={() => onSaveRole(roleChangeReason.trim())}
+              disabled={updateRolePending || !roleChangePreview.hasRoleChange || !confirmRoleChange || !hasValidRoleReason}
             >
               {updateRolePending ? 'Publishing...' : 'Publish Role Change'}
             </Button>
