@@ -19,15 +19,15 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useBrandingContext } from '@/contexts/BrandingContext';
-import { useMyAdminCapabilities } from '@/hooks/admin/useAdminCapabilities';
 import { cn } from '@/lib/utils';
 import { ROUTE_LABELS, SHELL_LABELS } from '@/lib/navigation-labels';
 import {
+  canConductPerformanceReviews,
+  canManageDocuments,
   canViewEmployeeDirectory,
-  hasRole,
-  MANAGER_AND_ABOVE_ROLES,
-  DOCUMENT_MANAGER_ROLES,
-  PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
+  canViewManagerDashboardWidgets,
+  canAccessAdminConsole,
+  canManageDepartments,
 } from '@/lib/permissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -173,7 +173,6 @@ function SidebarContent({
 }) {
   const { role } = useAuth();
   const { branding } = useBrandingContext();
-  const { capabilityMap } = useMyAdminCapabilities(role);
   const { unreadCount } = useShellNotifications();
   const mobilePrimaryItems = mobileOverflowOnly ? buildBottomNavItems(role) : [];
   const hiddenMobileHrefs = mobileOverflowOnly
@@ -184,22 +183,23 @@ function SidebarContent({
     item.href === '/notifications' ? { ...item, badge: unreadCount } : item,
   ), hiddenMobileHrefs);
 
-  // Filter nav items by role-based permissions
+  // Filter nav items by role-based permissions.
+  // All checks use permission helpers for consistency.
   const scopedPlanning = filterHiddenNavItems(planningNavigation.filter((item) => {
-    if (item.href === '/calendar') return hasRole(role, MANAGER_AND_ABOVE_ROLES);
-    if (item.href === '/performance') return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
+    if (item.href === '/calendar') return canViewManagerDashboardWidgets(role);
+    if (item.href === '/performance') return canConductPerformanceReviews(role);
     return true;
   }), hiddenMobileHrefs);
 
   const scopedRecords = filterHiddenNavItems(recordsNavigation.filter((item) => {
-    if (item.href === '/documents') return hasRole(role, DOCUMENT_MANAGER_ROLES);
+    if (item.href === '/documents') return canManageDocuments(role);
     return true;
   }), hiddenMobileHrefs);
 
-  const scopedAdmin = filterHiddenNavItems(capabilityMap.access_admin_console ? adminNavigation : [], hiddenMobileHrefs);
+  const scopedAdmin = filterHiddenNavItems(canAccessAdminConsole(role) ? adminNavigation : [], hiddenMobileHrefs);
   const scopedPeople = filterHiddenNavItems(peopleNavigation.filter((item) => {
     if (item.href === '/employees') return canViewEmployeeDirectory(role);
-    if (item.href === '/departments') return capabilityMap.manage_departments;
+    if (item.href === '/departments') return canManageDepartments(role);
     return true;
   }), hiddenMobileHrefs);
   const hasOverflowRoutes = [

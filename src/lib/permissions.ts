@@ -195,3 +195,20 @@ export function canViewLeaveSupportingDocument(role: MaybeRole) {
 export function canConductPerformanceReviews(role: MaybeRole) {
   return hasRole(role, PERFORMANCE_REVIEW_CONDUCTOR_ROLES);
 }
+
+/**
+ * Navigation permission helpers:
+ * These helpers align with what the AppSidebar uses for route visibility.
+ * Used exclusively for determining navigation presence; admin pages may have
+ * additional capability-based overrides.
+ */
+
+export function canAccessAdminConsole(role: MaybeRole): boolean {
+  return canAccessAdminPage(role);
+}
+
+export function canManageDepartments(role: MaybeRole): boolean {
+  // Departments can be managed by HR, Director, and Admin
+  // (same as manage_employee_directory, but separate capability for granularity)
+  return hasRole(role, ['admin', 'hr', 'director', 'general_manager']);
+}

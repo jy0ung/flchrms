@@ -7,9 +7,8 @@ import {
   canConductPerformanceReviews,
   canManageDocuments,
   canViewEmployeeDirectory,
+  canViewManagerDashboardWidgets,
   canViewTeamLeaveRequests,
-  hasRole,
-  MANAGER_AND_ABOVE_ROLES,
 } from '@/lib/permissions';
 
 import { buildCommandActions } from './command-registry';
@@ -29,7 +28,7 @@ export function useCommandPaletteActions() {
         canCreateEmployee: capabilityMap.create_employee,
         canCreateLeaveRequest: Boolean(user?.id),
         canViewTeamLeaveRequests: canViewTeamLeaveRequests(role),
-        canAccessCalendar: hasRole(role, MANAGER_AND_ABOVE_ROLES),
+        canAccessCalendar: canViewManagerDashboardWidgets(role),
         canManageDocuments: canManageDocuments(role),
         canConductPerformanceReviews: canConductPerformanceReviews(role),
         canViewAdminQuickActions: capabilityMap.view_admin_quick_actions,

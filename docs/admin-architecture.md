@@ -110,9 +110,56 @@ The following centralized-admin artifacts have been removed because the app no l
 - obsolete compatibility wrappers around canonical module pages
 - the old leave request details modal path replaced by module drawers
 
+## Shell Architecture: Why AdminLayout?
+
+The application uses two separate shell layouts: **AppLayout** (main app shell) and **AdminLayout** (governance shell).
+
+### Design Rationale
+
+**Separation of concerns:**
+- `AppLayout` serves operational modules: leave, payroll, employees (canonical), attendance, etc.
+- `AdminLayout` serves governance and system-level features: roles, policies, audit, announcements, settings.
+
+The two shells have different visual hierarchies:
+- `AppLayout`: Emphasizes module-level navigation with sidebar menu for operational routes.
+- `AdminLayout`: Emphasizes capability-gated admin sidebar with governance-focused navigation.
+
+**Why not one unified shell?**
+1. **Navigation complexity**: Unifying them would require complex conditional rendering in a single sidebar. Admin routes and app routes have different permission models (role-level + capability-matrix for admin, role-level only for app).
+2. **Visual consistency**: Keeping them separate allows each shell to optimize its information hierarchy for its audience (operators vs. administrators).
+3. **Scope clarity**: Team members can clearly understand whether a feature belongs in the operational workspace or the governance workspace.
+
+### When to Use AdminLayout vs. AppLayout
+
+**Use `AdminLayout` if:**
+- The page is gated by admin capabilities (e.g., role management, audit logs, policy settings).
+- The page serves governance, compliance, or system configuration functions.
+- The page is accessed via `/admin/*` routes.
+- The feature is only relevant for administrators or select high-privilege roles.
+
+**Use `AppLayout` if:**
+- The page serves operational workflows (e.g., leave requests, payroll review, employee directory).
+- The page is gated by role-level permissions (not capability checks).
+- The page is accessed via module routes like `/leave/*`, `/payroll/*`, `/employees/*`.
+- Multiple roles need access (not just admins).
+
+### New Page Checklist
+
+When adding a new page, ask:
+
+1. **Is this a governance or system feature?** (audit, roles, policies, settings) → AdminLayout
+2. **Is this operational work?** (leave, payroll, attendance, employees) → AppLayout
+3. **Do multiple roles access this?** → AppLayout
+4. **Only admins access it?** → AdminLayout
+5. **Does it require capability checks?** → AdminLayout
+6. **Does it use role checks only?** → Likely AppLayout
+
+If uncertain, check whether the canonical module workspace (e.g., `LeavePage.tsx`) already exists. If yes, extend it using `AppLayout`. If no, and the feature is governance-related, create an admin page using `AdminLayout`.
+
 ## Guidance
 
 - Keep admin pages thin and capability-gated.
 - Prefer sending users into canonical modules for operational work.
 - Add shared admin routing or governance behavior to the bridge/config layer first when it applies to more than one page.
 - Do not reintroduce centralized CRUD ownership into the admin shell.
+- Use role-based permission helpers in navigation to prevent unmapped admin shortcuts.

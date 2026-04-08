@@ -39,7 +39,7 @@ const AdminQuickActionsPage = lazy(() => import("./pages/admin/AdminQuickActions
 const EmployeeProfile = lazy(() => import("./pages/EmployeeProfile"));
 import NotFound from "./pages/NotFound";
 import {
-  AUTHENTICATED_APP_ROLES,
+  ADMIN_PAGE_ALLOWED_ROLES,
   EMPLOYEE_DIRECTORY_ALLOWED_ROLES,
   DOCUMENT_MANAGER_ROLES,
   PERFORMANCE_REVIEW_CONDUCTOR_ROLES,
@@ -80,14 +80,15 @@ const App = () => (
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route element={<AppLayout />}>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/leave" element={<Leave />} />
-                        <Route path="/departments" element={<Departments />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/attendance" element={<Attendance />} />
-                        <Route path="/training" element={<Training />} />
-                        <Route path="/announcements" element={<Announcements />} />
-                        <Route path="/profile" element={<Profile />} />
+                      {/* Public routes — available to authenticated users */}
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/leave" element={<Leave />} />
+                      <Route path="/departments" element={<Departments />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/training" element={<Training />} />
+                      <Route path="/announcements" element={<Announcements />} />
+                      <Route path="/profile" element={<Profile />} />
                         {/* Protected routes — role-gated sensitive pages */}
                         <Route element={<ProtectedRoute allowedRoles={PERFORMANCE_REVIEW_CONDUCTOR_ROLES} />}>
                           <Route path="/performance" element={<Performance />} />
@@ -99,14 +100,16 @@ const App = () => (
                           <Route path="/documents" element={<Documents />} />
                         </Route>
                         <Route path="/payroll" element={<Payroll />} />
-                        {/* Protected routes - Admin/HR/Manager/GM/Director only */}
+                        {/* Employee directory — admin/HR/Manager/GM/Director only */}
                         <Route element={<ProtectedRoute allowedRoles={EMPLOYEE_DIRECTORY_ALLOWED_ROLES} />}>
                           <Route path="/employees" element={<Employees />} />
                           <Route path="/employees/:employeeId" element={<EmployeeProfile />} />
                         </Route>
                       </Route>
-                      {/* Admin panel — dedicated layout with its own sidebar */}
-                      <Route element={<ProtectedRoute allowedRoles={AUTHENTICATED_APP_ROLES} />}>
+                      {/* Admin panel — governance shell with its own sidebar */}
+                      {/* Route-level gate: ADMIN_PAGE_ALLOWED_ROLES (admin, hr, director, general_manager) */}
+                      {/* Page-level gate: AdminLayout checks capability.access_admin_console for overrides */}
+                      <Route element={<ProtectedRoute allowedRoles={ADMIN_PAGE_ALLOWED_ROLES} />}>
                         <Route element={<AdminLayout />}>
                           <Route path="/admin" element={<AdminEntryRedirect />} />
                           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
