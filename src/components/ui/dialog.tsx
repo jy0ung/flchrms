@@ -28,8 +28,8 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      // Flat corporate modal overlay: no glass blur, no transparency on modal surface.
-      "fixed inset-0 z-50 bg-slate-950/35 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      // Darker overlay for professional modals (60% opacity)
+      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -58,12 +58,9 @@ const DialogContent = React.forwardRef<
         data-slot="dialog-content"
         className={cn(
           layout === "full-screen"
-            ? "fixed inset-0 z-50 grid h-[100dvh] max-h-[100dvh] w-screen max-w-none gap-4 overflow-y-auto bg-background px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 rounded-none sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-full sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:gap-5 sm:rounded-lg sm:border sm:border-border sm:p-6 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]"
-            : // Reusable modal shell standard:
-              // - solid surface, no transparency
-              // - clear border/shadow hierarchy
-              // - root handles scrolling while footer can remain sticky
-              "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border border-border bg-background p-5 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:max-h-[calc(100vh-2rem)] sm:w-full sm:gap-5 sm:p-6",
+            ? "fixed inset-0 z-50 grid h-[100dvh] max-h-[100dvh] w-screen max-w-none gap-4 overflow-y-auto bg-background px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 rounded-none sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-full sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:gap-5 sm:rounded-lg sm:border sm:border-border sm:p-6 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]"
+            : // Professional modal: clean border, no shadow, adequate padding
+              "fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border border-border bg-background p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:max-h-[calc(100vh-2rem)] sm:w-full sm:gap-5 sm:p-6",
           className,
         )}
         {...props}
@@ -71,7 +68,7 @@ const DialogContent = React.forwardRef<
         <DialogChromeContext.Provider value={{ showCloseButton, registerHeader, hasHeader, layout }}>
           {children}
           {showCloseButton && !hasHeader ? (
-            <DialogPrimitive.Close className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground ring-offset-background transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none sm:right-4 sm:top-4">
+            <DialogPrimitive.Close className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground ring-offset-background transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none sm:right-4 sm:top-4">
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
@@ -103,7 +100,7 @@ const DialogHeader = ({ className, children, ...props }: React.HTMLAttributes<HT
     >
       {children}
       {chrome?.showCloseButton ? (
-        <DialogPrimitive.Close className="absolute right-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground ring-offset-background transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
+        <DialogPrimitive.Close className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground ring-offset-background transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
@@ -142,7 +139,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("pr-8 text-lg font-semibold leading-tight tracking-tight", className)}
+    className={cn("pr-8 text-xl font-bold leading-tight tracking-tight", className)}
     {...props}
   />
 ));
