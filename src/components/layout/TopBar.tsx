@@ -38,12 +38,12 @@ export function TopBar() {
     : 'U';
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 border-b border-border bg-card">
       <AppPageContainer
         spacing="none"
         maxWidth="7xl"
         framePadding="shell"
-        className="flex h-16 min-w-0 items-center gap-3 md:h-14"
+        className="flex h-16 min-w-0 items-center gap-3 md:h-16"
       >
         {/* Breadcrumbs (hidden on mobile — sidebar hamburger takes that space) */}
         <div className="hidden min-w-0 flex-1 items-center gap-3 md:flex">
@@ -59,10 +59,10 @@ export function TopBar() {
                     {index > 0 && <BreadcrumbSeparator />}
                     <BreadcrumbItem>
                       {isLast ? (
-                        <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                        <BreadcrumbPage className="text-xs font-medium text-muted-foreground">{label}</BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink asChild>
-                          <Link to={path}>{label}</Link>
+                          <Link to={path} className="text-xs text-muted-foreground hover:text-foreground">{label}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
@@ -75,7 +75,7 @@ export function TopBar() {
 
         {/* Mobile: just show page title */}
         <div className="min-w-0 flex-1 md:hidden">
-          <p className="truncate text-sm font-semibold">
+          <p className="truncate text-sm font-medium">
             {getTopBarTitle(location.pathname)}
           </p>
         </div>
@@ -91,7 +91,7 @@ export function TopBar() {
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full md:h-10 md:w-10">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                     {initials}

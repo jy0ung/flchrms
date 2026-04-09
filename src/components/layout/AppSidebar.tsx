@@ -92,26 +92,26 @@ function SidebarNavItem({
       to={item.href}
       onClick={onNavigate}
       className={cn(
-        'group flex items-center gap-3 rounded-lg px-2.5 py-2 min-h-10 text-sm font-medium transition-all duration-150',
+        'group flex items-center gap-3 rounded-lg px-3 py-2.5 min-h-10 text-sm font-medium transition-colors duration-100',
         collapsed && 'justify-center px-0',
         item.danger
           ? isActive
-            ? 'bg-destructive/15 text-destructive'
-            : 'text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive'
+            ? 'bg-destructive/20 text-destructive'
+            : 'text-sidebar-foreground hover:bg-destructive/15 hover:text-destructive'
           : isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
+            ? 'bg-slate-700 text-accent'
+            : 'text-sidebar-foreground hover:bg-slate-800',
       )}
     >
-      <item.icon className="h-4 w-4 shrink-0" />
+      <item.icon className="h-5 w-5 shrink-0" />
       {!collapsed && <span className="truncate">{item.name}</span>}
       {!collapsed && item.badge != null && item.badge > 0 && (
-        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white px-1.5 text-[10px] font-semibold">
           {item.badge > 99 ? '99+' : item.badge}
         </span>
       )}
       {collapsed && item.badge != null && item.badge > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground">
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent text-white px-1 text-[9px] font-semibold">
           {item.badge > 99 ? '99+' : item.badge}
         </span>
       )}

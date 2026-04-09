@@ -20,7 +20,7 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[4.25rem] items-center gap-1 border-t border-border bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-center gap-1 border-t-2 border-t-border bg-card px-2 pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Mobile navigation"
     >
       {bottomNavItems.map((item) => {
@@ -33,16 +33,16 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
             key={item.href}
             to={item.href}
             className={cn(
-              'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-medium transition-colors',
+              'relative flex min-h-10 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors border-t-2',
               isActive
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'border-t-accent text-foreground'
+                : 'border-t-transparent text-muted-foreground hover:text-foreground',
             )}
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className="h-6 w-6" />
             <span className="max-w-full truncate leading-none">{item.name}</span>
             {item.href === '/notifications' && unreadCount > 0 && (
-              <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+              <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -53,10 +53,10 @@ export function MobileBottomNav({ onOpenSidebar }: { onOpenSidebar: () => void }
       <button
         type="button"
         onClick={onOpenSidebar}
-        className="flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="flex min-h-10 min-w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground border-t-2 border-t-transparent"
         aria-label="More navigation"
       >
-        <MoreHorizontal className="h-5 w-5" />
+        <MoreHorizontal className="h-6 w-6" />
         <span className="max-w-full truncate leading-none">{SHELL_LABELS.more}</span>
       </button>
     </nav>
