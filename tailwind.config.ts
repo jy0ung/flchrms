@@ -98,7 +98,49 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+      fontSize: {
+        // Enterprise typography scale
+        "xs": ["0.8125rem", { lineHeight: "1.2" }],       // 13px
+        "sm": ["0.875rem", { lineHeight: "1.42" }],       // 14px
+        "base": ["1rem", { lineHeight: "1.6" }],          // 16px
+        "lg": ["1.125rem", { lineHeight: "1.5" }],        // 18px
+        "xl": ["1.25rem", { lineHeight: "1.4" }],         // 20px
+        "2xl": ["1.5rem", { lineHeight: "1.3" }],         // 24px
+        "3xl": ["1.875rem", { lineHeight: "1.2" }],       // 30px
+        "4xl": ["2.25rem", { lineHeight: "1.1" }],        // 36px
+      },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [
+    tailwindcssAnimate,
+    // Typography utility classes
+    function ({ addComponents }: any) {
+      addComponents({
+        ".t-h1": {
+          "@apply text-4xl font-semibold leading-none tracking-tight": {},
+        },
+        ".t-h2": {
+          "@apply text-3xl font-semibold leading-tight tracking-tight": {},
+        },
+        ".t-h3": {
+          "@apply text-xl font-semibold leading-tight tracking-tight": {},
+        },
+        ".t-h4": {
+          "@apply text-lg font-semibold leading-tight tracking-tight": {},
+        },
+        ".t-body": {
+          "@apply text-base leading-relaxed": {},
+        },
+        ".t-body-sm": {
+          "@apply text-sm leading-relaxed": {},
+        },
+        ".t-label": {
+          "@apply text-sm font-medium": {},
+        },
+        ".t-meta": {
+          "@apply text-xs font-normal text-muted-foreground": {},
+        },
+      });
+    },
+  ],
 } satisfies Config;

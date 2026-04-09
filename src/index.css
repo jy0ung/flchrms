@@ -6,30 +6,30 @@
 
 @layer base {
   :root {
-    /* Neutral zinc scale + single blue accent */
-    --background: 0 0% 98%;
-    --foreground: 240 10% 4%;
+    /* Minimalist Modern Enterprise — Slate-based professional palette */
+    --background: 210 40% 98%;
+    --foreground: 215 28% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
+    --card-foreground: 215 28% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
+    --popover-foreground: 215 28% 17%;
 
-    --primary: 221 83% 53%;
+    --primary: 204 20% 33%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 215 28% 17%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 38%;
+    --muted: 210 17% 92%;
+    --muted-foreground: 215 20% 51%;
 
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 10%;
+    --accent: 168 81% 29%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Status — 3 tones only */
-    --success: 142 71% 45%;
+    /* Status — Professional, slightly desaturated */
+    --success: 162 72% 33%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -38,79 +38,79 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --info: 221 83% 53%;
+    --info: 189 94% 35%;
     --info-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 221 83% 53%;
+    --border: 210 17% 92%;
+    --input: 210 40% 98%;
+    --ring: 168 81% 29%;
     --radius: 0.5rem;
 
-    /* Sidebar — always-dark rail */
-    --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 240 5% 65%;
-    --sidebar-primary: 221 83% 53%;
+    /* Sidebar — maintain dark for visual anchoring */
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 168 81% 29%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent: 0 0% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 168 81% 29%;
 
-    /* Chart colors */
-    --chart-1: 221 83% 53%;
-    --chart-2: 142 71% 45%;
+    /* Chart colors — muted enterprise palette */
+    --chart-1: 204 20% 33%;
+    --chart-2: 162 72% 33%;
     --chart-3: 38 92% 50%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 340 75% 55%;
+    --chart-4: 189 94% 35%;
+    --chart-5: 215 20% 51%;
   }
 
   .dark {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
+    --background: 215 28% 10%;
+    --foreground: 210 40% 98%;
 
-    --card: 240 6% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 215 25% 14%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 6% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 215 25% 14%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 210 40% 96%;
+    --primary-foreground: 215 28% 17%;
 
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 215 25% 14%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 215 25% 18%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 168 81% 47%;
+    --accent-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 162 72% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 100% 0% 0%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --info: 217 91% 60%;
+    --info: 189 94% 45%;
     --info-foreground: 0 0% 100%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 217 91% 60%;
+    --border: 215 25% 18%;
+    --input: 215 25% 18%;
+    --ring: 168 81% 47%;
 
-    --sidebar-background: 240 10% 4%;
-    --sidebar-foreground: 240 5% 65%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 215 28% 8%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 168 81% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent: 215 25% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 215 25% 18%;
+    --sidebar-ring: 168 81% 47%;
   }
 }
 
@@ -129,26 +129,27 @@
   }
 
   h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
+    @apply font-semibold;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  /* Status badges */
+  /* Status badges — Monochrome background with color borders */
   .badge-success {
-    @apply bg-success/10 text-success border-success/20;
+    @apply bg-slate-50 border border-success text-success;
   }
 
   .badge-warning {
-    @apply bg-warning/10 text-warning border-warning/20;
+    @apply bg-slate-50 border border-warning text-warning;
   }
 
   .badge-destructive {
-    @apply bg-destructive/10 text-destructive border-destructive/20;
+    @apply bg-slate-50 border border-destructive text-destructive;
   }
 
   .badge-info {
-    @apply bg-primary/10 text-primary border-primary/20;
+    @apply bg-slate-50 border border-info text-info;
   }
 
   /* Navigation active state */
