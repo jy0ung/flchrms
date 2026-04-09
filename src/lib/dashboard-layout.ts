@@ -24,7 +24,8 @@ export type DashboardWidgetId =
   | 'charts'
   | 'calendarPreview'
   | 'recentActivity'
-  | 'pendingActions';
+  | 'pendingActions'
+  | 'rbacAdvancedKpi';
 
 // ── Tier / resize rules ──────────────────────────────────────────
 

@@ -10,7 +10,7 @@ import type { DashboardTier, DashboardWidgetDefinition, DashboardWidgetId, Resiz
 import { TIER_WIDTH_RULES } from '@/lib/dashboard-layout';
 import {
   Activity, BarChart3, Bell, Briefcase, Calendar, CalendarDays, CheckCircle2,
-  ClipboardList, Clock, GraduationCap, ListTodo, Megaphone, ShieldAlert, Target, Users,
+  ClipboardList, Clock, GraduationCap, ListTodo, Megaphone, ShieldAlert, Target, Users, Users2,
 } from 'lucide-react';
 
 // ── Widget metadata ──────────────────────────────────────────────
@@ -142,6 +142,14 @@ export const WIDGET_META: Record<DashboardWidgetId, DashboardWidgetMeta> = {
     defaultHeight: 4,
     defaultTier: 'primary',
   },
+  rbacAdvancedKpi: {
+    id: 'rbacAdvancedKpi',
+    label: 'RBAC Governance',
+    description: 'Role distribution, capability utilization, and RBAC health indicators.',
+    defaultWidth: 4,
+    defaultHeight: 4,
+    defaultTier: 'secondary',
+  },
 };
 
 export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = [
@@ -208,6 +216,7 @@ export const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?:
   calendarPreview: CalendarDays,
   recentActivity: Activity,
   pendingActions: ListTodo,
+  rbacAdvancedKpi: Users2,
 };
 
 // ── Role → widget mapping ────────────────────────────────────────
@@ -218,10 +227,10 @@ export const WIDGET_ICONS: Record<DashboardWidgetId, ComponentType<{ className?:
 export const ROLE_DEFAULT_WIDGETS: Record<AppRole, DashboardWidgetId[]> = {
   employee: ['attendanceToday', 'leaveBalance', 'announcements', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
   manager: ['teamSnapshot', 'onLeaveToday', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
-  general_manager: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
-  hr: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
-  director: ['criticalInsights', 'executiveMetrics', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
-  admin: ['criticalInsights', 'pendingActions', 'teamSnapshot', 'onLeaveToday', 'charts', 'announcements', 'trainingSummary', 'calendarPreview', 'recentActivity'],
+  general_manager: ['criticalInsights', 'executiveMetrics', 'rbacAdvancedKpi', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  hr: ['criticalInsights', 'executiveMetrics', 'rbacAdvancedKpi', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  director: ['criticalInsights', 'executiveMetrics', 'rbacAdvancedKpi', 'pendingActions', 'attendanceToday', 'charts', 'announcements', 'teamSnapshot', 'onLeaveToday', 'trainingSummary', 'performanceSummary', 'calendarPreview', 'recentActivity'],
+  admin: ['criticalInsights', 'rbacAdvancedKpi', 'pendingActions', 'teamSnapshot', 'onLeaveToday', 'charts', 'announcements', 'trainingSummary', 'calendarPreview', 'recentActivity'],
 };
 
 export const MAX_LEAVE_BALANCE_ROWS_IN_WIDGET = 4;
@@ -240,6 +249,7 @@ export const WIDGET_DEFINITIONS: Record<DashboardWidgetId, DashboardWidgetDefini
   calendarPreview: { id: 'calendarPreview', defaultTier: 'supporting', allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'], defaultW: 4, defaultH: 4, minW: TIER_WIDTH_RULES.supporting.minW, maxW: TIER_WIDTH_RULES.supporting.maxW },
   recentActivity: { id: 'recentActivity', defaultTier: 'supporting', allowedRoles: ['employee', 'manager', 'general_manager', 'hr', 'director', 'admin'], defaultW: 4, defaultH: 4, minW: TIER_WIDTH_RULES.supporting.minW, maxW: TIER_WIDTH_RULES.supporting.maxW },
   pendingActions: { id: 'pendingActions', defaultTier: 'primary', allowedRoles: ['manager', 'general_manager', 'hr', 'director', 'admin'], defaultW: 4, defaultH: 4, minW: TIER_WIDTH_RULES.primary.minW, maxW: TIER_WIDTH_RULES.primary.maxW },
+  rbacAdvancedKpi: { id: 'rbacAdvancedKpi', defaultTier: 'secondary', allowedRoles: ['general_manager', 'hr', 'director', 'admin'], defaultW: 4, defaultH: 4, minW: TIER_WIDTH_RULES.secondary.minW, maxW: TIER_WIDTH_RULES.secondary.maxW },
 };
 
 export const DASHBOARD_LAYOUT_PRESET_VERSION = 7;

@@ -13,3 +13,4 @@ export { ChartsWidget } from './ChartsWidget';
 export { CalendarPreviewWidget } from './CalendarPreviewWidget';
 export { RecentActivityWidget } from './RecentActivityWidget';
 export { PendingActionsWidget } from './PendingActionsWidget';
+export { RbacAdvancedKpiWidget } from './RbacAdvancedKpiWidget';

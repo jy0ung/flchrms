@@ -18,6 +18,7 @@ import { ChartsWidget } from './ChartsWidget';
 import { CalendarPreviewWidget } from './CalendarPreviewWidget';
 import { RecentActivityWidget } from './RecentActivityWidget';
 import { PendingActionsWidget } from './PendingActionsWidget';
+import { RbacAdvancedKpiWidget } from './RbacAdvancedKpiWidget';
 import { DashboardWidgetErrorBoundary } from './shared';
 
 interface DashboardWidgetRendererProps {
@@ -53,6 +54,8 @@ function WidgetSwitch({ widgetId, role }: { widgetId: DashboardWidgetId; role: A
       return <RecentActivityWidget />;
     case 'pendingActions':
       return <PendingActionsWidget role={role} />;
+    case 'rbacAdvancedKpi':
+      return <RbacAdvancedKpiWidget role={role} />;
     default:
       return null;
   }
